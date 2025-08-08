@@ -1,12 +1,12 @@
 {
   "expo": {
-    "extra": {
-      "eas": {
-        "projectId": "419ebd31-1229-4a80-9f95-9f77d74966e3"
-      }
-    },
     "android": {
       "package": "com.zekikoese.streameoiptvapp"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6b53fd89-6611-43bc-a24f-3b53a1081eca"
+      }
     }
   }
 }

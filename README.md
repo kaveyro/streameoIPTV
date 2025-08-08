@@ -1,0 +1,1 @@
+# StreameoIPTV\n\nReact Native IPTV player with HLS support.

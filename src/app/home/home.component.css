@@ -1,0 +1,420 @@
+/* ------------------------------- Layout -------------------------------- */
+.home-layout {
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 0.75rem;
+  background-color: var(--bg-surface-alt);
+  border-right: 1px solid var(--border-subtle);
+  z-index: 100;
+}
+
+.main-area {
+  margin-left: 190px;
+  padding: 1rem 1.25rem 2rem;
+}
+
+/* ------------------------------ Wordmark ------------------------------- */
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.5rem 0.75rem;
+  color: var(--accent);
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.wordmark svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  flex-shrink: 0;
+}
+
+/* ------------------------------ Nav items ------------------------------ */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.nav-item svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+}
+
+/* ------------------------------- Toolbar ------------------------------- */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.search-box {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.recordings-heading {
+  flex: 1 1 auto;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.toolbar-icon {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: transform var(--transition-slow), color var(--transition-fast);
+}
+
+.toolbar-icon:hover {
+  color: var(--text-primary);
+}
+
+.reload-icon:hover {
+  transform: rotate(360deg) scale(1.1);
+}
+
+/* --------------------------- Media type pills -------------------------- */
+.media-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.pill-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 0.15rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.pill-toggle.active {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.pill-toggle:not(.active):hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.pill-toggle:focus-within {
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+}
+
+.pill-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* ---------------------------- Format switcher -------------------------- */
+.format-switcher {
+  display: flex;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.format-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.format-btn svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  fill: currentColor;
+}
+
+.format-btn:hover {
+  color: var(--text-primary);
+}
+
+.format-btn.active {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.format-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 0.15rem var(--focus-ring);
+}
+
+/* ------------------------------ Recordings ----------------------------- */
+.recording-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.recording-row:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.recording-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.recording-title {
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recording-time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.recording-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.status-0 {
+  color: var(--text-secondary);
+}
+
+.status-1,
+.status-3 {
+  color: var(--color-danger);
+}
+
+.status-2 {
+  color: #2fb96e;
+}
+
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ------------------------------- Misc ---------------------------------- */
+.clickable {
+  cursor: pointer;
+}
+
+.go-back-arrow {
+  height: var(--icon-size-lg);
+  width: var(--icon-size-lg);
+  transition: transform var(--transition-fast);
+}
+
+.go-back-arrow:hover {
+  transform: scale(1.25);
+}
+
+.scroll-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: var(--icon-size-xl);
+  height: var(--icon-size-xl);
+  background-color: var(--accent);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background-color 0.2s;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.scroll-to-top:hover {
+  transform: scale(1.1);
+  background-color: var(--accent-pressed);
+}
+
+.scroll-to-top svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--text-primary);
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ------------------------- Small screens (<768) ------------------------ */
+@media screen and (max-width: 767px) {
+  .sidebar {
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    gap: 0.15rem;
+  }
+
+  .nav-label,
+  .wordmark-text {
+    display: none;
+  }
+
+  .wordmark {
+    padding: 0 0.5rem 0 0;
+  }
+
+  .nav-item {
+    width: auto;
+    padding: 0.45rem;
+    justify-content: center;
+  }
+
+  .main-area {
+    margin-left: 0;
+    margin-top: 3.4rem;
+  }
+}
+
+/* ------------------------ Collapsible sidebar -------------------------- */
+.sidebar-toggle {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 2px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+.sidebar-toggle:hover {
+  color: var(--text-primary);
+}
+.sidebar-toggle svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.sidebar.collapsed {
+  width: 64px;
+  padding: 1rem 0.5rem;
+}
+.sidebar.collapsed .nav-label,
+.sidebar.collapsed .wordmark-text,
+.sidebar.collapsed .wordmark > svg {
+  display: none;
+}
+.sidebar.collapsed .wordmark {
+  justify-content: center;
+  padding: 0 0 0.75rem;
+}
+.sidebar.collapsed .sidebar-toggle {
+  margin: 0;
+  transform: rotate(180deg);
+}
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+}
+.home-layout:has(.sidebar.collapsed) .main-area {
+  margin-left: 64px;
+}

@@ -1,0 +1,14 @@
+button .import {
+    height: var(--icon-size-base);
+    width: var(--icon-size-base);
+    transition: transform var(--transition-fast);
+}
+
+button:hover .import {
+    transform: scale(1.25);
+}
+
+.notice {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}

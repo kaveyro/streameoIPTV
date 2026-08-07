@@ -1,0 +1,122 @@
+.source {
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-surface);
+    width: 100%;
+    padding: 1rem;
+    position: relative;
+}
+
+.thin-line {
+    height: 1px;
+    background-color: var(--text-primary);
+    width: 100%;
+    margin: 0;
+}
+
+.field {
+    min-width: 12rem;
+    display: inline-block;
+}
+
+.eye {
+    width: var(--icon-size-base);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+    user-select: none;
+}
+
+.eye:hover {
+    transform: scale(1.25)
+}
+
+button .refresh {
+    display: inline;
+    height: var(--icon-size-base);
+    width: var(--icon-size-base);
+    transition: transform var(--transition-fast);
+  }
+
+  button:hover .refresh {
+    transform: rotate(360deg);
+  }
+
+button .trash {
+    height: var(--icon-size-base);
+    width: var(--icon-size-base);
+    overflow: visible;
+}
+
+button .trash-lid {
+    transition: transform var(--transition-fast);
+}
+
+button:hover .trash-lid {
+    transform: translateY(-15%);
+}
+
+.wrap-text {
+    overflow: hidden;
+    overflow-wrap: break-word;
+}
+
+.check-disabled {
+    position: absolute;
+    height: var(--icon-size-xl);
+    width: var(--icon-size-xl);
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.check {
+    position: absolute;
+    height: var(--icon-size-xl);
+    width: var(--icon-size-xl);
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+    color: var(--text-primary);
+}
+
+.check:hover {
+    transform: translateY(-50%) scale(1.25)
+}
+
+button .pen {
+    width: var(--icon-size-base);
+    height: var(--icon-size-base);
+    transition: transform var(--transition-fast);
+}
+
+button:hover .pen {
+    transform: scale(1.25);
+}
+
+.expiry-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.65rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-surface-alt);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.expiry-badge--danger {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.last-updated {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    opacity: 0.5;
+    font-size: 0.8em;
+}

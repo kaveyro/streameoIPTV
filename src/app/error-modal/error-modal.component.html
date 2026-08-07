@@ -1,0 +1,26 @@
+<div class="modal-header">
+    <h4 class="modal-title lbl">{{ 'ERROR.TITLE' | translate }}</h4>
+    <button type="button" class="btn-close btn-close-white" [attr.aria-label]="('MODAL.CLOSE' | translate)" (click)="activeModal.close('Cross click')"></button>
+</div>
+<div class="modal-body">
+    <p class="lbl">
+        <span [innerHTML]="'ERROR.OCCURRED' | translate:{ link: 'https://github.com/kaveyro/streameoIPTV/issues' }"></span>
+    </p>
+    <p>
+        {{ 'ERROR.LOGS_INTRO' | translate }}
+    </p>
+    <ul>
+        <li>Windows: <span class="selectable">%localappdata%\streameoIPTV\cache\logs</span></li>
+        <li>Linux: <span class="selectable">~/.cache/streameoIPTV/logs</span></li>
+        <li>MacOS: <span class="selectable">~/Library/Caches/streameoIPTV/logs</span></li>
+    </ul>
+    <p>{{ 'ERROR.ATTACH_LOGS' | translate }}</p>
+    <p>{{ 'ERROR.PERSISTENT' | translate }}</p>
+    <textarea autocomplete="false" spellchek="false" readonly class="error-area">
+        {{error}}
+    </textarea>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-secondary" (click)="copy()">{{ 'ERROR.COPY' | translate }}</button>
+    <button class="btn btn-danger ms-1" (click)="activeModal.close('close')">{{ 'MODAL.CLOSE_BTN' | translate }}</button>
+</div>

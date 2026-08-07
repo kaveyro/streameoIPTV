@@ -1,0 +1,116 @@
+.player-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: #000;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+}
+
+.player-overlay.fullscreen {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+/* In fullscreen only the video is shown (bar + list are removed via *ngIf),
+   so the host fills the whole screen. */
+.player-overlay.fullscreen .video-host {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.video-host {
+  grid-column: 1;
+  grid-row: 1;
+  background: #000;
+  min-width: 0;
+  min-height: 0;
+}
+
+.player-bar {
+  grid-column: 1;
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-surface-alt);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ptitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.pbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.pbtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.pbtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.player-list {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  overflow-y: auto;
+  background: var(--bg-surface-alt);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.player-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.player-list-item:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.player-list-item.active {
+  background: var(--bg-surface);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.pli-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.pli-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

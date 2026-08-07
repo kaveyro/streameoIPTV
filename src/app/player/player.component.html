@@ -1,0 +1,34 @@
+<div class="player-overlay" [class.fullscreen]="fullscreen" *ngIf="active">
+  <!-- The native mpv window is positioned exactly over this element. Never put
+       DOM on top of it: on Windows it always composites above the WebView. -->
+  <div #videoHost class="video-host"></div>
+
+  <div class="player-bar" *ngIf="!fullscreen">
+    <button type="button" class="pbtn" (click)="back()" title="Back to channels">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor"
+          d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
+      </svg>
+      <span>Channels</span>
+    </button>
+    <span class="ptitle" [title]="current?.name">{{ current?.name }}</span>
+    <button type="button" class="pbtn" (click)="toggleFullscreen()"
+      [title]="fullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path *ngIf="!fullscreen" fill="currentColor"
+          d="M5,5H10V7H7V10H5V5M14,5H19V10H17V7H14V5M17,14H19V19H14V17H17V14M10,17V19H5V14H7V17H10Z" />
+        <path *ngIf="fullscreen" fill="currentColor"
+          d="M14,14H19V16H16V19H14V14M5,14H10V19H8V16H5V14M8,5H10V10H5V8H8V5M19,8V10H14V5H16V8H19Z" />
+      </svg>
+    </button>
+  </div>
+
+  <aside class="player-list" *ngIf="!fullscreen">
+    <div class="player-list-item" *ngFor="let ch of channels"
+      [class.active]="ch.id === current?.id" (click)="switch(ch)" [title]="ch.name">
+      <img *ngIf="ch.image" [src]="ch.image" class="pli-logo" alt=""
+        onerror="this.style.visibility='hidden'" />
+      <span class="pli-name">{{ ch.name }}</span>
+    </div>
+  </aside>
+</div>

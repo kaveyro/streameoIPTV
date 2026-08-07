@@ -1,0 +1,27 @@
+export class Settings {
+  recording_path?: string;
+  use_stream_caching?: boolean;
+  mpv_params?: string;
+  default_view?: number;
+  volume?: number;
+  refresh_on_start?: boolean;
+  restream_port?: number;
+  enable_tray_icon?: boolean;
+  zoom?: number;
+  default_sort?: number;
+  enable_hwdec?: boolean;
+  always_ask_save?: boolean;
+  enable_gpu?: boolean;
+  preferred_subtitle_language?: string;
+  preferred_audio_language?: string;
+  theme?: string;
+  accent_color?: string;
+  use_external_player?: boolean;
+  external_player_path?: string;
+  external_player_args?: string;
+  player_ui?: string;
+  normalize_volume?: boolean;
+  auto_refresh_hours?: number;
+  language?: string;
+  show_channel_source?: boolean;
+}

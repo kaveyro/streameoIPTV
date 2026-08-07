@@ -1,0 +1,151 @@
+.channel {
+  border-radius: var(--radius-sm);
+  height: 4.5em;
+  width: 100%;
+  background: var(--bg-surface);
+  overflow-y: hidden;
+  overflow-x: hidden;
+  user-select: none;
+  transition: width 0.5s ease-out;
+}
+
+.channel-title-container {
+  margin-left: 10px;
+  margin-right: 10px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.channel-title {
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.channel-source {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.channel-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.image-container {
+  height: 100%;
+  width: 50px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel:hover {
+  background: var(--accent-hover);
+  cursor: pointer;
+}
+
+.faded {
+  opacity: 0.5;
+}
+
+.channel:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+.playing {
+  background: var(--accent-strong);
+  animation-name: pulse;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-duration: 2s;
+}
+
+.playing:hover {
+  background: var(--color-danger);
+}
+
+@keyframes pulse {
+  from {
+    transform: scale3d(1, 1, 1);
+  }
+
+  50% {
+    transform: scale3d(1.05, 1.05, 1.05);
+  }
+
+  to {
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+.disabled {
+  opacity: 25%;
+}
+
+.archive-icon {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.favorite-icon {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  color: var(--color-favorite);
+}
+
+/* List format: one full-width row, hover uses the surface hover token */
+.channel-list:not(.playing):hover {
+  background: var(--bg-surface-hover);
+}
+
+/* Now playing (live xtream channels, grid + list formats). The line is
+   always reserved for eligible channels so the async load causes no jump. */
+.has-now-playing .channel-title,
+.has-now-playing .channel-source {
+  line-height: 1.25;
+}
+
+.now-playing-line {
+  height: 15px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.now-playing-title {
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.now-playing-track {
+  height: 2px;
+  margin-top: 2px;
+  border-radius: 1px;
+  background: var(--bg-surface-hover);
+  overflow: hidden;
+}
+
+.now-playing-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.guide-cal-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--accent);
+  cursor: pointer;
+  margin-bottom: 4px;
+}

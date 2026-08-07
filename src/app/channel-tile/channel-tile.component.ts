@@ -1,0 +1,496 @@
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  Renderer2,
+  SimpleChanges,
+  ViewChild,
+} from "@angular/core";
+import { MatMenuTrigger } from "@angular/material/menu";
+import { Channel } from "../models/channel";
+import { MemoryService } from "../memory.service";
+import { MediaType } from "../models/mediaType";
+import { invoke } from "@tauri-apps/api/core";
+import { ToastrService } from "ngx-toastr";
+import { ErrorService } from "../error.service";
+import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { EditChannelModalComponent } from "../edit-channel-modal/edit-channel-modal.component";
+import { EditGroupModalComponent } from "../edit-group-modal/edit-group-modal.component";
+import { DeleteGroupModalComponent } from "../delete-group-modal/delete-group-modal.component";
+import { EpgModalComponent } from "../epg-modal/epg-modal.component";
+import { EPG } from "../models/epg";
+import { RestreamModalComponent } from "../restream-modal/restream-modal.component";
+import { DownloadService } from "../download.service";
+import { Download } from "../models/download";
+import { Subscription, take } from "rxjs";
+import { save } from "@tauri-apps/plugin-dialog";
+import { CHANNEL_EXTENSION, GROUP_EXTENSION, RECORD_EXTENSION } from "../models/extensions";
+import { getDateFormatted, getExtension, sanitizeFileName } from "../utils";
+import { NodeType, fromMediaType } from "../models/nodeType";
+
+import { ViewMode } from "../models/viewMode";
+import { ViewFormat } from "../models/viewFormat";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { LogoCacheService } from "../logo-cache.service";
+import { NowPlaying, NowPlayingService } from "../now-playing.service";
+import { TranslateService } from "@ngx-translate/core";
+
+@Component({
+  selector: "app-channel-tile",
+  templateUrl: "./channel-tile.component.html",
+  styleUrl: "./channel-tile.component.css",
+})
+export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
+  constructor(
+    public memory: MemoryService,
+    private toastr: ToastrService,
+    private error: ErrorService,
+    private modal: NgbModal,
+    private el: ElementRef,
+    private renderer: Renderer2,
+    private download: DownloadService,
+    private logoCache: LogoCacheService,
+    private nowPlayingService: NowPlayingService,
+    private translate: TranslateService,
+  ) { }
+  @Input() channel?: Channel;
+  @Input() id!: number;
+  @Input() viewMode: number = 0;
+  @Input() format: ViewFormat = "grid";
+  @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
+  menuTopLeftPosition = { x: 0, y: 0 };
+  showImage: boolean = true;
+  starting: boolean = false;
+  alreadyExistsInFav = false;
+  downloading = false;
+  mediaTypeEnum = MediaType;
+  viewModeEnum = ViewMode;
+  subscriptions: Subscription[] = [];
+  fade = false;
+  logoSrc?: string;
+  nowPlaying?: NowPlaying;
+  nowPlayingProgress = 0;
+  private nowPlayingRequested = false;
+
+  ngOnInit(): void {
+    const image = this.channel?.image;
+    if (image) {
+      this.logoCache.getLogo(image).then((src) => (this.logoSrc = src));
+    }
+    this.loadNowPlaying();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes["format"] && !changes["format"].firstChange) {
+      this.loadNowPlaying();
+    }
+  }
+
+  private loadNowPlaying() {
+    if (this.nowPlayingRequested || !this.showNowPlayingLine()) return;
+    this.nowPlayingRequested = true;
+    this.nowPlayingService.getNowPlaying(this.channel!).then((nowPlaying) => {
+      if (!nowPlaying) return;
+      this.nowPlaying = nowPlaying;
+      const duration = nowPlaying.end_timestamp - nowPlaying.start_timestamp;
+      const elapsed = Date.now() / 1000 - nowPlaying.start_timestamp;
+      this.nowPlayingProgress =
+        duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
+    });
+  }
+
+  showNowPlayingLine(): boolean {
+    return (
+      this.channel?.media_type === MediaType.livestream &&
+      this.nowPlayingService.hasEpg(this.channel)
+    );
+  }
+
+  ngAfterViewInit(): void {
+    this.getExistingDownload();
+  }
+
+  setDownloadGradient(progress: number) {
+    let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
+    let background = `linear-gradient(to right, green ${progress}%, #343a40 ${progress}%)`;
+    this.renderer.setStyle(element, "background", background);
+  }
+
+  clearDownloadGradient() {
+    let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
+    let background = "#343a40";
+    this.renderer.setStyle(element, "background", background);
+  }
+
+  async click(record = false) {
+    if (this.starting === true) {
+      try {
+        await invoke("cancel_play", { sourceId: this.channel?.source_id, channelId: this.channel?.id });
+      } catch (e) {
+        this.error.handleError(e);
+      }
+      return;
+    }
+    if (
+      this.channel?.media_type == MediaType.serie ||
+      this.channel?.media_type == MediaType.group ||
+      this.channel?.media_type == MediaType.season
+    ) {
+      if (
+        this.channel.media_type == MediaType.serie &&
+        !this.memory.SeriesRefreshed.has(this.channel.id!)
+      ) {
+        this.memory.HideChannels.next(false);
+        try {
+          await invoke("get_episodes", { channel: this.channel });
+          this.memory.SeriesRefreshed.set(this.channel.id!, true);
+        } catch (e) {
+          this.error.handleError(e, this.translate.instant("TOAST.FETCH_SERIES_FAILED"));
+        }
+      }
+      this.memory.SetNode.next({
+        id:
+          this.channel?.media_type == MediaType.serie
+            ? parseInt(this.channel.url!)
+            : this.channel.id!,
+        name: this.channel.name!,
+        type: fromMediaType(this.channel.media_type),
+        sourceId: this.channel.source_id,
+      });
+      return;
+    }
+    let file = undefined;
+    if (record && (this.memory.IsContainer || this.memory.AlwaysAskSave)) {
+      file = await save({
+        canCreateDirectories: true,
+        title: this.translate.instant("DIALOG.SAVE_RECORDING"),
+        defaultPath: `${sanitizeFileName(this.channel?.name!)}_${getDateFormatted()}${RECORD_EXTENSION}`,
+      });
+      if (!file) return;
+    }
+    this.starting = true;
+    this.memory.SetFocus.next(this.id);
+    try {
+      // Recording and the user's external player keep using the classic
+      // spawn-a-window path; everything else plays in the embedded player,
+      // which switches channels over IPC without restarting mpv.
+      if (record || this.memory.UseExternalPlayer) {
+        await invoke("play", { channel: this.channel, record: record, recordPath: file });
+      } else {
+        this.memory.PlayerOpen.next(this.channel!);
+      }
+    } catch (e) {
+      this.error.handleError(e);
+    }
+    invoke("add_last_watched", { id: this.channel?.id }).catch((e) => {
+      console.error(e);
+      this.error.handleError(e);
+    });
+    this.starting = false;
+  }
+
+  onRightClick(event: MouseEvent) {
+    if (this.channel?.media_type == MediaType.season) return;
+    this.alreadyExistsInFav = this.channel!.favorite!;
+    this.downloading = this.isDownloading();
+    event.preventDefault();
+    this.menuTopLeftPosition.x = event.clientX;
+    this.menuTopLeftPosition.y = event.clientY;
+    if (this.memory.currentContextMenu?.menuOpen) this.memory.currentContextMenu.closeMenu();
+    this.memory.currentContextMenu = this.matMenuTrigger;
+    this.matMenuTrigger.openMenu();
+  }
+
+  onError(event: Event) {
+    // If the cached data URL fails to render, fall back to the remote URL
+    // once; if that fails too (or there is nothing to fall back to), hide
+    // the image like before.
+    const remote = this.channel?.image;
+    if (remote && this.logoSrc && this.logoSrc !== remote) {
+      this.logoSrc = remote;
+    } else {
+      this.showImage = false;
+    }
+  }
+
+  async favorite() {
+    let call = "favorite_channel";
+    const wasFavorite = this.channel!.favorite;
+    const name = this.channel?.name;
+    if (wasFavorite) {
+      call = "unfavorite_channel";
+    }
+    try {
+      await invoke(call, { channelId: this.channel!.id });
+      this.channel!.favorite = !wasFavorite;
+      if (wasFavorite) {
+        if (this.viewMode == ViewMode.Favorites)
+          this.fade = true;
+        this.toastr.success(this.translate.instant("TOAST.FAVORITE_REMOVED", { name }));
+      } else {
+        if (this.viewMode == ViewMode.Favorites)
+          this.fade = false;
+        this.toastr.success(this.translate.instant("TOAST.FAVORITE_ADDED", { name }));
+      }
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.FAVORITE_FAILED", { name }));
+    }
+  }
+
+  async removeFromHistory() {
+    const name = this.channel?.name;
+    try {
+      await invoke("remove_from_history", { id: this.channel!.id });
+      this.memory.Refresh.next(false);
+      this.toastr.success(this.translate.instant("TOAST.HISTORY_REMOVED", { name }));
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.HISTORY_REMOVE_FAILED", { name }));
+    }
+  }
+
+  async record() {
+    await this.click(true);
+  }
+
+  isMovie() {
+    return this.channel?.media_type == MediaType.movie;
+  }
+
+  isLivestream() {
+    return this.channel?.media_type == MediaType.livestream;
+  }
+
+  isCustom(): boolean {
+    return this.memory.CustomSourceIds!.has(this.channel?.source_id!);
+  }
+
+  showEPG(): boolean {
+    return (
+      this.channel?.media_type == MediaType.livestream &&
+      !this.isCustom() &&
+      (this.memory.XtreamSourceIds.has(this.channel.source_id!) ||
+        !!this.channel.epg_channel_id)
+    );
+  }
+
+  getSourceName(): string {
+    if (!this.channel?.source_id) return "";
+    return this.memory.Sources.get(this.channel.source_id)?.name || "";
+  }
+
+  async showEPGModal() {
+    try {
+      let data: EPG[] = await invoke("get_epg", { channel: this.channel });
+      if (data.length == 0) {
+        this.toastr.info(this.translate.instant("TOAST.NO_EPG"));
+        return;
+      }
+      this.memory.ModalRef = this.modal.open(EpgModalComponent, {
+        backdrop: "static",
+        size: "xl",
+        keyboard: false,
+      });
+      this.memory.ModalRef.result.then((_) => (this.memory.ModalRef = undefined));
+      this.memory.ModalRef.componentInstance.epg = data;
+      this.memory.ModalRef.componentInstance.name = this.channel?.name;
+      this.memory.ModalRef.componentInstance.channelId = this.channel?.id;
+      this.memory.ModalRef.componentInstance.sourceId = this.channel?.source_id;
+    } catch (e) {
+      this.error.handleError(
+        e,
+        this.translate.instant("TOAST.EPG_MISSING_STREAM_ID"),
+      );
+    }
+  }
+
+  edit() {
+    if (this.channel?.media_type == MediaType.group) this.edit_group();
+    else {
+      this.edit_channel();
+    }
+  }
+
+  edit_group() {
+    this.memory.ModalRef = this.modal.open(EditGroupModalComponent, {
+      backdrop: "static",
+      size: "xl",
+      keyboard: false,
+    });
+    this.memory.ModalRef.result.then((_) => (this.memory.ModalRef = undefined));
+    this.memory.ModalRef.componentInstance.name = "EditCustomGroupModal";
+    this.memory.ModalRef.componentInstance.editing = true;
+    this.memory.ModalRef.componentInstance.group = {
+      id: this.channel!.id,
+      name: this.channel!.name,
+      image: this.channel!.image,
+      source_id: this.channel!.source_id,
+    };
+    this.memory.ModalRef.componentInstance.originalName = this.channel!.name;
+  }
+
+  edit_channel() {
+    this.memory.ModalRef = this.modal.open(EditChannelModalComponent, {
+      backdrop: "static",
+      size: "xl",
+      keyboard: false,
+    });
+    this.memory.ModalRef.result.then((_) => (this.memory.ModalRef = undefined));
+    this.memory.ModalRef.componentInstance.name = "EditCustomChannelModal";
+    this.memory.ModalRef.componentInstance.editing = true;
+    this.memory.ModalRef.componentInstance.channel.data = { ...this.channel };
+  }
+
+  async share() {
+    const isGroup = this.channel?.media_type == MediaType.group;
+    let file = await save({
+      canCreateDirectories: true,
+      title: this.translate.instant(isGroup ? "DIALOG.EXPORT_GROUP" : "DIALOG.EXPORT_CHANNEL"),
+      defaultPath:
+        sanitizeFileName(this.channel?.name!) +
+        (isGroup ? GROUP_EXTENSION : CHANNEL_EXTENSION),
+    });
+    if (!file) {
+      return;
+    }
+    if (isGroup) {
+      this.memory.tryIPC(
+        this.translate.instant("TOAST.CATEGORY_EXPORTED", { path: file }),
+        this.translate.instant("TOAST.EXPORT_FAILED"),
+        () => invoke("share_custom_group", { group: this.channel, path: file }),
+      );
+    } else {
+      this.memory.tryIPC(
+        this.translate.instant("TOAST.CHANNEL_EXPORTED", { path: file }),
+        this.translate.instant("TOAST.EXPORT_FAILED"),
+        () => invoke("share_custom_channel", { channel: this.channel, path: file }),
+      );
+    }
+  }
+
+  async delete() {
+    if (this.channel?.media_type == MediaType.group) this.deleteGroup();
+    else await this.deleteChannel();
+  }
+
+  async deleteGroup() {
+    try {
+      if (await invoke("group_not_empty", { id: this.channel?.id })) {
+        this.openDeleteGroupModal();
+      } else await this.deleteGroupNoReplace();
+    } catch (e) {
+      this.error.handleError(e);
+    }
+  }
+
+  async deleteGroupNoReplace() {
+    try {
+      await invoke("delete_custom_group", {
+        id: this.channel?.id,
+        doChannelsUpdate: false,
+      });
+      this.memory.Refresh.next(true);
+      this.error.success(this.translate.instant("TOAST.CATEGORY_DELETED"));
+    } catch (e) {
+      this.error.handleError(e);
+    }
+  }
+
+  openDeleteGroupModal() {
+    this.memory.ModalRef = this.modal.open(DeleteGroupModalComponent, {
+      backdrop: "static",
+      size: "xl",
+      keyboard: false,
+    });
+    this.memory.ModalRef.result.then((_) => (this.memory.ModalRef = undefined));
+    this.memory.ModalRef.componentInstance.name = "DeleteGroupModal";
+    this.memory.ModalRef.componentInstance.group = { ...this.channel };
+  }
+
+  openRestreamModal() {
+    this.memory.ModalRef = this.modal.open(RestreamModalComponent, {
+      backdrop: "static",
+      size: "xl",
+      keyboard: false,
+    });
+    this.memory.ModalRef.componentInstance.channel = this.channel;
+    this.memory.ModalRef.componentInstance.name = "RestreamModalComponent";
+    this.memory.ModalRef.result.then((_) => (this.memory.ModalRef = undefined));
+  }
+
+  async deleteChannel() {
+    await this.memory.tryIPC(
+      this.translate.instant("TOAST.CHANNEL_DELETED"),
+      this.translate.instant("TOAST.CHANNEL_DELETE_FAILED"),
+      () => invoke("delete_custom_channel", { id: this.channel?.id }),
+    );
+    this.memory.Refresh.next(true);
+  }
+
+  isDownloading() {
+    return this.download.Downloads.has(this.channel!.id!.toString());
+  }
+
+  async downloadVod() {
+    let file = undefined;
+    if (this.memory.IsContainer || this.memory.AlwaysAskSave) {
+      file = await save({
+        canCreateDirectories: true,
+        title: this.translate.instant("DIALOG.DOWNLOAD_MOVIE"),
+        defaultPath: `${sanitizeFileName(this.channel?.name!)}.${getExtension(this.channel?.url!)}`,
+      });
+      if (!file) {
+        return;
+      }
+    }
+    let download = await this.download.addDownload(
+      this.channel!.id!.toString(),
+      this.channel!,
+    );
+    this.downloadSubscribe(download);
+    await this.download.download(download.id, file);
+  }
+
+  async cancelDownload() {
+    await this.download.abortDownload(this.channel!.id!.toString());
+  }
+
+  getExistingDownload() {
+    let download = this.download.Downloads.get(this.channel!.id!.toString());
+    if (download) {
+      this.setDownloadGradient(download.progress);
+      this.downloadSubscribe(download);
+    }
+  }
+
+  downloadSubscribe(download: Download) {
+    let progressUpdate = download.progressUpdate.subscribe((progress) => {
+      this.setDownloadGradient(progress);
+      if (progress == 100) progressUpdate.unsubscribe();
+    });
+    this.subscriptions.push(progressUpdate);
+    this.subscriptions.push(
+      download.complete.pipe(take(1)).subscribe((_) => {
+        progressUpdate.unsubscribe();
+        this.clearDownloadGradient();
+      }),
+    );
+  }
+
+  async copyURL() {
+    try {
+      await writeText(this.channel?.url ?? "");
+      this.error.success(this.translate.instant("TOAST.URL_COPIED"));
+    }
+    catch (e) {
+      this.error.handleError(e);
+    }
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.forEach((x) => x.unsubscribe());
+  }
+}

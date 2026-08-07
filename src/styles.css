@@ -1,0 +1,375 @@
+@import "./assets/css/bootstrap.min.css";
+@import "ngx-toastr/toastr";
+@import "@angular/material/prebuilt-themes/pink-bluegrey.css";
+@import "./assets/css/roboto.css";
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   --------------------------------------------------------------------------- */
+:root {
+  /* Backgrounds */
+  --bg-app: #202124;
+  --bg-surface: #343a40;
+  --bg-surface-alt: #292b2c;
+  --bg-modal: var(--bg-surface-alt);
+  --bg-surface-hover: #444;
+  --bg-inset: #000;
+
+  /* Borders */
+  --border-subtle: #444;
+
+  /* Accent (blue) */
+  --accent: #0d6efd;
+  --accent-hover: #007bff;
+  --accent-strong: #0048ff;
+  --accent-pressed: #0b5ed7;
+  --focus-ring: rgba(13, 110, 253, 0.7);
+
+  /* Status */
+  --color-favorite: #ffc107;
+  --color-danger: #dc3545;
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-secondary: #ced4da;
+
+  /* Radii */
+  --radius-sm: 0.25rem;
+  --radius-md: 10px;
+  --radius-lg: 22px;
+
+  /* Icon sizes */
+  --icon-size-sm: 1.25rem;
+  --icon-size-base: 1.5rem;
+  --icon-size-md: 1.75rem;
+  --icon-size-lg: 2.5rem;
+  --icon-size-xl: 3rem;
+
+  /* Motion */
+  --transition-fast: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* ---------------------------------------------------------------------------
+   Themes (default :root = dark)
+   --------------------------------------------------------------------------- */
+body[data-theme="light"] {
+  --bg-app: #f5f6f8;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #eceef2;
+  --bg-surface-hover: #e2e5ea;
+  --bg-inset: #d8dbe0;
+  --border-subtle: rgba(20, 24, 40, 0.15);
+  --text-primary: #1a1c20;
+  --text-secondary: #5c6470;
+}
+
+body[data-theme="oled"] {
+  --bg-app: #000;
+  --bg-surface: #0e0e12;
+  --bg-surface-alt: #16161a;
+  --bg-surface-hover: #1f1f24;
+}
+
+/* ---------------------------------------------------------------------------
+   Accent variants (default :root = blue)
+   --------------------------------------------------------------------------- */
+body[data-accent="purple"] {
+  --accent: #8b5cf6;
+  --accent-hover: #a78bfa;
+  --accent-strong: #7c3aed;
+  --accent-pressed: #6d28d9;
+  --focus-ring: rgba(139, 92, 246, 0.7);
+}
+
+body[data-accent="teal"] {
+  --accent: #14b8a6;
+  --accent-hover: #2dd4bf;
+  --accent-strong: #0d9488;
+  --accent-pressed: #0f766e;
+  --focus-ring: rgba(20, 184, 166, 0.7);
+}
+
+body[data-accent="coral"] {
+  --accent: #f4713b;
+  --accent-hover: #f68a5c;
+  --accent-strong: #ea580c;
+  --accent-pressed: #c2410c;
+  --focus-ring: rgba(244, 113, 59, 0.7);
+}
+
+body[data-accent="green"] {
+  --accent: #22c55e;
+  --accent-hover: #4ade80;
+  --accent-strong: #16a34a;
+  --accent-pressed: #15803d;
+  --focus-ring: rgba(34, 197, 94, 0.7);
+}
+
+/* Map Bootstrap primary buttons onto the accent tokens so the selected
+   accent color applies to .btn-primary as well. */
+.btn-primary {
+  --bs-btn-bg: var(--accent);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-bg: var(--accent-hover);
+  --bs-btn-hover-border-color: var(--accent-hover);
+  --bs-btn-active-bg: var(--accent-pressed);
+  --bs-btn-active-border-color: var(--accent-pressed);
+  --bs-btn-disabled-bg: var(--accent);
+  --bs-btn-disabled-border-color: var(--accent);
+  --bs-btn-focus-shadow-rgb: none;
+}
+
+.btn-primary:focus-visible {
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+/* The white ✕ variant of Bootstrap's close button is illegible on light
+   surfaces — drop the invert filter when the light theme is active. */
+body[data-theme="light"] .btn-close-white {
+  filter: none;
+}
+
+/* Angular Material menus (context menus) ship with the prebuilt dark theme;
+   re-skin them with the design tokens so they follow the active theme. */
+.mat-mdc-menu-panel {
+  background-color: var(--bg-surface) !important;
+}
+
+.mat-mdc-menu-item .mat-mdc-menu-item-text,
+.mat-mdc-menu-item {
+  color: var(--text-primary) !important;
+}
+
+.mat-mdc-menu-item:hover:not([disabled]) {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+.help-modal__container {
+  .help-modal {
+    background-color: var(--bg-app) !important;
+
+    .item {
+      background-color: var(--bg-app) !important;
+
+      .key {
+        background-color: var(--bg-app) !important;
+      }
+
+      .description {
+        color: var(--text-primary) !important;
+      }
+    }
+  }
+}
+
+.modal-content {
+  border-radius: var(--radius-lg) !important;
+  background-color: var(--bg-modal);
+}
+
+.selectable {
+  user-select: text;
+}
+
+p {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+.bs-col-padding {
+  padding-left: 1rem !important;
+}
+
+html {
+  overflow-y: scroll;
+}
+
+html,
+body {
+  height: fit-content;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  font-family: "Roboto", sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Icon utilities
+   --------------------------------------------------------------------------- */
+.icon-sm {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+.icon-md {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+}
+
+.icon-lg {
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
+}
+
+.icon-hover-scale {
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.icon-hover-scale:hover {
+  transform: scale(1.25);
+}
+
+.icon-hover-rotate {
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+}
+
+.icon-hover-rotate:hover {
+  transform: rotate(360deg);
+}
+
+/* ---------------------------------------------------------------------------
+   Skeleton loader (for channel-tile placeholders)
+   --------------------------------------------------------------------------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.07),
+    transparent
+  );
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+/* White shimmer is invisible on light surfaces — use a dark one instead. */
+body[data-theme="light"] .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(20, 24, 40, 0.06),
+    transparent
+  );
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Sized like a channel tile (see channel-tile.component.css .channel) */
+.skeleton-tile {
+  height: 4.5em;
+  width: 100%;
+  border-radius: var(--radius-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   Empty state ("no results" messaging)
+   --------------------------------------------------------------------------- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 3rem 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Toasts (ngx-toastr) — modern, bottom-left, accent-colored
+   --------------------------------------------------------------------------- */
+.toast-container {
+  pointer-events: auto;
+}
+
+.toast-container .ngx-toastr {
+  width: 340px;
+  padding: 13px 40px 13px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent);
+  background: var(--bg-surface-alt);
+  background-image: none !important;
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.toast-container .ngx-toastr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.toast-container .ngx-toastr .toast-title {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.toast-container .ngx-toastr .toast-message {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.toast-container .ngx-toastr .toast-close-button {
+  color: var(--text-secondary);
+  opacity: 0.7;
+  text-shadow: none;
+  font-weight: 400;
+  top: -2px;
+  right: -4px;
+}
+.toast-container .ngx-toastr .toast-close-button:hover {
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+/* Semantic accents: success/info use the current accent, error/warning their tokens */
+.toast-container .toast-success,
+.toast-container .toast-info {
+  border-left-color: var(--accent);
+}
+.toast-container .toast-error {
+  border-left-color: var(--color-danger);
+}
+.toast-container .toast-warning {
+  border-left-color: var(--color-favorite);
+}
+
+.toast-container .toast-progress {
+  height: 3px;
+  opacity: 0.9;
+  background: var(--accent);
+  border-radius: 0 0 12px 12px;
+}
+.toast-container .toast-error .toast-progress {
+  background: var(--color-danger);
+}
+.toast-container .toast-warning .toast-progress {
+  background: var(--color-favorite);
+}

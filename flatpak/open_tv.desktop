@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=AudioVideo
+Comment=Fast And Powerful IPTV App
+Exec=streameo-iptv
+Icon=dev.kaveyro.streameo-iptv
+Keywords=iptv;streaming;tv;streameo;
+Name=Streameo IPTV
+StartupWMClass=streameo-iptv
+Terminal=false
+Type=Application

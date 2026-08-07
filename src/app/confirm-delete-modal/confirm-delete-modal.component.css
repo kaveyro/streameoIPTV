@@ -1,0 +1,9 @@
+button .nuke {
+    width: var(--icon-size-base);
+    height: var(--icon-size-base);
+    transition: transform var(--transition-fast);
+}
+
+button:hover .nuke {
+    transform: scale(1.25);
+}

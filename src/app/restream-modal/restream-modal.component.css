@@ -1,0 +1,20 @@
+.notice {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.box {
+  background-color: var(--bg-inset); /* Dark background similar to a code editor */
+  padding: 10px; /* Add padding for readability */
+  border-radius: var(--radius-sm); /* Rounded corners (optional) */
+}
+
+button .icon {
+  height: var(--icon-size-base);
+  width: var(--icon-size-base);
+  transition: transform var(--transition-fast);
+}
+
+button:hover .icon {
+  transform: scale(1.25);
+}

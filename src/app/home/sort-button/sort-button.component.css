@@ -1,0 +1,13 @@
+.sort-icon {
+  display: block;
+  height: var(--icon-size-md);
+  width: var(--icon-size-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: transform var(--transition-slow), color var(--transition-fast);
+}
+
+.sort-icon:hover {
+  color: var(--text-primary);
+  transform: scale(1.1);
+}

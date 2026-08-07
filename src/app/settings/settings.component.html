@@ -1,0 +1,630 @@
+<svg (click)="goBack()" class="arrow" fill="currentColor" viewBox="0 0 24 24">
+  <path
+    d="M2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12M18,11H10L13.5,7.5L12.08,6.08L6.16,12L12.08,17.92L13.5,16.5L10,13H18V11Z" />
+</svg>
+<div class="container px-5">
+  <h2 class="mt-4 mb-4 text-center">{{ 'SETTINGS.TITLE' | translate }}</h2>
+
+  <div class="settings-layout">
+    <nav class="settings-nav" [attr.aria-label]="('SETTINGS.CATEGORIES_ARIA' | translate)">
+      <button *ngFor="let category of settingsCategories" type="button" class="nav-item"
+        [class.nav-item--active]="activeCategory === category.id"
+        [attr.aria-current]="activeCategory === category.id ? 'page' : null" (click)="setCategory(category.id)">
+        {{ category.label | translate }}
+      </button>
+    </nav>
+
+    <div class="settings-content">
+      <!-- General -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'general'" [attr.aria-label]="('SETTINGS.NAV.GENERAL' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.GENERAL' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-language">{{ 'SETTINGS.GENERAL.LANGUAGE' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.LANGUAGE_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <select id="set-language" [(ngModel)]="settings.language" (ngModelChange)="updateLanguage($event)" class="form-control control-input">
+                <option [ngValue]="'system'">{{ 'SETTINGS.GENERAL.LANGUAGE_SYSTEM' | translate }}</option>
+                <option [ngValue]="'en'">English</option>
+                <option [ngValue]="'de'">Deutsch</option>
+                <option [ngValue]="'es'">Español</option>
+                <option [ngValue]="'fr'">Français</option>
+                <option [ngValue]="'it'">Italiano</option>
+                <option [ngValue]="'pt'">Português</option>
+                <option [ngValue]="'nl'">Nederlands</option>
+                <option [ngValue]="'pl'">Polski</option>
+                <option [ngValue]="'ro'">Română</option>
+                <option [ngValue]="'el'">Ελληνικά</option>
+                <option [ngValue]="'ru'">Русский</option>
+                <option [ngValue]="'uk'">Українська</option>
+                <option [ngValue]="'tr'">Türkçe</option>
+                <option [ngValue]="'ar'">العربية</option>
+                <option [ngValue]="'hi'">हिन्दी</option>
+                <option [ngValue]="'zh'">中文</option>
+                <option [ngValue]="'ja'">日本語</option>
+                <option [ngValue]="'ko'">한국어</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-default-view">{{ 'SETTINGS.GENERAL.DEFAULT_VIEW' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.DEFAULT_VIEW_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <select id="set-default-view" (ngModelChange)="updateSettings()" [(ngModel)]="settings.default_view"
+                class="form-control control-input">
+                <option [ngValue]="viewModeEnum.All">{{ 'SETTINGS.GENERAL.VIEW_ALL' | translate }}</option>
+                <option [ngValue]="viewModeEnum.Categories">{{ 'SETTINGS.GENERAL.VIEW_CATEGORIES' | translate }}</option>
+                <option [ngValue]="viewModeEnum.Favorites">{{ 'SETTINGS.GENERAL.VIEW_FAVORITES' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-default-sort">{{ 'SETTINGS.GENERAL.DEFAULT_SORT' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.DEFAULT_SORT_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <select id="set-default-sort" (ngModelChange)="updateSettings()" [(ngModel)]="settings.default_sort"
+                class="form-control control-input">
+                <ng-container *ngFor="let sort of sortTypes">
+                  <option [ngValue]="sort">{{ _getSortTypeText(sort) | translate }}</option>
+                </ng-container>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-refresh-start">{{ 'SETTINGS.GENERAL.REFRESH_ON_START' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.REFRESH_ON_START_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-refresh-start" type="checkbox" [(ngModel)]="settings.refresh_on_start"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-auto-refresh">{{ 'SETTINGS.GENERAL.AUTO_REFRESH' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.AUTO_REFRESH_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <select id="set-auto-refresh" (ngModelChange)="updateSettings()"
+                [(ngModel)]="settings.auto_refresh_hours" class="form-control control-input">
+                <option [ngValue]="0">{{ 'SETTINGS.GENERAL.OFF' | translate }}</option>
+                <option [ngValue]="6">{{ 'SETTINGS.GENERAL.EVERY_HOURS' | translate:{ count: 6 } }}</option>
+                <option [ngValue]="12">{{ 'SETTINGS.GENERAL.EVERY_HOURS' | translate:{ count: 12 } }}</option>
+                <option [ngValue]="24">{{ 'SETTINGS.GENERAL.EVERY_HOURS' | translate:{ count: 24 } }}</option>
+                <option [ngValue]="48">{{ 'SETTINGS.GENERAL.EVERY_HOURS' | translate:{ count: 48 } }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-volume">{{ 'SETTINGS.GENERAL.VOLUME_ON_START' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.VOLUME_ON_START_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <input id="set-volume" type="range" step="1" class="form-range volume-slider" min="0" max="100"
+                [(ngModel)]="settings.volume" (ngModelChange)="updateSettings()" />
+              <span class="volume-value">{{ settings.volume }}</span>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-zoom">{{ 'SETTINGS.GENERAL.UI_ZOOM' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.UI_ZOOM_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <div class="input-group control-input">
+                <input id="set-zoom" class="form-control" step="10" min="10" max="1000" type="number"
+                  [(ngModel)]="settings.zoom" />
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-tray">{{ 'SETTINGS.GENERAL.TRAY_ICON' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.TRAY_ICON_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-tray" type="checkbox" [(ngModel)]="settings.enable_tray_icon"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Appearance -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'appearance'" [attr.aria-label]="('SETTINGS.NAV.APPEARANCE' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.APPEARANCE' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-theme">{{ 'SETTINGS.APPEARANCE.THEME' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.APPEARANCE.THEME_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <select id="set-theme" [(ngModel)]="settings.theme" (ngModelChange)="updateTheme($event)"
+                class="form-control control-input">
+                <option [ngValue]="'system'">{{ 'SETTINGS.APPEARANCE.THEME_SYSTEM' | translate }}</option>
+                <option [ngValue]="'dark'">{{ 'SETTINGS.APPEARANCE.THEME_DARK' | translate }}</option>
+                <option [ngValue]="'light'">{{ 'SETTINGS.APPEARANCE.THEME_LIGHT' | translate }}</option>
+                <option [ngValue]="'oled'">{{ 'SETTINGS.APPEARANCE.THEME_OLED' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.APPEARANCE.ACCENT' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.APPEARANCE.ACCENT_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <div class="d-flex gap-2">
+                <button *ngFor="let accent of accentColors" type="button" class="accent-swatch"
+                  [class.accent-swatch--active]="(settings.accent_color ?? 'blue') == accent.id"
+                  [style.background-color]="accent.color" [attr.aria-label]="accent.id"
+                  [ngbTooltip]="accent.id | titlecase" (click)="setAccentColor(accent.id)"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-show-source">{{ 'SETTINGS.APPEARANCE.SHOW_SOURCE' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.APPEARANCE.SHOW_SOURCE_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-show-source" type="checkbox" [(ngModel)]="settings.show_channel_source"
+                  (ngModelChange)="updateShowChannelSource()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Playback -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'playback'" [attr.aria-label]="('SETTINGS.NAV.PLAYBACK' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.PLAYBACK' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-caching">{{ 'SETTINGS.PLAYBACK.CACHING' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.CACHING_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-caching" type="checkbox" [(ngModel)]="settings.use_stream_caching"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-hwdec">{{ 'SETTINGS.PLAYBACK.HWDEC' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.HWDEC_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-hwdec" type="checkbox" [(ngModel)]="settings.enable_hwdec"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-gpu">{{ 'SETTINGS.PLAYBACK.GPU' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.GPU_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-gpu" type="checkbox" [(ngModel)]="settings.enable_gpu"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-player-ui">{{ 'SETTINGS.PLAYBACK.PLAYER_UI' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.PLAYER_UI_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <select id="set-player-ui" (ngModelChange)="updateSettings()" [(ngModel)]="settings.player_ui"
+                class="form-control control-input">
+                <option [ngValue]="'modern'">{{ 'SETTINGS.PLAYBACK.PLAYER_UI_MODERN' | translate }}</option>
+                <option [ngValue]="'classic'">{{ 'SETTINGS.PLAYBACK.PLAYER_UI_CLASSIC' | translate }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-normalize-volume">{{ 'SETTINGS.PLAYBACK.NORMALIZE' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.NORMALIZE_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-normalize-volume" type="checkbox" [(ngModel)]="settings.normalize_volume"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-external-player">{{ 'SETTINGS.PLAYBACK.EXTERNAL_PLAYER' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.EXTERNAL_PLAYER_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-external-player" type="checkbox" [(ngModel)]="settings.use_external_player"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row" [class.setting-row--disabled]="!settings.use_external_player">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.PLAYBACK.EXTERNAL_PLAYER_PATH' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.EXTERNAL_PLAYER_PATH_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control setting-control--path">
+              <span class="selectable path-text" *ngIf="!settings.external_player_path">{{ 'SETTINGS.PLAYBACK.NO_PLAYER_SELECTED' | translate }}</span>
+              <span class="selectable path-text" *ngIf="settings.external_player_path"
+                [title]="settings.external_player_path">{{
+                settings.external_player_path
+                }}</span>
+              <button (click)="selectExternalPlayer()" [disabled]="!settings.use_external_player"
+                class="btn btn-primary btn-sm d-inline-flex align-items-center">
+                <span>{{ 'COMMON.BROWSE' | translate }}</span>
+                <svg fill="currentColor" class="ms-2 folder" viewBox="0 0 24 24">
+                  <path
+                    d="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row" [class.setting-row--disabled]="!settings.use_external_player">
+            <div class="setting-info">
+              <label class="setting-title" for="set-external-args">{{ 'SETTINGS.PLAYBACK.EXTERNAL_ARGS' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.EXTERNAL_ARGS_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <input id="set-external-args" class="form-control control-input" type="text"
+                placeholder="--fullscreen {{ '{url}' }}" [disabled]="!settings.use_external_player"
+                [(ngModel)]="settings.external_player_args" (change)="updateSettings()" />
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-sub-lang">{{ 'SETTINGS.PLAYBACK.SUB_LANG' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.LANG_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <input id="set-sub-lang" class="form-control control-input" type="text" placeholder="e.g. de,en"
+                [(ngModel)]="settings.preferred_subtitle_language" (change)="updateSettings()" />
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-audio-lang">{{ 'SETTINGS.PLAYBACK.AUDIO_LANG' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.LANG_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <input id="set-audio-lang" class="form-control control-input" type="text" placeholder="e.g. de,en"
+                [(ngModel)]="settings.preferred_audio_language" (change)="updateSettings()" />
+            </div>
+          </div>
+
+          <div class="setting-row setting-row--stack">
+            <div class="setting-info">
+              <label class="setting-title" for="mpvParams">{{ 'SETTINGS.PLAYBACK.MPV_PARAMS' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.PLAYBACK.MPV_PARAMS_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <textarea #mpvParams id="mpvParams" [(ngModel)]="settings.mpv_params" placeholder="e.g. --hwdec=auto"
+                class="form-control"></textarea>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recording -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'recording'" [attr.aria-label]="('SETTINGS.NAV.RECORDING' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.RECORDING' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.RECORDING.PATH' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.RECORDING.PATH_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control setting-control--path">
+              <span class="selectable path-text" *ngIf="!settings.recording_path" id="default-path"
+                title="~/Home/Videos">~/Home/Videos</span>
+              <span class="selectable path-text" *ngIf="settings.recording_path" [title]="settings.recording_path">{{
+                settings.recording_path
+                }}</span>
+              <button (click)="selectFolder()" class="btn btn-primary btn-sm d-inline-flex align-items-center">
+                <span>{{ 'COMMON.CHANGE' | translate }}</span>
+                <svg fill="currentColor" class="ms-2 folder" viewBox="0 0 24 24">
+                  <path
+                    d="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-always-ask">{{ 'SETTINGS.RECORDING.ALWAYS_ASK' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.RECORDING.ALWAYS_ASK_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-always-ask" type="checkbox" [(ngModel)]="settings.always_ask_save"
+                  (ngModelChange)="this.updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Network -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'network'" [attr.aria-label]="('SETTINGS.NAV.NETWORK' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.NETWORK' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-restream-port">{{ 'SETTINGS.NETWORK.RESTREAM_PORT' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.NETWORK.RESTREAM_PORT_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <input id="set-restream-port" class="form-control control-input" type="number"
+                [(ngModel)]="settings.restream_port" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sources -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'sources'" [attr.aria-label]="('SETTINGS.NAV.SOURCES' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.SOURCES' | translate }}</h3>
+        <ng-container *ngFor="let source of sources; let i = index">
+          <div [ngClass]="{ 'mt-3': i != 0 }">
+            <app-source-tile [source]="source"
+              [expiry]="source.source_type == 2 ? expiries[source.id!] : undefined"></app-source-tile>
+          </div>
+        </ng-container>
+
+        <div class="mt-4 d-flex flex-wrap gap-3">
+          <button [disabled]="memory.Loading" (click)="addSource()"
+            class="btn btn-primary d-inline-flex align-items-center">
+            <span>{{ 'SETTINGS.SOURCES.ADD_SOURCE' | translate }}</span>
+            <svg class="plus ms-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+            </svg>
+          </button>
+          <button [disabled]="memory.Loading" (click)="refreshAll()"
+            class="btn btn-secondary d-inline-flex align-items-center">
+            {{ 'SETTINGS.SOURCES.REFRESH_ALL' | translate }}
+            <svg class="refresh ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path fill="currentColor"
+                d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+            </svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- External EPG -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'epg'" [attr.aria-label]="('SETTINGS.NAV.EPG' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.EPG.TITLE' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-desc">{{ 'SETTINGS.EPG.INTRO' | translate }}</div>
+            </div>
+          </div>
+
+          <div class="setting-row setting-row--stack">
+            <div class="setting-info">
+              <label class="setting-title" for="xmltvSources">{{ 'SETTINGS.EPG.SOURCES_LABEL' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.EPG.SOURCES_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <textarea id="xmltvSources" [(ngModel)]="xmltvSourcesText"
+                [placeholder]="('SETTINGS.EPG.SOURCES_PLACEHOLDER' | translate)" (change)="saveXmltvSources()"
+                class="form-control"></textarea>
+            </div>
+          </div>
+
+          <div class="setting-row setting-row--stack">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.EPG.FREE_SOURCES' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.EPG.FREE_SOURCES_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <div class="free-epg-list">
+                <button *ngFor="let src of freeEpgSources" type="button" class="free-epg-chip"
+                  [class.free-epg-chip--added]="isSourceAdded(src.url)" (click)="toggleFreeSource(src.url)">
+                  <span>{{ src.label }}</span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path *ngIf="!isSourceAdded(src.url)" fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                    <path *ngIf="isSourceAdded(src.url)" fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.EPG.REFRESH' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.EPG.REFRESH_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <button [disabled]="memory.Loading" (click)="refreshXmltv()"
+                class="btn btn-secondary btn-sm d-inline-flex align-items-center">
+                {{ 'SETTINGS.EPG.REFRESH' | translate }}
+                <svg class="refresh ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data and backup -->
+      <section class="settings-pane" [hidden]="activeCategory !== 'data'" [attr.aria-label]="('SETTINGS.NAV.DATA' | translate)">
+        <h3 class="pane-title">{{ 'SETTINGS.NAV.DATA' | translate }}</h3>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.DATA.BACKUP' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.DATA.BACKUP_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <button [disabled]="memory.Loading" (click)="backupDatabase()"
+                class="btn btn-secondary btn-sm d-inline-flex align-items-center">
+                {{ 'SETTINGS.DATA.BACKUP_BTN' | translate }}
+                <svg class="history ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M12,3A9,9 0 0,0 3,12H0L4,16L8,12H5A7,7 0 0,1 12,5A7,7 0 0,1 19,12A7,7 0 0,1 12,19C10.5,19 9.09,18.5 7.94,17.7L6.5,19.14C8.04,20.3 9.94,21 12,21A9,9 0 0,0 21,12A9,9 0 0,0 12,3M14,12A2,2 0 0,0 12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.DATA.RESTORE' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.DATA.RESTORE_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <button [disabled]="memory.Loading" (click)="restoreDatabase()"
+                class="btn btn-secondary btn-sm d-inline-flex align-items-center">
+                {{ 'SETTINGS.DATA.RESTORE_BTN' | translate }}
+                <svg class="history ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M13,3A9,9 0 0,0 4,12H1L4.89,15.89L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3M12,8V13L16.28,15.54L17,14.33L13.5,12.25V8H12Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.DATA.EXPORT_FAVORITES' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.DATA.EXPORT_FAVORITES_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <button [disabled]="memory.Loading" (click)="exportFavorites()"
+                class="btn btn-secondary btn-sm d-inline-flex align-items-center">
+                {{ 'SETTINGS.DATA.EXPORT_BTN' | translate }}
+                <svg class="history ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12,19L8,15H10.5V12H13.5V15H16L12,19Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.DATA.CLEAR_HISTORY' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.DATA.CLEAR_HISTORY_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <button [disabled]="memory.Loading" (click)="clearHistory()"
+                class="btn btn-secondary btn-sm d-inline-flex align-items-center">
+                {{ 'SETTINGS.DATA.CLEAR_BTN' | translate }}
+                <svg class="history ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M13.5,8H12V13L16.28,15.54L17,14.33L13.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.89,15.89L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{ 'SETTINGS.DATA.DELETE_ALL' | translate }}</span>
+              <div class="setting-desc">{{ 'SETTINGS.DATA.DELETE_ALL_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <button class="btn btn-danger btn-sm d-inline-flex align-items-center" [disabled]="memory.Loading"
+                (click)="nuke()">
+                {{ 'SETTINGS.DATA.DELETE_BTN' | translate }}
+                <svg class="nuke ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path fill="currentColor"
+                    d="M14.04,12H10V11H5.5A3.5,3.5 0 0,1 2,7.5A3.5,3.5 0 0,1 5.5,4C6.53,4 7.45,4.44 8.09,5.15C8.5,3.35 10.08,2 12,2C13.92,2 15.5,3.35 15.91,5.15C16.55,4.44 17.47,4 18.5,4A3.5,3.5 0 0,1 22,7.5A3.5,3.5 0 0,1 18.5,11H14.04V12M10,16.9V15.76H5V13.76H19V15.76H14.04V16.92L20,19.08C20.58,19.29 21,19.84 21,20.5A1.5,1.5 0 0,1 19.5,22H4.5A1.5,1.5 0 0,1 3,20.5C3,19.84 3.42,19.29 4,19.08L10,16.9Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<ng-template #restoreModal let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title lbl">{{ 'SETTINGS.RESTORE_MODAL.TITLE' | translate }}</h4>
+    <button type="button" class="btn-close btn-close-white" [attr.aria-label]="('MODAL.CLOSE' | translate)"
+      (click)="modal.close('cancel')"></button>
+  </div>
+  <div class="modal-body">
+    <p [innerHTML]="'SETTINGS.RESTORE_MODAL.BODY1' | translate"></p>
+    <p>{{ 'SETTINGS.RESTORE_MODAL.BODY2' | translate }}</p>
+  </div>
+  <div class="modal-footer">
+    <button (click)="modal.close('confirm')" class="btn btn-danger d-inline-flex align-items-center" type="submit">
+      <span>{{ 'SETTINGS.RESTORE_MODAL.CONFIRM' | translate }}</span>
+      <svg class="nuke ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path fill="currentColor"
+          d="M13,3A9,9 0 0,0 4,12H1L4.89,15.89L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3M12,8V13L16.28,15.54L17,14.33L13.5,12.25V8H12Z" />
+      </svg>
+    </button>
+    <button (click)="modal.close('cancel')" class="btn btn-secondary d-inline-flex align-items-center" type="submit">
+      <span>{{ 'MODAL.CANCEL' | translate }}</span>
+      <svg class="nuke ms-1" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+      </svg>
+    </button>
+  </div>
+</ng-template>

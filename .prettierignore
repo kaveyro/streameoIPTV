@@ -1,0 +1,15 @@
+# Build outputs
+dist
+.angular
+node_modules
+
+# Tauri (Rust) side
+src-tauri/target
+src-tauri/gen
+
+# Static assets
+src/assets
+
+# Lockfiles
+package-lock.json
+pnpm-lock.yaml

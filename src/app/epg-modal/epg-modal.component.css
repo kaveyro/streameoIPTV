@@ -1,0 +1,17 @@
+.epg-item {
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  width: 100%;
+  padding: 1rem;
+  position: relative;
+}
+
+.arrow {
+  width: var(--icon-size-xl);
+  height: var(--icon-size-xl);
+  cursor: pointer;
+}
+
+.date-text {
+  font-size: 1.1rem;
+}

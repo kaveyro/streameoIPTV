@@ -290,7 +290,24 @@
     "TITLE": "İndirmeler",
     "EXPAND": "İndirme yöneticisini genişlet",
     "MINIMIZE": "İndirme yöneticisini küçült",
-    "CANCEL_ARIA": "{{name}} indirmesini iptal et"
+    "CANCEL_ARIA": "{{name}} indirmesini iptal et",
+    "STATUS_QUEUED": "Sırada",
+    "STATUS_ACTIVE": "İndiriliyor",
+    "STATUS_COMPLETED": "Tamamlandı",
+    "STATUS_FAILED": "Başarısız",
+    "STATUS_CANCELLED": "İptal edildi",
+    "PAUSE": "Kuyruğu duraklat",
+    "RESUME": "Kuyruğu sürdür",
+    "PAUSED_HINT": "Kuyruk duraklatıldı - süren indirmeler biter, yenisi başlatılmaz",
+    "QUEUE_EMPTY": "Etkin indirme yok",
+    "MOVE_UP": "Yukarı taşı",
+    "MOVE_DOWN": "Aşağı taşı",
+    "RETRY": "Yeniden dene",
+    "REMOVE": "Listeden kaldır",
+    "FINISHED": "Tamamlananlar",
+    "CLEAR_FINISHED": "Temizle",
+    "CANCEL_ALL": "Tümünü iptal et",
+    "CONCURRENT": "Paralel indirme"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Özel kanal oluşturma",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Favori yedeği başarıyla geri yüklendi",
     "FAVS_RESTORE_FAILED": "Favori yedeği geri yüklenemedi",
     "EPG_REFRESHED": "Harici EPG yenilendi",
-    "EPG_REFRESH_FAILED": "Harici EPG yenilenemedi"
+    "EPG_REFRESH_FAILED": "Harici EPG yenilenemedi",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" başarıyla indirildi",
+    "DOWNLOAD_CANCELLED": "\"{{name}}\" indirmesi iptal edildi"
   }
 }

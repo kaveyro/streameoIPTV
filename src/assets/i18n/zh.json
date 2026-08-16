@@ -290,7 +290,24 @@
     "TITLE": "下载",
     "EXPAND": "展开下载管理器",
     "MINIMIZE": "最小化下载管理器",
-    "CANCEL_ARIA": "取消下载 {{name}}"
+    "CANCEL_ARIA": "取消下载 {{name}}",
+    "STATUS_QUEUED": "排队中",
+    "STATUS_ACTIVE": "下载中",
+    "STATUS_COMPLETED": "已完成",
+    "STATUS_FAILED": "失败",
+    "STATUS_CANCELLED": "已取消",
+    "PAUSE": "暂停队列",
+    "RESUME": "继续队列",
+    "PAUSED_HINT": "队列已暂停 - 正在进行的下载会完成，不会开始新的下载",
+    "QUEUE_EMPTY": "没有正在进行的下载",
+    "MOVE_UP": "上移",
+    "MOVE_DOWN": "下移",
+    "RETRY": "重试",
+    "REMOVE": "从列表中移除",
+    "FINISHED": "已完成",
+    "CLEAR_FINISHED": "清空",
+    "CANCEL_ALL": "全部取消",
+    "CONCURRENT": "并行下载数"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "创建自定义频道",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "已成功还原收藏备份",
     "FAVS_RESTORE_FAILED": "还原收藏备份失败",
     "EPG_REFRESHED": "外部 EPG 已刷新",
-    "EPG_REFRESH_FAILED": "刷新外部 EPG 失败"
+    "EPG_REFRESH_FAILED": "刷新外部 EPG 失败",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" 下载完成",
+    "DOWNLOAD_CANCELLED": "已取消 \"{{name}}\" 的下载"
   }
 }

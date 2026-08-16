@@ -290,7 +290,24 @@
     "TITLE": "Descărcări",
     "EXPAND": "Extinde managerul de descărcări",
     "MINIMIZE": "Minimizează managerul de descărcări",
-    "CANCEL_ARIA": "Anulează descărcarea {{name}}"
+    "CANCEL_ARIA": "Anulează descărcarea {{name}}",
+    "STATUS_QUEUED": "În așteptare",
+    "STATUS_ACTIVE": "Se descarcă",
+    "STATUS_COMPLETED": "Finalizat",
+    "STATUS_FAILED": "Eșuat",
+    "STATUS_CANCELLED": "Anulat",
+    "PAUSE": "Suspendă coada",
+    "RESUME": "Reia coada",
+    "PAUSED_HINT": "Coadă suspendată - descărcările în curs se termină, nu pornesc altele noi",
+    "QUEUE_EMPTY": "Nicio descărcare activă",
+    "MOVE_UP": "Mută mai sus",
+    "MOVE_DOWN": "Mută mai jos",
+    "RETRY": "Reîncearcă",
+    "REMOVE": "Elimină din listă",
+    "FINISHED": "Finalizate",
+    "CLEAR_FINISHED": "Golește",
+    "CANCEL_ALL": "Anulează tot",
+    "CONCURRENT": "Descărcări paralele"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Creare canal personalizat",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Backupul favoritelor a fost restaurat cu succes",
     "FAVS_RESTORE_FAILED": "Restaurarea backupului favoritelor a eșuat",
     "EPG_REFRESHED": "EPG extern reîmprospătat",
-    "EPG_REFRESH_FAILED": "Reîmprospătarea EPG extern a eșuat"
+    "EPG_REFRESH_FAILED": "Reîmprospătarea EPG extern a eșuat",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" a fost descărcat cu succes",
+    "DOWNLOAD_CANCELLED": "Descărcarea \"{{name}}\" a fost anulată"
   }
 }

@@ -290,7 +290,24 @@
     "TITLE": "Pobrania",
     "EXPAND": "Rozwiń menedżera pobierania",
     "MINIMIZE": "Zminimalizuj menedżera pobierania",
-    "CANCEL_ARIA": "Anuluj pobieranie {{name}}"
+    "CANCEL_ARIA": "Anuluj pobieranie {{name}}",
+    "STATUS_QUEUED": "W kolejce",
+    "STATUS_ACTIVE": "Pobieranie",
+    "STATUS_COMPLETED": "Ukończone",
+    "STATUS_FAILED": "Niepowodzenie",
+    "STATUS_CANCELLED": "Anulowane",
+    "PAUSE": "Wstrzymaj kolejkę",
+    "RESUME": "Wznów kolejkę",
+    "PAUSED_HINT": "Kolejka wstrzymana - trwające pobierania zakończą się, nowe nie ruszą",
+    "QUEUE_EMPTY": "Brak aktywnych pobierań",
+    "MOVE_UP": "Przenieś w górę",
+    "MOVE_DOWN": "Przenieś w dół",
+    "RETRY": "Ponów",
+    "REMOVE": "Usuń z listy",
+    "FINISHED": "Zakończone",
+    "CLEAR_FINISHED": "Wyczyść",
+    "CANCEL_ALL": "Anuluj wszystko",
+    "CONCURRENT": "Równoległe pobierania"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Tworzenie kanału niestandardowego",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Pomyślnie przywrócono kopię zapasową ulubionych",
     "FAVS_RESTORE_FAILED": "Nie udało się przywrócić kopii zapasowej ulubionych",
     "EPG_REFRESHED": "Zewnętrzny EPG odświeżony",
-    "EPG_REFRESH_FAILED": "Nie udało się odświeżyć zewnętrznego EPG"
+    "EPG_REFRESH_FAILED": "Nie udało się odświeżyć zewnętrznego EPG",
+    "DOWNLOAD_COMPLETED": "Pobrano \"{{name}}\"",
+    "DOWNLOAD_CANCELLED": "Pobieranie \"{{name}}\" anulowane"
   }
 }

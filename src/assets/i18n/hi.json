@@ -290,7 +290,24 @@
     "TITLE": "डाउनलोड",
     "EXPAND": "डाउनलोड प्रबंधक विस्तृत करें",
     "MINIMIZE": "डाउनलोड प्रबंधक छोटा करें",
-    "CANCEL_ARIA": "{{name}} का डाउनलोड रद्द करें"
+    "CANCEL_ARIA": "{{name}} का डाउनलोड रद्द करें",
+    "STATUS_QUEUED": "कतार में",
+    "STATUS_ACTIVE": "डाउनलोड हो रहा है",
+    "STATUS_COMPLETED": "पूर्ण",
+    "STATUS_FAILED": "विफल",
+    "STATUS_CANCELLED": "रद्द",
+    "PAUSE": "कतार रोकें",
+    "RESUME": "कतार जारी रखें",
+    "PAUSED_HINT": "कतार रुकी हुई है - चल रहे डाउनलोड पूरे होंगे, नए शुरू नहीं होंगे",
+    "QUEUE_EMPTY": "कोई सक्रिय डाउनलोड नहीं",
+    "MOVE_UP": "ऊपर ले जाएँ",
+    "MOVE_DOWN": "नीचे ले जाएँ",
+    "RETRY": "पुनः प्रयास करें",
+    "REMOVE": "सूची से हटाएँ",
+    "FINISHED": "पूर्ण",
+    "CLEAR_FINISHED": "साफ़ करें",
+    "CANCEL_ALL": "सभी रद्द करें",
+    "CONCURRENT": "समानांतर डाउनलोड"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "कस्टम चैनल बना रहे हैं",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "पसंदीदा बैकअप सफलतापूर्वक पुनर्स्थापित किया गया",
     "FAVS_RESTORE_FAILED": "पसंदीदा बैकअप पुनर्स्थापित करने में विफल",
     "EPG_REFRESHED": "बाहरी EPG ताज़ा किया गया",
-    "EPG_REFRESH_FAILED": "बाहरी EPG ताज़ा करने में विफल"
+    "EPG_REFRESH_FAILED": "बाहरी EPG ताज़ा करने में विफल",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" सफलतापूर्वक डाउनलोड हुआ",
+    "DOWNLOAD_CANCELLED": "\"{{name}}\" का डाउनलोड रद्द किया गया"
   }
 }

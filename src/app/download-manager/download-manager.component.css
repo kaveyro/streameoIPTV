@@ -1,5 +1,5 @@
 .download-box {
-  width: 320px;
+  width: 340px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -9,6 +9,18 @@
 .download-header {
   background-color: var(--bg-app);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.download-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.count-badge {
+  background-color: var(--bg-surface-alt);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 500;
 }
 
 button.btn-outline-light {
@@ -25,13 +37,63 @@ button.btn-outline-light:hover {
   background-color: var(--bg-surface-alt);
 }
 
-.stop {
+.paused-hint {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.history-section,
+.footer-section {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.history-item {
+  min-width: 0;
+}
+
+.status-icon {
+  width: var(--icon-size-sm, 14px);
+  height: var(--icon-size-sm, 14px);
+}
+
+.clear-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.clear-link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.concurrency-select {
+  width: auto;
+  background-color: var(--bg-surface-alt);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+}
+
+.action {
   width: var(--icon-size-base);
   height: var(--icon-size-base);
+  flex-shrink: 0;
   cursor: pointer;
   transition: transform var(--transition-fast);
 }
 
-.stop:hover {
+.action:hover {
   transform: scale(1.25);
+}
+
+.action.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.stop {
+  width: var(--icon-size-base);
+  height: var(--icon-size-base);
 }

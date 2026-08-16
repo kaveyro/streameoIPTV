@@ -290,7 +290,24 @@
     "TITLE": "التنزيلات",
     "EXPAND": "توسيع مدير التنزيلات",
     "MINIMIZE": "تصغير مدير التنزيلات",
-    "CANCEL_ARIA": "إلغاء تنزيل {{name}}"
+    "CANCEL_ARIA": "إلغاء تنزيل {{name}}",
+    "STATUS_QUEUED": "في قائمة الانتظار",
+    "STATUS_ACTIVE": "جارٍ التنزيل",
+    "STATUS_COMPLETED": "مكتمل",
+    "STATUS_FAILED": "فشل",
+    "STATUS_CANCELLED": "أُلغي",
+    "PAUSE": "إيقاف قائمة الانتظار مؤقتًا",
+    "RESUME": "استئناف قائمة الانتظار",
+    "PAUSED_HINT": "قائمة الانتظار متوقفة مؤقتًا - تكتمل التنزيلات الجارية ولا تبدأ تنزيلات جديدة",
+    "QUEUE_EMPTY": "لا توجد تنزيلات نشطة",
+    "MOVE_UP": "تحريك لأعلى",
+    "MOVE_DOWN": "تحريك لأسفل",
+    "RETRY": "إعادة المحاولة",
+    "REMOVE": "إزالة من القائمة",
+    "FINISHED": "المكتملة",
+    "CLEAR_FINISHED": "مسح",
+    "CANCEL_ALL": "إلغاء الكل",
+    "CONCURRENT": "تنزيلات متوازية"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "إنشاء قناة مخصّصة",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "تم استعادة النسخة الاحتياطية للمفضلة بنجاح",
     "FAVS_RESTORE_FAILED": "فشل استعادة النسخة الاحتياطية للمفضلة",
     "EPG_REFRESHED": "تم تحديث دليل EPG الخارجي",
-    "EPG_REFRESH_FAILED": "فشل تحديث دليل EPG الخارجي"
+    "EPG_REFRESH_FAILED": "فشل تحديث دليل EPG الخارجي",
+    "DOWNLOAD_COMPLETED": "تم تنزيل \"{{name}}\" بنجاح",
+    "DOWNLOAD_CANCELLED": "تم إلغاء تنزيل \"{{name}}\""
   }
 }

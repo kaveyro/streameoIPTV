@@ -290,7 +290,24 @@
     "TITLE": "Downloads",
     "EXPAND": "Downloadbeheer uitvouwen",
     "MINIMIZE": "Downloadbeheer minimaliseren",
-    "CANCEL_ARIA": "Download van {{name}} annuleren"
+    "CANCEL_ARIA": "Download van {{name}} annuleren",
+    "STATUS_QUEUED": "In wachtrij",
+    "STATUS_ACTIVE": "Bezig met downloaden",
+    "STATUS_COMPLETED": "Voltooid",
+    "STATUS_FAILED": "Mislukt",
+    "STATUS_CANCELLED": "Geannuleerd",
+    "PAUSE": "Wachtrij pauzeren",
+    "RESUME": "Wachtrij hervatten",
+    "PAUSED_HINT": "Wachtrij gepauzeerd - lopende downloads worden voltooid, er starten geen nieuwe",
+    "QUEUE_EMPTY": "Geen actieve downloads",
+    "MOVE_UP": "Omhoog",
+    "MOVE_DOWN": "Omlaag",
+    "RETRY": "Opnieuw proberen",
+    "REMOVE": "Uit lijst verwijderen",
+    "FINISHED": "Voltooid",
+    "CLEAR_FINISHED": "Wissen",
+    "CANCEL_ALL": "Alles annuleren",
+    "CONCURRENT": "Parallelle downloads"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Een aangepast kanaal maken",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Favorietenback-up succesvol hersteld",
     "FAVS_RESTORE_FAILED": "Herstellen van favorietenback-up mislukt",
     "EPG_REFRESHED": "Externe EPG vernieuwd",
-    "EPG_REFRESH_FAILED": "Externe EPG vernieuwen mislukt"
+    "EPG_REFRESH_FAILED": "Externe EPG vernieuwen mislukt",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" is gedownload",
+    "DOWNLOAD_CANCELLED": "Download van \"{{name}}\" geannuleerd"
   }
 }

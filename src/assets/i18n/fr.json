@@ -290,7 +290,24 @@
     "TITLE": "Téléchargements",
     "EXPAND": "Développer le gestionnaire de téléchargements",
     "MINIMIZE": "Réduire le gestionnaire de téléchargements",
-    "CANCEL_ARIA": "Annuler le téléchargement de {{name}}"
+    "CANCEL_ARIA": "Annuler le téléchargement de {{name}}",
+    "STATUS_QUEUED": "En attente",
+    "STATUS_ACTIVE": "Téléchargement",
+    "STATUS_COMPLETED": "Terminé",
+    "STATUS_FAILED": "Échec",
+    "STATUS_CANCELLED": "Annulé",
+    "PAUSE": "Mettre la file en pause",
+    "RESUME": "Reprendre la file",
+    "PAUSED_HINT": "File en pause : les téléchargements en cours se terminent, aucun nouveau ne démarre",
+    "QUEUE_EMPTY": "Aucun téléchargement actif",
+    "MOVE_UP": "Monter",
+    "MOVE_DOWN": "Descendre",
+    "RETRY": "Réessayer",
+    "REMOVE": "Retirer de la liste",
+    "FINISHED": "Terminés",
+    "CLEAR_FINISHED": "Vider",
+    "CANCEL_ALL": "Tout annuler",
+    "CONCURRENT": "Téléchargements parallèles"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Création d'une chaîne personnalisée",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Sauvegarde des favoris restaurée avec succès",
     "FAVS_RESTORE_FAILED": "Échec de la restauration de la sauvegarde des favoris",
     "EPG_REFRESHED": "EPG externe actualisée",
-    "EPG_REFRESH_FAILED": "Échec de l'actualisation de l'EPG externe"
+    "EPG_REFRESH_FAILED": "Échec de l'actualisation de l'EPG externe",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" téléchargé avec succès",
+    "DOWNLOAD_CANCELLED": "Téléchargement de \"{{name}}\" annulé"
   }
 }

@@ -290,7 +290,24 @@
     "TITLE": "ダウンロード",
     "EXPAND": "ダウンロードマネージャーを展開",
     "MINIMIZE": "ダウンロードマネージャーを最小化",
-    "CANCEL_ARIA": "{{name}} のダウンロードをキャンセル"
+    "CANCEL_ARIA": "{{name}} のダウンロードをキャンセル",
+    "STATUS_QUEUED": "待機中",
+    "STATUS_ACTIVE": "ダウンロード中",
+    "STATUS_COMPLETED": "完了",
+    "STATUS_FAILED": "失敗",
+    "STATUS_CANCELLED": "キャンセル済み",
+    "PAUSE": "キューを一時停止",
+    "RESUME": "キューを再開",
+    "PAUSED_HINT": "キューは一時停止中です - 実行中のダウンロードは完了し、新規は開始されません",
+    "QUEUE_EMPTY": "実行中のダウンロードはありません",
+    "MOVE_UP": "上へ",
+    "MOVE_DOWN": "下へ",
+    "RETRY": "再試行",
+    "REMOVE": "リストから削除",
+    "FINISHED": "完了分",
+    "CLEAR_FINISHED": "クリア",
+    "CANCEL_ALL": "すべてキャンセル",
+    "CONCURRENT": "同時ダウンロード数"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "カスタムチャンネルの作成",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "お気に入りバックアップを正常に復元しました",
     "FAVS_RESTORE_FAILED": "お気に入りバックアップの復元に失敗しました",
     "EPG_REFRESHED": "外部 EPG を更新しました",
-    "EPG_REFRESH_FAILED": "外部 EPG の更新に失敗しました"
+    "EPG_REFRESH_FAILED": "外部 EPG の更新に失敗しました",
+    "DOWNLOAD_COMPLETED": "「{{name}}」のダウンロードが完了しました",
+    "DOWNLOAD_CANCELLED": "「{{name}}」のダウンロードをキャンセルしました"
   }
 }

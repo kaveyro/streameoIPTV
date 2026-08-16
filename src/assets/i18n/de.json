@@ -290,7 +290,24 @@
     "TITLE": "Downloads",
     "EXPAND": "Download-Manager erweitern",
     "MINIMIZE": "Download-Manager minimieren",
-    "CANCEL_ARIA": "Download von {{name}} abbrechen"
+    "CANCEL_ARIA": "Download von {{name}} abbrechen",
+    "STATUS_QUEUED": "In Warteschlange",
+    "STATUS_ACTIVE": "Wird geladen",
+    "STATUS_COMPLETED": "Abgeschlossen",
+    "STATUS_FAILED": "Fehlgeschlagen",
+    "STATUS_CANCELLED": "Abgebrochen",
+    "PAUSE": "Warteschlange pausieren",
+    "RESUME": "Warteschlange fortsetzen",
+    "PAUSED_HINT": "Warteschlange pausiert - laufende Downloads werden beendet, neue nicht gestartet",
+    "QUEUE_EMPTY": "Keine aktiven Downloads",
+    "MOVE_UP": "Nach oben",
+    "MOVE_DOWN": "Nach unten",
+    "RETRY": "Erneut versuchen",
+    "REMOVE": "Aus Liste entfernen",
+    "FINISHED": "Abgeschlossen",
+    "CLEAR_FINISHED": "Leeren",
+    "CANCEL_ALL": "Alle abbrechen",
+    "CONCURRENT": "Parallele Downloads"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Benutzerdefinierten Kanal erstellen",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Favoritensicherung erfolgreich wiederhergestellt",
     "FAVS_RESTORE_FAILED": "Wiederherstellen der Favoritensicherung fehlgeschlagen",
     "EPG_REFRESHED": "Externe EPG aktualisiert",
-    "EPG_REFRESH_FAILED": "Externe EPG konnte nicht aktualisiert werden"
+    "EPG_REFRESH_FAILED": "Externe EPG konnte nicht aktualisiert werden",
+    "DOWNLOAD_COMPLETED": "„{{name}}“ erfolgreich heruntergeladen",
+    "DOWNLOAD_CANCELLED": "Download von „{{name}}“ abgebrochen"
   }
 }

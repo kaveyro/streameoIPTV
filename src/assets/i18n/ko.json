@@ -290,7 +290,24 @@
     "TITLE": "다운로드",
     "EXPAND": "다운로드 관리자 펼치기",
     "MINIMIZE": "다운로드 관리자 최소화",
-    "CANCEL_ARIA": "{{name}} 다운로드 취소"
+    "CANCEL_ARIA": "{{name}} 다운로드 취소",
+    "STATUS_QUEUED": "대기 중",
+    "STATUS_ACTIVE": "다운로드 중",
+    "STATUS_COMPLETED": "완료됨",
+    "STATUS_FAILED": "실패",
+    "STATUS_CANCELLED": "취소됨",
+    "PAUSE": "대기열 일시중지",
+    "RESUME": "대기열 다시 시작",
+    "PAUSED_HINT": "대기열이 일시중지되었습니다 - 진행 중인 다운로드는 완료되고 새로 시작되지 않습니다",
+    "QUEUE_EMPTY": "진행 중인 다운로드 없음",
+    "MOVE_UP": "위로 이동",
+    "MOVE_DOWN": "아래로 이동",
+    "RETRY": "다시 시도",
+    "REMOVE": "목록에서 제거",
+    "FINISHED": "완료됨",
+    "CLEAR_FINISHED": "지우기",
+    "CANCEL_ALL": "모두 취소",
+    "CONCURRENT": "동시 다운로드 수"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "사용자 지정 채널 만들기",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "즐겨찾기 백업을 성공적으로 복원했습니다",
     "FAVS_RESTORE_FAILED": "즐겨찾기 백업 복원에 실패했습니다",
     "EPG_REFRESHED": "외부 EPG를 새로 고쳤습니다",
-    "EPG_REFRESH_FAILED": "외부 EPG 새로 고침 실패"
+    "EPG_REFRESH_FAILED": "외부 EPG 새로 고침 실패",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" 다운로드 완료",
+    "DOWNLOAD_CANCELLED": "\"{{name}}\" 다운로드가 취소되었습니다"
   }
 }

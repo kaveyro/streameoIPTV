@@ -290,7 +290,24 @@
     "TITLE": "Downloads",
     "EXPAND": "Expand download manager",
     "MINIMIZE": "Minimize download manager",
-    "CANCEL_ARIA": "Cancel download of {{name}}"
+    "CANCEL_ARIA": "Cancel download of {{name}}",
+    "STATUS_QUEUED": "Queued",
+    "STATUS_ACTIVE": "Downloading",
+    "STATUS_COMPLETED": "Completed",
+    "STATUS_FAILED": "Failed",
+    "STATUS_CANCELLED": "Cancelled",
+    "PAUSE": "Pause queue",
+    "RESUME": "Resume queue",
+    "PAUSED_HINT": "Queue paused - running downloads finish, no new ones are started",
+    "QUEUE_EMPTY": "No active downloads",
+    "MOVE_UP": "Move up",
+    "MOVE_DOWN": "Move down",
+    "RETRY": "Retry",
+    "REMOVE": "Remove from list",
+    "FINISHED": "Finished",
+    "CLEAR_FINISHED": "Clear",
+    "CANCEL_ALL": "Cancel all",
+    "CONCURRENT": "Parallel downloads"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Creating a custom channel",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Successfully restored favorites backup",
     "FAVS_RESTORE_FAILED": "Failed to restore favorites backup",
     "EPG_REFRESHED": "External EPG refreshed",
-    "EPG_REFRESH_FAILED": "Failed to refresh external EPG"
+    "EPG_REFRESH_FAILED": "Failed to refresh external EPG",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" downloaded successfully",
+    "DOWNLOAD_CANCELLED": "Download of \"{{name}}\" cancelled"
   }
 }

@@ -70,6 +70,6 @@ export class AppComponent implements OnInit {
   }
 
   showDownloadManager() {
-    return this.download.Downloads.size > 0;
+    return this.download.Downloads.size > 0 || this.download.History.length > 0;
   }
 }

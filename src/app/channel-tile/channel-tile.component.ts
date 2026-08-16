@@ -446,12 +446,12 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
         return;
       }
     }
-    let download = await this.download.addDownload(
+    let download = await this.download.enqueue(
       this.channel!.id!.toString(),
       this.channel!,
+      file ?? undefined,
     );
     this.downloadSubscribe(download);
-    await this.download.download(download.id, file);
   }
 
   async cancelDownload() {

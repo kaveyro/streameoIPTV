@@ -176,12 +176,12 @@ export class EpgModalItemComponent implements OnDestroy {
       favorite: false,
       source_id: this.sourceId,
     };
-    let download = await this.download.addDownload(
+    let download = await this.download.enqueue(
       this.getDownloadId(),
       channel,
+      file ?? undefined,
     );
     this.downloadSubscribe(download);
-    await this.download.download(download.id, file);
   }
 
   downloadSubscribe(download: Download) {

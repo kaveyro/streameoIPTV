@@ -290,7 +290,24 @@
     "TITLE": "Download",
     "EXPAND": "Espandi il gestore download",
     "MINIMIZE": "Riduci il gestore download",
-    "CANCEL_ARIA": "Annulla il download di {{name}}"
+    "CANCEL_ARIA": "Annulla il download di {{name}}",
+    "STATUS_QUEUED": "In coda",
+    "STATUS_ACTIVE": "Download in corso",
+    "STATUS_COMPLETED": "Completato",
+    "STATUS_FAILED": "Non riuscito",
+    "STATUS_CANCELLED": "Annullato",
+    "PAUSE": "Metti in pausa la coda",
+    "RESUME": "Riprendi la coda",
+    "PAUSED_HINT": "Coda in pausa: i download in corso terminano, non ne partono di nuovi",
+    "QUEUE_EMPTY": "Nessun download attivo",
+    "MOVE_UP": "Sposta su",
+    "MOVE_DOWN": "Sposta giù",
+    "RETRY": "Riprova",
+    "REMOVE": "Rimuovi dall'elenco",
+    "FINISHED": "Completati",
+    "CLEAR_FINISHED": "Svuota",
+    "CANCEL_ALL": "Annulla tutto",
+    "CONCURRENT": "Download paralleli"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Creazione di un canale personalizzato",
@@ -469,6 +486,8 @@
     "FAVS_RESTORE_SUCCESS": "Backup dei preferiti ripristinato con successo",
     "FAVS_RESTORE_FAILED": "Impossibile ripristinare il backup dei preferiti",
     "EPG_REFRESHED": "EPG esterna aggiornata",
-    "EPG_REFRESH_FAILED": "Impossibile aggiornare l'EPG esterna"
+    "EPG_REFRESH_FAILED": "Impossibile aggiornare l'EPG esterna",
+    "DOWNLOAD_COMPLETED": "\"{{name}}\" scaricato correttamente",
+    "DOWNLOAD_CANCELLED": "Download di \"{{name}}\" annullato"
   }
 }

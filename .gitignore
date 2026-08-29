@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Playback binaries copied in before a Windows build (see README)
+/src-tauri/deps/

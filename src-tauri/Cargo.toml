@@ -1,6 +1,6 @@
 [package]
 name = "streameo_iptv"
-version = "1.2.5"
+version = "1.2.6"
 description = "Fast And Powerful IPTV App"
 authors = ["kaveyro"]
 license = ""

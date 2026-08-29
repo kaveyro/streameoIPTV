@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "open-tv": {
+    "streameoIPTV": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -23,7 +23,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/open-tv",
+            "outputPath": "dist/streameoIPTV",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -76,10 +76,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "open-tv:build:production"
+              "buildTarget": "streameoIPTV:build:production"
             },
             "development": {
-              "buildTarget": "open-tv:build:development"
+              "buildTarget": "streameoIPTV:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -87,7 +87,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "buildTarget": "open-tv:build"
+            "buildTarget": "streameoIPTV:build"
           }
         },
         "test": {

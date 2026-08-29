@@ -1,9 +1,9 @@
 {
   "bundle": {
     "resources": {
-      "C:/open-tv-deps/mpv.exe": "deps/mpv.exe",
-      "C:/open-tv-deps/ffmpeg.exe": "deps/ffmpeg.exe",
-      "C:/open-tv-deps/yt-dlp.exe": "deps/yt-dlp.exe"
+      "deps/mpv.exe": "deps/mpv.exe",
+      "deps/ffmpeg.exe": "deps/ffmpeg.exe",
+      "deps/yt-dlp.exe": "deps/yt-dlp.exe"
     }
   }
 }

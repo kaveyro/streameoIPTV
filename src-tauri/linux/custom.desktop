@@ -1,10 +1,10 @@
 [Desktop Entry]
 Categories={{categories}}
 Comment={{comment}}
-Exec=env WEBKIT_DISABLE_DMABUF_RENDERER=1 open_tv
+Exec=env WEBKIT_DISABLE_DMABUF_RENDERER=1 streameo_iptv
 Icon={{icon}}
-Keywords=open;tv;opentv;
+Keywords=iptv;tv;streameo;
 Name={{name}}
-StartupWMClass=open_tv
+StartupWMClass=streameo_iptv
 Terminal=false
 Type=Application

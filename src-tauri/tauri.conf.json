@@ -1,9 +1,9 @@
 {
   "productName": "streameoIPTV",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "identifier": "com.kaveyro.streameo-iptv",
   "build": {
-    "frontendDist": "../dist/open-tv/browser",
+    "frontendDist": "../dist/streameoIPTV/browser",
     "devUrl": "http://localhost:4200",
     "beforeDevCommand": "npm run start",
     "beforeBuildCommand": "ng build --configuration=production"

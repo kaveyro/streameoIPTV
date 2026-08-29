@@ -21,6 +21,8 @@ restreaming on top.
 - ⏺️ **Recording**: record while watching, or schedule a recording from the EPG
 - ⬇️ **Downloads**: a managed queue for movies and catch-up — pause it, reorder it,
   cancel single entries, retry what failed
+- 🔔 **Reminders**: a desktop notification when a programme you flagged in the EPG
+  starts, and when a scheduled recording begins
 - 📡 **Restreaming**: share a channel to another device on your network
 - ⭐ **Organize**: favorites, watch history, hidden channels and groups, search across all
   sources, and bulk actions
@@ -61,8 +63,10 @@ pulls them in.
 - Platform build tools: MSVC Build Tools on Windows, Xcode Command Line Tools on macOS,
   `webkit2gtk` and friends on Linux (see the
   [Tauri prerequisites](https://tauri.app/start/prerequisites/))
-- **Windows only**: `mpv.exe`, `ffmpeg.exe` and `yt-dlp.exe` in `C:\open-tv-deps\`. They
-  are copied into the bundle as declared in `src-tauri/tauri.windows.conf.json`.
+- **Windows only**: `mpv.exe`, `ffmpeg.exe` and `yt-dlp.exe` in `src-tauri/deps/`. They
+  are copied into the installation folder as declared in
+  `src-tauri/tauri.windows.conf.json`; the folder is git-ignored, so put the binaries
+  there yourself before building.
 - **Linux/macOS**: `mpv`, `ffmpeg` and `yt-dlp` on your `PATH`
 
 ### Setup
@@ -180,8 +184,8 @@ directory elsewhere). `mpv.log` is the place to look when a channel will not pla
 - ng-bootstrap – Bootstrap components for Angular
 - ngx-toastr – Toast notifications
 - ng-keyboard-shortcuts – Keyboard shortcut handling
-- Tauri plugins: clipboard-manager, dialog, process, shell, single-instance, updater,
-  window-state
+- Tauri plugins: clipboard-manager, dialog, notification, process, shell,
+  single-instance, updater, window-state
 
 ## Contributing
 
@@ -205,8 +209,6 @@ If you encounter any issues or have questions, please
 
 ## Acknowledgments
 
-- Based on [Open TV](https://github.com/Fredolx/open-tv) by Frédéric Lachapelle, which
-  this project builds on under the GPL
 - Playback by [mpv](https://mpv.io/), with the on-screen controller from
   [mpv-osc-tethys](https://github.com/Zren/mpv-osc-tethys)
 - Built with [Tauri](https://tauri.app/)

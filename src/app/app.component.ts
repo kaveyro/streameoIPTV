@@ -12,7 +12,7 @@ import { Settings } from "./models/settings";
   styleUrl: "./app.component.css",
 })
 export class AppComponent implements OnInit {
-  title = "open-tv";
+  title = "streameoIPTV";
 
   constructor(
     private download: DownloadService,

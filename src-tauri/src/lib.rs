@@ -134,6 +134,7 @@ pub fn run() {
             player_init,
             player_play,
             player_stop,
+            player_osd,
             player_set_bounds,
             player_set_visible,
             player_destroy,
@@ -298,6 +299,16 @@ async fn player_play(
 #[tauri::command]
 async fn player_stop(state: State<'_, Mutex<AppState>>) -> Result<(), String> {
     player::stop(state).await.map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn player_osd(
+    state: State<'_, Mutex<AppState>>,
+    message: String,
+) -> Result<(), String> {
+    player::show_message(state, message)
+        .await
+        .map_err(map_err_frontend)
 }
 
 #[tauri::command]

@@ -279,6 +279,9 @@ pub fn get_global_mpv_args(wid: isize, ipc_pipe: &str) -> Result<Vec<String>> {
     args.push("--force-window=yes".to_string());
     args.push(format!("--input-ipc-server={ipc_pipe}"));
     args.push("--no-terminal".to_string());
+    if let Some(path) = mpv_log_path() {
+        args.push(format!("--log-file={path}"));
+    }
     args.push("--keep-open=no".to_string());
     args.push(ARG_MSG_LEVEL.to_string());
     if settings.enable_hwdec.unwrap_or(true) {
@@ -333,6 +336,17 @@ pub fn get_global_mpv_args(wid: isize, ipc_pipe: &str) -> Result<Vec<String>> {
         args.append(&mut params);
     }
     Ok(args)
+}
+
+/// Path for mpv's own log file, next to the app log. The embedded player
+/// discards mpv's stdout/stderr, so without this a stream that never opens
+/// leaves no trace anywhere.
+fn mpv_log_path() -> Option<String> {
+    let dir = directories::ProjectDirs::from("dev", "kaveyro", "streameoIPTV")?
+        .cache_dir()
+        .join("logs");
+    std::fs::create_dir_all(&dir).ok()?;
+    Some(dir.join("mpv.log").to_string_lossy().to_string())
 }
 
 fn get_play_args(

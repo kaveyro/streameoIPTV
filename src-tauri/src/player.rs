@@ -200,6 +200,17 @@ async fn player_alive(state: &State<'_, Mutex<AppState>>) -> bool {
     }
 }
 
+/// Shows a message on mpv's own on-screen display. The native video window
+/// always composites above the WebView, so a DOM toast placed over the video
+/// area is invisible while the player is open - mpv's OSD is the only surface
+/// that is guaranteed to be seen, fullscreen included.
+pub async fn show_message(state: State<'_, Mutex<AppState>>, message: String) -> Result<()> {
+    if let Some(tx) = state.lock().await.player_ipc_tx.clone() {
+        let _ = tx.send(json!({ "command": ["show-text", message, 6000] }));
+    }
+    Ok(())
+}
+
 /// Unloads the current file but keeps mpv alive and idle.
 pub async fn stop(state: State<'_, Mutex<AppState>>) -> Result<()> {
     if let Some(tx) = state.lock().await.player_ipc_tx.clone() {
@@ -408,6 +419,7 @@ async fn run_ipc(
             return;
         }
     };
+    crate::log::log(format!("mpv IPC connected on {pipe}"));
     let (reader, mut writer) = tokio::io::split(client);
     // Read mpv's responses/events (also keeps the pipe buffer from blocking
     // writes): turn our fullscreen script-message into a frontend event, and
@@ -440,6 +452,7 @@ async fn run_ipc(
                             .get("file_error")
                             .and_then(Value::as_str)
                             .unwrap_or("mpv could not play this channel");
+                        crate::log::log(format!("player: playback failed: {message}"));
                         let _ = reader_app.emit("player-error", message.to_string());
                     }
                 }
@@ -453,6 +466,7 @@ async fn run_ipc(
                             .and_then(Value::as_str)
                             .filter(|e| *e != "success")
                         {
+                            crate::log::log(format!("player: loadfile rejected: {error}"));
                             let _ = reader_app.emit("player-error", error.to_string());
                         }
                     }

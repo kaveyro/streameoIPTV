@@ -66,9 +66,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       const now = Date.now();
       if (now - this.lastErrorAt < PlayerComponent.ERROR_TOAST_INTERVAL_MS) return;
       this.lastErrorAt = now;
-      this.ngZone.run(() =>
-        this.error.handleError(event.payload, this.translate.instant("TOAST.PLAYER_ERROR")),
-      );
+      this.ngZone.run(() => this.reportPlaybackError(event.payload));
     }).then((unlisten) => this.unlistens.push(unlisten));
     // mpv died or its IPC pipe broke and the backend tore the player down; the
     // next play has to build a new one.
@@ -115,6 +113,20 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
     // Wait for *ngIf to render the host element, then align the native window.
     setTimeout(() => this.startBoundsSync(), 0);
+  }
+
+  /**
+   * Reports a playback failure. While the player is open a toast is useless:
+   * the native video window composites above the WebView, so anything the DOM
+   * paints over the video area is invisible. mpv's own OSD is drawn inside
+   * that window and is the only surface the user can actually see.
+   */
+  private reportPlaybackError(message: string) {
+    const text = `${this.translate.instant("TOAST.PLAYER_ERROR")}: ${message}`;
+    if (this.active) {
+      invoke("player_osd", { message: text }).catch(() => {});
+    }
+    this.error.handleError(message, this.translate.instant("TOAST.PLAYER_ERROR"));
   }
 
   private async fallback(channel: Channel) {

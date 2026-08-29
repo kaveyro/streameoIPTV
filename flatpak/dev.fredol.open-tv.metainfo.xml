@@ -22,7 +22,7 @@
       <li>Refresh your sources when you need it 🔄</li>
       <li>Add channels to favorites 🌟</li>
     </ul>
-    <p>PLEASE consider donating, I've been developing this app solo for the past 2 years! Instructions on my github (https://github.com/kaveyro/streameo-iptv)</p>
+    <p>PLEASE consider donating, I've been developing this app solo for the past 2 years! Instructions on my github (https://github.com/kaveyro/streameoIPTV)</p>
   </description>
     <categories>
     <category>AudioVideo</category>
@@ -147,105 +147,105 @@
     <release version="1.6.1" date="2025-04-16">
       <description>
     <p>
-      Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+      Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
     </p>
       </description>
     </release>
     <release version="1.6.0" date="2025-04-15">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.5.2" date="2025-03-12">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.5.1" date="2025-03-12">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.5.0" date="2025-03-10">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.4.1" date="2025-01-22">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.4.0" date="2025-01-22">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.3.1" date="2025-01-09">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.3.0" date="2025-01-09">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.2.0" date="2024-12-12">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.1.0" date="2024-11-28">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.0.3" date="2024-10-17">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.0.2" date="2024-10-13">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.0.1" date="2024-10-08">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
     <release version="1.0.0" date="2024-10-01">
       <description>
         <p>
-          Please see the official changelog at github.com/kaveyro/streameo-iptv/releases
+          Please see the official changelog at github.com/kaveyro/streameoIPTV/releases
         </p>
       </description>
     </release>
@@ -261,9 +261,9 @@
     </screenshot>
  </screenshots>
   <developer_name>Frédéric Lachapelle</developer_name>
-  <url type="homepage">https://github.com/kaveyro/streameo-iptv</url>
-  <url type="bugtracker">https://github.com/kaveyro/streameo-iptv/issues</url>
-  <url type="faq">https://github.com/kaveyro/streameo-iptv</url>
-  <url type="help">https://github.com/kaveyro/streameo-iptv/issues</url>
+  <url type="homepage">https://github.com/kaveyro/streameoIPTV</url>
+  <url type="bugtracker">https://github.com/kaveyro/streameoIPTV/issues</url>
+  <url type="faq">https://github.com/kaveyro/streameoIPTV</url>
+  <url type="help">https://github.com/kaveyro/streameoIPTV/issues</url>
   <url type="donation">https://github.com/sponsors/kaveyro</url>
 </component>

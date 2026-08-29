@@ -8,7 +8,7 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use tokio_util::sync::CancellationToken;
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
 pub struct Channel {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -81,7 +81,7 @@ pub struct XtreamStatusUserInfo {
     pub exp_date: serde_json::Value,
 }
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
 pub struct Settings {
     pub recording_path: Option<String>,
     pub mpv_params: Option<String>,

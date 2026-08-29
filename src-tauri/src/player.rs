@@ -33,6 +33,17 @@ use {
 
 const PIPE_NAME: &str = r"\\.\pipe\streameo-mpv";
 
+/// Request id carried by the `loadfile` command so the IPC reader can tell its
+/// error reply apart from the property sets sent alongside it.
+const LOADFILE_REQUEST_ID: u64 = 1;
+
+/// mpv's built-in default user agent. The classic spawn-per-channel path simply
+/// omits `--user-agent` when nothing is configured, but the embedded player
+/// reuses one process, so the property has to be reset explicitly on every
+/// channel - with this value rather than an empty string, which many providers
+/// answer with 403.
+const MPV_DEFAULT_USER_AGENT: &str = "libmpv";
+
 /// Raw HWND of the native mpv host window, mirrored here so synchronous window
 /// event / tray handlers (which cannot lock the async `AppState` mutex) can
 /// show/hide it. 0 means "no player window".
@@ -48,9 +59,13 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
     }
     #[cfg(target_os = "windows")]
     {
-        if state.lock().await.player_mpv.is_some() {
+        // Reuse a healthy player; tear down a dead one (mpv crashed, IPC pipe
+        // broke) so this call rebuilds it instead of leaving a black window
+        // whose commands go nowhere.
+        if player_alive(&state).await {
             return Ok(());
         }
+        destroy(app.clone(), state.clone()).await?;
         let parent: isize = app
             .get_webview_window("main")
             .context("no main window")?
@@ -132,7 +147,17 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
 }
 
 /// Switches the embedded player to `channel` without restarting mpv.
-pub async fn play(channel: Channel, state: State<'_, Mutex<AppState>>) -> Result<()> {
+pub async fn play(
+    app: AppHandle,
+    channel: Channel,
+    state: State<'_, Mutex<AppState>>,
+) -> Result<()> {
+    // Without this check the commands below would be queued into a channel
+    // nobody reads any more and the video area would simply stay black.
+    if !player_alive(&state).await {
+        destroy(app, state).await?;
+        anyhow::bail!("the player is not running anymore");
+    }
     let tx = state
         .lock()
         .await
@@ -148,6 +173,19 @@ pub async fn play(channel: Channel, state: State<'_, Mutex<AppState>>) -> Result
         let _ = tx.send(cmd);
     }
     Ok(())
+}
+
+/// True while mpv is still running and its IPC channel is still connected.
+async fn player_alive(state: &State<'_, Mutex<AppState>>) -> bool {
+    let mut s = state.lock().await;
+    if s.player_ipc_tx.is_none() {
+        return false;
+    }
+    match s.player_mpv.as_mut() {
+        // try_wait yields Ok(Some(status)) once the process has exited.
+        Some(child) => child.try_wait().ok().flatten().is_none(),
+        None => false,
+    }
 }
 
 /// Unloads the current file but keeps mpv alive and idle.
@@ -254,6 +292,12 @@ fn build_play_commands(
     let h = headers.unwrap_or_default();
     let mut cmds: Vec<Value> = Vec::new();
 
+    // Close the running stream before opening the next one. Providers commonly
+    // allow a single connection per subscription, and `loadfile ... replace`
+    // on its own opens the new connection while the old one is still up - the
+    // provider then refuses it and the player stays black.
+    cmds.push(json!({ "command": ["stop"] }));
+
     cmds.push(set_prop("force-media-title", json!(channel.name)));
 
     let mut header_fields: Vec<String> = Vec::new();
@@ -268,7 +312,9 @@ fn build_play_commands(
     let user_agent = h
         .user_agent
         .or_else(|| source.as_ref().and_then(|s| s.stream_user_agent.clone()))
-        .unwrap_or_default();
+        .map(|ua| ua.trim().to_string())
+        .filter(|ua| !ua.is_empty())
+        .unwrap_or_else(|| MPV_DEFAULT_USER_AGENT.to_string());
     cmds.push(set_prop("user-agent", json!(user_agent)));
 
     // Match the classic path: never verify TLS (mpv's default), and only pass
@@ -292,7 +338,10 @@ fn build_play_commands(
     cmds.push(set_prop("save-position-on-quit", json!(!is_live)));
     cmds.push(set_prop("loop-playlist", json!(if is_live { "inf" } else { "no" })));
 
-    cmds.push(json!({ "command": ["loadfile", url, "replace"] }));
+    cmds.push(json!({
+        "command": ["loadfile", url, "replace"],
+        "request_id": LOADFILE_REQUEST_ID,
+    }));
 
     // Series: queue the following episodes so playback continues automatically,
     // mirroring the playlist the classic path builds in get_play_args.
@@ -319,29 +368,64 @@ async fn run_ipc(
         Ok(c) => c,
         Err(e) => {
             crate::log::log(format!("mpv IPC connect failed: {e:?}"));
+            handle_player_lost(&app).await;
             return;
         }
     };
     let (reader, mut writer) = tokio::io::split(client);
     // Read mpv's responses/events (also keeps the pipe buffer from blocking
-    // writes) and turn our fullscreen script-message into a frontend event.
+    // writes): turn our fullscreen script-message into a frontend event, and
+    // report playback failures - mpv's own output is not captured, so this is
+    // the only place a dead link, an HTTP error or a connection refused by the
+    // provider can be noticed at all.
+    let reader_app = app.clone();
     tokio::spawn(async move {
         let mut lines = BufReader::new(reader).lines();
         while let Ok(Some(line)) = lines.next_line().await {
             let Ok(v) = serde_json::from_str::<Value>(&line) else {
                 continue;
             };
-            if v.get("event").and_then(Value::as_str) == Some("client-message")
-                && v.get("args")
-                    .and_then(Value::as_array)
-                    .and_then(|a| a.first())
-                    .and_then(Value::as_str)
-                    == Some("streameo-fullscreen")
-            {
-                let _ = app.emit("player-toggle-fullscreen", ());
+            match v.get("event").and_then(Value::as_str) {
+                Some("client-message") => {
+                    if v.get("args")
+                        .and_then(Value::as_array)
+                        .and_then(|a| a.first())
+                        .and_then(Value::as_str)
+                        == Some("streameo-fullscreen")
+                    {
+                        let _ = reader_app.emit("player-toggle-fullscreen", ());
+                    }
+                }
+                // mpv could not open or keep reading the stream. The other
+                // reasons ("eof", "stop", "quit") are ordinary playback ends.
+                Some("end-file") => {
+                    if v.get("reason").and_then(Value::as_str) == Some("error") {
+                        let message = v
+                            .get("file_error")
+                            .and_then(Value::as_str)
+                            .unwrap_or("mpv could not play this channel");
+                        let _ = reader_app.emit("player-error", message.to_string());
+                    }
+                }
+                // No event field: a reply to one of our commands. Only the
+                // loadfile reply is surfaced - a property an mpv build happens
+                // to reject must not spam the user with toasts.
+                None => {
+                    if v.get("request_id").and_then(Value::as_u64) == Some(LOADFILE_REQUEST_ID) {
+                        if let Some(error) = v
+                            .get("error")
+                            .and_then(Value::as_str)
+                            .filter(|e| *e != "success")
+                        {
+                            let _ = reader_app.emit("player-error", error.to_string());
+                        }
+                    }
+                }
+                _ => {}
             }
         }
     });
+    let mut lost = false;
     while let Some(cmd) = rx.recv().await {
         let mut bytes = match serde_json::to_vec(&cmd) {
             Ok(b) => b,
@@ -349,10 +433,25 @@ async fn run_ipc(
         };
         bytes.push(b'\n');
         if writer.write_all(&bytes).await.is_err() {
+            lost = true;
             break;
         }
         let _ = writer.flush().await;
     }
+    // A closed receiver means destroy() dropped the sender: an intentional
+    // shutdown, not a lost player.
+    if lost {
+        handle_player_lost(&app).await;
+    }
+}
+
+/// The pipe to mpv is gone: tear the player down and tell the frontend, so the
+/// next channel click rebuilds it instead of sending commands into the void.
+#[cfg(target_os = "windows")]
+async fn handle_player_lost(app: &AppHandle) {
+    let state = app.state::<Mutex<AppState>>();
+    let _ = destroy(app.clone(), state).await;
+    let _ = app.emit("player-crashed", ());
 }
 
 #[cfg(target_os = "windows")]
@@ -465,5 +564,87 @@ mod win {
         }
         unsafe { EnableWindow(child, 1 /* TRUE */) };
         true
+    }
+}
+
+#[cfg(test)]
+mod test_player {
+    use super::*;
+    use crate::types::{Channel, ChannelHttpHeaders, Settings};
+
+    fn channel() -> Channel {
+        Channel {
+            id: Some(1),
+            name: "Test".to_string(),
+            url: Some("http://example.com/live".to_string()),
+            ..Default::default()
+        }
+    }
+
+    fn commands(headers: Option<ChannelHttpHeaders>) -> Vec<Value> {
+        build_play_commands(&channel(), &None, headers, &Settings::default()).unwrap()
+    }
+
+    fn user_agent_of(cmds: &[Value]) -> String {
+        cmds.iter()
+            .find(|c| c["command"][0] == "set_property" && c["command"][1] == "user-agent")
+            .and_then(|c| c["command"][2].as_str())
+            .expect("no user-agent command")
+            .to_string()
+    }
+
+    /// The provider only allows so many connections at once, so the running
+    /// stream has to be closed before the next one is opened.
+    #[test]
+    fn test_stops_before_loading_the_next_stream() {
+        let cmds = commands(None);
+        let stop = cmds
+            .iter()
+            .position(|c| c["command"][0] == "stop")
+            .expect("no stop command");
+        let loadfile = cmds
+            .iter()
+            .position(|c| c["command"][0] == "loadfile")
+            .expect("no loadfile command");
+        assert!(stop < loadfile, "stop must be sent before loadfile");
+    }
+
+    /// An empty user agent makes many providers answer 403; mpv's own default
+    /// is what the classic spawn-per-channel path sends.
+    #[test]
+    fn test_falls_back_to_default_user_agent() {
+        for user_agent in [None, Some(String::new()), Some("   ".to_string())] {
+            let headers = ChannelHttpHeaders {
+                user_agent,
+                ..Default::default()
+            };
+            assert_eq!(user_agent_of(&commands(Some(headers))), MPV_DEFAULT_USER_AGENT);
+        }
+    }
+
+    #[test]
+    fn test_keeps_the_configured_user_agent() {
+        let headers = ChannelHttpHeaders {
+            user_agent: Some("VLC/3.0.20".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(user_agent_of(&commands(Some(headers))), "VLC/3.0.20");
+    }
+
+    /// Only the loadfile reply carries the request id the IPC reader reports on.
+    #[test]
+    fn test_loadfile_is_tagged_for_error_reporting() {
+        let cmds = commands(None);
+        let loadfile = cmds
+            .iter()
+            .find(|c| c["command"][0] == "loadfile")
+            .expect("no loadfile command");
+        assert_eq!(loadfile["request_id"].as_u64(), Some(LOADFILE_REQUEST_ID));
+        assert!(
+            cmds.iter()
+                .filter(|c| c.get("request_id").is_some())
+                .count()
+                == 1
+        );
     }
 }

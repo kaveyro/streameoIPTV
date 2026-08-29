@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "外部 EPG 已刷新",
     "EPG_REFRESH_FAILED": "刷新外部 EPG 失败",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" 下载完成",
-    "DOWNLOAD_CANCELLED": "已取消 \"{{name}}\" 的下载"
+    "DOWNLOAD_CANCELLED": "已取消 \"{{name}}\" 的下载",
+    "PLAYER_ERROR": "播放失败",
+    "PLAYER_CRASHED": "播放器意外停止。选择一个频道即可重新启动。"
   }
 }

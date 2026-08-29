@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "Зовнішній EPG оновлено",
     "EPG_REFRESH_FAILED": "Не вдалося оновити зовнішній EPG",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" успішно завантажено",
-    "DOWNLOAD_CANCELLED": "Завантаження \"{{name}}\" скасовано"
+    "DOWNLOAD_CANCELLED": "Завантаження \"{{name}}\" скасовано",
+    "PLAYER_ERROR": "Не вдалося відтворити",
+    "PLAYER_CRASHED": "Програвач несподівано зупинився. Виберіть канал, щоб запустити його знову."
   }
 }

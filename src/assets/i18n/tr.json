@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "Harici EPG yenilendi",
     "EPG_REFRESH_FAILED": "Harici EPG yenilenemedi",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" başarıyla indirildi",
-    "DOWNLOAD_CANCELLED": "\"{{name}}\" indirmesi iptal edildi"
+    "DOWNLOAD_CANCELLED": "\"{{name}}\" indirmesi iptal edildi",
+    "PLAYER_ERROR": "Oynatma başarısız",
+    "PLAYER_CRASHED": "Oynatıcı beklenmedik şekilde durdu. Yeniden başlatmak için bir kanal seçin."
   }
 }

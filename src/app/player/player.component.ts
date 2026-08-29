@@ -11,6 +11,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { UnlistenFn, listen } from "@tauri-apps/api/event";
 import { Subscription } from "rxjs";
+import { TranslateService } from "@ngx-translate/core";
 import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
 import { ErrorService } from "../error.service";
@@ -30,6 +31,8 @@ import { ErrorService } from "../error.service";
   styleUrl: "./player.component.css",
 })
 export class PlayerComponent implements AfterViewInit, OnDestroy {
+  /// Minimum gap between two playback-failure toasts.
+  private static readonly ERROR_TOAST_INTERVAL_MS = 5000;
   active = false;
   current?: Channel;
   fullscreen = false;
@@ -37,13 +40,15 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private embeddedUnavailable = false;
   private resizeObserver?: ResizeObserver;
   private subscriptions: Subscription[] = [];
-  private fullscreenUnlisten?: UnlistenFn;
+  private unlistens: UnlistenFn[] = [];
+  private lastErrorAt = 0;
   @ViewChild("videoHost") videoHost?: ElementRef<HTMLDivElement>;
 
   constructor(
     public memory: MemoryService,
     private ngZone: NgZone,
     private error: ErrorService,
+    private translate: TranslateService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -52,7 +57,27 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     // toggle app-level fullscreen since mpv can't fullscreen an embedded child.
     listen("player-toggle-fullscreen", () => {
       if (this.active) this.ngZone.run(() => this.toggleFullscreen());
-    }).then((unlisten) => (this.fullscreenUnlisten = unlisten));
+    }).then((unlisten) => this.unlistens.push(unlisten));
+    // mpv failed to open or read the stream. Without this the video area would
+    // just stay black: mpv's output is not captured anywhere else.
+    listen<string>("player-error", (event) => {
+      // A live stream that keeps failing makes mpv retry (loop-playlist=inf),
+      // so report at most one failure per interval instead of a toast storm.
+      const now = Date.now();
+      if (now - this.lastErrorAt < PlayerComponent.ERROR_TOAST_INTERVAL_MS) return;
+      this.lastErrorAt = now;
+      this.ngZone.run(() =>
+        this.error.handleError(event.payload, this.translate.instant("TOAST.PLAYER_ERROR")),
+      );
+    }).then((unlisten) => this.unlistens.push(unlisten));
+    // mpv died or its IPC pipe broke and the backend tore the player down; the
+    // next play has to build a new one.
+    listen("player-crashed", () => {
+      this.ngZone.run(() => {
+        this.initialized = false;
+        this.error.info(this.translate.instant("TOAST.PLAYER_CRASHED"));
+      });
+    }).then((unlisten) => this.unlistens.push(unlisten));
   }
 
   get channels(): Channel[] {
@@ -84,7 +109,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.lockBackgroundScroll(true);
     try {
       await invoke("player_set_visible", { visible: true });
-      await invoke("player_play", { channel });
+      await this.playChannel(channel);
     } catch (e) {
       this.error.handleError(e);
     }
@@ -104,11 +129,31 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     if (channel.id === this.current?.id) return;
     this.current = channel;
     try {
-      await invoke("player_play", { channel });
+      await this.playChannel(channel);
       invoke("add_last_watched", { id: channel.id }).catch(() => {});
     } catch (e) {
       this.error.handleError(e);
     }
+  }
+
+  /**
+   * Sends the channel to mpv, rebuilding the player once if it has died. The
+   * backend rejects a play on a dead player (and tears its remains down), so
+   * without the retry the first click after a crash would be swallowed.
+   */
+  private async playChannel(channel: Channel) {
+    try {
+      await invoke("player_play", { channel });
+      return;
+    } catch (e) {
+      console.error(e);
+    }
+    this.initialized = false;
+    await invoke("player_init");
+    this.initialized = true;
+    await invoke("player_set_visible", { visible: true });
+    await invoke("player_play", { channel });
+    this.syncBounds();
   }
 
   async back() {
@@ -146,9 +191,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private startBoundsSync() {
     this.syncBounds();
     if (!this.resizeObserver && this.videoHost) {
-      this.resizeObserver = new ResizeObserver(() =>
-        this.ngZone.run(() => this.syncBounds()),
-      );
+      this.resizeObserver = new ResizeObserver(() => this.ngZone.run(() => this.syncBounds()));
       this.resizeObserver.observe(this.videoHost.nativeElement);
     }
   }
@@ -192,7 +235,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.stopBoundsSync();
-    this.fullscreenUnlisten?.();
+    this.unlistens.forEach((unlisten) => unlisten());
     this.lockBackgroundScroll(false);
   }
 }

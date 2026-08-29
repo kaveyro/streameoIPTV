@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "تم تحديث دليل EPG الخارجي",
     "EPG_REFRESH_FAILED": "فشل تحديث دليل EPG الخارجي",
     "DOWNLOAD_COMPLETED": "تم تنزيل \"{{name}}\" بنجاح",
-    "DOWNLOAD_CANCELLED": "تم إلغاء تنزيل \"{{name}}\""
+    "DOWNLOAD_CANCELLED": "تم إلغاء تنزيل \"{{name}}\"",
+    "PLAYER_ERROR": "فشل التشغيل",
+    "PLAYER_CRASHED": "توقف المشغل بشكل غير متوقع. اختر قناة لتشغيله من جديد."
   }
 }

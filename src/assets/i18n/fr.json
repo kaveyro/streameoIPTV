@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "EPG externe actualisée",
     "EPG_REFRESH_FAILED": "Échec de l'actualisation de l'EPG externe",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" téléchargé avec succès",
-    "DOWNLOAD_CANCELLED": "Téléchargement de \"{{name}}\" annulé"
+    "DOWNLOAD_CANCELLED": "Téléchargement de \"{{name}}\" annulé",
+    "PLAYER_ERROR": "Échec de la lecture",
+    "PLAYER_CRASHED": "Le lecteur s'est arrêté de manière inattendue. Choisissez une chaîne pour le relancer."
   }
 }

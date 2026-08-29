@@ -273,10 +273,13 @@ async fn player_init(
 
 #[tauri::command]
 async fn player_play(
+    app: AppHandle,
     channel: Channel,
     state: State<'_, Mutex<AppState>>,
 ) -> Result<(), String> {
-    player::play(channel, state).await.map_err(map_err_frontend)
+    player::play(app, channel, state)
+        .await
+        .map_err(map_err_frontend)
 }
 
 #[tauri::command]

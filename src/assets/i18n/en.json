@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "External EPG refreshed",
     "EPG_REFRESH_FAILED": "Failed to refresh external EPG",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" downloaded successfully",
-    "DOWNLOAD_CANCELLED": "Download of \"{{name}}\" cancelled"
+    "DOWNLOAD_CANCELLED": "Download of \"{{name}}\" cancelled",
+    "PLAYER_ERROR": "Playback failed",
+    "PLAYER_CRASHED": "The player stopped unexpectedly. Pick a channel to start it again."
   }
 }

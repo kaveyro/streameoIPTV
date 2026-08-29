@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "외부 EPG를 새로 고쳤습니다",
     "EPG_REFRESH_FAILED": "외부 EPG 새로 고침 실패",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" 다운로드 완료",
-    "DOWNLOAD_CANCELLED": "\"{{name}}\" 다운로드가 취소되었습니다"
+    "DOWNLOAD_CANCELLED": "\"{{name}}\" 다운로드가 취소되었습니다",
+    "PLAYER_ERROR": "재생 실패",
+    "PLAYER_CRASHED": "플레이어가 예기치 않게 중지되었습니다. 채널을 선택하면 다시 시작됩니다."
   }
 }

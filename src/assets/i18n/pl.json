@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "Zewnętrzny EPG odświeżony",
     "EPG_REFRESH_FAILED": "Nie udało się odświeżyć zewnętrznego EPG",
     "DOWNLOAD_COMPLETED": "Pobrano \"{{name}}\"",
-    "DOWNLOAD_CANCELLED": "Pobieranie \"{{name}}\" anulowane"
+    "DOWNLOAD_CANCELLED": "Pobieranie \"{{name}}\" anulowane",
+    "PLAYER_ERROR": "Odtwarzanie nie powiodło się",
+    "PLAYER_CRASHED": "Odtwarzacz nieoczekiwanie się zatrzymał. Wybierz kanał, aby uruchomić go ponownie."
   }
 }

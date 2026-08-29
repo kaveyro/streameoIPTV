@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "Externe EPG vernieuwd",
     "EPG_REFRESH_FAILED": "Externe EPG vernieuwen mislukt",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" is gedownload",
-    "DOWNLOAD_CANCELLED": "Download van \"{{name}}\" geannuleerd"
+    "DOWNLOAD_CANCELLED": "Download van \"{{name}}\" geannuleerd",
+    "PLAYER_ERROR": "Afspelen mislukt",
+    "PLAYER_CRASHED": "De speler is onverwacht gestopt. Kies een kanaal om hem opnieuw te starten."
   }
 }

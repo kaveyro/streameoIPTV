@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "外部 EPG を更新しました",
     "EPG_REFRESH_FAILED": "外部 EPG の更新に失敗しました",
     "DOWNLOAD_COMPLETED": "「{{name}}」のダウンロードが完了しました",
-    "DOWNLOAD_CANCELLED": "「{{name}}」のダウンロードをキャンセルしました"
+    "DOWNLOAD_CANCELLED": "「{{name}}」のダウンロードをキャンセルしました",
+    "PLAYER_ERROR": "再生に失敗しました",
+    "PLAYER_CRASHED": "プレーヤーが予期せず停止しました。チャンネルを選ぶと再起動します。"
   }
 }

@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "EPG extern reîmprospătat",
     "EPG_REFRESH_FAILED": "Reîmprospătarea EPG extern a eșuat",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" a fost descărcat cu succes",
-    "DOWNLOAD_CANCELLED": "Descărcarea \"{{name}}\" a fost anulată"
+    "DOWNLOAD_CANCELLED": "Descărcarea \"{{name}}\" a fost anulată",
+    "PLAYER_ERROR": "Redarea a eșuat",
+    "PLAYER_CRASHED": "Playerul s-a oprit neașteptat. Alege un canal pentru a-l porni din nou."
   }
 }

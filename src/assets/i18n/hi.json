@@ -488,6 +488,8 @@
     "EPG_REFRESHED": "बाहरी EPG ताज़ा किया गया",
     "EPG_REFRESH_FAILED": "बाहरी EPG ताज़ा करने में विफल",
     "DOWNLOAD_COMPLETED": "\"{{name}}\" सफलतापूर्वक डाउनलोड हुआ",
-    "DOWNLOAD_CANCELLED": "\"{{name}}\" का डाउनलोड रद्द किया गया"
+    "DOWNLOAD_CANCELLED": "\"{{name}}\" का डाउनलोड रद्द किया गया",
+    "PLAYER_ERROR": "चलाने में विफल",
+    "PLAYER_CRASHED": "प्लेयर अप्रत्याशित रूप से रुक गया। इसे फिर से शुरू करने के लिए कोई चैनल चुनें।"
   }
 }

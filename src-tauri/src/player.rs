@@ -20,7 +20,8 @@
 use crate::types::{AppState, Channel, ChannelHttpHeaders, Settings, Source};
 use anyhow::{Context, Result};
 use serde_json::{Value, json};
-use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::LazyLock;
+use std::sync::atomic::{AtomicIsize, AtomicU32, Ordering};
 use tauri::{AppHandle, State};
 use tokio::sync::Mutex;
 
@@ -31,7 +32,12 @@ use {
     tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
 };
 
-const PIPE_NAME: &str = r"\\.\pipe\streameo-mpv";
+/// IPC pipe for our mpv, unique per app run. With a fixed name a leftover mpv
+/// from an earlier run keeps ownership of it, our client connects to that stale
+/// process, and every command goes to an invisible player while the embedded
+/// one sits idle showing a black surface - with no error anywhere.
+static PIPE_NAME: LazyLock<String> =
+    LazyLock::new(|| format!(r"\\.\pipe\streameo-mpv-{}", std::process::id()));
 
 /// Request id carried by the `loadfile` command so the IPC reader can tell its
 /// error reply apart from the property sets sent alongside it.
@@ -48,6 +54,10 @@ const MPV_DEFAULT_USER_AGENT: &str = "libmpv";
 /// event / tray handlers (which cannot lock the async `AppState` mutex) can
 /// show/hide it. 0 means "no player window".
 static PLAYER_HWND: AtomicIsize = AtomicIsize::new(0);
+
+/// Process id of the embedded mpv, for the synchronous exit path. 0 means "no
+/// player process".
+static PLAYER_MPV_PID: AtomicU32 = AtomicU32::new(0);
 
 /// Creates the native child window + persistent mpv process and wires up IPC.
 /// Idempotent: a second call while a player already exists is a no-op.
@@ -85,7 +95,7 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         }
         PLAYER_HWND.store(child_hwnd, Ordering::SeqCst);
 
-        let args = crate::mpv::get_global_mpv_args(child_hwnd, PIPE_NAME)?;
+        let args = crate::mpv::get_global_mpv_args(child_hwnd, &PIPE_NAME)?;
         let mpv = tokio::process::Command::new(crate::mpv::get_mpv_path())
             .args(&args)
             .stdin(Stdio::null())
@@ -98,8 +108,10 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
                 crate::utils::friendly_spawn_error("mpv", e)
             })?;
 
+        PLAYER_MPV_PID.store(mpv.id().unwrap_or(0), Ordering::SeqCst);
+
         let (ipc_tx, ipc_rx) = tokio::sync::mpsc::unbounded_channel::<Value>();
-        tokio::spawn(run_ipc(app.clone(), PIPE_NAME.to_string(), ipc_rx));
+        tokio::spawn(run_ipc(app.clone(), PIPE_NAME.clone(), ipc_rx));
 
         // Route double-click and the `f` key to a script-message we catch on the
         // IPC read side and turn into app-level fullscreen (mpv's own fullscreen
@@ -258,6 +270,29 @@ pub fn set_visible_sync(visible: bool) {
     let _ = visible;
 }
 
+/// Kills the embedded mpv from the process-exit path, where the async state is
+/// never dropped (so `kill_on_drop` does not fire) and locking it is not
+/// possible. A surviving mpv would keep a provider connection open and hold on
+/// to the IPC pipe.
+pub fn kill_sync() {
+    let pid = PLAYER_MPV_PID.swap(0, Ordering::SeqCst);
+    if pid == 0 {
+        return;
+    }
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows_sys::Win32::Foundation::CloseHandle;
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, PROCESS_TERMINATE, TerminateProcess,
+        };
+        let handle = OpenProcess(PROCESS_TERMINATE, 0, pid);
+        if !handle.is_null() {
+            TerminateProcess(handle, 0);
+            CloseHandle(handle);
+        }
+    }
+}
+
 /// Tears down the player: kills mpv and destroys the native window.
 pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<()> {
     let (child, mpv) = {
@@ -265,6 +300,7 @@ pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Resul
         s.player_ipc_tx = None; // dropping the sender ends the IPC task
         (s.player_child_hwnd.take(), s.player_mpv.take())
     };
+    PLAYER_MPV_PID.store(0, Ordering::SeqCst);
     if let Some(mut mpv) = mpv {
         let _ = mpv.kill().await;
     }

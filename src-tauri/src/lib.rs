@@ -159,6 +159,15 @@ pub fn run() {
             if *ENABLE_TRAY_ICON {
                 let _ = build_tray_icon(app);
             }
+            // Title the window with the version actually running. It used to be
+            // a hardcoded string in tauri.conf.json, which silently kept
+            // claiming an old version after every release.
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_title(&format!(
+                    "streameoIPTV (v{})",
+                    app.package_info().version
+                ));
+            }
             Ok(())
         })
         .on_window_event(|_window, event| match event {
@@ -179,6 +188,10 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|_app, event| match event {
+            // Managed state is not dropped when the process ends, so the
+            // embedded mpv would outlive the app, keep a provider connection
+            // open and hold on to its IPC pipe.
+            tauri::RunEvent::Exit => player::kill_sync(),
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => {
                 if !*ENABLE_TRAY_ICON {

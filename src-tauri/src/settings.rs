@@ -30,6 +30,7 @@ pub const NORMALIZE_VOLUME: &str = "normalizeVolume";
 pub const AUTO_REFRESH_HOURS: &str = "autoRefreshHours";
 pub const LANGUAGE: &str = "language";
 pub const SHOW_CHANNEL_SOURCE: &str = "showChannelSource";
+pub const AUTO_UPDATE: &str = "autoUpdate";
 pub const XMLTV_SOURCES: &str = "xmltvSources";
 
 /// XMLTV EPG source URLs, stored as a JSON array string in the settings table.
@@ -88,6 +89,7 @@ pub fn get_settings() -> Result<Settings> {
         auto_refresh_hours: map.get(AUTO_REFRESH_HOURS).and_then(|s| s.parse().ok()),
         language: map.get(LANGUAGE).map(|s| s.to_string()),
         show_channel_source: map.get(SHOW_CHANNEL_SOURCE).and_then(|s| s.parse().ok()),
+        auto_update: map.get(AUTO_UPDATE).and_then(|s| s.parse().ok()),
     };
     Ok(settings)
 }
@@ -189,6 +191,9 @@ pub fn update_settings(settings: Settings) -> Result<()> {
             SHOW_CHANNEL_SOURCE.to_string(),
             Some(show_channel_source.to_string()),
         );
+    }
+    if let Some(auto_update) = settings.auto_update {
+        map.insert(AUTO_UPDATE.to_string(), Some(auto_update.to_string()));
     }
     sql::update_settings(map)?;
     Ok(())

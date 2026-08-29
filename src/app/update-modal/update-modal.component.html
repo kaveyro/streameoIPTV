@@ -1,0 +1,18 @@
+<div class="modal-header">
+  <h4 class="modal-title">{{ "UPDATE.TITLE" | translate }}</h4>
+</div>
+<div class="modal-body">
+  <p class="mb-2">
+    {{ "UPDATE.AVAILABLE" | translate: { version: version, current: currentVersion } }}
+  </p>
+  <pre class="update-notes" *ngIf="notes">{{ notes }}</pre>
+  <p class="text-secondary small mb-0">{{ "UPDATE.RESTART_HINT" | translate }}</p>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="activeModal.close(false)">
+    {{ "UPDATE.LATER" | translate }}
+  </button>
+  <button type="button" class="btn btn-primary" (click)="activeModal.close(true)">
+    {{ "UPDATE.INSTALL" | translate }}
+  </button>
+</div>

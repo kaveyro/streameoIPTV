@@ -35,6 +35,7 @@ import { SortButtonComponent } from './home/sort-button/sort-button.component';
 import { SortItemComponent } from './home/sort-button/sort-item/sort-item.component';
 import { DownloadManagerComponent } from './download-manager/download-manager.component';
 import { PlayerComponent } from './player/player.component';
+import { UpdateModalComponent } from './update-modal/update-modal.component';
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { TimeUntilPipe } from './pipes/time-until.pipe';
@@ -70,6 +71,7 @@ export function createTranslateLoader(http: HttpClient) {
     SortButtonComponent,
     SortItemComponent,
     DownloadManagerComponent,
+    UpdateModalComponent,
     PlayerComponent,
   ],
   imports: [
@@ -79,7 +81,10 @@ export function createTranslateLoader(http: HttpClient) {
     AppRoutingModule,
     NgbTooltipModule,
     ToastrModule.forRoot({
-      positionClass: "toast-bottom-left",
+      // Top right: the embedded player's native mpv window covers the whole
+      // video area and always composites above the WebView, so a toast in the
+      // bottom-left corner was painted underneath it and never seen.
+      positionClass: "toast-top-right",
       timeOut: 4000,
       progressBar: true,
       closeButton: true,

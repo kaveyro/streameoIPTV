@@ -146,7 +146,13 @@
       "UI_ZOOM": "UI ズーム",
       "UI_ZOOM_DESC": "インターフェース全体の拡大率（パーセント）。",
       "TRAY_ICON": "トレイアイコンを有効化",
-      "TRAY_ICON_DESC": "アプリをシステムトレイで実行し続けます。これを無効にすると EPG 通知も無効になります。"
+      "TRAY_ICON_DESC": "アプリをシステムトレイで実行し続けます。これを無効にすると EPG 通知も無効になります。",
+      "AUTO_UPDATE": "更新を自動的に確認",
+      "AUTO_UPDATE_DESC": "起動時に新しいバージョンを探し、インストールを提案します",
+      "APP_VERSION": "バージョン",
+      "APP_VERSION_DESC": "現在のバージョンは {{version}} です",
+      "CHECK_UPDATES": "今すぐ確認",
+      "CHECKING": "確認中..."
     },
     "APPEARANCE": {
       "THEME": "テーマ",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "「{{name}}」のダウンロードが完了しました",
     "DOWNLOAD_CANCELLED": "「{{name}}」のダウンロードをキャンセルしました",
     "PLAYER_ERROR": "再生に失敗しました",
-    "PLAYER_CRASHED": "プレーヤーが予期せず停止しました。チャンネルを選ぶと再起動します。"
+    "PLAYER_CRASHED": "プレーヤーが予期せず停止しました。チャンネルを選ぶと再起動します。",
+    "UPDATE_UP_TO_DATE": "最新の状態です",
+    "UPDATE_DOWNLOADING": "バージョン {{version}} をダウンロード中...",
+    "UPDATE_INSTALLED": "更新をインストールしました。再起動します",
+    "UPDATE_FAILED": "更新の確認に失敗しました"
+  },
+  "UPDATE": {
+    "TITLE": "更新があります",
+    "AVAILABLE": "バージョン {{version}} が利用できます（現在は {{current}}）。",
+    "RESTART_HINT": "インストール後にアプリを再起動します。",
+    "INSTALL": "今すぐインストール",
+    "LATER": "後で"
   }
 }

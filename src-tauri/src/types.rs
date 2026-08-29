@@ -108,6 +108,7 @@ pub struct Settings {
     pub auto_refresh_hours: Option<u16>,
     pub language: Option<String>,
     pub show_channel_source: Option<bool>,
+    pub auto_update: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]

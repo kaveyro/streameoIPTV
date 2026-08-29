@@ -146,7 +146,13 @@
       "UI_ZOOM": "Interfacezoom",
       "UI_ZOOM_DESC": "Schaal van de hele interface, in procenten.",
       "TRAY_ICON": "Systeemvakpictogram inschakelen",
-      "TRAY_ICON_DESC": "Houd de app draaiend in het systeemvak. Dit uitschakelen schakelt ook EPG-meldingen uit."
+      "TRAY_ICON_DESC": "Houd de app draaiend in het systeemvak. Dit uitschakelen schakelt ook EPG-meldingen uit.",
+      "AUTO_UPDATE": "Automatisch op updates controleren",
+      "AUTO_UPDATE_DESC": "Bij het opstarten naar een nieuwe versie kijken en installatie aanbieden",
+      "APP_VERSION": "Versie",
+      "APP_VERSION_DESC": "Je gebruikt versie {{version}}",
+      "CHECK_UPDATES": "Nu controleren",
+      "CHECKING": "Bezig met controleren..."
     },
     "APPEARANCE": {
       "THEME": "Thema",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" is gedownload",
     "DOWNLOAD_CANCELLED": "Download van \"{{name}}\" geannuleerd",
     "PLAYER_ERROR": "Afspelen mislukt",
-    "PLAYER_CRASHED": "De speler is onverwacht gestopt. Kies een kanaal om hem opnieuw te starten."
+    "PLAYER_CRASHED": "De speler is onverwacht gestopt. Kies een kanaal om hem opnieuw te starten.",
+    "UPDATE_UP_TO_DATE": "Je bent up-to-date",
+    "UPDATE_DOWNLOADING": "Versie {{version}} wordt gedownload...",
+    "UPDATE_INSTALLED": "Update geïnstalleerd, opnieuw opstarten",
+    "UPDATE_FAILED": "Controleren op updates mislukt"
+  },
+  "UPDATE": {
+    "TITLE": "Update beschikbaar",
+    "AVAILABLE": "Versie {{version}} is beschikbaar, jij hebt {{current}}.",
+    "RESTART_HINT": "De app start opnieuw op na de installatie.",
+    "INSTALL": "Nu installeren",
+    "LATER": "Later"
   }
 }

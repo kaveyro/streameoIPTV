@@ -146,7 +146,13 @@
       "UI_ZOOM": "Zoom interfață",
       "UI_ZOOM_DESC": "Scalarea întregii interfețe, în procente.",
       "TRAY_ICON": "Activează pictograma din bara de sistem",
-      "TRAY_ICON_DESC": "Menține aplicația în funcțiune în bara de sistem. Dezactivarea acesteia dezactivează și notificările EPG."
+      "TRAY_ICON_DESC": "Menține aplicația în funcțiune în bara de sistem. Dezactivarea acesteia dezactivează și notificările EPG.",
+      "AUTO_UPDATE": "Caută actualizări automat",
+      "AUTO_UPDATE_DESC": "Caută o versiune nouă la pornire și propune instalarea",
+      "APP_VERSION": "Versiune",
+      "APP_VERSION_DESC": "Folosești versiunea {{version}}",
+      "CHECK_UPDATES": "Caută acum",
+      "CHECKING": "Se caută..."
     },
     "APPEARANCE": {
       "THEME": "Temă",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" a fost descărcat cu succes",
     "DOWNLOAD_CANCELLED": "Descărcarea \"{{name}}\" a fost anulată",
     "PLAYER_ERROR": "Redarea a eșuat",
-    "PLAYER_CRASHED": "Playerul s-a oprit neașteptat. Alege un canal pentru a-l porni din nou."
+    "PLAYER_CRASHED": "Playerul s-a oprit neașteptat. Alege un canal pentru a-l porni din nou.",
+    "UPDATE_UP_TO_DATE": "Ești la zi",
+    "UPDATE_DOWNLOADING": "Se descarcă versiunea {{version}}...",
+    "UPDATE_INSTALLED": "Actualizare instalată, se repornește",
+    "UPDATE_FAILED": "Verificarea actualizărilor a eșuat"
+  },
+  "UPDATE": {
+    "TITLE": "Actualizare disponibilă",
+    "AVAILABLE": "Versiunea {{version}} este disponibilă, tu ai {{current}}.",
+    "RESTART_HINT": "Aplicația repornește după instalare.",
+    "INSTALL": "Instalează acum",
+    "LATER": "Mai târziu"
   }
 }

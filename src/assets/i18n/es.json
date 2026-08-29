@@ -146,7 +146,13 @@
       "UI_ZOOM": "Zoom de la interfaz",
       "UI_ZOOM_DESC": "Escala de toda la interfaz, en porcentaje.",
       "TRAY_ICON": "Activar icono en la bandeja",
-      "TRAY_ICON_DESC": "Mantén la app ejecutándose en la bandeja del sistema. Desactivarlo también desactiva las notificaciones EPG."
+      "TRAY_ICON_DESC": "Mantén la app ejecutándose en la bandeja del sistema. Desactivarlo también desactiva las notificaciones EPG.",
+      "AUTO_UPDATE": "Buscar actualizaciones automáticamente",
+      "AUTO_UPDATE_DESC": "Buscar una versión nueva al iniciar y ofrecer instalarla",
+      "APP_VERSION": "Versión",
+      "APP_VERSION_DESC": "Estás usando la versión {{version}}",
+      "CHECK_UPDATES": "Buscar ahora",
+      "CHECKING": "Buscando..."
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" descargado correctamente",
     "DOWNLOAD_CANCELLED": "Descarga de \"{{name}}\" cancelada",
     "PLAYER_ERROR": "Fallo en la reproducción",
-    "PLAYER_CRASHED": "El reproductor se detuvo inesperadamente. Elige un canal para volver a iniciarlo."
+    "PLAYER_CRASHED": "El reproductor se detuvo inesperadamente. Elige un canal para volver a iniciarlo.",
+    "UPDATE_UP_TO_DATE": "Todo está actualizado",
+    "UPDATE_DOWNLOADING": "Descargando la versión {{version}}...",
+    "UPDATE_INSTALLED": "Actualización instalada, reiniciando",
+    "UPDATE_FAILED": "Error al buscar actualizaciones"
+  },
+  "UPDATE": {
+    "TITLE": "Actualización disponible",
+    "AVAILABLE": "La versión {{version}} está disponible, tienes la {{current}}.",
+    "RESTART_HINT": "La aplicación se reinicia tras instalar la actualización.",
+    "INSTALL": "Instalar ahora",
+    "LATER": "Más tarde"
   }
 }

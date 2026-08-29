@@ -146,7 +146,13 @@
       "UI_ZOOM": "Zoom de l'interface",
       "UI_ZOOM_DESC": "Échelle de toute l'interface, en pourcentage.",
       "TRAY_ICON": "Activer l'icône dans la barre d'état",
-      "TRAY_ICON_DESC": "Garde l'application en cours d'exécution dans la barre d'état système. Le désactiver désactive aussi les notifications EPG."
+      "TRAY_ICON_DESC": "Garde l'application en cours d'exécution dans la barre d'état système. Le désactiver désactive aussi les notifications EPG.",
+      "AUTO_UPDATE": "Rechercher les mises à jour automatiquement",
+      "AUTO_UPDATE_DESC": "Chercher une nouvelle version au démarrage et proposer de l'installer",
+      "APP_VERSION": "Version",
+      "APP_VERSION_DESC": "Vous utilisez la version {{version}}",
+      "CHECK_UPDATES": "Vérifier maintenant",
+      "CHECKING": "Vérification..."
     },
     "APPEARANCE": {
       "THEME": "Thème",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" téléchargé avec succès",
     "DOWNLOAD_CANCELLED": "Téléchargement de \"{{name}}\" annulé",
     "PLAYER_ERROR": "Échec de la lecture",
-    "PLAYER_CRASHED": "Le lecteur s'est arrêté de manière inattendue. Choisissez une chaîne pour le relancer."
+    "PLAYER_CRASHED": "Le lecteur s'est arrêté de manière inattendue. Choisissez une chaîne pour le relancer.",
+    "UPDATE_UP_TO_DATE": "Tout est à jour",
+    "UPDATE_DOWNLOADING": "Téléchargement de la version {{version}}...",
+    "UPDATE_INSTALLED": "Mise à jour installée, redémarrage",
+    "UPDATE_FAILED": "Échec de la vérification"
+  },
+  "UPDATE": {
+    "TITLE": "Mise à jour disponible",
+    "AVAILABLE": "La version {{version}} est disponible, vous avez la {{current}}.",
+    "RESTART_HINT": "L'application redémarre une fois la mise à jour installée.",
+    "INSTALL": "Installer maintenant",
+    "LATER": "Plus tard"
   }
 }

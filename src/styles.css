@@ -298,7 +298,7 @@ body[data-theme="light"] .skeleton::after {
 }
 
 /* ---------------------------------------------------------------------------
-   Toasts (ngx-toastr) — modern, bottom-left, accent-colored
+   Toasts (ngx-toastr) — modern, top-right, accent-colored
    --------------------------------------------------------------------------- */
 .toast-container {
   pointer-events: auto;

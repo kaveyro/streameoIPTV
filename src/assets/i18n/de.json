@@ -146,7 +146,13 @@
       "UI_ZOOM": "Oberflächen-Zoom",
       "UI_ZOOM_DESC": "Skalierung der gesamten Oberfläche in Prozent.",
       "TRAY_ICON": "Tray-Symbol aktivieren",
-      "TRAY_ICON_DESC": "Die App im System-Tray weiterlaufen lassen. Das Deaktivieren schaltet auch EPG-Benachrichtigungen ab."
+      "TRAY_ICON_DESC": "Die App im System-Tray weiterlaufen lassen. Das Deaktivieren schaltet auch EPG-Benachrichtigungen ab.",
+      "AUTO_UPDATE": "Automatisch nach Updates suchen",
+      "AUTO_UPDATE_DESC": "Beim Start nach einer neuen Version sehen und die Installation anbieten",
+      "APP_VERSION": "Version",
+      "APP_VERSION_DESC": "Du verwendest Version {{version}}",
+      "CHECK_UPDATES": "Jetzt prüfen",
+      "CHECKING": "Wird geprüft..."
     },
     "APPEARANCE": {
       "THEME": "Design",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "„{{name}}“ erfolgreich heruntergeladen",
     "DOWNLOAD_CANCELLED": "Download von „{{name}}“ abgebrochen",
     "PLAYER_ERROR": "Wiedergabe fehlgeschlagen",
-    "PLAYER_CRASHED": "Der Player wurde unerwartet beendet. Wähle einen Sender, um ihn neu zu starten."
+    "PLAYER_CRASHED": "Der Player wurde unerwartet beendet. Wähle einen Sender, um ihn neu zu starten.",
+    "UPDATE_UP_TO_DATE": "Du bist auf dem neuesten Stand",
+    "UPDATE_DOWNLOADING": "Version {{version}} wird geladen...",
+    "UPDATE_INSTALLED": "Update installiert, Neustart",
+    "UPDATE_FAILED": "Update-Prüfung fehlgeschlagen"
+  },
+  "UPDATE": {
+    "TITLE": "Update verfügbar",
+    "AVAILABLE": "Version {{version}} ist verfügbar, du hast {{current}}.",
+    "RESTART_HINT": "Die App startet nach der Installation neu.",
+    "INSTALL": "Jetzt installieren",
+    "LATER": "Später"
   }
 }

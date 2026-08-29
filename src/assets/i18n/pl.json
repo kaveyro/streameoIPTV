@@ -146,7 +146,13 @@
       "UI_ZOOM": "Powiększenie interfejsu",
       "UI_ZOOM_DESC": "Skala całego interfejsu w procentach.",
       "TRAY_ICON": "Włącz ikonę w zasobniku",
-      "TRAY_ICON_DESC": "Utrzymuj działanie aplikacji w zasobniku systemowym. Wyłączenie tej opcji wyłącza również powiadomienia EPG."
+      "TRAY_ICON_DESC": "Utrzymuj działanie aplikacji w zasobniku systemowym. Wyłączenie tej opcji wyłącza również powiadomienia EPG.",
+      "AUTO_UPDATE": "Automatycznie sprawdzaj aktualizacje",
+      "AUTO_UPDATE_DESC": "Przy starcie szukaj nowej wersji i proponuj instalację",
+      "APP_VERSION": "Wersja",
+      "APP_VERSION_DESC": "Używasz wersji {{version}}",
+      "CHECK_UPDATES": "Sprawdź teraz",
+      "CHECKING": "Sprawdzanie..."
     },
     "APPEARANCE": {
       "THEME": "Motyw",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "Pobrano \"{{name}}\"",
     "DOWNLOAD_CANCELLED": "Pobieranie \"{{name}}\" anulowane",
     "PLAYER_ERROR": "Odtwarzanie nie powiodło się",
-    "PLAYER_CRASHED": "Odtwarzacz nieoczekiwanie się zatrzymał. Wybierz kanał, aby uruchomić go ponownie."
+    "PLAYER_CRASHED": "Odtwarzacz nieoczekiwanie się zatrzymał. Wybierz kanał, aby uruchomić go ponownie.",
+    "UPDATE_UP_TO_DATE": "Masz najnowszą wersję",
+    "UPDATE_DOWNLOADING": "Pobieranie wersji {{version}}...",
+    "UPDATE_INSTALLED": "Aktualizacja zainstalowana, ponowne uruchamianie",
+    "UPDATE_FAILED": "Sprawdzanie aktualizacji nie powiodło się"
+  },
+  "UPDATE": {
+    "TITLE": "Dostępna aktualizacja",
+    "AVAILABLE": "Wersja {{version}} jest dostępna, masz {{current}}.",
+    "RESTART_HINT": "Aplikacja uruchomi się ponownie po instalacji.",
+    "INSTALL": "Zainstaluj teraz",
+    "LATER": "Później"
   }
 }

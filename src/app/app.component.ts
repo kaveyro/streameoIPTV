@@ -1,11 +1,9 @@
 import { Component, HostListener, OnInit } from "@angular/core";
-import { check } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
 import { invoke } from "@tauri-apps/api/core";
 import { DownloadService } from "./download.service";
-import { ErrorService } from "./error.service";
 import { ThemeService } from "./theme.service";
 import { LanguageService } from "./language.service";
+import { UpdateService } from "./update.service";
 import { Settings } from "./models/settings";
 
 @Component({
@@ -18,9 +16,9 @@ export class AppComponent implements OnInit {
 
   constructor(
     private download: DownloadService,
-    private error: ErrorService,
     private theme: ThemeService,
     private language: LanguageService,
+    private update: UpdateService,
   ) {}
 
   ngOnInit(): void {
@@ -28,7 +26,6 @@ export class AppComponent implements OnInit {
     // the stored preference (if any) is applied once settings load.
     this.language.apply(undefined);
     this.applySettings();
-    this.checkForUpdates();
   }
 
   private async applySettings() {
@@ -36,23 +33,13 @@ export class AppComponent implements OnInit {
       const settings = (await invoke("get_settings")) as Settings;
       this.theme.apply(settings.theme, settings.accent_color);
       this.language.apply(settings.language);
+      // Opt-out, not opt-in: unset means check, which is what the app did
+      // before the setting existed.
+      if (settings.auto_update !== false) {
+        this.update.check(false);
+      }
     } catch {
       // Settings unavailable (e.g. first launch) — keep the defaults.
-    }
-  }
-
-  private async checkForUpdates() {
-    try {
-      const update = await check();
-      if (!update) {
-        return;
-      }
-      this.error.info(`Downloading update v${update.version}...`);
-      await update.downloadAndInstall();
-      this.error.success("Update installed, restarting...");
-      await relaunch();
-    } catch {
-      // No update endpoint reachable (e.g. no release published yet) — stay silent.
     }
   }
 

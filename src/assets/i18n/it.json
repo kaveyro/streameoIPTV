@@ -146,7 +146,13 @@
       "UI_ZOOM": "Zoom dell'interfaccia",
       "UI_ZOOM_DESC": "Scala dell'intera interfaccia, in percentuale.",
       "TRAY_ICON": "Abilita icona nella barra delle applicazioni",
-      "TRAY_ICON_DESC": "Mantieni l'app in esecuzione nella barra delle applicazioni di sistema. Disabilitandola si disattivano anche le notifiche EPG."
+      "TRAY_ICON_DESC": "Mantieni l'app in esecuzione nella barra delle applicazioni di sistema. Disabilitandola si disattivano anche le notifiche EPG.",
+      "AUTO_UPDATE": "Cerca aggiornamenti automaticamente",
+      "AUTO_UPDATE_DESC": "Cercare una nuova versione all'avvio e proporne l'installazione",
+      "APP_VERSION": "Versione",
+      "APP_VERSION_DESC": "Stai usando la versione {{version}}",
+      "CHECK_UPDATES": "Controlla ora",
+      "CHECKING": "Controllo..."
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" scaricato correttamente",
     "DOWNLOAD_CANCELLED": "Download di \"{{name}}\" annullato",
     "PLAYER_ERROR": "Riproduzione non riuscita",
-    "PLAYER_CRASHED": "Il lettore si è arrestato in modo imprevisto. Scegli un canale per riavviarlo."
+    "PLAYER_CRASHED": "Il lettore si è arrestato in modo imprevisto. Scegli un canale per riavviarlo.",
+    "UPDATE_UP_TO_DATE": "Sei aggiornato",
+    "UPDATE_DOWNLOADING": "Download della versione {{version}}...",
+    "UPDATE_INSTALLED": "Aggiornamento installato, riavvio",
+    "UPDATE_FAILED": "Controllo aggiornamenti non riuscito"
+  },
+  "UPDATE": {
+    "TITLE": "Aggiornamento disponibile",
+    "AVAILABLE": "La versione {{version}} è disponibile, hai la {{current}}.",
+    "RESTART_HINT": "L'app si riavvia dopo l'installazione.",
+    "INSTALL": "Installa ora",
+    "LATER": "Più tardi"
   }
 }

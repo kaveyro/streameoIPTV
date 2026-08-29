@@ -146,7 +146,13 @@
       "UI_ZOOM": "界面缩放",
       "UI_ZOOM_DESC": "整个界面的缩放比例，以百分比表示。",
       "TRAY_ICON": "启用托盘图标",
-      "TRAY_ICON_DESC": "让应用在系统托盘中继续运行。停用此项也会停用 EPG 通知。"
+      "TRAY_ICON_DESC": "让应用在系统托盘中继续运行。停用此项也会停用 EPG 通知。",
+      "AUTO_UPDATE": "自动检查更新",
+      "AUTO_UPDATE_DESC": "启动时查找新版本并提示安装",
+      "APP_VERSION": "版本",
+      "APP_VERSION_DESC": "当前版本 {{version}}",
+      "CHECK_UPDATES": "立即检查",
+      "CHECKING": "正在检查..."
     },
     "APPEARANCE": {
       "THEME": "主题",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" 下载完成",
     "DOWNLOAD_CANCELLED": "已取消 \"{{name}}\" 的下载",
     "PLAYER_ERROR": "播放失败",
-    "PLAYER_CRASHED": "播放器意外停止。选择一个频道即可重新启动。"
+    "PLAYER_CRASHED": "播放器意外停止。选择一个频道即可重新启动。",
+    "UPDATE_UP_TO_DATE": "已是最新版本",
+    "UPDATE_DOWNLOADING": "正在下载版本 {{version}}...",
+    "UPDATE_INSTALLED": "更新已安装，正在重启",
+    "UPDATE_FAILED": "检查更新失败"
+  },
+  "UPDATE": {
+    "TITLE": "有可用更新",
+    "AVAILABLE": "版本 {{version}} 可用，你当前是 {{current}}。",
+    "RESTART_HINT": "安装完成后应用会重新启动。",
+    "INSTALL": "立即安装",
+    "LATER": "以后再说"
   }
 }

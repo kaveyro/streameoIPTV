@@ -24,4 +24,5 @@ export class Settings {
   auto_refresh_hours?: number;
   language?: string;
   show_channel_source?: boolean;
+  auto_update?: boolean;
 }

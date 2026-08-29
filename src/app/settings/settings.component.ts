@@ -13,6 +13,8 @@ import { SORT_TYPES, SortType, getSortTypeText } from "../models/sortType";
 import { ThemeService } from "../theme.service";
 import { LanguageService } from "../language.service";
 import { TranslateService } from "@ngx-translate/core";
+import { getVersion } from "@tauri-apps/api/app";
+import { UpdateService } from "../update.service";
 
 @Component({
   selector: "app-settings",
@@ -56,6 +58,8 @@ export class SettingsComponent {
     { id: "data", label: "SETTINGS.NAV.DATA" },
   ];
   xmltvSourcesText = "";
+  /// Version of the running app, shown next to the update controls.
+  appVersion = "";
   // Curated free public XMLTV EPG sources for one-click adding.
   freeEpgSources = [
     { label: "IPTV-EPG · Deutschland", url: "https://iptv-epg.org/files/epg-de.xml" },
@@ -83,6 +87,7 @@ export class SettingsComponent {
     private theme: ThemeService,
     private language: LanguageService,
     private translate: TranslateService,
+    public update: UpdateService,
   ) { }
 
   _getSortTypeText(sortType: SortType) {
@@ -126,6 +131,15 @@ export class SettingsComponent {
     this.getSettings();
     this.getSources();
     this.getXmltvSources();
+    getVersion()
+      .then((version) => (this.appVersion = version))
+      .catch(() => (this.appVersion = "?"));
+  }
+
+  /// Manual check from the settings: reports every outcome, including that
+  /// there is nothing to install.
+  async checkForUpdates() {
+    await this.update.check(true);
   }
 
   getXmltvSources() {
@@ -174,6 +188,8 @@ export class SettingsComponent {
     invoke("get_settings").then((x) => {
       this.settings = x as Settings;
       if (this.settings.use_stream_caching == undefined) this.settings.use_stream_caching = true;
+      // Matches the startup behaviour, which checks unless explicitly disabled.
+      if (this.settings.auto_update == undefined) this.settings.auto_update = true;
       if (this.settings.default_view == undefined) this.settings.default_view = ViewMode.All;
       if (this.settings.volume == undefined) this.settings.volume = 100;
       if (this.settings.restream_port == undefined) this.settings.restream_port = 3000;

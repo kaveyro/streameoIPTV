@@ -112,6 +112,33 @@
 
           <div class="setting-row">
             <div class="setting-info">
+              <label class="setting-title" for="set-auto-update">{{ 'SETTINGS.GENERAL.AUTO_UPDATE' | translate }}</label>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.AUTO_UPDATE_DESC' | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <label class="switch">
+                <input id="set-auto-update" type="checkbox" [(ngModel)]="settings.auto_update"
+                  (ngModelChange)="updateSettings()" />
+                <span class="switch-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">{{ 'SETTINGS.GENERAL.APP_VERSION' | translate }}</div>
+              <div class="setting-desc">{{ 'SETTINGS.GENERAL.APP_VERSION_DESC' | translate:{ version: appVersion } }}</div>
+            </div>
+            <div class="setting-control">
+              <button type="button" class="btn btn-secondary" (click)="checkForUpdates()"
+                [disabled]="update.Busy">
+                {{ (update.Busy ? 'SETTINGS.GENERAL.CHECKING' : 'SETTINGS.GENERAL.CHECK_UPDATES') | translate }}
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
               <label class="setting-title" for="set-volume">{{ 'SETTINGS.GENERAL.VOLUME_ON_START' | translate }}</label>
               <div class="setting-desc">{{ 'SETTINGS.GENERAL.VOLUME_ON_START_DESC' | translate }}</div>
             </div>

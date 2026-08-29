@@ -146,7 +146,13 @@
       "UI_ZOOM": "UI zoom",
       "UI_ZOOM_DESC": "Scale of the entire interface, in percent.",
       "TRAY_ICON": "Enable tray icon",
-      "TRAY_ICON_DESC": "Keep the app running in the system tray. Disabling this also disables EPG notifications."
+      "TRAY_ICON_DESC": "Keep the app running in the system tray. Disabling this also disables EPG notifications.",
+      "AUTO_UPDATE": "Check for updates automatically",
+      "AUTO_UPDATE_DESC": "Look for a new version at startup and offer to install it",
+      "APP_VERSION": "Version",
+      "APP_VERSION_DESC": "You are running version {{version}}",
+      "CHECK_UPDATES": "Check now",
+      "CHECKING": "Checking..."
     },
     "APPEARANCE": {
       "THEME": "Theme",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" downloaded successfully",
     "DOWNLOAD_CANCELLED": "Download of \"{{name}}\" cancelled",
     "PLAYER_ERROR": "Playback failed",
-    "PLAYER_CRASHED": "The player stopped unexpectedly. Pick a channel to start it again."
+    "PLAYER_CRASHED": "The player stopped unexpectedly. Pick a channel to start it again.",
+    "UPDATE_UP_TO_DATE": "You are up to date",
+    "UPDATE_DOWNLOADING": "Downloading version {{version}}...",
+    "UPDATE_INSTALLED": "Update installed, restarting",
+    "UPDATE_FAILED": "Update check failed"
+  },
+  "UPDATE": {
+    "TITLE": "Update available",
+    "AVAILABLE": "Version {{version}} is available, you have {{current}}.",
+    "RESTART_HINT": "The app restarts once the update is installed.",
+    "INSTALL": "Install now",
+    "LATER": "Later"
   }
 }

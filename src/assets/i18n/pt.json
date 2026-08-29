@@ -146,7 +146,13 @@
       "UI_ZOOM": "Zoom da interface",
       "UI_ZOOM_DESC": "Escala de toda a interface, em percentagem.",
       "TRAY_ICON": "Ativar ícone na bandeja",
-      "TRAY_ICON_DESC": "Mantém a aplicação em execução na bandeja do sistema. Desativá-lo também desativa as notificações EPG."
+      "TRAY_ICON_DESC": "Mantém a aplicação em execução na bandeja do sistema. Desativá-lo também desativa as notificações EPG.",
+      "AUTO_UPDATE": "Procurar atualizações automaticamente",
+      "AUTO_UPDATE_DESC": "Procurar uma nova versão ao iniciar e propor a instalação",
+      "APP_VERSION": "Versão",
+      "APP_VERSION_DESC": "Estás a usar a versão {{version}}",
+      "CHECK_UPDATES": "Procurar agora",
+      "CHECKING": "A procurar..."
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" transferido com sucesso",
     "DOWNLOAD_CANCELLED": "Transferência de \"{{name}}\" cancelada",
     "PLAYER_ERROR": "Falha na reprodução",
-    "PLAYER_CRASHED": "O leitor parou inesperadamente. Escolhe um canal para o iniciar de novo."
+    "PLAYER_CRASHED": "O leitor parou inesperadamente. Escolhe um canal para o iniciar de novo.",
+    "UPDATE_UP_TO_DATE": "Está tudo atualizado",
+    "UPDATE_DOWNLOADING": "A transferir a versão {{version}}...",
+    "UPDATE_INSTALLED": "Atualização instalada, a reiniciar",
+    "UPDATE_FAILED": "Falha ao procurar atualizações"
+  },
+  "UPDATE": {
+    "TITLE": "Atualização disponível",
+    "AVAILABLE": "A versão {{version}} está disponível, tens a {{current}}.",
+    "RESTART_HINT": "A aplicação reinicia depois de instalar.",
+    "INSTALL": "Instalar agora",
+    "LATER": "Mais tarde"
   }
 }

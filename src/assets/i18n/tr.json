@@ -146,7 +146,13 @@
       "UI_ZOOM": "Arayüz yakınlaştırması",
       "UI_ZOOM_DESC": "Tüm arayüzün ölçeği, yüzde olarak.",
       "TRAY_ICON": "Tepsi simgesini etkinleştir",
-      "TRAY_ICON_DESC": "Uygulamayı sistem tepsisinde çalışır durumda tut. Bunu devre dışı bırakmak EPG bildirimlerini de devre dışı bırakır."
+      "TRAY_ICON_DESC": "Uygulamayı sistem tepsisinde çalışır durumda tut. Bunu devre dışı bırakmak EPG bildirimlerini de devre dışı bırakır.",
+      "AUTO_UPDATE": "Güncellemeleri otomatik denetle",
+      "AUTO_UPDATE_DESC": "Başlangıçta yeni sürüme bak ve kurulumu öner",
+      "APP_VERSION": "Sürüm",
+      "APP_VERSION_DESC": "{{version}} sürümünü kullanıyorsun",
+      "CHECK_UPDATES": "Şimdi denetle",
+      "CHECKING": "Denetleniyor..."
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -490,6 +496,17 @@
     "DOWNLOAD_COMPLETED": "\"{{name}}\" başarıyla indirildi",
     "DOWNLOAD_CANCELLED": "\"{{name}}\" indirmesi iptal edildi",
     "PLAYER_ERROR": "Oynatma başarısız",
-    "PLAYER_CRASHED": "Oynatıcı beklenmedik şekilde durdu. Yeniden başlatmak için bir kanal seçin."
+    "PLAYER_CRASHED": "Oynatıcı beklenmedik şekilde durdu. Yeniden başlatmak için bir kanal seçin.",
+    "UPDATE_UP_TO_DATE": "Her şey güncel",
+    "UPDATE_DOWNLOADING": "{{version}} sürümü indiriliyor...",
+    "UPDATE_INSTALLED": "Güncelleme kuruldu, yeniden başlatılıyor",
+    "UPDATE_FAILED": "Güncelleme denetimi başarısız"
+  },
+  "UPDATE": {
+    "TITLE": "Güncelleme mevcut",
+    "AVAILABLE": "{{version}} sürümü mevcut, sende {{current}} var.",
+    "RESTART_HINT": "Kurulumdan sonra uygulama yeniden başlar.",
+    "INSTALL": "Şimdi kur",
+    "LATER": "Daha sonra"
   }
 }

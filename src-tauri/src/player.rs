@@ -364,9 +364,9 @@ fn build_play_commands(
         .unwrap_or_else(|| MPV_DEFAULT_USER_AGENT.to_string());
     cmds.push(set_prop("user-agent", json!(user_agent)));
 
-    // Match the classic path: never verify TLS (mpv's default), and only pass
-    // the ytdl no-check option when the channel explicitly asks to ignore SSL.
-    cmds.push(set_prop("stream-tls-verify", json!("no")));
+    // TLS verification is left alone, exactly like the classic path: mpv has no
+    // "stream-tls-verify" property (setting it only produced "property not
+    // found"), and the per-channel opt-out below is the documented way.
     let ytdl_raw = if h.ignore_ssl == Some(true) {
         "no-check-certificates="
     } else {
@@ -384,6 +384,17 @@ fn build_play_commands(
     let is_live = channel.media_type == crate::media_type::LIVESTREAM;
     cmds.push(set_prop("save-position-on-quit", json!(!is_live)));
     cmds.push(set_prop("loop-playlist", json!(if is_live { "inf" } else { "no" })));
+
+    // Providers serve live streams as HTTP 206 responses with a fixed content
+    // length, so mpv takes them for seekable files: FFmpeg then seeks to the end
+    // to estimate the duration, which opens a second connection the provider
+    // does not grant. The demuxer waits there forever - no error, no end-file,
+    // just a black video area - which is why only the first channel of a
+    // session used to play. Skipping the probe removes that seek.
+    cmds.push(set_prop(
+        "demuxer-lavf-probe-info",
+        json!(if is_live { "nostreams" } else { "auto" }),
+    ));
 
     cmds.push(json!({
         "command": ["loadfile", url, "replace"],
@@ -679,6 +690,44 @@ mod test_player {
             ..Default::default()
         };
         assert_eq!(user_agent_of(&commands(Some(headers))), "VLC/3.0.20");
+    }
+
+    fn prop_of(cmds: &[Value], name: &str) -> Option<Value> {
+        cmds.iter()
+            .find(|c| c["command"][0] == "set_property" && c["command"][1] == name)
+            .map(|c| c["command"][2].clone())
+    }
+
+    /// The duration probe seeks to the end of what mpv believes is a file. For
+    /// a live stream that second connection is refused and the demuxer hangs,
+    /// leaving a black video area with no error at all.
+    #[test]
+    fn test_live_streams_skip_the_duration_probe() {
+        let mut channel = channel();
+        channel.media_type = crate::media_type::LIVESTREAM;
+        let cmds =
+            build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
+        assert_eq!(
+            prop_of(&cmds, "demuxer-lavf-probe-info"),
+            Some(json!("nostreams"))
+        );
+    }
+
+    /// Movies and episodes are real files: they keep mpv's normal probing.
+    #[test]
+    fn test_vod_keeps_probing() {
+        let mut channel = channel();
+        channel.media_type = crate::media_type::MOVIE;
+        let cmds =
+            build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
+        assert_eq!(prop_of(&cmds, "demuxer-lavf-probe-info"), Some(json!("auto")));
+    }
+
+    /// mpv has no such property - setting it only logged "property not found".
+    #[test]
+    fn test_no_bogus_tls_property() {
+        let cmds = commands(None);
+        assert_eq!(prop_of(&cmds, "stream-tls-verify"), None);
     }
 
     /// Only the loadfile reply carries the request id the IPC reader reports on.

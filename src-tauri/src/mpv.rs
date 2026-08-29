@@ -56,6 +56,12 @@ const ARG_USER_AGENT: &str = "--user-agent=";
 const ARG_IGNORE_SSL: &str = "--ytdl-raw-options=no-check-certificates=True";
 const ARG_PREFETCH_PLAYLIST: &str = "--prefetch-playlist=yes";
 const ARG_LOOP_PLAYLIST: &str = "--loop-playlist=inf";
+/// Live streams arrive as HTTP 206 with a fixed content length, which makes mpv
+/// treat them as seekable files and FFmpeg seek to the end to estimate the
+/// duration. That second connection is refused by most providers and the
+/// demuxer then hangs - fatal here because a live playlist is reloaded whenever
+/// the provider's buffer ends.
+const ARG_PROBE_INFO_LIVE: &str = "--demuxer-lavf-probe-info=nostreams";
 const ARG_HWDEC: &str = "--hwdec=auto";
 const ARG_GPU_NEXT: &str = "--vo=gpu-next";
 const ARG_GPU_PROFILE_HIGH_QUALITY: &str = "--profile=high-quality";
@@ -397,6 +403,7 @@ fn get_play_args(
     if channel.media_type == media_type::LIVESTREAM {
         args.push(ARG_PREFETCH_PLAYLIST.to_string());
         args.push(ARG_LOOP_PLAYLIST.to_string());
+        args.push(ARG_PROBE_INFO_LIVE.to_string());
     }
     if let Some(volume) = settings.volume {
         args.push(format!("{ARG_VOLUME}{volume}"));

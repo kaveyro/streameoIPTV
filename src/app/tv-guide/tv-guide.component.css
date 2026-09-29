@@ -1,0 +1,203 @@
+:host {
+  display: block;
+  --guide-name-width: 190px;
+  --guide-header-height: 2rem;
+  --guide-row-height: 3.25rem;
+}
+
+.view-title {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.guide-group {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* Own scroll container: the channel column sticks at inline-start and the
+   time header at the top. The padding keeps focused cells out from under
+   them when scrollIntoView() brings them into view. */
+.guide-scroller {
+  position: relative;
+  overflow: auto;
+  height: calc(100vh - 8rem);
+  min-height: 280px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--bg-surface-alt);
+  scroll-padding-inline-start: var(--guide-name-width);
+  scroll-padding-block-start: var(--guide-header-height);
+}
+
+.guide-grid {
+  position: relative;
+  width: max-content;
+  min-width: 100%;
+}
+
+.guide-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  height: var(--guide-header-height);
+  background-color: var(--bg-surface-alt);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.guide-corner {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 4;
+  flex-shrink: 0;
+  width: var(--guide-name-width);
+  padding-inline: 0.75rem;
+  line-height: var(--guide-header-height);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-alt);
+  border-inline-end: 1px solid var(--border-subtle);
+}
+
+.guide-slots {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.guide-slot {
+  flex-shrink: 0;
+  padding-inline-start: 0.4rem;
+  line-height: var(--guide-header-height);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  border-inline-start: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.guide-row {
+  display: flex;
+  height: var(--guide-row-height);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.guide-channel {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  width: var(--guide-name-width);
+  padding: 0 0.75rem;
+  border: none;
+  border-inline-end: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  text-align: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.guide-channel:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.guide-timeline {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.guide-block {
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  padding: 0 0.5rem;
+  border: none;
+  border-inline-end: 2px solid var(--bg-surface-alt);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  text-align: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.guide-block:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.guide-block.is-past {
+  color: var(--text-secondary);
+}
+
+.guide-block.is-now {
+  background-color: rgba(var(--accent-rgb), 0.22);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.guide-block.is-scheduled {
+  box-shadow: inset 0 -3px 0 var(--color-danger);
+}
+
+.guide-channel:focus-visible,
+.guide-block:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--focus-ring);
+}
+
+.guide-no-epg {
+  position: sticky;
+  inset-inline-start: var(--guide-name-width);
+  display: inline-block;
+  padding-inline: 0.75rem;
+  line-height: var(--guide-row-height);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.guide-loading {
+  position: absolute;
+  inset-block: 0.3rem;
+  inset-inline: 0.3rem;
+}
+
+/* Above the programme blocks, below the sticky channel column/header. */
+.guide-now-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 2px;
+  background-color: var(--color-danger);
+  pointer-events: none;
+}
+
+.guide-sentinel {
+  height: 1px;
+}
+
+.guide-load-more {
+  display: block;
+  margin: 0.75rem auto;
+}
+
+.guide-menu-anchor {
+  position: fixed;
+  visibility: hidden;
+}
+
+.guide-menu-title {
+  max-width: 280px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

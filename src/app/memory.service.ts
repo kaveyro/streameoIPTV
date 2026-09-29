@@ -69,6 +69,13 @@ export class MemoryService {
   /// Emits after settings that only apply when mpv spawns were changed and the
   /// embedded player was torn down; the PlayerComponent re-inits on next open.
   public PlayerReset: Subject<void> = new Subject();
+  /// Parental lock: whether a PIN is set (refreshed by the home page and the
+  /// settings), and whether the PIN was entered in this session so locked
+  /// groups are listed. Every `search` sends ShowLocked as `show_locked`.
+  public HasParentalPin: boolean = false;
+  public ShowLocked: boolean = false;
+  /// Ids of the groups locked by the parental PIN.
+  public LockedGroupIds: Set<number> = new Set();
 
   async tryIPC<T>(
     successMessage: string,
@@ -100,11 +107,29 @@ export class MemoryService {
       await closed.catch(() => {});
       return;
     }
-    await invoke("player_set_visible", { visible: false }).catch(() => {});
+    // Counted, so with two dialogs open closing the top one does not bring
+    // the video back over the other.
+    if (this.playerHiddenBy++ === 0) {
+      await invoke("player_set_visible", { visible: false }).catch(() => {});
+    }
     await closed.catch(() => {});
-    if (this.PlayerVisible) {
+    if (--this.playerHiddenBy === 0 && this.PlayerVisible) {
       await invoke("player_set_visible", { visible: true }).catch(() => {});
     }
+  }
+
+  private playerHiddenBy = 0;
+
+  /** Reloads whether a parental PIN exists and which groups are locked. */
+  async refreshParental(): Promise<void> {
+    const [hasPin, locked] = await Promise.all([
+      invoke<boolean>("has_parental_pin"),
+      invoke<number[]>("get_locked_group_ids"),
+    ]);
+    this.HasParentalPin = hasPin;
+    this.LockedGroupIds = new Set(locked);
+    // Without a PIN nothing is locked any more.
+    if (!hasPin) this.ShowLocked = false;
   }
 
   async get_epg_ids() {

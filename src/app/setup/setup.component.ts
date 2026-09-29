@@ -14,6 +14,8 @@ import { ConfirmService } from "../confirm.service";
 import { LanguageService } from "../language.service";
 import { ThemeService } from "../theme.service";
 import { Settings } from "../models/settings";
+import { PLAYLIST_EXTENSIONS } from "../models/extensions";
+import { canCheckSource, sourceForCheck } from "../source-check";
 
 @Component({
   selector: "app-setup",
@@ -33,6 +35,8 @@ export class SetupComponent implements OnInit {
     private themeService: ThemeService,
   ) {}
   loading = false;
+  /// "Test connection" is running.
+  checking = false;
   /// Inline error for the URL field (e.g. an URL that cannot be parsed).
   urlError?: string;
   /// Stored settings, so the first-run language/theme pickers can persist
@@ -105,6 +109,25 @@ export class SetupComponent implements OnInit {
       await invoke("update_settings", { settings: this.settings });
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.SETTINGS_SAVE_FAILED"));
+    }
+  }
+
+  canCheck(): boolean {
+    return canCheckSource(this.source.source_type);
+  }
+
+  /** Checks that the source can be reached and logged into, without importing. */
+  async testConnection() {
+    if (this.checking || !this.canCheck()) return;
+    this.checking = true;
+    try {
+      await invoke("check_source", { source: sourceForCheck(this.source) });
+      this.toastr.success(this.translate.instant("SOURCE.CHECK_OK"));
+    } catch (e) {
+      // The backend message is already redacted and meant for the user.
+      this.toastr.error(String(e), this.translate.instant("SOURCE.CHECK_FAILED"));
+    } finally {
+      this.checking = false;
     }
   }
 
@@ -181,7 +204,10 @@ export class SetupComponent implements OnInit {
       canCreateDirectories: false,
       title: this.translate.instant("SETUP.SELECT_EXPORT_FILE"),
       filters: [
-        { name: this.translate.instant("DIALOG.FILTER_STREAMEO_EXPORT"), extensions: ["otvp"] },
+        {
+          name: this.translate.instant("DIALOG.FILTER_STREAMEO_EXPORT"),
+          extensions: PLAYLIST_EXTENSIONS,
+        },
       ],
     });
     if (file == null) {

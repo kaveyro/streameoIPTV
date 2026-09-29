@@ -4,28 +4,21 @@ import { ToastrModule } from "ngx-toastr";
 
 import { DownloadService } from "./download.service";
 import { DownloadStatus } from "./models/download";
+import { mockTauri, resetTauri } from "../testing/test-helpers";
 
 describe("DownloadService", () => {
   let service: DownloadService;
-  let tauriInternals: any;
-
   beforeEach(() => {
     // The service registers a Tauri progress listener for every queued
-    // download; outside the Tauri webview that global has to be stubbed.
-    tauriInternals = (window as any).__TAURI_INTERNALS__;
-    (window as any).__TAURI_INTERNALS__ = {
-      transformCallback: () => 1,
-      invoke: () => Promise.resolve(1),
-    };
+    // download; outside the Tauri webview the IPC bridge has to be mocked.
+    mockTauri();
     TestBed.configureTestingModule({
       imports: [TranslateModule.forRoot(), ToastrModule.forRoot()],
     });
     service = TestBed.inject(DownloadService);
   });
 
-  afterEach(() => {
-    (window as any).__TAURI_INTERNALS__ = tauriInternals;
-  });
+  afterEach(() => resetTauri());
 
   it("should be created", () => {
     expect(service).toBeTruthy();

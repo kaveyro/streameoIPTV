@@ -42,7 +42,8 @@
       "HIDDEN": "Ascunse",
       "RECORDINGS": "Înregistrări",
       "SETTINGS": "Setări",
-      "GUIDE": "Ghid TV"
+      "GUIDE": "Ghid TV",
+      "CONTINUE_WATCHING": "Continuă vizionarea"
     },
     "PILL": {
       "LIVESTREAMS": "Transmisiuni live",
@@ -67,7 +68,9 @@
     "SHARE": "Partajează",
     "RESTREAM": "Re-stream",
     "COPY_URL": "Copiază URL-ul",
-    "DELETE": "Șterge"
+    "DELETE": "Șterge",
+    "LOCK_GROUP": "Blochează grupul",
+    "UNLOCK_GROUP": "Deblochează grupul"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nu s-au găsit canale",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Nicio înregistrare programată",
     "NO_RECORDINGS_HINT": "Programează una din ghidul TV al unui canal",
     "NO_GUIDE": "Încă nu există date de ghid",
-    "NO_GUIDE_HINT": "Adaugă surse XMLTV în Setări și asigură-te că tvg-id-ul canalelor tale se potrivește cu ghidul."
+    "NO_GUIDE_HINT": "Adaugă surse XMLTV în Setări și asigură-te că tvg-id-ul canalelor tale se potrivește cu ghidul.",
+    "NOTHING_TO_CONTINUE": "Nimic de continuat încă",
+    "NOTHING_TO_CONTINUE_HINT": "Filmele și episoadele începute apar aici și continuă de unde ai rămas",
+    "NO_RECORDING_FILES": "Încă nu există fișiere înregistrate",
+    "NO_RECORDING_FILES_HINT": "Înregistrările și descărcările sunt salvate în folderul de înregistrări (Setări → Înregistrare)"
   },
   "RECORDING": {
     "SCHEDULED": "Înregistrare programată",
@@ -127,7 +134,8 @@
       "NETWORK": "Rețea",
       "SOURCES": "Surse",
       "DATA": "Date și backup",
-      "EPG": "EPG extern"
+      "EPG": "EPG extern",
+      "PARENTAL": "Control parental"
     },
     "GENERAL": {
       "LANGUAGE": "Limbă",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "Descarcă cele mai recente date de ghid. Acest lucru se întâmplă automat și conform programului de reîmprospătare automată a surselor.",
       "FREE_SOURCES": "Surse EPG gratuite",
       "FREE_SOURCES_DESC": "Adaugă un ghid XMLTV gratuit cunoscut cu un clic. Alege-le pe cele care se potrivesc cu țările canalelor tale."
+    },
+    "PARENTAL": {
+      "DESC": "Protejează grupurile cu un PIN. Grupurile blocate și canalele lor rămân ascunse până când PIN-ul este introdus cu butonul lacăt de pe pagina principală. Blochează un grup din meniul său contextual din Categorii.",
+      "SET_PIN": "Setează PIN",
+      "CHANGE_PIN": "Schimbă PIN-ul",
+      "CURRENT_PIN": "PIN actual",
+      "NEW_PIN": "PIN nou",
+      "REPEAT_PIN": "Repetă PIN-ul nou",
+      "REMOVE_PIN": "Elimină PIN-ul",
+      "REMOVE_PIN_DESC": "Introdu PIN-ul actual. Toate grupurile blocate vor fi deblocate.",
+      "REMOVE_BTN": "Elimină PIN-ul"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Adaugă sursă personalizată",
     "IMPORT_CUSTOM": "Importă sursă personalizată",
     "DELETE_ALL_DATA": "Șterge toate datele aplicației",
-    "SELECT_EXPORT_FILE": "Selectează fișierul de export streameoIPTV (.otvp)",
+    "SELECT_EXPORT_FILE": "Selectează fișierul de export streameoIPTV (.siptvp)",
     "URL": "URL",
     "XTREAM_URL_HINT": "Adresa serverului în formatul http://host:port",
     "INVALID_URL": "„{{url}}” nu este un URL valid. Verificați dacă are spații sau greșeli de scriere.",
@@ -309,8 +328,8 @@
     "RUNNING": "Rulează și este accesibilă de la următoarele IP-uri...",
     "LOCAL_IPS": "IP-uri locale:",
     "WAN_ADDRESS": "Adresă WAN:",
-    "SHARE_INFO1": "Selectează un IP și apasă butonul de partajare de mai jos pentru a genera un fișier .otv. Vei putea partaja acest fișier cu prietenii tăi, ca ei să îl importe în streameoIPTV și să vizioneze conținutul tău re-transmis.",
-    "SHARE_INFO2": "Poți importa fișiere .otv în streameoIPTV având sau creând o sursă personalizată. Asigură-te că selectezi IP-ul corect pentru contextul corect; partajarea unui fișier .otv cu unul dintre IP-urile tale locale nu va funcționa pentru cineva din afara rețelei tale LAN.",
+    "SHARE_INFO1": "Selectează un IP și apasă butonul de partajare de mai jos pentru a genera un fișier .siptv. Vei putea partaja acest fișier cu prietenii tăi, ca ei să îl importe în streameoIPTV și să vizioneze conținutul tău re-transmis.",
+    "SHARE_INFO2": "Poți importa fișiere .siptv în streameoIPTV având sau creând o sursă personalizată. Asigură-te că selectezi IP-ul corect pentru contextul corect; partajarea unui fișier .siptv cu unul dintre IP-urile tale locale nu va funcționa pentru cineva din afara rețelei tale LAN.",
     "SELECT_IP": "Selectează IP-ul de partajat",
     "START": "Start",
     "WATCH": "Vizionează",
@@ -439,7 +458,11 @@
     "ENABLED": "Activată",
     "MORE_ACTIONS": "Mai multe acțiuni",
     "SHOW_USERNAME": "Afișează numele de utilizator",
-    "HIDE_USERNAME": "Ascunde numele de utilizator"
+    "HIDE_USERNAME": "Ascunde numele de utilizator",
+    "CHECK": "Testează conexiunea",
+    "CHECKING": "Se testează…",
+    "CHECK_OK": "Conexiune reușită",
+    "CHECK_FAILED": "Conexiune eșuată"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selectează unde se salvează înregistrarea",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up disponibil",
-    "IS_FAVORITE": "La favorite"
+    "IS_FAVORITE": "La favorite",
+    "RESUME": "Reia",
+    "LOCKED_GROUP": "Grup blocat"
   },
   "LOADING": {
     "CHANNELS": "Se încarcă canalele..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Ștergeți canalul?",
     "DELETE_CHANNEL_BODY": "Canalul „{{name}}” va fi șters definitiv.",
     "DELETE_CATEGORY_TITLE": "Ștergeți categoria?",
-    "DELETE_CATEGORY_BODY": "Categoria „{{name}}” va fi ștearsă definitiv."
+    "DELETE_CATEGORY_BODY": "Categoria „{{name}}” va fi ștearsă definitiv.",
+    "CANCEL_RECORDING_TITLE": "Anulezi înregistrarea?",
+    "CANCEL_RECORDING_BODY": "Înregistrarea programată „{{title}}” va fi anulată.",
+    "STOP_RECORDING_BODY": "Înregistrarea „{{title}}” este în curs și va fi oprită. Partea înregistrată până acum rămâne în folderul de înregistrări.",
+    "DELETE_RECORDING_TITLE": "Ștergi înregistrarea?",
+    "DELETE_RECORDING_BODY": "Fișierul „{{name}}” va fi șters din folderul de înregistrări. Acțiunea nu poate fi anulată.",
+    "REMOVE_PIN_TITLE": "Elimini PIN-ul parental?",
+    "REMOVE_PIN_BODY": "Toate grupurile blocate vor fi deblocate și afișate tuturor."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Înapoi la canale",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Progresul emisiunii",
     "FILTER_PLACEHOLDER": "Filtrați canalele...",
     "FILTER_CHANNELS": "Filtrați lista de canale"
+  },
+  "GUIDE": {
+    "CHANNEL": "Canal",
+    "NO_EPG": "Fără EPG",
+    "NO_CATCHUP": "Acest program nu este disponibil în arhivă",
+    "PLAY_CHANNEL": "Redă {{name}}"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "Introdu PIN-ul",
+    "PIN": "PIN",
+    "PIN_FORMAT": "Între 4 și 8 cifre",
+    "PIN_MISMATCH": "PIN-urile nu se potrivesc",
+    "PIN_SET": "PIN-ul parental a fost setat",
+    "PIN_CHANGED": "PIN-ul parental a fost schimbat",
+    "PIN_REMOVED": "PIN-ul parental a fost eliminat, toate grupurile sunt deblocate",
+    "SET_PIN_FIRST": "Setează mai întâi un PIN parental (Setări → Control parental)",
+    "SHOW_LOCKED": "Afișează grupurile blocate",
+    "HIDE_LOCKED": "Ascunde grupurile blocate",
+    "UNLOCK_HINT": "Introdu PIN-ul parental pentru a afișa grupurile blocate în această sesiune.",
+    "WRONG_PIN": "PIN greșit",
+    "LOCK_GROUP_TITLE": "Blochează „{{name}}”",
+    "UNLOCK_GROUP_TITLE": "Deblochează „{{name}}”",
+    "GROUP_LOCKED": "„{{name}}” a fost blocat",
+    "GROUP_UNLOCKED": "„{{name}}” a fost deblocat"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Anulează înregistrarea",
+    "CLEAR_FINISHED": "Șterge cele finalizate",
+    "CLEARED": "Intrările finalizate au fost eliminate",
+    "CLEAR_FAILED": "Nu s-au putut șterge înregistrările finalizate",
+    "FILES": "Fișiere înregistrate",
+    "FILES_LOAD_FAILED": "Nu s-au putut încărca fișierele înregistrate",
+    "FILE_DELETED": "„{{name}}” a fost șters",
+    "FILE_DELETE_FAILED": "Nu s-a putut șterge înregistrarea",
+    "FOLDER": "Folder:",
+    "COPY_PATH": "Copiază calea folderului",
+    "PATH_COPIED": "Calea folderului a fost copiată",
+    "PLAY": "Redă",
+    "PLAY_ARIA": "Redă {{name}}",
+    "UNKNOWN_CHANNEL": "Canal necunoscut",
+    "OPEN_FOLDER": "Deschide folderul"
   }
 }

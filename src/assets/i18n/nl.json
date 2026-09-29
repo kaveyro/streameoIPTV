@@ -42,7 +42,8 @@
       "HIDDEN": "Verborgen",
       "RECORDINGS": "Opnames",
       "SETTINGS": "Instellingen",
-      "GUIDE": "TV-gids"
+      "GUIDE": "TV-gids",
+      "CONTINUE_WATCHING": "Verder kijken"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -67,7 +68,9 @@
     "SHARE": "Delen",
     "RESTREAM": "Re-stream",
     "COPY_URL": "URL kopiëren",
-    "DELETE": "Verwijderen"
+    "DELETE": "Verwijderen",
+    "LOCK_GROUP": "Groep vergrendelen",
+    "UNLOCK_GROUP": "Groep ontgrendelen"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Geen kanalen gevonden",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Geen geplande opnames",
     "NO_RECORDINGS_HINT": "Plan er een via de tv-gids van een kanaal",
     "NO_GUIDE": "Nog geen gidsgegevens",
-    "NO_GUIDE_HINT": "Voeg XMLTV-bronnen toe in Instellingen en zorg dat de tvg-id van je kanalen overeenkomt met de gids."
+    "NO_GUIDE_HINT": "Voeg XMLTV-bronnen toe in Instellingen en zorg dat de tvg-id van je kanalen overeenkomt met de gids.",
+    "NOTHING_TO_CONTINUE": "Nog niets om verder te kijken",
+    "NOTHING_TO_CONTINUE_HINT": "Films en afleveringen die je hebt gestart verschijnen hier en gaan verder waar je was gebleven",
+    "NO_RECORDING_FILES": "Nog geen opgenomen bestanden",
+    "NO_RECORDING_FILES_HINT": "Opnames en downloads worden opgeslagen in de opnamemap (Instellingen → Opname)"
   },
   "RECORDING": {
     "SCHEDULED": "Geplande opname",
@@ -127,7 +134,8 @@
       "NETWORK": "Netwerk",
       "SOURCES": "Bronnen",
       "DATA": "Gegevens en back-up",
-      "EPG": "Externe EPG"
+      "EPG": "Externe EPG",
+      "PARENTAL": "Ouderlijk toezicht"
     },
     "GENERAL": {
       "LANGUAGE": "Taal",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "De nieuwste gidsgegevens downloaden. Dit gebeurt ook automatisch volgens je schema voor automatisch vernieuwen van bronnen.",
       "FREE_SOURCES": "Gratis EPG-bronnen",
       "FREE_SOURCES_DESC": "Voeg met één klik een bekende gratis XMLTV-gids toe. Kies degene die bij de landen van je kanalen passen."
+    },
+    "PARENTAL": {
+      "DESC": "Beveilig groepen met een pincode. Vergrendelde groepen en hun kanalen blijven verborgen tot de pincode is ingevoerd via de slotknop op de startpagina. Vergrendel een groep via het contextmenu in Categorieën.",
+      "SET_PIN": "Pincode instellen",
+      "CHANGE_PIN": "Pincode wijzigen",
+      "CURRENT_PIN": "Huidige pincode",
+      "NEW_PIN": "Nieuwe pincode",
+      "REPEAT_PIN": "Herhaal de nieuwe pincode",
+      "REMOVE_PIN": "Pincode verwijderen",
+      "REMOVE_PIN_DESC": "Voer de huidige pincode in. Alle vergrendelde groepen worden ontgrendeld.",
+      "REMOVE_BTN": "Pincode verwijderen"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Aangepaste bron toevoegen",
     "IMPORT_CUSTOM": "Aangepaste bron importeren",
     "DELETE_ALL_DATA": "Alle app-gegevens verwijderen",
-    "SELECT_EXPORT_FILE": "Selecteer het streameoIPTV-exportbestand (.otvp)",
+    "SELECT_EXPORT_FILE": "Selecteer het streameoIPTV-exportbestand (.siptvp)",
     "URL": "URL",
     "XTREAM_URL_HINT": "Serveradres in de vorm http://host:port",
     "INVALID_URL": "\"{{url}}\" is geen geldige URL. Controleer op spaties of typfouten.",
@@ -309,8 +328,8 @@
     "RUNNING": "Actief en bereikbaar via de volgende ip's...",
     "LOCAL_IPS": "Lokale ip's:",
     "WAN_ADDRESS": "WAN-adres:",
-    "SHARE_INFO1": "Selecteer een IP en druk op de deelknop hieronder om een .otv-bestand te genereren. Je kunt dit bestand met je vrienden delen zodat zij het in streameoIPTV kunnen importeren en je opnieuw gestreamde inhoud kunnen bekijken.",
-    "SHARE_INFO2": "Je kunt .otv-bestanden in streameoIPTV importeren door een aangepaste bron te hebben of te maken. Zorg ervoor dat je de juiste IP voor de juiste context selecteert; het delen van een .otv-bestand met een van je lokale IP's werkt niet voor iemand buiten je LAN.",
+    "SHARE_INFO1": "Selecteer een IP en druk op de deelknop hieronder om een .siptv-bestand te genereren. Je kunt dit bestand met je vrienden delen zodat zij het in streameoIPTV kunnen importeren en je opnieuw gestreamde inhoud kunnen bekijken.",
+    "SHARE_INFO2": "Je kunt .siptv-bestanden in streameoIPTV importeren door een aangepaste bron te hebben of te maken. Zorg ervoor dat je de juiste IP voor de juiste context selecteert; het delen van een .siptv-bestand met een van je lokale IP's werkt niet voor iemand buiten je LAN.",
     "SELECT_IP": "Selecteer IP om te delen",
     "START": "Starten",
     "WATCH": "Bekijken",
@@ -439,7 +458,11 @@
     "ENABLED": "Ingeschakeld",
     "MORE_ACTIONS": "Meer acties",
     "SHOW_USERNAME": "Gebruikersnaam tonen",
-    "HIDE_USERNAME": "Gebruikersnaam verbergen"
+    "HIDE_USERNAME": "Gebruikersnaam verbergen",
+    "CHECK": "Verbinding testen",
+    "CHECKING": "Bezig met testen…",
+    "CHECK_OK": "Verbinding geslaagd",
+    "CHECK_FAILED": "Verbinding mislukt"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecteer waar de opname wordt opgeslagen",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Terugkijken beschikbaar",
-    "IS_FAVORITE": "In favorieten"
+    "IS_FAVORITE": "In favorieten",
+    "RESUME": "Hervatten",
+    "LOCKED_GROUP": "Vergrendelde groep"
   },
   "LOADING": {
     "CHANNELS": "Je kanalen worden geladen..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Kanaal verwijderen?",
     "DELETE_CHANNEL_BODY": "Het kanaal \"{{name}}\" wordt definitief verwijderd.",
     "DELETE_CATEGORY_TITLE": "Categorie verwijderen?",
-    "DELETE_CATEGORY_BODY": "De categorie \"{{name}}\" wordt definitief verwijderd."
+    "DELETE_CATEGORY_BODY": "De categorie \"{{name}}\" wordt definitief verwijderd.",
+    "CANCEL_RECORDING_TITLE": "Opname annuleren?",
+    "CANCEL_RECORDING_BODY": "De geplande opname \"{{title}}\" wordt geannuleerd.",
+    "STOP_RECORDING_BODY": "De opname \"{{title}}\" loopt en wordt gestopt. Het tot nu toe opgenomen deel blijft in de opnamemap.",
+    "DELETE_RECORDING_TITLE": "Opname verwijderen?",
+    "DELETE_RECORDING_BODY": "Het bestand \"{{name}}\" wordt uit de opnamemap verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "REMOVE_PIN_TITLE": "Ouderlijke pincode verwijderen?",
+    "REMOVE_PIN_BODY": "Alle vergrendelde groepen worden ontgrendeld en voor iedereen getoond."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Terug naar kanalen",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Voortgang van het programma",
     "FILTER_PLACEHOLDER": "Kanalen filteren...",
     "FILTER_CHANNELS": "Kanaallijst filteren"
+  },
+  "GUIDE": {
+    "CHANNEL": "Kanaal",
+    "NO_EPG": "Geen EPG",
+    "NO_CATCHUP": "Dit programma is niet beschikbaar in het archief",
+    "PLAY_CHANNEL": "{{name}} afspelen"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "Voer de pincode in",
+    "PIN": "Pincode",
+    "PIN_FORMAT": "4 tot 8 cijfers",
+    "PIN_MISMATCH": "De pincodes komen niet overeen",
+    "PIN_SET": "Ouderlijke pincode ingesteld",
+    "PIN_CHANGED": "Ouderlijke pincode gewijzigd",
+    "PIN_REMOVED": "Ouderlijke pincode verwijderd, alle groepen zijn ontgrendeld",
+    "SET_PIN_FIRST": "Stel eerst een ouderlijke pincode in (Instellingen → Ouderlijk toezicht)",
+    "SHOW_LOCKED": "Vergrendelde groepen tonen",
+    "HIDE_LOCKED": "Vergrendelde groepen verbergen",
+    "UNLOCK_HINT": "Voer de ouderlijke pincode in om de vergrendelde groepen voor deze sessie te tonen.",
+    "WRONG_PIN": "Onjuiste pincode",
+    "LOCK_GROUP_TITLE": "\"{{name}}\" vergrendelen",
+    "UNLOCK_GROUP_TITLE": "\"{{name}}\" ontgrendelen",
+    "GROUP_LOCKED": "\"{{name}}\" vergrendeld",
+    "GROUP_UNLOCKED": "\"{{name}}\" ontgrendeld"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Opname annuleren",
+    "CLEAR_FINISHED": "Voltooide wissen",
+    "CLEARED": "Voltooide items verwijderd",
+    "CLEAR_FAILED": "Kan voltooide opnames niet wissen",
+    "FILES": "Opgenomen bestanden",
+    "FILES_LOAD_FAILED": "Kan opgenomen bestanden niet laden",
+    "FILE_DELETED": "\"{{name}}\" verwijderd",
+    "FILE_DELETE_FAILED": "Kan de opname niet verwijderen",
+    "FOLDER": "Map:",
+    "COPY_PATH": "Mappad kopiëren",
+    "PATH_COPIED": "Mappad gekopieerd",
+    "PLAY": "Afspelen",
+    "PLAY_ARIA": "{{name}} afspelen",
+    "UNKNOWN_CHANNEL": "Onbekend kanaal",
+    "OPEN_FOLDER": "Map openen"
   }
 }

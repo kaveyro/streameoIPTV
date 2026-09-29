@@ -78,8 +78,12 @@ export class SettingsComponent {
     { id: "network", label: "SETTINGS.NAV.NETWORK" },
     { id: "sources", label: "SETTINGS.NAV.SOURCES" },
     { id: "epg", label: "SETTINGS.NAV.EPG" },
+    { id: "parental", label: "SETTINGS.NAV.PARENTAL" },
     { id: "data", label: "SETTINGS.NAV.DATA" },
   ];
+  /// Parental lock form (set/change and remove the PIN).
+  pinForm = { current: "", next: "", repeat: "", remove: "" };
+  pinBusy = false;
   xmltvSourcesText = "";
   /// Version of the running app, shown next to the update controls.
   appVersion = "";
@@ -132,6 +136,7 @@ export class SettingsComponent {
 
   setCategory(id: string) {
     this.activeCategory = id;
+    if (id == "parental") this.refreshParental();
     if (id == "sources" && !this.expiriesLoaded) {
       this.expiriesLoaded = true;
       this.getExpiries();
@@ -149,6 +154,14 @@ export class SettingsComponent {
 
   @HostListener("document:keydown", ["$event"])
   onKeyDown(event: KeyboardEvent) {
+    // A mat-menu (e.g. a source's "more actions") handles Escape itself; its
+    // keydown still bubbles here and must not also leave the settings.
+    if (
+      event.defaultPrevented ||
+      document.querySelector(".cdk-overlay-container .mat-mdc-menu-panel")
+    ) {
+      return;
+    }
     if (
       event.key == "Escape" ||
       event.key == "BrowserBack" ||
@@ -181,6 +194,7 @@ export class SettingsComponent {
     this.getSettings();
     this.getSources();
     this.getXmltvSources();
+    this.refreshParental();
     getVersion()
       .then((version) => (this.appVersion = version))
       .catch(() => (this.appVersion = "?"));
@@ -287,8 +301,11 @@ export class SettingsComponent {
   }
 
   /// Applies the UI zoom right away, the save itself is debounced.
+  /// Applied on `change` (blur, Enter, spinner), not per keystroke: typing
+  /// "120" would otherwise shrink the whole UI to 12% on the way.
   onZoomChange(zoom: number | null) {
-    if (zoom == null || !Number.isFinite(zoom) || zoom < 10 || zoom > 1000) return;
+    if (zoom == null || !Number.isFinite(zoom)) return;
+    zoom = Math.min(300, Math.max(50, Math.round(zoom)));
     this.settings.zoom = zoom;
     getCurrentWebview()
       .setZoom(Math.trunc(zoom * 100) / 10000)
@@ -434,6 +451,67 @@ export class SettingsComponent {
     this.playerSnapshot = snapshot;
     this.memory.PlayerReset.next();
     invoke("player_destroy").catch(() => {});
+  }
+
+  private refreshParental() {
+    this.memory.refreshParental().catch((e) => console.error(e));
+  }
+
+  pinValid(pin: string): boolean {
+    return /^\d{4,8}$/.test(pin);
+  }
+
+  /** Sets the first PIN or changes the existing one. */
+  async savePin() {
+    const { current, next, repeat } = this.pinForm;
+    if (this.pinBusy) return;
+    if (!this.pinValid(next)) {
+      this.toastr.error(this.translate.instant("PARENTAL.PIN_FORMAT"));
+      return;
+    }
+    if (next !== repeat) {
+      this.toastr.error(this.translate.instant("PARENTAL.PIN_MISMATCH"));
+      return;
+    }
+    const changing = this.memory.HasParentalPin;
+    this.pinBusy = true;
+    try {
+      await invoke("set_parental_pin", { currentPin: changing ? current : null, newPin: next });
+      this.toastr.success(
+        this.translate.instant(changing ? "PARENTAL.PIN_CHANGED" : "PARENTAL.PIN_SET"),
+      );
+      this.pinForm = { current: "", next: "", repeat: "", remove: "" };
+    } catch (e) {
+      // "Wrong PIN", "The PIN must be 4 to 8 digits": meant for the user.
+      this.toastr.error(String(e));
+    } finally {
+      this.pinBusy = false;
+    }
+    this.refreshParental();
+  }
+
+  /** Removes the PIN, which also unlocks every locked group. */
+  async removePin() {
+    const current = this.pinForm.remove;
+    if (this.pinBusy || !current) return;
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.REMOVE_PIN_TITLE",
+      messages: ["CONFIRM.REMOVE_PIN_BODY"],
+      confirmLabel: "SETTINGS.PARENTAL.REMOVE_BTN",
+    });
+    if (!confirmed) return;
+    this.pinBusy = true;
+    try {
+      await invoke("set_parental_pin", { currentPin: current, newPin: null });
+      this.memory.ShowLocked = false;
+      this.toastr.success(this.translate.instant("PARENTAL.PIN_REMOVED"));
+      this.pinForm = { current: "", next: "", repeat: "", remove: "" };
+    } catch (e) {
+      this.toastr.error(String(e));
+    } finally {
+      this.pinBusy = false;
+    }
+    this.refreshParental();
   }
 
   async selectFolder() {

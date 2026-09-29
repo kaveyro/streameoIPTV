@@ -142,6 +142,22 @@
   color: var(--color-favorite);
 }
 
+.lock-icon {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  color: var(--text-secondary);
+}
+
+.resume-badge {
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* List format: one full-width row; names may wrap onto two lines. */
 .channel-list {
   height: auto;

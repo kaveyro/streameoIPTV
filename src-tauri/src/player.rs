@@ -21,7 +21,7 @@ use crate::types::{AppState, Channel, ChannelHttpHeaders, Settings, Source};
 use anyhow::{Context, Result};
 use serde_json::{Value, json};
 use std::sync::LazyLock;
-use std::sync::atomic::{AtomicIsize, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
 use tauri::{AppHandle, State};
 use tokio::sync::Mutex;
 
@@ -58,6 +58,14 @@ static PLAYER_HWND: AtomicIsize = AtomicIsize::new(0);
 /// Process id of the embedded mpv, for the synchronous exit path. 0 means "no
 /// player process".
 static PLAYER_MPV_PID: AtomicU32 = AtomicU32::new(0);
+
+/// Whether the file currently loaded is a movie or episode. mpv only writes
+/// its resume position when it quits, which the embedded player never does
+/// (switching is `stop` + `loadfile`, closing kills it), so the position is
+/// saved explicitly whenever such a file is left.
+static PLAYING_VOD: AtomicBool = AtomicBool::new(false);
+
+const SAVE_POSITION: &str = "write-watch-later-config";
 
 /// Serializes `init`: its liveness check and the state update are separate
 /// lock scopes, so two overlapping calls (a double-click on a channel) would
@@ -204,7 +212,12 @@ pub async fn play(
         .and_then(|id| crate::sql::get_source_from_id(id).ok());
     let headers = crate::sql::get_channel_headers_by_id(channel.id.context("no channel id")?)?;
     let settings = crate::settings::get_settings()?;
-    for cmd in build_play_commands(&channel, &source, headers, &settings)? {
+    let commands = build_play_commands(&channel, &source, headers, &settings)?;
+    let is_vod = channel.media_type != crate::media_type::LIVESTREAM;
+    if PLAYING_VOD.swap(is_vod, Ordering::SeqCst) {
+        let _ = tx.send(json!({ "command": [SAVE_POSITION] }));
+    }
+    for cmd in commands {
         let _ = tx.send(cmd);
     }
     Ok(())
@@ -237,6 +250,9 @@ pub async fn show_message(state: State<'_, Mutex<AppState>>, message: String) ->
 /// Unloads the current file but keeps mpv alive and idle.
 pub async fn stop(state: State<'_, Mutex<AppState>>) -> Result<()> {
     if let Some(tx) = state.lock().await.player_ipc_tx.clone() {
+        if PLAYING_VOD.swap(false, Ordering::SeqCst) {
+            let _ = tx.send(json!({ "command": [SAVE_POSITION] }));
+        }
         let _ = tx.send(json!({ "command": ["stop"] }));
     }
     Ok(())
@@ -329,6 +345,14 @@ pub fn kill_sync() {
 
 /// Tears down the player: kills mpv and destroys the native window.
 pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<()> {
+    if PLAYING_VOD.swap(false, Ordering::SeqCst) {
+        let tx = state.lock().await.player_ipc_tx.clone();
+        if let Some(tx) = tx {
+            let _ = tx.send(json!({ "command": [SAVE_POSITION] }));
+            // Give mpv a moment to write the file before it is killed.
+            tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        }
+    }
     let (child, mpv) = {
         let mut s = state.lock().await;
         s.player_ipc_tx = None; // dropping the sender ends the IPC task

@@ -1,0 +1,150 @@
+<div class="recordings">
+  <h2 class="view-title">{{ "HOME.NAV.RECORDINGS" | translate }}</h2>
+
+  <!-- Scheduled recordings -->
+  <section class="rec-section" aria-labelledby="rec-schedule-title">
+    <div class="section-head">
+      <h3 id="rec-schedule-title" class="section-title">
+        {{ "HOME.SCHEDULED_RECORDINGS" | translate }}
+      </h3>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        *ngIf="hasFinished()"
+        [disabled]="clearing"
+        (click)="clearFinished()"
+      >
+        {{ "RECORDINGS.CLEAR_FINISHED" | translate }}
+      </button>
+    </div>
+    <span class="visually-hidden" aria-live="polite" role="status">
+      <ng-container *ngIf="scheduleLoaded">{{
+        "HOME.RECORDINGS_SHOWN" | translate: { count: schedule.length }
+      }}</ng-container>
+    </span>
+
+    <div *ngIf="!scheduleLoaded" class="skeleton skeleton-row" aria-hidden="true"></div>
+    <div *ngIf="scheduleLoaded && schedule.length === 0" class="empty-state">
+      <p class="mb-1">{{ "EMPTY.NO_RECORDINGS" | translate }}</p>
+      <small>{{ "EMPTY.NO_RECORDINGS_HINT" | translate }}</small>
+    </div>
+    <ul class="rec-list" *ngIf="schedule.length > 0">
+      <li class="recording-row" *ngFor="let recording of schedule; trackBy: trackRecording">
+        <div class="recording-info">
+          <div class="recording-title">{{ recordingTitle(recording) }}</div>
+          <div class="recording-time">
+            <span *ngIf="recording.title && recording.channel_name"
+              >{{ recording.channel_name }} ·
+            </span>
+            {{ formatRange(recording) }}
+          </div>
+        </div>
+        <span class="recording-status status-{{ recording.status }}">
+          <span
+            *ngIf="recording.status === statusEnum.Recording"
+            class="rec-dot"
+            aria-hidden="true"
+          ></span>
+          {{ statusKey(recording.status) | translate }}
+        </span>
+        <button
+          *ngIf="canCancel(recording)"
+          type="button"
+          class="icon-btn row-action row-action--danger"
+          [disabled]="busy.has('s' + recording.id)"
+          (click)="cancel(recording)"
+          [attr.aria-label]="
+            'HOME.CANCEL_RECORDING_ARIA' | translate: { title: recordingTitle(recording) }
+          "
+          [ngbTooltip]="'RECORDINGS.CANCEL' | translate"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Recorded files -->
+  <section class="rec-section" aria-labelledby="rec-files-title">
+    <div class="section-head">
+      <h3 id="rec-files-title" class="section-title">{{ "RECORDINGS.FILES" | translate }}</h3>
+    </div>
+    <div class="folder-row" *ngIf="folder">
+      <span class="folder-label">{{ "RECORDINGS.FOLDER" | translate }}</span>
+      <span class="folder-path selectable" [title]="folder">{{ folder }}</span>
+      <button
+        type="button"
+        class="icon-btn row-action"
+        (click)="openFolder()"
+        [attr.aria-label]="'RECORDINGS.OPEN_FOLDER' | translate"
+        [ngbTooltip]="'RECORDINGS.OPEN_FOLDER' | translate"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="icon-btn row-action"
+        (click)="copyFolder()"
+        [attr.aria-label]="'RECORDINGS.COPY_PATH' | translate"
+        [ngbTooltip]="'RECORDINGS.COPY_PATH' | translate"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <div *ngIf="!filesLoaded" class="skeleton skeleton-row" aria-hidden="true"></div>
+    <div *ngIf="filesLoaded && files.length === 0" class="empty-state">
+      <p class="mb-1">{{ "EMPTY.NO_RECORDING_FILES" | translate }}</p>
+      <small>{{ "EMPTY.NO_RECORDING_FILES_HINT" | translate }}</small>
+    </div>
+    <ul class="rec-list" *ngIf="files.length > 0">
+      <li class="recording-row" *ngFor="let file of files; trackBy: trackFile">
+        <button
+          type="button"
+          class="icon-btn row-action"
+          (click)="play(file)"
+          [attr.aria-label]="'RECORDINGS.PLAY_ARIA' | translate: { name: file.name }"
+          [ngbTooltip]="'RECORDINGS.PLAY' | translate"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M10,16.5V7.5L16,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+            />
+          </svg>
+        </button>
+        <div class="recording-info">
+          <div class="recording-title" [title]="file.name">{{ file.name }}</div>
+          <div class="recording-time">
+            {{ formatSize(file.size) }} · {{ formatDate(file.modified) }}
+          </div>
+        </div>
+        <button
+          type="button"
+          class="icon-btn row-action row-action--danger"
+          [disabled]="busy.has('f' + file.path)"
+          (click)="deleteFile(file)"
+          [attr.aria-label]="'HOME.DELETE_RECORDING_ARIA' | translate: { title: file.name }"
+          [ngbTooltip]="'MODAL.DELETE' | translate"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </section>
+</div>

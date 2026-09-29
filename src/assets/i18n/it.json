@@ -42,7 +42,8 @@
       "HIDDEN": "Nascosti",
       "RECORDINGS": "Registrazioni",
       "SETTINGS": "Impostazioni",
-      "GUIDE": "Guida TV"
+      "GUIDE": "Guida TV",
+      "CONTINUE_WATCHING": "Continua a guardare"
     },
     "PILL": {
       "LIVESTREAMS": "Livestream",
@@ -67,7 +68,9 @@
     "SHARE": "Condividi",
     "RESTREAM": "Re-stream",
     "COPY_URL": "Copia URL",
-    "DELETE": "Elimina"
+    "DELETE": "Elimina",
+    "LOCK_GROUP": "Blocca gruppo",
+    "UNLOCK_GROUP": "Sblocca gruppo"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nessun canale trovato",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Nessuna registrazione programmata",
     "NO_RECORDINGS_HINT": "Programmane una dalla guida TV di un canale",
     "NO_GUIDE": "Ancora nessun dato della guida",
-    "NO_GUIDE_HINT": "Aggiungi fonti XMLTV nelle Impostazioni e assicurati che il tvg-id dei tuoi canali corrisponda alla guida."
+    "NO_GUIDE_HINT": "Aggiungi fonti XMLTV nelle Impostazioni e assicurati che il tvg-id dei tuoi canali corrisponda alla guida.",
+    "NOTHING_TO_CONTINUE": "Ancora niente da continuare",
+    "NOTHING_TO_CONTINUE_HINT": "I film e gli episodi iniziati compaiono qui e riprendono da dove li avevi lasciati",
+    "NO_RECORDING_FILES": "Ancora nessun file registrato",
+    "NO_RECORDING_FILES_HINT": "Registrazioni e download vengono salvati nella cartella di registrazione (Impostazioni → Registrazione)"
   },
   "RECORDING": {
     "SCHEDULED": "Registrazione programmata",
@@ -127,7 +134,8 @@
       "NETWORK": "Rete",
       "SOURCES": "Sorgenti",
       "DATA": "Dati e backup",
-      "EPG": "EPG esterna"
+      "EPG": "EPG esterna",
+      "PARENTAL": "Blocco parentale"
     },
     "GENERAL": {
       "LANGUAGE": "Lingua",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "Scarica i dati della guida più recenti. Questo avviene anche automaticamente in base alla pianificazione di aggiornamento automatico delle fonti.",
       "FREE_SOURCES": "Fonti EPG gratuite",
       "FREE_SOURCES_DESC": "Aggiungi una guida XMLTV gratuita nota con un clic. Scegli quelle che corrispondono ai paesi dei tuoi canali."
+    },
+    "PARENTAL": {
+      "DESC": "Proteggi i gruppi con un PIN. I gruppi bloccati e i loro canali restano nascosti finché il PIN non viene inserito con il pulsante del lucchetto nella pagina iniziale. Blocca un gruppo dal suo menu contestuale in Categorie.",
+      "SET_PIN": "Imposta PIN",
+      "CHANGE_PIN": "Cambia PIN",
+      "CURRENT_PIN": "PIN attuale",
+      "NEW_PIN": "Nuovo PIN",
+      "REPEAT_PIN": "Ripeti il nuovo PIN",
+      "REMOVE_PIN": "Rimuovi PIN",
+      "REMOVE_PIN_DESC": "Inserisci il PIN attuale. Tutti i gruppi bloccati vengono sbloccati.",
+      "REMOVE_BTN": "Rimuovi PIN"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Aggiungi sorgente personalizzata",
     "IMPORT_CUSTOM": "Importa sorgente personalizzata",
     "DELETE_ALL_DATA": "Elimina tutti i dati dell'app",
-    "SELECT_EXPORT_FILE": "Seleziona il file di esportazione di streameoIPTV (.otvp)",
+    "SELECT_EXPORT_FILE": "Seleziona il file di esportazione di streameoIPTV (.siptvp)",
     "URL": "URL",
     "XTREAM_URL_HINT": "Indirizzo del server nel formato http://host:port",
     "INVALID_URL": "\"{{url}}\" non è un URL valido. Controlla che non contenga spazi o errori di battitura.",
@@ -309,8 +328,8 @@
     "RUNNING": "In esecuzione e accessibile dai seguenti IP...",
     "LOCAL_IPS": "IP locali:",
     "WAN_ADDRESS": "Indirizzo WAN:",
-    "SHARE_INFO1": "Seleziona un IP e premi il pulsante di condivisione qui sotto per generare un file .otv. Potrai condividere questo file con i tuoi amici in modo che possano importarlo in streameoIPTV e guardare i tuoi contenuti ridistribuiti.",
-    "SHARE_INFO2": "Puoi importare i file .otv in streameoIPTV avendo o creando una sorgente personalizzata. Assicurati di selezionare l'IP corretto per il contesto giusto; condividere un file .otv con uno dei tuoi IP locali non funzionerà per qualcuno al di fuori della tua LAN.",
+    "SHARE_INFO1": "Seleziona un IP e premi il pulsante di condivisione qui sotto per generare un file .siptv. Potrai condividere questo file con i tuoi amici in modo che possano importarlo in streameoIPTV e guardare i tuoi contenuti ridistribuiti.",
+    "SHARE_INFO2": "Puoi importare i file .siptv in streameoIPTV avendo o creando una sorgente personalizzata. Assicurati di selezionare l'IP corretto per il contesto giusto; condividere un file .siptv con uno dei tuoi IP locali non funzionerà per qualcuno al di fuori della tua LAN.",
     "SELECT_IP": "Seleziona l'IP da condividere",
     "START": "Avvia",
     "WATCH": "Guarda",
@@ -439,7 +458,11 @@
     "ENABLED": "Attiva",
     "MORE_ACTIONS": "Altre azioni",
     "SHOW_USERNAME": "Mostra nome utente",
-    "HIDE_USERNAME": "Nascondi nome utente"
+    "HIDE_USERNAME": "Nascondi nome utente",
+    "CHECK": "Verifica connessione",
+    "CHECKING": "Verifica in corso…",
+    "CHECK_OK": "Connessione riuscita",
+    "CHECK_FAILED": "Connessione non riuscita"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Seleziona dove salvare la registrazione",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up disponibile",
-    "IS_FAVORITE": "Nei preferiti"
+    "IS_FAVORITE": "Nei preferiti",
+    "RESUME": "Riprendi",
+    "LOCKED_GROUP": "Gruppo bloccato"
   },
   "LOADING": {
     "CHANNELS": "Caricamento dei tuoi canali..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Eliminare il canale?",
     "DELETE_CHANNEL_BODY": "Il canale \"{{name}}\" verrà eliminato definitivamente.",
     "DELETE_CATEGORY_TITLE": "Eliminare la categoria?",
-    "DELETE_CATEGORY_BODY": "La categoria \"{{name}}\" verrà eliminata definitivamente."
+    "DELETE_CATEGORY_BODY": "La categoria \"{{name}}\" verrà eliminata definitivamente.",
+    "CANCEL_RECORDING_TITLE": "Annullare la registrazione?",
+    "CANCEL_RECORDING_BODY": "La registrazione programmata \"{{title}}\" verrà annullata.",
+    "STOP_RECORDING_BODY": "La registrazione \"{{title}}\" è in corso e verrà interrotta. La parte già registrata resta nella cartella di registrazione.",
+    "DELETE_RECORDING_TITLE": "Eliminare la registrazione?",
+    "DELETE_RECORDING_BODY": "Il file \"{{name}}\" verrà eliminato dalla cartella di registrazione. L'operazione non può essere annullata.",
+    "REMOVE_PIN_TITLE": "Rimuovere il PIN parentale?",
+    "REMOVE_PIN_BODY": "Tutti i gruppi bloccati verranno sbloccati e mostrati a tutti."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Torna ai canali",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Avanzamento del programma",
     "FILTER_PLACEHOLDER": "Filtra canali...",
     "FILTER_CHANNELS": "Filtra l'elenco dei canali"
+  },
+  "GUIDE": {
+    "CHANNEL": "Canale",
+    "NO_EPG": "Nessuna EPG",
+    "NO_CATCHUP": "Questo programma non è disponibile nell'archivio",
+    "PLAY_CHANNEL": "Riproduci {{name}}"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "Inserisci il PIN",
+    "PIN": "PIN",
+    "PIN_FORMAT": "Da 4 a 8 cifre",
+    "PIN_MISMATCH": "I PIN non corrispondono",
+    "PIN_SET": "PIN parentale impostato",
+    "PIN_CHANGED": "PIN parentale modificato",
+    "PIN_REMOVED": "PIN parentale rimosso, tutti i gruppi sono sbloccati",
+    "SET_PIN_FIRST": "Imposta prima un PIN parentale (Impostazioni → Blocco parentale)",
+    "SHOW_LOCKED": "Mostra i gruppi bloccati",
+    "HIDE_LOCKED": "Nascondi i gruppi bloccati",
+    "UNLOCK_HINT": "Inserisci il PIN parentale per mostrare i gruppi bloccati per questa sessione.",
+    "WRONG_PIN": "PIN errato",
+    "LOCK_GROUP_TITLE": "Blocca \"{{name}}\"",
+    "UNLOCK_GROUP_TITLE": "Sblocca \"{{name}}\"",
+    "GROUP_LOCKED": "\"{{name}}\" bloccato",
+    "GROUP_UNLOCKED": "\"{{name}}\" sbloccato"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Annulla registrazione",
+    "CLEAR_FINISHED": "Rimuovi completate",
+    "CLEARED": "Voci completate rimosse",
+    "CLEAR_FAILED": "Impossibile rimuovere le registrazioni completate",
+    "FILES": "File registrati",
+    "FILES_LOAD_FAILED": "Impossibile caricare i file registrati",
+    "FILE_DELETED": "\"{{name}}\" eliminato",
+    "FILE_DELETE_FAILED": "Impossibile eliminare la registrazione",
+    "FOLDER": "Cartella:",
+    "COPY_PATH": "Copia percorso cartella",
+    "PATH_COPIED": "Percorso della cartella copiato",
+    "PLAY": "Riproduci",
+    "PLAY_ARIA": "Riproduci {{name}}",
+    "UNKNOWN_CHANNEL": "Canale sconosciuto",
+    "OPEN_FOLDER": "Apri cartella"
   }
 }

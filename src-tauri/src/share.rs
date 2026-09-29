@@ -49,14 +49,18 @@ pub fn share_custom_source(mut source: Source, path: String) -> Result<()> {
 
 pub fn import(path: String, source_id: Option<i64>, name_override: Option<String>) -> Result<()> {
     let data = std::fs::read_to_string(&path)?;
+    // The .otv* names come from the project this app was forked from; files
+    // exported by older versions keep importing.
     match path
         .split(".")
         .last()
         .context("Invalid path, no extension")?
+        .to_ascii_lowercase()
+        .as_str()
     {
-        "otv" => import_channel(data, source_id.context("No source id")?, name_override),
-        "otvg" => import_group(data, source_id.context("No source id")?, name_override),
-        "otvp" => import_playlist(data, name_override),
+        "siptv" | "otv" => import_channel(data, source_id.context("No source id")?, name_override),
+        "siptvg" | "otvg" => import_group(data, source_id.context("No source id")?, name_override),
+        "siptvp" | "otvp" => import_playlist(data, name_override),
         _ => Err(anyhow::anyhow!("Invalid path")),
     }
 }

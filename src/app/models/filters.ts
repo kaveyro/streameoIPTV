@@ -13,4 +13,6 @@ export class Filters {
   public use_keywords!: boolean;
   public sort?: SortType;
   public season?: number;
+  /// Include groups locked by the parental PIN; always MemoryService.ShowLocked.
+  public show_locked?: boolean;
 }

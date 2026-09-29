@@ -28,8 +28,10 @@ pub mod logo_cache;
 pub mod m3u;
 pub mod media_type;
 pub mod mpv;
+pub mod parental;
 pub mod player;
 pub mod recording_scheduler;
+pub mod recordings;
 pub mod redact;
 pub mod restream;
 pub mod settings;
@@ -132,6 +134,18 @@ pub fn run() {
             schedule_recording,
             cancel_scheduled_recording,
             get_scheduled_recordings,
+            get_recording_schedule,
+            clear_finished_recordings,
+            get_recording_files,
+            delete_recording_file,
+            get_recording_folder,
+            open_recording_folder,
+            has_parental_pin,
+            verify_parental_pin,
+            set_parental_pin,
+            set_group_locked,
+            get_locked_group_ids,
+            check_source,
             player_init,
             player_play,
             player_stop,
@@ -734,4 +748,77 @@ fn cancel_scheduled_recording(id: i64) -> Result<(), String> {
 #[tauri::command(async)]
 fn get_scheduled_recordings() -> Result<Vec<ScheduledRecording>, String> {
     sql::get_scheduled_recordings().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_recording_schedule() -> Result<Vec<ScheduledRecording>, String> {
+    sql::get_recording_schedule().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn clear_finished_recordings() -> Result<(), String> {
+    sql::clear_finished_recordings().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_recording_files() -> Result<Vec<recordings::RecordingFile>, String> {
+    recordings::list_files().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn delete_recording_file(path: String) -> Result<(), String> {
+    recordings::delete_file(&path).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_recording_folder() -> Result<String, String> {
+    recordings::folder().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn open_recording_folder() -> Result<(), String> {
+    recordings::open_folder().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn has_parental_pin() -> Result<bool, String> {
+    parental::has_pin().map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn verify_parental_pin(pin: String) -> Result<bool, String> {
+    parental::verify(&pin).await.map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn set_parental_pin(
+    current_pin: Option<String>,
+    new_pin: Option<String>,
+) -> Result<(), String> {
+    parental::set_pin(current_pin, new_pin)
+        .await
+        .map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn set_group_locked(group_id: i64, locked: bool, pin: String) -> Result<(), String> {
+    parental::set_group_locked(group_id, locked, pin)
+        .await
+        .map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_locked_group_ids() -> Result<Vec<i64>, String> {
+    sql::get_locked_group_ids().map_err(map_err_frontend)
+}
+
+/// Checks that a source can be reached and logged into, without importing.
+#[tauri::command]
+async fn check_source(source: Source) -> Result<(), String> {
+    match source.source_type {
+        source_type::XTREAM => xtream::check(source).await,
+        source_type::M3U_LINK => m3u::check_link(source).await,
+        _ => Ok(()),
+    }
+    .map_err(map_err_frontend)
 }

@@ -96,6 +96,7 @@ pub fn schedule(
         start_timestamp,
         end_timestamp,
         status: STATUS_PENDING,
+        channel_name: None,
     })?;
     Ok(())
 }

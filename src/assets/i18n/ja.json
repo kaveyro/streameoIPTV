@@ -42,7 +42,8 @@
       "HIDDEN": "非表示",
       "RECORDINGS": "録画",
       "SETTINGS": "設定",
-      "GUIDE": "番組表"
+      "GUIDE": "番組表",
+      "CONTINUE_WATCHING": "続きから視聴"
     },
     "PILL": {
       "LIVESTREAMS": "ライブ配信",
@@ -67,7 +68,9 @@
     "SHARE": "共有",
     "RESTREAM": "再ストリーミング",
     "COPY_URL": "URL をコピー",
-    "DELETE": "削除"
+    "DELETE": "削除",
+    "LOCK_GROUP": "グループをロック",
+    "UNLOCK_GROUP": "グループのロックを解除"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "チャンネルが見つかりません",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "予約録画はありません",
     "NO_RECORDINGS_HINT": "チャンネルの番組表から予約してください",
     "NO_GUIDE": "番組表データがありません",
-    "NO_GUIDE_HINT": "設定で XMLTV ソースを追加し、チャンネルの tvg-id が番組表と一致していることを確認してください。"
+    "NO_GUIDE_HINT": "設定で XMLTV ソースを追加し、チャンネルの tvg-id が番組表と一致していることを確認してください。",
+    "NOTHING_TO_CONTINUE": "続きから視聴できるものはまだありません",
+    "NOTHING_TO_CONTINUE_HINT": "視聴を始めた映画やエピソードがここに表示され、中断した位置から再開されます",
+    "NO_RECORDING_FILES": "録画ファイルはまだありません",
+    "NO_RECORDING_FILES_HINT": "録画とダウンロードは録画フォルダーに保存されます（設定 → 録画）"
   },
   "RECORDING": {
     "SCHEDULED": "予約録画",
@@ -127,7 +134,8 @@
       "NETWORK": "ネットワーク",
       "SOURCES": "ソース",
       "DATA": "データとバックアップ",
-      "EPG": "外部 EPG"
+      "EPG": "外部 EPG",
+      "PARENTAL": "ペアレンタルロック"
     },
     "GENERAL": {
       "LANGUAGE": "言語",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "最新の番組表データをダウンロードします。ソースの自動更新スケジュールに従って自動的にも実行されます。",
       "FREE_SOURCES": "無料 EPG ソース",
       "FREE_SOURCES_DESC": "既知の無料 XMLTV ガイドをワンクリックで追加します。チャンネルの国に合うものを選んでください。"
+    },
+    "PARENTAL": {
+      "DESC": "PINでグループを保護します。ロックされたグループとそのチャンネルは、ホーム画面の鍵ボタンでPINを入力するまで表示されません。グループは「カテゴリ」のコンテキストメニューからロックできます。",
+      "SET_PIN": "PINを設定",
+      "CHANGE_PIN": "PINを変更",
+      "CURRENT_PIN": "現在のPIN",
+      "NEW_PIN": "新しいPIN",
+      "REPEAT_PIN": "新しいPINを再入力",
+      "REMOVE_PIN": "PINを削除",
+      "REMOVE_PIN_DESC": "現在のPINを入力してください。ロックされたすべてのグループのロックが解除されます。",
+      "REMOVE_BTN": "PINを削除"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "カスタムソースを追加",
     "IMPORT_CUSTOM": "カスタムソースをインポート",
     "DELETE_ALL_DATA": "すべてのアプリデータを削除",
-    "SELECT_EXPORT_FILE": "streameoIPTV エクスポートファイル（.otvp）を選択",
+    "SELECT_EXPORT_FILE": "streameoIPTV エクスポートファイル（.siptvp）を選択",
     "URL": "URL",
     "XTREAM_URL_HINT": "サーバーアドレス（形式: http://host:port）",
     "INVALID_URL": "「{{url}}」は有効な URL ではありません。スペースや入力ミスがないか確認してください。",
@@ -309,8 +328,8 @@
     "RUNNING": "実行中で、次の IP からアクセスできます...",
     "LOCAL_IPS": "ローカル IP：",
     "WAN_ADDRESS": "WAN アドレス：",
-    "SHARE_INFO1": "IP を選択し、下の共有ボタンを押して .otv ファイルを生成します。このファイルを友人と共有すると、友人は streameoIPTV にインポートしてあなたの再ストリーミングコンテンツを視聴できます。",
-    "SHARE_INFO2": "カスタムソースを保有または作成することで、streameoIPTV に .otv ファイルをインポートできます。状況に応じて正しい IP を選択してください。ローカル IP の 1 つで .otv ファイルを共有しても、LAN 外の人には機能しません。",
+    "SHARE_INFO1": "IP を選択し、下の共有ボタンを押して .siptv ファイルを生成します。このファイルを友人と共有すると、友人は streameoIPTV にインポートしてあなたの再ストリーミングコンテンツを視聴できます。",
+    "SHARE_INFO2": "カスタムソースを保有または作成することで、streameoIPTV に .siptv ファイルをインポートできます。状況に応じて正しい IP を選択してください。ローカル IP の 1 つで .siptv ファイルを共有しても、LAN 外の人には機能しません。",
     "SELECT_IP": "共有する IP を選択",
     "START": "開始",
     "WATCH": "視聴",
@@ -439,7 +458,11 @@
     "ENABLED": "有効",
     "MORE_ACTIONS": "その他の操作",
     "SHOW_USERNAME": "ユーザー名を表示",
-    "HIDE_USERNAME": "ユーザー名を隠す"
+    "HIDE_USERNAME": "ユーザー名を隠す",
+    "CHECK": "接続をテスト",
+    "CHECKING": "テスト中…",
+    "CHECK_OK": "接続に成功しました",
+    "CHECK_FAILED": "接続に失敗しました"
   },
   "DIALOG": {
     "SAVE_RECORDING": "録画の保存先を選択",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "見逃し配信あり",
-    "IS_FAVORITE": "お気に入り済み"
+    "IS_FAVORITE": "お気に入り済み",
+    "RESUME": "再開",
+    "LOCKED_GROUP": "ロックされたグループ"
   },
   "LOADING": {
     "CHANNELS": "チャンネルを読み込んでいます..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "チャンネルを削除しますか？",
     "DELETE_CHANNEL_BODY": "チャンネル「{{name}}」は完全に削除されます。",
     "DELETE_CATEGORY_TITLE": "カテゴリを削除しますか？",
-    "DELETE_CATEGORY_BODY": "カテゴリ「{{name}}」は完全に削除されます。"
+    "DELETE_CATEGORY_BODY": "カテゴリ「{{name}}」は完全に削除されます。",
+    "CANCEL_RECORDING_TITLE": "録画をキャンセルしますか？",
+    "CANCEL_RECORDING_BODY": "予約録画「{{title}}」はキャンセルされます。",
+    "STOP_RECORDING_BODY": "録画「{{title}}」は進行中のため停止されます。録画済みの部分は録画フォルダーに残ります。",
+    "DELETE_RECORDING_TITLE": "録画を削除しますか？",
+    "DELETE_RECORDING_BODY": "ファイル「{{name}}」は録画フォルダーから削除されます。元に戻すことはできません。",
+    "REMOVE_PIN_TITLE": "保護者用PINを削除しますか？",
+    "REMOVE_PIN_BODY": "ロックされたすべてのグループのロックが解除され、全員に表示されます。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "チャンネルに戻る",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "番組の進行状況",
     "FILTER_PLACEHOLDER": "チャンネルを絞り込む...",
     "FILTER_CHANNELS": "チャンネルリストを絞り込む"
+  },
+  "GUIDE": {
+    "CHANNEL": "チャンネル",
+    "NO_EPG": "EPGなし",
+    "NO_CATCHUP": "この番組はアーカイブにありません",
+    "PLAY_CHANNEL": "{{name}} を再生"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "PINを入力",
+    "PIN": "PIN",
+    "PIN_FORMAT": "4～8桁の数字",
+    "PIN_MISMATCH": "PINが一致しません",
+    "PIN_SET": "保護者用PINを設定しました",
+    "PIN_CHANGED": "保護者用PINを変更しました",
+    "PIN_REMOVED": "保護者用PINを削除しました。すべてのグループのロックが解除されています",
+    "SET_PIN_FIRST": "先に保護者用PINを設定してください（設定 → ペアレンタルロック）",
+    "SHOW_LOCKED": "ロックされたグループを表示",
+    "HIDE_LOCKED": "ロックされたグループを隠す",
+    "UNLOCK_HINT": "保護者用PINを入力すると、このセッション中はロックされたグループが表示されます。",
+    "WRONG_PIN": "PINが正しくありません",
+    "LOCK_GROUP_TITLE": "「{{name}}」をロック",
+    "UNLOCK_GROUP_TITLE": "「{{name}}」のロックを解除",
+    "GROUP_LOCKED": "「{{name}}」をロックしました",
+    "GROUP_UNLOCKED": "「{{name}}」のロックを解除しました"
+  },
+  "RECORDINGS": {
+    "CANCEL": "録画をキャンセル",
+    "CLEAR_FINISHED": "完了したものを消去",
+    "CLEARED": "完了した項目を削除しました",
+    "CLEAR_FAILED": "完了した録画を消去できませんでした",
+    "FILES": "録画ファイル",
+    "FILES_LOAD_FAILED": "録画ファイルを読み込めませんでした",
+    "FILE_DELETED": "「{{name}}」を削除しました",
+    "FILE_DELETE_FAILED": "録画を削除できませんでした",
+    "FOLDER": "フォルダー:",
+    "COPY_PATH": "フォルダーのパスをコピー",
+    "PATH_COPIED": "フォルダーのパスをコピーしました",
+    "PLAY": "再生",
+    "PLAY_ARIA": "{{name}} を再生",
+    "UNKNOWN_CHANNEL": "不明なチャンネル",
+    "OPEN_FOLDER": "フォルダーを開く"
   }
 }

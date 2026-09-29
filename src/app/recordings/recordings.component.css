@@ -1,0 +1,153 @@
+:host {
+  display: block;
+}
+
+.view-title {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.rec-section + .rec-section {
+  margin-top: 2rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  margin: 0;
+}
+
+.rec-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recording-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-tile);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.recording-row:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.recording-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.recording-title {
+  font-size: var(--fs-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recording-time {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.recording-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid currentColor;
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+
+.status-0 {
+  color: var(--text-secondary);
+}
+
+.status-1,
+.status-3 {
+  color: var(--color-danger);
+}
+
+.status-2 {
+  color: var(--color-success);
+}
+
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-dot {
+    animation: none;
+  }
+}
+
+.row-action {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.row-action:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.row-action--danger:hover:not(:disabled) {
+  color: var(--color-danger);
+}
+
+.folder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.folder-label {
+  flex-shrink: 0;
+}
+
+.folder-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  /* A path reads left to right, also in an RTL UI. */
+  unicode-bidi: plaintext;
+}
+
+.skeleton-row {
+  height: 3.5rem;
+}

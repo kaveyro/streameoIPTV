@@ -36,6 +36,9 @@ import { SortItemComponent } from "./home/sort-button/sort-item/sort-item.compon
 import { DownloadManagerComponent } from "./download-manager/download-manager.component";
 import { PlayerComponent } from "./player/player.component";
 import { UpdateModalComponent } from "./update-modal/update-modal.component";
+import { RecordingsComponent } from "./recordings/recordings.component";
+import { TvGuideComponent } from "./tv-guide/tv-guide.component";
+import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 
@@ -71,6 +74,9 @@ export function createTranslateLoader(http: HttpClient) {
     DownloadManagerComponent,
     UpdateModalComponent,
     PlayerComponent,
+    RecordingsComponent,
+    TvGuideComponent,
+    PinDialogComponent,
   ],
   imports: [
     BrowserModule,

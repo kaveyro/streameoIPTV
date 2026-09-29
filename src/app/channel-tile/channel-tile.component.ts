@@ -39,6 +39,8 @@ import { LogoCacheService } from "../logo-cache.service";
 import { NowPlaying, NowPlayingService } from "../now-playing.service";
 import { TranslateService } from "@ngx-translate/core";
 import { ConfirmService } from "../confirm.service";
+import { PlaybackService } from "../playback.service";
+import { ParentalService } from "../parental.service";
 
 @Component({
   selector: "app-channel-tile",
@@ -58,6 +60,8 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     private nowPlayingService: NowPlayingService,
     private translate: TranslateService,
     private confirmService: ConfirmService,
+    private playback: PlaybackService,
+    private parental: ParentalService,
   ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
@@ -201,13 +205,14 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     this.starting = true;
     this.memory.SetFocus.next(this.id);
     try {
-      // Recording and the user's external player keep using the classic
-      // spawn-a-window path; everything else plays in the embedded player,
-      // which switches channels over IPC without restarting mpv.
-      if (record || this.memory.UseExternalPlayer) {
+      // Recording keeps using the classic spawn-a-window path; everything
+      // else goes through the shared playback path (embedded player, which
+      // switches channels over IPC without restarting mpv, or the user's
+      // external player).
+      if (record) {
         await invoke("play", { channel: this.channel, record: record, recordPath: file });
       } else {
-        this.memory.PlayerOpen.next(this.channel!);
+        await this.playback.play(this.channel!);
       }
     } catch (e) {
       this.error.handleError(e);
@@ -297,6 +302,25 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.FAVORITE_FAILED", { name }));
     }
+  }
+
+  isGroup(): boolean {
+    return this.channel?.media_type == MediaType.group;
+  }
+
+  /** A locked group, shown because the PIN was entered in this session. */
+  isLockedGroup(): boolean {
+    return this.isGroup() && this.parental.isLocked(this.channel);
+  }
+
+  /** Movies and episodes in the history resume where they were left. */
+  showResumeBadge(): boolean {
+    return this.viewMode == ViewMode.History && this.isMovie();
+  }
+
+  async toggleGroupLock() {
+    if (!this.channel) return;
+    if (await this.parental.toggleGroupLock(this.channel)) this.memory.Refresh.next(false);
   }
 
   async removeFromHistory() {

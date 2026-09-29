@@ -42,7 +42,8 @@
       "HIDDEN": "Ausgeblendet",
       "RECORDINGS": "Aufnahmen",
       "SETTINGS": "Einstellungen",
-      "GUIDE": "TV-Programm"
+      "GUIDE": "TV-Programm",
+      "CONTINUE_WATCHING": "Weiterschauen"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -67,7 +68,9 @@
     "SHARE": "Teilen",
     "RESTREAM": "Re-Stream",
     "COPY_URL": "URL kopieren",
-    "DELETE": "Löschen"
+    "DELETE": "Löschen",
+    "LOCK_GROUP": "Gruppe sperren",
+    "UNLOCK_GROUP": "Gruppe entsperren"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Keine Kanäle gefunden",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Keine geplanten Aufnahmen",
     "NO_RECORDINGS_HINT": "Planen Sie eine über den TV-Guide eines Kanals",
     "NO_GUIDE": "Noch keine Programmdaten",
-    "NO_GUIDE_HINT": "Füge XMLTV-Quellen in den Einstellungen hinzu und stelle sicher, dass die tvg-id deiner Sender zum Programm passt."
+    "NO_GUIDE_HINT": "Füge XMLTV-Quellen in den Einstellungen hinzu und stelle sicher, dass die tvg-id deiner Sender zum Programm passt.",
+    "NOTHING_TO_CONTINUE": "Noch nichts zum Weiterschauen",
+    "NOTHING_TO_CONTINUE_HINT": "Begonnene Filme und Folgen erscheinen hier und laufen dort weiter, wo du aufgehört hast",
+    "NO_RECORDING_FILES": "Noch keine aufgenommenen Dateien",
+    "NO_RECORDING_FILES_HINT": "Aufnahmen und Downloads werden im Aufnahmeordner gespeichert (Einstellungen → Aufnahme)"
   },
   "RECORDING": {
     "SCHEDULED": "Geplante Aufnahme",
@@ -127,7 +134,8 @@
       "NETWORK": "Netzwerk",
       "SOURCES": "Quellen",
       "DATA": "Daten und Sicherung",
-      "EPG": "Externe EPG"
+      "EPG": "Externe EPG",
+      "PARENTAL": "Kindersicherung"
     },
     "GENERAL": {
       "LANGUAGE": "Sprache",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "Die neuesten Programmdaten herunterladen. Dies geschieht auch automatisch gemäß deinem Zeitplan für die automatische Quellenaktualisierung.",
       "FREE_SOURCES": "Kostenlose EPG-Quellen",
       "FREE_SOURCES_DESC": "Füge eine bekannte kostenlose XMLTV-Quelle mit einem Klick hinzu. Wähle die passenden Länder deiner Sender."
+    },
+    "PARENTAL": {
+      "DESC": "Schütze Gruppen mit einer PIN. Gesperrte Gruppen und ihre Kanäle bleiben verborgen, bis die PIN über das Schloss-Symbol auf der Startseite eingegeben wird. Eine Gruppe sperrst du über ihr Kontextmenü in den Kategorien.",
+      "SET_PIN": "PIN festlegen",
+      "CHANGE_PIN": "PIN ändern",
+      "CURRENT_PIN": "Aktuelle PIN",
+      "NEW_PIN": "Neue PIN",
+      "REPEAT_PIN": "Neue PIN wiederholen",
+      "REMOVE_PIN": "PIN entfernen",
+      "REMOVE_PIN_DESC": "Gib die aktuelle PIN ein. Alle gesperrten Gruppen werden entsperrt.",
+      "REMOVE_BTN": "PIN entfernen"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Benutzerdefinierte Quelle hinzufügen",
     "IMPORT_CUSTOM": "Benutzerdefinierte Quelle importieren",
     "DELETE_ALL_DATA": "Alle App-Daten löschen",
-    "SELECT_EXPORT_FILE": "streameoIPTV-Exportdatei (.otvp) auswählen",
+    "SELECT_EXPORT_FILE": "streameoIPTV-Exportdatei (.siptvp) auswählen",
     "URL": "URL",
     "XTREAM_URL_HINT": "Serveradresse im Format http://host:port",
     "INVALID_URL": "„{{url}}“ ist keine gültige URL. Bitte auf Leerzeichen oder Tippfehler prüfen.",
@@ -309,8 +328,8 @@
     "RUNNING": "Läuft und erreichbar über die folgenden IPs...",
     "LOCAL_IPS": "Lokale IPs:",
     "WAN_ADDRESS": "WAN-Adresse:",
-    "SHARE_INFO1": "Wählen Sie eine IP und drücken Sie unten die Teilen-Schaltfläche, um eine .otv-Datei zu erzeugen. Sie können diese Datei mit Ihren Freunden teilen, damit sie sie in streameoIPTV importieren und Ihre re-gestreamten Inhalte ansehen können.",
-    "SHARE_INFO2": "Sie können .otv-Dateien in streameoIPTV importieren, indem Sie eine benutzerdefinierte Quelle besitzen oder erstellen. Achten Sie darauf, die richtige IP für den richtigen Kontext zu wählen; das Teilen einer .otv-Datei mit einer Ihrer lokalen IPs funktioniert nicht für jemanden außerhalb Ihres LANs.",
+    "SHARE_INFO1": "Wählen Sie eine IP und drücken Sie unten die Teilen-Schaltfläche, um eine .siptv-Datei zu erzeugen. Sie können diese Datei mit Ihren Freunden teilen, damit sie sie in streameoIPTV importieren und Ihre re-gestreamten Inhalte ansehen können.",
+    "SHARE_INFO2": "Sie können .siptv-Dateien in streameoIPTV importieren, indem Sie eine benutzerdefinierte Quelle besitzen oder erstellen. Achten Sie darauf, die richtige IP für den richtigen Kontext zu wählen; das Teilen einer .siptv-Datei mit einer Ihrer lokalen IPs funktioniert nicht für jemanden außerhalb Ihres LANs.",
     "SELECT_IP": "IP zum Teilen auswählen",
     "START": "Start",
     "WATCH": "Ansehen",
@@ -439,7 +458,11 @@
     "ENABLED": "Aktiviert",
     "MORE_ACTIONS": "Weitere Aktionen",
     "SHOW_USERNAME": "Benutzernamen anzeigen",
-    "HIDE_USERNAME": "Benutzernamen verbergen"
+    "HIDE_USERNAME": "Benutzernamen verbergen",
+    "CHECK": "Verbindung testen",
+    "CHECKING": "Wird getestet…",
+    "CHECK_OK": "Verbindung erfolgreich",
+    "CHECK_FAILED": "Verbindung fehlgeschlagen"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Speicherort für die Aufnahme auswählen",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up verfügbar",
-    "IS_FAVORITE": "In Favoriten"
+    "IS_FAVORITE": "In Favoriten",
+    "RESUME": "Fortsetzen",
+    "LOCKED_GROUP": "Gesperrte Gruppe"
   },
   "LOADING": {
     "CHANNELS": "Deine Kanäle werden geladen..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Kanal löschen?",
     "DELETE_CHANNEL_BODY": "Der Kanal „{{name}}“ wird endgültig gelöscht.",
     "DELETE_CATEGORY_TITLE": "Kategorie löschen?",
-    "DELETE_CATEGORY_BODY": "Die Kategorie „{{name}}“ wird endgültig gelöscht."
+    "DELETE_CATEGORY_BODY": "Die Kategorie „{{name}}“ wird endgültig gelöscht.",
+    "CANCEL_RECORDING_TITLE": "Aufnahme abbrechen?",
+    "CANCEL_RECORDING_BODY": "Die geplante Aufnahme „{{title}}“ wird abgebrochen.",
+    "STOP_RECORDING_BODY": "Die Aufnahme „{{title}}“ läuft und wird beendet. Der bisher aufgenommene Teil bleibt im Aufnahmeordner.",
+    "DELETE_RECORDING_TITLE": "Aufnahme löschen?",
+    "DELETE_RECORDING_BODY": "Die Datei „{{name}}“ wird aus dem Aufnahmeordner gelöscht. Dies kann nicht rückgängig gemacht werden.",
+    "REMOVE_PIN_TITLE": "Jugendschutz-PIN entfernen?",
+    "REMOVE_PIN_BODY": "Alle gesperrten Gruppen werden entsperrt und für alle angezeigt."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Zurück zu den Kanälen",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Sendungsfortschritt",
     "FILTER_PLACEHOLDER": "Kanäle filtern...",
     "FILTER_CHANNELS": "Kanalliste filtern"
+  },
+  "GUIDE": {
+    "CHANNEL": "Kanal",
+    "NO_EPG": "Kein EPG",
+    "NO_CATCHUP": "Diese Sendung ist nicht im Archiv verfügbar",
+    "PLAY_CHANNEL": "{{name}} abspielen"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "PIN eingeben",
+    "PIN": "PIN",
+    "PIN_FORMAT": "4 bis 8 Ziffern",
+    "PIN_MISMATCH": "Die PINs stimmen nicht überein",
+    "PIN_SET": "Jugendschutz-PIN festgelegt",
+    "PIN_CHANGED": "Jugendschutz-PIN geändert",
+    "PIN_REMOVED": "Jugendschutz-PIN entfernt, alle Gruppen sind entsperrt",
+    "SET_PIN_FIRST": "Lege zuerst eine Jugendschutz-PIN fest (Einstellungen → Kindersicherung)",
+    "SHOW_LOCKED": "Gesperrte Gruppen anzeigen",
+    "HIDE_LOCKED": "Gesperrte Gruppen ausblenden",
+    "UNLOCK_HINT": "Gib die Jugendschutz-PIN ein, um die gesperrten Gruppen für diese Sitzung anzuzeigen.",
+    "WRONG_PIN": "Falsche PIN",
+    "LOCK_GROUP_TITLE": "„{{name}}“ sperren",
+    "UNLOCK_GROUP_TITLE": "„{{name}}“ entsperren",
+    "GROUP_LOCKED": "„{{name}}“ gesperrt",
+    "GROUP_UNLOCKED": "„{{name}}“ entsperrt"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Aufnahme abbrechen",
+    "CLEAR_FINISHED": "Abgeschlossene entfernen",
+    "CLEARED": "Abgeschlossene Einträge entfernt",
+    "CLEAR_FAILED": "Abgeschlossene Aufnahmen konnten nicht entfernt werden",
+    "FILES": "Aufgenommene Dateien",
+    "FILES_LOAD_FAILED": "Aufgenommene Dateien konnten nicht geladen werden",
+    "FILE_DELETED": "„{{name}}“ gelöscht",
+    "FILE_DELETE_FAILED": "Aufnahme konnte nicht gelöscht werden",
+    "FOLDER": "Ordner:",
+    "COPY_PATH": "Ordnerpfad kopieren",
+    "PATH_COPIED": "Ordnerpfad kopiert",
+    "PLAY": "Abspielen",
+    "PLAY_ARIA": "{{name}} abspielen",
+    "UNKNOWN_CHANNEL": "Unbekannter Kanal",
+    "OPEN_FOLDER": "Ordner öffnen"
   }
 }

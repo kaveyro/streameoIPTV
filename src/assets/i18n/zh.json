@@ -42,7 +42,8 @@
       "HIDDEN": "已隐藏",
       "RECORDINGS": "录制",
       "SETTINGS": "设置",
-      "GUIDE": "电视指南"
+      "GUIDE": "电视指南",
+      "CONTINUE_WATCHING": "继续观看"
     },
     "PILL": {
       "LIVESTREAMS": "直播",
@@ -67,7 +68,9 @@
     "SHARE": "分享",
     "RESTREAM": "转推流",
     "COPY_URL": "复制 URL",
-    "DELETE": "删除"
+    "DELETE": "删除",
+    "LOCK_GROUP": "锁定分组",
+    "UNLOCK_GROUP": "解锁分组"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "未找到频道",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "没有计划录制",
     "NO_RECORDINGS_HINT": "从频道的电视指南中安排一个",
     "NO_GUIDE": "暂无指南数据",
-    "NO_GUIDE_HINT": "在设置中添加 XMLTV 源，并确保频道的 tvg-id 与指南匹配。"
+    "NO_GUIDE_HINT": "在设置中添加 XMLTV 源，并确保频道的 tvg-id 与指南匹配。",
+    "NOTHING_TO_CONTINUE": "暂无可继续观看的内容",
+    "NOTHING_TO_CONTINUE_HINT": "已开始观看的电影和剧集会显示在这里，并从上次停止的位置继续播放",
+    "NO_RECORDING_FILES": "暂无录制文件",
+    "NO_RECORDING_FILES_HINT": "录制和下载的文件保存在录制文件夹中（设置 → 录制）"
   },
   "RECORDING": {
     "SCHEDULED": "计划录制",
@@ -127,7 +134,8 @@
       "NETWORK": "网络",
       "SOURCES": "来源",
       "DATA": "数据与备份",
-      "EPG": "外部 EPG"
+      "EPG": "外部 EPG",
+      "PARENTAL": "家长锁"
     },
     "GENERAL": {
       "LANGUAGE": "语言",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "下载最新的节目指南数据。这也会按照您的源自动刷新计划自动进行。",
       "FREE_SOURCES": "免费 EPG 源",
       "FREE_SOURCES_DESC": "一键添加已知的免费 XMLTV 指南。选择与您频道所在国家/地区匹配的源。"
+    },
+    "PARENTAL": {
+      "DESC": "用 PIN 保护分组。在主页上通过锁按钮输入 PIN 之前，已锁定的分组及其频道将保持隐藏。可在“分类”中通过分组的右键菜单锁定分组。",
+      "SET_PIN": "设置 PIN",
+      "CHANGE_PIN": "更改 PIN",
+      "CURRENT_PIN": "当前 PIN",
+      "NEW_PIN": "新 PIN",
+      "REPEAT_PIN": "再次输入新 PIN",
+      "REMOVE_PIN": "移除 PIN",
+      "REMOVE_PIN_DESC": "输入当前 PIN。所有已锁定的分组都将解锁。",
+      "REMOVE_BTN": "移除 PIN"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "添加自定义来源",
     "IMPORT_CUSTOM": "导入自定义来源",
     "DELETE_ALL_DATA": "删除所有应用数据",
-    "SELECT_EXPORT_FILE": "选择 streameoIPTV 导出文件（.otvp）",
+    "SELECT_EXPORT_FILE": "选择 streameoIPTV 导出文件（.siptvp）",
     "URL": "URL",
     "XTREAM_URL_HINT": "服务器地址，格式为 http://host:port",
     "INVALID_URL": "“{{url}}”不是有效的 URL。请检查是否有空格或拼写错误。",
@@ -309,8 +328,8 @@
     "RUNNING": "正在运行，可通过以下 IP 访问...",
     "LOCAL_IPS": "本地 IP：",
     "WAN_ADDRESS": "WAN 地址：",
-    "SHARE_INFO1": "选择一个 IP 并按下方的分享按钮以生成 .otv 文件。您可以将此文件分享给朋友，让他们在 streameoIPTV 中导入并观看您的转推流内容。",
-    "SHARE_INFO2": "您可以通过拥有或创建自定义来源在 streameoIPTV 中导入 .otv 文件。请务必为相应场景选择正确的 IP；用您的某个本地 IP 分享 .otv 文件对局域网外的人无效。",
+    "SHARE_INFO1": "选择一个 IP 并按下方的分享按钮以生成 .siptv 文件。您可以将此文件分享给朋友，让他们在 streameoIPTV 中导入并观看您的转推流内容。",
+    "SHARE_INFO2": "您可以通过拥有或创建自定义来源在 streameoIPTV 中导入 .siptv 文件。请务必为相应场景选择正确的 IP；用您的某个本地 IP 分享 .siptv 文件对局域网外的人无效。",
     "SELECT_IP": "选择要分享的 IP",
     "START": "开始",
     "WATCH": "观看",
@@ -439,7 +458,11 @@
     "ENABLED": "已启用",
     "MORE_ACTIONS": "更多操作",
     "SHOW_USERNAME": "显示用户名",
-    "HIDE_USERNAME": "隐藏用户名"
+    "HIDE_USERNAME": "隐藏用户名",
+    "CHECK": "测试连接",
+    "CHECKING": "正在测试…",
+    "CHECK_OK": "连接成功",
+    "CHECK_FAILED": "连接失败"
   },
   "DIALOG": {
     "SAVE_RECORDING": "选择录制的保存位置",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "支持回看",
-    "IS_FAVORITE": "已收藏"
+    "IS_FAVORITE": "已收藏",
+    "RESUME": "继续",
+    "LOCKED_GROUP": "已锁定的分组"
   },
   "LOADING": {
     "CHANNELS": "正在加载频道..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "删除频道？",
     "DELETE_CHANNEL_BODY": "频道“{{name}}”将被永久删除。",
     "DELETE_CATEGORY_TITLE": "删除分类？",
-    "DELETE_CATEGORY_BODY": "分类“{{name}}”将被永久删除。"
+    "DELETE_CATEGORY_BODY": "分类“{{name}}”将被永久删除。",
+    "CANCEL_RECORDING_TITLE": "取消录制？",
+    "CANCEL_RECORDING_BODY": "将取消已安排的录制“{{title}}”。",
+    "STOP_RECORDING_BODY": "录制“{{title}}”正在进行，将被停止。已录制的部分会保留在录制文件夹中。",
+    "DELETE_RECORDING_TITLE": "删除录制文件？",
+    "DELETE_RECORDING_BODY": "文件“{{name}}”将从录制文件夹中删除。此操作无法撤销。",
+    "REMOVE_PIN_TITLE": "移除家长 PIN？",
+    "REMOVE_PIN_BODY": "所有已锁定的分组都将解锁并对所有人可见。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "返回频道",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "节目进度",
     "FILTER_PLACEHOLDER": "筛选频道...",
     "FILTER_CHANNELS": "筛选频道列表"
+  },
+  "GUIDE": {
+    "CHANNEL": "频道",
+    "NO_EPG": "无节目单",
+    "NO_CATCHUP": "此节目无法从存档中观看",
+    "PLAY_CHANNEL": "播放 {{name}}"
+  },
+  "PARENTAL": {
+    "CONFIRM": "确定",
+    "ENTER_PIN": "输入 PIN",
+    "PIN": "PIN",
+    "PIN_FORMAT": "4 到 8 位数字",
+    "PIN_MISMATCH": "两次输入的 PIN 不一致",
+    "PIN_SET": "已设置家长 PIN",
+    "PIN_CHANGED": "已更改家长 PIN",
+    "PIN_REMOVED": "已移除家长 PIN，所有分组均已解锁",
+    "SET_PIN_FIRST": "请先设置家长 PIN（设置 → 家长锁）",
+    "SHOW_LOCKED": "显示已锁定的分组",
+    "HIDE_LOCKED": "隐藏已锁定的分组",
+    "UNLOCK_HINT": "输入家长 PIN 以在本次会话中显示已锁定的分组。",
+    "WRONG_PIN": "PIN 错误",
+    "LOCK_GROUP_TITLE": "锁定“{{name}}”",
+    "UNLOCK_GROUP_TITLE": "解锁“{{name}}”",
+    "GROUP_LOCKED": "已锁定“{{name}}”",
+    "GROUP_UNLOCKED": "已解锁“{{name}}”"
+  },
+  "RECORDINGS": {
+    "CANCEL": "取消录制",
+    "CLEAR_FINISHED": "清除已完成",
+    "CLEARED": "已移除已完成的条目",
+    "CLEAR_FAILED": "无法清除已完成的录制",
+    "FILES": "录制文件",
+    "FILES_LOAD_FAILED": "无法加载录制文件",
+    "FILE_DELETED": "已删除“{{name}}”",
+    "FILE_DELETE_FAILED": "无法删除录制文件",
+    "FOLDER": "文件夹：",
+    "COPY_PATH": "复制文件夹路径",
+    "PATH_COPIED": "已复制文件夹路径",
+    "PLAY": "播放",
+    "PLAY_ARIA": "播放 {{name}}",
+    "UNKNOWN_CHANNEL": "未知频道",
+    "OPEN_FOLDER": "打开文件夹"
   }
 }

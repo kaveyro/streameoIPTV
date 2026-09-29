@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { MemoryService } from "../memory.service";
 import { TranslateService } from "@ngx-translate/core";
+import { CHANNEL_EXTENSIONS, GROUP_EXTENSIONS } from "../models/extensions";
 
 @Component({
   selector: "app-import-modal",
@@ -25,7 +26,7 @@ export class ImportModalComponent {
       directory: false,
       canCreateDirectories: false,
       title: this.translate.instant("IMPORT.SELECT_FILE"),
-      filters: [{ name: "extension", extensions: ["otv", "otvg"] }],
+      filters: [{ name: "extension", extensions: [...CHANNEL_EXTENSIONS, ...GROUP_EXTENSIONS] }],
     });
     if (file == null) {
       return;
@@ -36,7 +37,7 @@ export class ImportModalComponent {
       this.translate.instant("TOAST.IMPORT_SUCCESS"),
       this.translate.instant("TOAST.IMPORT_FAILED"),
       () =>
-      invoke("import", { sourceId: this.source_id, path: file, nameOverride: this.nameOverride }),
+        invoke("import", { sourceId: this.source_id, path: file, nameOverride: this.nameOverride }),
     );
     this.memory.RefreshSources.next(true);
     if (!fail) this.activeModal.close("close");

@@ -38,6 +38,15 @@ import { Stack } from "../models/stack";
 import { VIEW_FORMAT, ViewFormat } from "../models/viewFormat";
 import { TranslateService } from "@ngx-translate/core";
 import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
+import { ParentalService } from "../parental.service";
+
+/// What the main area shows: the channel library (all view modes, also
+/// "continue watching"), the TV guide or the recordings. Frontend only; the
+/// backend view_type is only used by `search`.
+export type HomePanel = "library" | "guide" | "recordings";
+
+/// Number of sidebar nav items (ids viewMode-0 .. viewMode-6).
+const NAV_ITEM_COUNT = 7;
 
 @Component({
   selector: "app-home",
@@ -112,6 +121,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private navigatingBack = false;
   private scrollListener?: () => void;
   sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED) === "true";
+  panel: HomePanel = "library";
+  /// History restricted to movies/episodes, which resume where they were left.
+  continueWatching = false;
+  /// The media filters of the other views, kept while "continue watching"
+  /// replaces them with movies only.
+  private savedMediaTypes?: MediaType[];
+  /// Group the TV guide is restricted to (the one open when it was opened).
+  guideGroup?: { id: number; name: string };
 
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -134,7 +151,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   isMode(viewMode: ViewMode): boolean {
-    return this.filters?.view_type === viewMode;
+    return (
+      this.panel === "library" && !this.continueWatching && this.filters?.view_type === viewMode
+    );
+  }
+
+  isContinueWatching(): boolean {
+    return this.panel === "library" && this.continueWatching;
   }
 
   trackByChannel(index: number, channel: Channel) {
@@ -149,6 +172,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private modal: NgbModal,
     private ngZone: NgZone,
     private translate: TranslateService,
+    private parental: ParentalService,
   ) {
     this.getSources();
     this.listenForAutoRefresh();
@@ -199,6 +223,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.memory.AlwaysAskSave = settings.always_ask_save ?? false;
         this.memory.ShowChannelSource = settings.show_channel_source ?? true;
         this.memory.UseExternalPlayer = settings.use_external_player ?? false;
+        // Best effort: without it the lock button stays hidden.
+        this.memory.refreshParental().catch((e) => console.error(e));
         this.memory.Sources = new Map(sources.filter((x) => x.enabled).map((s) => [s.id!, s]));
         this.hasXtream = this.anyXtream();
         if (sources.length == 0) this.reset();
@@ -335,7 +361,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const page = more ? this.filters.page + 1 : 1;
     // The page is only committed once it loaded: a failed request must not
     // skip a page (or grow it forever) on the next attempt.
-    const filters: Filters = { ...this.filters, page };
+    const filters: Filters = { ...this.filters, page, show_locked: this.memory.ShowLocked };
     this.loading = true;
     if (!more) {
       this.gridLoading = true;
@@ -354,16 +380,28 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.channels = this.channels.concat(channels);
       }
       // Mirror the directly-playable channels so the embedded player's side
-      // list can switch channels without returning to the grid.
-      this.memory.PlayerChannelList = this.channels.filter(
-        (c) => c.media_type === MediaType.livestream || c.media_type === MediaType.movie,
-      );
+      // list can switch channels without returning to the grid. The guide
+      // publishes its own rows while it is shown.
+      if (this.panel === "library") {
+        this.memory.PlayerChannelList = this.channels.filter(
+          (c) => c.media_type === MediaType.livestream || c.media_type === MediaType.movie,
+        );
+      }
       this.reachedMax = channels.length < this.PAGE_SIZE;
       this.loadMoreFailed = false;
     } catch (e) {
       if (seq !== this.loadSeq) return;
       this.error.handleError(e);
-      if (more) this.loadMoreFailed = true;
+      if (more) {
+        this.loadMoreFailed = true;
+      } else {
+        // A failed first page: the list shown belongs to the previous query,
+        // so paging must not continue from that query's page count.
+        this.channels = [];
+        this.filters.page = 1;
+        this.reachedMax = true;
+        this.channelsVisible = true;
+      }
     } finally {
       if (seq === this.loadSeq) {
         this.loading = false;
@@ -387,6 +425,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private isNearScrollEnd(): boolean {
     if (this.reachedMax || this.loading || this.loadMoreFailed || !this.filters) return false;
+    if (this.panel !== "library") return false;
     if (this.memory.PlayerVisible) return false;
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
@@ -431,6 +470,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.keyboardBlocked()) return;
         action();
       };
+    // Alt/Ctrl + letter or digit. AltGr arrives as Ctrl+Alt, and the library
+    // matches modifiers loosely, so on e.g. a German layout AltGr+Q ("@") or
+    // AltGr+E ("€") typed into the search box would trigger these. They leave
+    // preventDefault to this wrapper, so such keystrokes still type.
+    const modified =
+      (action: () => unknown) =>
+      (output: { event: Event }): void => {
+        const event = output.event as KeyboardEvent;
+        if (event.getModifierState?.("AltGraph") || (event.ctrlKey && event.altKey)) return;
+        event.preventDefault();
+        guarded(action)(output);
+      };
     this.shortcuts = [
       {
         key: ["ctrl + f", "ctrl + space", "cmd + f"],
@@ -446,33 +497,33 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         key: "alt + 1",
         label: t("SHORTCUT.SWITCHING_MODES"),
         description: t("SHORTCUT.SELECT_ALL"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => this.switchMode(ViewMode.All)),
+        command: modified(() => this.switchMode(ViewMode.All)),
       },
       {
         key: "alt + 2",
         label: t("SHORTCUT.SWITCHING_MODES"),
         description: t("SHORTCUT.SELECT_CATEGORIES"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => this.switchMode(ViewMode.Categories)),
+        command: modified(() => this.switchMode(ViewMode.Categories)),
       },
       {
         key: "alt + 3",
         label: t("SHORTCUT.SWITCHING_MODES"),
         description: t("SHORTCUT.SELECT_FAVORITES"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => this.switchMode(ViewMode.Favorites)),
+        command: modified(() => this.switchMode(ViewMode.Favorites)),
       },
       {
         key: "alt + 4",
         label: t("SHORTCUT.SWITCHING_MODES"),
         description: t("SHORTCUT.SELECT_HISTORY"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => this.switchMode(ViewMode.History)),
+        command: modified(() => this.switchMode(ViewMode.History)),
       },
       // Media filters on Alt+Q/W/E (Ctrl+W closes windows); the
       // non-colliding Ctrl+Q / Ctrl+E keep working.
@@ -480,9 +531,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         key: ["alt + q", "ctrl + q"],
         label: t("SHORTCUT.MEDIA_FILTERS"),
         description: t("SHORTCUT.TOGGLE_LIVESTREAMS"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => {
+        command: modified(() => {
           this.chkLiveStream = !this.chkLiveStream;
           this.updateMediaTypes(MediaType.livestream);
         }),
@@ -491,9 +542,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         key: "alt + w",
         label: t("SHORTCUT.MEDIA_FILTERS"),
         description: t("SHORTCUT.TOGGLE_MOVIES"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => {
+        command: modified(() => {
           this.chkMovie = !this.chkMovie;
           this.updateMediaTypes(MediaType.movie);
         }),
@@ -502,9 +553,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         key: ["alt + e", "ctrl + e"],
         label: t("SHORTCUT.MEDIA_FILTERS"),
         description: t("SHORTCUT.TOGGLE_SERIES"),
-        preventDefault: true,
+        preventDefault: false,
         allowIn: [AllowIn.Input],
-        command: guarded(() => {
+        command: modified(() => {
           this.chkSerie = !this.chkSerie;
           this.updateMediaTypes(MediaType.serie);
         }),
@@ -557,6 +608,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateMediaTypes(mediaType: MediaType) {
+    // "Continue watching" always shows movies/episodes only; the pills are
+    // hidden there and the shortcuts must not change it either.
+    if (this.continueWatching || this.panel !== "library") return;
     let index = this.filters!.media_types.indexOf(mediaType);
     if (index == -1) this.filters!.media_types.push(mediaType);
     else this.filters!.media_types.splice(index, 1);
@@ -564,11 +618,32 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   filtersVisible() {
-    return !this.filters?.series_id;
+    return !this.filters?.series_id && !this.continueWatching && this.panel === "library";
   }
 
-  async switchMode(viewMode: ViewMode) {
-    if (!this.filters || viewMode == this.filters.view_type) return;
+  async switchMode(viewMode: ViewMode, continueWatching = false) {
+    if (!this.filters) return;
+    const sameMode =
+      viewMode == this.filters.view_type && continueWatching === this.continueWatching;
+    if (this.panel !== "library") {
+      this.panel = "library";
+      // Back to the view that was open before the guide/recordings: keep its
+      // position (group, query), just reload it.
+      if (sameMode) {
+        await this.load();
+        return;
+      }
+    } else if (sameMode) return;
+    if (continueWatching !== this.continueWatching) {
+      if (continueWatching) {
+        this.savedMediaTypes = [...this.filters.media_types];
+        this.filters.media_types = [MediaType.movie];
+      } else if (this.savedMediaTypes) {
+        this.filters.media_types = this.savedMediaTypes;
+        this.savedMediaTypes = undefined;
+      }
+      this.continueWatching = continueWatching;
+    }
     this.filters.series_id = undefined;
     this.filters.group_id = undefined;
     this.filters.view_type = viewMode;
@@ -655,6 +730,30 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** Shows the TV guide or the recordings instead of the channel library. */
+  showPanel(panel: Exclude<HomePanel, "library">) {
+    if (!this.filters || this.panel === panel) return;
+    if (panel === "guide") {
+      const group = this.filters.group_id;
+      const node = this.nodeStack.findLast(NodeType.Category);
+      this.guideGroup =
+        group !== undefined ? { id: group, name: node?.name ?? String(group) } : undefined;
+    }
+    this.panel = panel;
+    // The panels handle their own keys; a stale focus area must not act there.
+    this.focusArea = FocusArea.ViewMode;
+    this.showScrollTop = false;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    // The player's side list mirrors the shown channels: the guide publishes
+    // its own rows, the recordings have none.
+    this.memory.PlayerChannelList = [];
+  }
+
+  /** Home toolbar lock: show the locked groups (after the PIN) or hide them. */
+  async toggleLocked() {
+    if (await this.parental.toggleShowLocked()) await this.load();
+  }
+
   openSettings() {
     this.router.navigateByUrl("settings");
   }
@@ -662,6 +761,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   async nav(key: string) {
     if (this.keyboardBlocked() || this.searchFocused()) return;
     if (this.memory.currentContextMenu?.menuOpen) return;
+    if (this.panel !== "library") {
+      this.navSidebarOnly(key);
+      return;
+    }
     // Focus may have moved by Tab or mouse since the last arrow key.
     this.syncFocusFromDom();
     let tmpFocus = 0;
@@ -685,7 +788,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.changeFocusArea(false);
     } else if (tmpFocus > goOverSize && this.focusArea == FocusArea.Filters) {
       this.changeFocusArea(true);
-    } else if (tmpFocus > 3 && this.focusArea == FocusArea.ViewMode) {
+    } else if (tmpFocus > NAV_ITEM_COUNT - 1 && this.focusArea == FocusArea.ViewMode) {
       this.changeFocusArea(true);
     } else if (
       this.focusArea == FocusArea.Tiles &&
@@ -702,6 +805,21 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         document.getElementById(`${FocusAreaPrefix[this.focusArea]}${this.focus}`)?.focus();
       }, 0);
     }
+  }
+
+  /// The guide and the recordings handle their own keys; arrow keys only move
+  /// within the sidebar there.
+  private navSidebarOnly(key: string) {
+    const prefix = FocusAreaPrefix[FocusArea.ViewMode];
+    const id = (document.activeElement as HTMLElement | null)?.id ?? "";
+    if (!id.startsWith(prefix)) return;
+    const index = Number(id.slice(prefix.length));
+    if (!Number.isInteger(index)) return;
+    const delta = key === "ArrowUp" || key === "ArrowLeft" ? -1 : 1;
+    const next = Math.min(NAV_ITEM_COUNT - 1, Math.max(0, index + delta));
+    this.focusArea = FocusArea.ViewMode;
+    this.focus = next;
+    document.getElementById(`${prefix}${next}`)?.focus();
   }
 
   /// Picks up the focus area/index from the focused element's id.
@@ -761,7 +879,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         ? this.shortFiltersMode()
           ? 1
           : 2
-        : 3;
+        : NAV_ITEM_COUNT - 1;
     let id = FocusAreaPrefix[this.focusArea] + this.focus;
     document.getElementById(id)?.focus();
   }
@@ -810,7 +928,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       return;
     }
-    if (event.key == "Enter" && this.focusArea == FocusArea.Filters)
+    if (event.key == "Enter" && this.focusArea == FocusArea.Filters && this.panel === "library")
       (document.activeElement as any).click();
   }
 

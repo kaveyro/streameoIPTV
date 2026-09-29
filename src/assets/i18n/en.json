@@ -42,7 +42,8 @@
       "HIDDEN": "Hidden",
       "RECORDINGS": "Recordings",
       "SETTINGS": "Settings",
-      "GUIDE": "TV Guide"
+      "GUIDE": "TV Guide",
+      "CONTINUE_WATCHING": "Continue watching"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -67,7 +68,9 @@
     "SHARE": "Share",
     "RESTREAM": "Re-stream",
     "COPY_URL": "Copy URL",
-    "DELETE": "Delete"
+    "DELETE": "Delete",
+    "LOCK_GROUP": "Lock group",
+    "UNLOCK_GROUP": "Unlock group"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "No channels found",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "No scheduled recordings",
     "NO_RECORDINGS_HINT": "Schedule one from a channel's TV guide",
     "NO_GUIDE": "No guide data yet",
-    "NO_GUIDE_HINT": "Add XMLTV sources in Settings, and make sure your channels' tvg-id matches the guide."
+    "NO_GUIDE_HINT": "Add XMLTV sources in Settings, and make sure your channels' tvg-id matches the guide.",
+    "NOTHING_TO_CONTINUE": "Nothing to continue yet",
+    "NOTHING_TO_CONTINUE_HINT": "Movies and episodes you started show up here and resume where you left off",
+    "NO_RECORDING_FILES": "No recorded files yet",
+    "NO_RECORDING_FILES_HINT": "Recordings and downloads are saved in the recording folder (Settings → Recording)"
   },
   "RECORDING": {
     "SCHEDULED": "Scheduled recording",
@@ -127,7 +134,8 @@
       "NETWORK": "Network",
       "SOURCES": "Sources",
       "EPG": "External EPG",
-      "DATA": "Data and backup"
+      "DATA": "Data and backup",
+      "PARENTAL": "Parental lock"
     },
     "GENERAL": {
       "LANGUAGE": "Language",
@@ -261,6 +269,17 @@
       "SQLITE_DATABASE": "SQLite database",
       "SAVE_FAVORITES": "Select where to save the favorites playlist",
       "M3U_PLAYLIST": "M3U playlist"
+    },
+    "PARENTAL": {
+      "DESC": "Protect groups with a PIN. Locked groups and their channels stay hidden until the PIN is entered with the lock button on the home page. Lock a group from its context menu in Categories.",
+      "SET_PIN": "Set PIN",
+      "CHANGE_PIN": "Change PIN",
+      "CURRENT_PIN": "Current PIN",
+      "NEW_PIN": "New PIN",
+      "REPEAT_PIN": "Repeat new PIN",
+      "REMOVE_PIN": "Remove PIN",
+      "REMOVE_PIN_DESC": "Enter the current PIN. All locked groups are unlocked.",
+      "REMOVE_BTN": "Remove PIN"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Add custom source",
     "IMPORT_CUSTOM": "Import custom source",
     "DELETE_ALL_DATA": "Delete all app data",
-    "SELECT_EXPORT_FILE": "Select streameoIPTV export file (.otvp)",
+    "SELECT_EXPORT_FILE": "Select streameoIPTV export file (.siptvp)",
     "URL": "URL",
     "XTREAM_URL_HINT": "Server address in the form http://host:port",
     "INVALID_URL": "\"{{url}}\" is not a valid URL. Check it for spaces or typos.",
@@ -309,8 +328,8 @@
     "RUNNING": "Running and accessible from the following ips...",
     "LOCAL_IPS": "Local ips:",
     "WAN_ADDRESS": "WAN address:",
-    "SHARE_INFO1": "Select an IP and press the share button below to generate an .otv file. You will be able to share this file with your friends so they can import it in streameoIPTV and watch your re-streamed content.",
-    "SHARE_INFO2": "You can import .otv files in streameoIPTV by having or creating a custom source. Make sure to select the right IP for the right context; sharing an .otv file with one of your local IPs will not work for someone outside your LAN.",
+    "SHARE_INFO1": "Select an IP and press the share button below to generate a .siptv file. You will be able to share this file with your friends so they can import it in streameoIPTV and watch your re-streamed content.",
+    "SHARE_INFO2": "You can import .siptv files in streameoIPTV by having or creating a custom source. Make sure to select the right IP for the right context; sharing a .siptv file with one of your local IPs will not work for someone outside your LAN.",
     "SELECT_IP": "Select IP to share",
     "START": "Start",
     "WATCH": "Watch",
@@ -439,7 +458,11 @@
     "ENABLED": "Enabled",
     "MORE_ACTIONS": "More actions",
     "SHOW_USERNAME": "Show username",
-    "HIDE_USERNAME": "Hide username"
+    "HIDE_USERNAME": "Hide username",
+    "CHECK": "Test connection",
+    "CHECKING": "Testing…",
+    "CHECK_OK": "Connection successful",
+    "CHECK_FAILED": "Connection failed"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Select where to save recording",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up available",
-    "IS_FAVORITE": "In favorites"
+    "IS_FAVORITE": "In favorites",
+    "RESUME": "Resume",
+    "LOCKED_GROUP": "Locked group"
   },
   "LOADING": {
     "CHANNELS": "Loading your channels..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Delete channel?",
     "DELETE_CHANNEL_BODY": "The channel \"{{name}}\" will be deleted permanently.",
     "DELETE_CATEGORY_TITLE": "Delete category?",
-    "DELETE_CATEGORY_BODY": "The category \"{{name}}\" will be deleted permanently."
+    "DELETE_CATEGORY_BODY": "The category \"{{name}}\" will be deleted permanently.",
+    "CANCEL_RECORDING_TITLE": "Cancel recording?",
+    "CANCEL_RECORDING_BODY": "The scheduled recording \"{{title}}\" will be cancelled.",
+    "STOP_RECORDING_BODY": "The recording \"{{title}}\" is running and will be stopped. The part recorded so far stays in the recording folder.",
+    "DELETE_RECORDING_TITLE": "Delete recording?",
+    "DELETE_RECORDING_BODY": "The file \"{{name}}\" will be deleted from the recording folder. This cannot be undone.",
+    "REMOVE_PIN_TITLE": "Remove parental PIN?",
+    "REMOVE_PIN_BODY": "All locked groups will be unlocked and shown to everyone."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Back to channels",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Programme progress",
     "FILTER_PLACEHOLDER": "Filter channels...",
     "FILTER_CHANNELS": "Filter the channel list"
+  },
+  "GUIDE": {
+    "CHANNEL": "Channel",
+    "NO_EPG": "No EPG",
+    "NO_CATCHUP": "This programme is not available from the archive",
+    "PLAY_CHANNEL": "Play {{name}}"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "Enter PIN",
+    "PIN": "PIN",
+    "PIN_FORMAT": "4 to 8 digits",
+    "PIN_MISMATCH": "The PINs do not match",
+    "PIN_SET": "Parental PIN set",
+    "PIN_CHANGED": "Parental PIN changed",
+    "PIN_REMOVED": "Parental PIN removed, all groups are unlocked",
+    "SET_PIN_FIRST": "Set a parental PIN first (Settings → Parental lock)",
+    "SHOW_LOCKED": "Show locked groups",
+    "HIDE_LOCKED": "Hide locked groups",
+    "UNLOCK_HINT": "Enter the parental PIN to show the locked groups for this session.",
+    "WRONG_PIN": "Wrong PIN",
+    "LOCK_GROUP_TITLE": "Lock \"{{name}}\"",
+    "UNLOCK_GROUP_TITLE": "Unlock \"{{name}}\"",
+    "GROUP_LOCKED": "Locked \"{{name}}\"",
+    "GROUP_UNLOCKED": "Unlocked \"{{name}}\""
+  },
+  "RECORDINGS": {
+    "CANCEL": "Cancel recording",
+    "CLEAR_FINISHED": "Clear finished",
+    "CLEARED": "Removed the finished entries",
+    "CLEAR_FAILED": "Failed to clear the finished recordings",
+    "FILES": "Recorded files",
+    "FILES_LOAD_FAILED": "Failed to load the recorded files",
+    "FILE_DELETED": "Deleted \"{{name}}\"",
+    "FILE_DELETE_FAILED": "Failed to delete the recording",
+    "FOLDER": "Folder:",
+    "COPY_PATH": "Copy folder path",
+    "PATH_COPIED": "Copied the folder path",
+    "PLAY": "Play",
+    "PLAY_ARIA": "Play {{name}}",
+    "UNKNOWN_CHANNEL": "Unknown channel",
+    "OPEN_FOLDER": "Open folder"
   }
 }

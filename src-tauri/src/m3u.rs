@@ -214,6 +214,27 @@ pub async fn get_m3u8_from_link(source: Source, wipe: bool) -> Result<()> {
     result
 }
 
+/// Fetches the start of an M3U link and checks it is a playlist, for the
+/// "test connection" button.
+pub async fn check_link(source: Source) -> Result<()> {
+    let user_agent = get_user_agent_from_source(&source)?;
+    let client = download_client_builder().user_agent(user_agent).build()?;
+    let url = source.url.clone().context("Invalid source")?;
+    let mut response = client.get(&url).send().await?.error_for_status()?;
+    let mut head: Vec<u8> = Vec::new();
+    while head.len() < 64 * 1024 {
+        match response.chunk().await? {
+            Some(chunk) => head.extend_from_slice(&chunk),
+            None => break,
+        }
+    }
+    let text = String::from_utf8_lossy(&head);
+    if !text.contains("#EXTM3U") && !text.contains("#EXTINF") {
+        bail!("The link does not point to an M3U playlist");
+    }
+    Ok(())
+}
+
 fn get_tmp_path() -> Result<String> {
     static COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
     let mut path = directories::ProjectDirs::from("dev", "kaveyro", "streameoIPTV")

@@ -42,7 +42,8 @@
       "HIDDEN": "Ocultos",
       "RECORDINGS": "Gravações",
       "SETTINGS": "Definições",
-      "GUIDE": "Guia de TV"
+      "GUIDE": "Guia de TV",
+      "CONTINUE_WATCHING": "Continuar assistindo"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -67,7 +68,9 @@
     "SHARE": "Partilhar",
     "RESTREAM": "Re-stream",
     "COPY_URL": "Copiar URL",
-    "DELETE": "Eliminar"
+    "DELETE": "Eliminar",
+    "LOCK_GROUP": "Bloquear grupo",
+    "UNLOCK_GROUP": "Desbloquear grupo"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nenhum canal encontrado",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Nenhuma gravação agendada",
     "NO_RECORDINGS_HINT": "Agende uma a partir do guia de TV de um canal",
     "NO_GUIDE": "Ainda sem dados de guia",
-    "NO_GUIDE_HINT": "Adicione fontes XMLTV nas Definições e certifique-se de que o tvg-id dos seus canais corresponde ao guia."
+    "NO_GUIDE_HINT": "Adicione fontes XMLTV nas Definições e certifique-se de que o tvg-id dos seus canais corresponde ao guia.",
+    "NOTHING_TO_CONTINUE": "Nada para continuar ainda",
+    "NOTHING_TO_CONTINUE_HINT": "Filmes e episódios iniciados aparecem aqui e continuam de onde você parou",
+    "NO_RECORDING_FILES": "Nenhum arquivo gravado ainda",
+    "NO_RECORDING_FILES_HINT": "Gravações e downloads são salvos na pasta de gravação (Configurações → Gravação)"
   },
   "RECORDING": {
     "SCHEDULED": "Gravação agendada",
@@ -127,7 +134,8 @@
       "NETWORK": "Rede",
       "SOURCES": "Fontes",
       "DATA": "Dados e cópia de segurança",
-      "EPG": "EPG externo"
+      "EPG": "EPG externo",
+      "PARENTAL": "Controle parental"
     },
     "GENERAL": {
       "LANGUAGE": "Idioma",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "Transferir os dados de guia mais recentes. Isto também acontece automaticamente de acordo com o seu agendamento de atualização automática de fontes.",
       "FREE_SOURCES": "Fontes de EPG gratuitas",
       "FREE_SOURCES_DESC": "Adicione um guia XMLTV gratuito conhecido com um clique. Escolha os que correspondem aos países dos seus canais."
+    },
+    "PARENTAL": {
+      "DESC": "Proteja grupos com um PIN. Grupos bloqueados e seus canais ficam ocultos até que o PIN seja digitado no botão de cadeado da página inicial. Bloqueie um grupo pelo menu de contexto em Categorias.",
+      "SET_PIN": "Definir PIN",
+      "CHANGE_PIN": "Alterar PIN",
+      "CURRENT_PIN": "PIN atual",
+      "NEW_PIN": "Novo PIN",
+      "REPEAT_PIN": "Repita o novo PIN",
+      "REMOVE_PIN": "Remover PIN",
+      "REMOVE_PIN_DESC": "Digite o PIN atual. Todos os grupos bloqueados são desbloqueados.",
+      "REMOVE_BTN": "Remover PIN"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Adicionar fonte personalizada",
     "IMPORT_CUSTOM": "Importar fonte personalizada",
     "DELETE_ALL_DATA": "Eliminar todos os dados da aplicação",
-    "SELECT_EXPORT_FILE": "Selecione o ficheiro de exportação do streameoIPTV (.otvp)",
+    "SELECT_EXPORT_FILE": "Selecione o ficheiro de exportação do streameoIPTV (.siptvp)",
     "URL": "URL",
     "XTREAM_URL_HINT": "Endereço do servidor no formato http://host:port",
     "INVALID_URL": "\"{{url}}\" não é um URL válido. Verifique se há espaços ou erros de digitação.",
@@ -309,8 +328,8 @@
     "RUNNING": "Em execução e acessível a partir dos seguintes IPs...",
     "LOCAL_IPS": "IPs locais:",
     "WAN_ADDRESS": "Endereço WAN:",
-    "SHARE_INFO1": "Selecione um IP e prima o botão de partilha abaixo para gerar um ficheiro .otv. Poderá partilhar este ficheiro com os seus amigos para que o possam importar no streameoIPTV e ver o seu conteúdo re-transmitido.",
-    "SHARE_INFO2": "Pode importar ficheiros .otv no streameoIPTV tendo ou criando uma fonte personalizada. Certifique-se de que seleciona o IP correto para o contexto certo; partilhar um ficheiro .otv com um dos seus IPs locais não funcionará para alguém fora da sua LAN.",
+    "SHARE_INFO1": "Selecione um IP e prima o botão de partilha abaixo para gerar um ficheiro .siptv. Poderá partilhar este ficheiro com os seus amigos para que o possam importar no streameoIPTV e ver o seu conteúdo re-transmitido.",
+    "SHARE_INFO2": "Pode importar ficheiros .siptv no streameoIPTV tendo ou criando uma fonte personalizada. Certifique-se de que seleciona o IP correto para o contexto certo; partilhar um ficheiro .siptv com um dos seus IPs locais não funcionará para alguém fora da sua LAN.",
     "SELECT_IP": "Selecione o IP a partilhar",
     "START": "Iniciar",
     "WATCH": "Ver",
@@ -439,7 +458,11 @@
     "ENABLED": "Ativada",
     "MORE_ACTIONS": "Mais ações",
     "SHOW_USERNAME": "Mostrar nome de usuário",
-    "HIDE_USERNAME": "Ocultar nome de usuário"
+    "HIDE_USERNAME": "Ocultar nome de usuário",
+    "CHECK": "Testar conexão",
+    "CHECKING": "Testando…",
+    "CHECK_OK": "Conexão bem-sucedida",
+    "CHECK_FAILED": "Falha na conexão"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecione onde guardar a gravação",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up disponível",
-    "IS_FAVORITE": "Nos favoritos"
+    "IS_FAVORITE": "Nos favoritos",
+    "RESUME": "Retomar",
+    "LOCKED_GROUP": "Grupo bloqueado"
   },
   "LOADING": {
     "CHANNELS": "Carregando seus canais..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Excluir o canal?",
     "DELETE_CHANNEL_BODY": "O canal \"{{name}}\" será excluído permanentemente.",
     "DELETE_CATEGORY_TITLE": "Excluir a categoria?",
-    "DELETE_CATEGORY_BODY": "A categoria \"{{name}}\" será excluída permanentemente."
+    "DELETE_CATEGORY_BODY": "A categoria \"{{name}}\" será excluída permanentemente.",
+    "CANCEL_RECORDING_TITLE": "Cancelar a gravação?",
+    "CANCEL_RECORDING_BODY": "A gravação agendada \"{{title}}\" será cancelada.",
+    "STOP_RECORDING_BODY": "A gravação \"{{title}}\" está em andamento e será interrompida. O trecho já gravado permanece na pasta de gravação.",
+    "DELETE_RECORDING_TITLE": "Excluir a gravação?",
+    "DELETE_RECORDING_BODY": "O arquivo \"{{name}}\" será excluído da pasta de gravação. Isso não pode ser desfeito.",
+    "REMOVE_PIN_TITLE": "Remover o PIN parental?",
+    "REMOVE_PIN_BODY": "Todos os grupos bloqueados serão desbloqueados e exibidos para todos."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Voltar aos canais",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Progresso do programa",
     "FILTER_PLACEHOLDER": "Filtrar canais...",
     "FILTER_CHANNELS": "Filtrar a lista de canais"
+  },
+  "GUIDE": {
+    "CHANNEL": "Canal",
+    "NO_EPG": "Sem EPG",
+    "NO_CATCHUP": "Este programa não está disponível no arquivo",
+    "PLAY_CHANNEL": "Reproduzir {{name}}"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "Digite o PIN",
+    "PIN": "PIN",
+    "PIN_FORMAT": "4 a 8 dígitos",
+    "PIN_MISMATCH": "Os PINs não coincidem",
+    "PIN_SET": "PIN parental definido",
+    "PIN_CHANGED": "PIN parental alterado",
+    "PIN_REMOVED": "PIN parental removido, todos os grupos foram desbloqueados",
+    "SET_PIN_FIRST": "Defina primeiro um PIN parental (Configurações → Controle parental)",
+    "SHOW_LOCKED": "Mostrar grupos bloqueados",
+    "HIDE_LOCKED": "Ocultar grupos bloqueados",
+    "UNLOCK_HINT": "Digite o PIN parental para mostrar os grupos bloqueados nesta sessão.",
+    "WRONG_PIN": "PIN incorreto",
+    "LOCK_GROUP_TITLE": "Bloquear \"{{name}}\"",
+    "UNLOCK_GROUP_TITLE": "Desbloquear \"{{name}}\"",
+    "GROUP_LOCKED": "\"{{name}}\" bloqueado",
+    "GROUP_UNLOCKED": "\"{{name}}\" desbloqueado"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Cancelar gravação",
+    "CLEAR_FINISHED": "Limpar concluídas",
+    "CLEARED": "Entradas concluídas removidas",
+    "CLEAR_FAILED": "Falha ao limpar as gravações concluídas",
+    "FILES": "Arquivos gravados",
+    "FILES_LOAD_FAILED": "Falha ao carregar os arquivos gravados",
+    "FILE_DELETED": "\"{{name}}\" excluído",
+    "FILE_DELETE_FAILED": "Falha ao excluir a gravação",
+    "FOLDER": "Pasta:",
+    "COPY_PATH": "Copiar caminho da pasta",
+    "PATH_COPIED": "Caminho da pasta copiado",
+    "PLAY": "Reproduzir",
+    "PLAY_ARIA": "Reproduzir {{name}}",
+    "UNKNOWN_CHANNEL": "Canal desconhecido",
+    "OPEN_FOLDER": "Abrir pasta"
   }
 }

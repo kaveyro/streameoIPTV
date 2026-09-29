@@ -87,6 +87,51 @@
         </svg>
         <span class="nav-label">{{ "HOME.NAV.HISTORY" | translate }}</span>
       </button>
+      <button
+        id="viewMode-4"
+        type="button"
+        class="nav-item"
+        (click)="switchMode(viewModeEnum.History, true)"
+        [class.active]="isContinueWatching()"
+        [attr.aria-current]="isContinueWatching() ? 'page' : null"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M10,16.5L16,12L10,7.5V16.5Z"
+          />
+        </svg>
+        <span class="nav-label">{{ "HOME.NAV.CONTINUE_WATCHING" | translate }}</span>
+      </button>
+      <button
+        id="viewMode-5"
+        type="button"
+        class="nav-item"
+        (click)="showPanel('guide')"
+        [class.active]="panel === 'guide'"
+        [attr.aria-current]="panel === 'guide' ? 'page' : null"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M21,17H3V5H21M21,3H3A2,2 0 0,0 1,5V17A2,2 0 0,0 3,19H8V21H16V19H21A2,2 0 0,0 23,17V5A2,2 0 0,0 21,3M5,7H11V9H5V7M13,7H19V9H13V7M5,11H9V13H5V11M11,11H19V13H11V11Z"
+          />
+        </svg>
+        <span class="nav-label">{{ "HOME.NAV.GUIDE" | translate }}</span>
+      </button>
+      <button
+        id="viewMode-6"
+        type="button"
+        class="nav-item"
+        (click)="showPanel('recordings')"
+        [class.active]="panel === 'recordings'"
+        [attr.aria-current]="panel === 'recordings' ? 'page' : null"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,7A5,5 0 0,0 7,12A5,5 0 0,0 12,17A5,5 0 0,0 17,12A5,5 0 0,0 12,7Z"
+          />
+        </svg>
+        <span class="nav-label">{{ "HOME.NAV.RECORDINGS" | translate }}</span>
+      </button>
     </nav>
     <button
       type="button"
@@ -104,7 +149,7 @@
   </aside>
 
   <main class="main-area">
-    <div class="toolbar">
+    <div class="toolbar" [hidden]="panel !== 'library'">
       <div class="search-box">
         <input
           autocomplete="off"
@@ -151,6 +196,30 @@
       </div>
 
       <div class="toolbar-actions">
+        <button
+          *ngIf="memory.HasParentalPin"
+          type="button"
+          class="icon-btn"
+          (click)="toggleLocked()"
+          [attr.aria-pressed]="memory.ShowLocked"
+          [attr.aria-label]="
+            (memory.ShowLocked ? 'PARENTAL.HIDE_LOCKED' : 'PARENTAL.SHOW_LOCKED') | translate
+          "
+          [ngbTooltip]="
+            (memory.ShowLocked ? 'PARENTAL.HIDE_LOCKED' : 'PARENTAL.SHOW_LOCKED') | translate
+          "
+        >
+          <svg *ngIf="!memory.ShowLocked" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"
+            />
+          </svg>
+          <svg *ngIf="memory.ShowLocked" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V10A2,2 0 0,1 6,8H15V6A3,3 0 0,0 12,3A3,3 0 0,0 9,6H7A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17Z"
+            />
+          </svg>
+        </button>
         <svg
           (click)="reload()"
           class="toolbar-icon reload-icon"
@@ -206,7 +275,8 @@
     <div
       class="mb-3 d-flex align-items-center"
       *ngIf="
-        (filters?.view_type == viewModeEnum.Categories && filters?.group_id) || filters?.series_id
+        panel === 'library' &&
+        ((filters?.view_type == viewModeEnum.Categories && filters?.group_id) || filters?.series_id)
       "
     >
       <svg
@@ -230,12 +300,12 @@
     </div>
 
     <span class="visually-hidden" aria-live="polite" role="status">
-      <ng-container *ngIf="!loading && filters">{{
+      <ng-container *ngIf="!loading && filters && panel === 'library'">{{
         "HOME.CHANNELS_SHOWN" | translate: { count: channels.length }
       }}</ng-container>
     </span>
 
-    <ng-container>
+    <ng-container *ngIf="panel === 'library'">
       <div
         *ngIf="gridLoading"
         class="tile-grid"
@@ -256,7 +326,13 @@
               <small>{{ "EMPTY.NO_FAVORITES_HINT" | translate }}</small>
             </ng-container>
             <ng-container *ngSwitchCase="viewModeEnum.History">
-              <p class="mb-1">{{ "EMPTY.NOTHING_WATCHED" | translate }}</p>
+              <ng-container *ngIf="continueWatching; else nothingWatched">
+                <p class="mb-1">{{ "EMPTY.NOTHING_TO_CONTINUE" | translate }}</p>
+                <small>{{ "EMPTY.NOTHING_TO_CONTINUE_HINT" | translate }}</small>
+              </ng-container>
+              <ng-template #nothingWatched>
+                <p class="mb-1">{{ "EMPTY.NOTHING_WATCHED" | translate }}</p>
+              </ng-template>
             </ng-container>
             <ng-container *ngSwitchDefault>
               <p class="mb-1">{{ "EMPTY.NO_CHANNELS_FOUND" | translate }}</p>
@@ -291,6 +367,9 @@
         {{ "HOME.LOAD_MORE" | translate }}
       </button>
     </ng-container>
+
+    <app-tv-guide *ngIf="panel === 'guide'" [group]="guideGroup"></app-tv-guide>
+    <app-recordings *ngIf="panel === 'recordings'"></app-recordings>
   </main>
 </div>
 

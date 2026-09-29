@@ -25,6 +25,17 @@ type PlayerKey = "next" | "prev" | "back" | "last";
 /// Class on <body> while the player is shown (the toasts are styled with it).
 const BODY_CLASS = "player-open";
 
+/// Everything behind the overlay. Marked inert while the player is shown, so
+/// Tab cannot walk the hidden home page and the tile that started playback
+/// loses focus (its Enter handler would otherwise restart that channel).
+const BACKGROUND_SELECTOR = "main, app-download-manager";
+
+function setBackgroundInert(inert: boolean) {
+  document
+    .querySelectorAll(BACKGROUND_SELECTOR)
+    .forEach((el) => el.toggleAttribute("inert", inert));
+}
+
 /**
  * In-app video surface for the embedded, persistent mpv player.
  *
@@ -176,6 +187,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.active = true;
     this.memory.PlayerVisible = true;
     document.body.classList.add(BODY_CLASS);
+    setBackgroundInert(true);
     // Stop the home page behind the overlay from scrolling, so its scrollbar
     // doesn't show at the window edge alongside the channel list's own.
     this.lockBackgroundScroll(true);
@@ -199,7 +211,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     // Wait for *ngIf to render the host element, then align the native window.
     setTimeout(() => {
       this.startBoundsSync();
-      this.scrollActiveIntoView(false);
+      // Focus lands in the list, so the keyboard keeps working in the player.
+      this.scrollActiveIntoView(true);
     }, 0);
     this.startEpgTimer();
     if (switchSeq === this.switchSeq) this.announce(channel);
@@ -505,6 +518,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.active = false;
     this.memory.PlayerVisible = false;
     document.body.classList.remove(BODY_CLASS);
+    setBackgroundInert(false);
     this.filterText = "";
     this.nowPlaying = undefined;
     this.lockBackgroundScroll(false);
@@ -588,5 +602,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.unlistens.forEach((unlisten) => unlisten());
     this.lockBackgroundScroll(false);
     document.body.classList.remove(BODY_CLASS);
+    setBackgroundInert(false);
   }
 }

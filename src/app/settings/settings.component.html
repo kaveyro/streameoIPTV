@@ -257,11 +257,11 @@
                   id="set-zoom"
                   class="form-control"
                   step="10"
-                  min="10"
-                  max="1000"
+                  min="50"
+                  max="300"
                   type="number"
                   [ngModel]="settings.zoom"
-                  (ngModelChange)="onZoomChange($event)"
+                  (change)="onZoomChange($any($event.target).valueAsNumber)"
                 />
                 <span class="input-group-text">%</span>
               </div>
@@ -997,6 +997,157 @@
             </div>
           </div>
         </div>
+      </section>
+
+      <!-- Parental lock -->
+      <section
+        class="settings-pane"
+        [hidden]="activeCategory !== 'parental'"
+        [attr.aria-label]="'SETTINGS.NAV.PARENTAL' | translate"
+      >
+        <h3 class="pane-title">{{ "SETTINGS.NAV.PARENTAL" | translate }}</h3>
+        <p class="setting-desc mb-3">{{ "SETTINGS.PARENTAL.DESC" | translate }}</p>
+
+        <!-- Set or change the PIN -->
+        <form class="settings-group" (ngSubmit)="savePin()" novalidate>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">{{
+                (memory.HasParentalPin
+                  ? "SETTINGS.PARENTAL.CHANGE_PIN"
+                  : "SETTINGS.PARENTAL.SET_PIN"
+                ) | translate
+              }}</span>
+              <div class="setting-desc">{{ "PARENTAL.PIN_FORMAT" | translate }}</div>
+            </div>
+          </div>
+          <div class="setting-row" *ngIf="memory.HasParentalPin">
+            <div class="setting-info">
+              <label class="setting-title" for="pin-current">{{
+                "SETTINGS.PARENTAL.CURRENT_PIN" | translate
+              }}</label>
+            </div>
+            <div class="setting-control">
+              <input
+                id="pin-current"
+                name="pin-current"
+                class="form-control control-input"
+                type="password"
+                inputmode="numeric"
+                maxlength="8"
+                autocomplete="off"
+                [(ngModel)]="pinForm.current"
+              />
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="pin-new">{{
+                "SETTINGS.PARENTAL.NEW_PIN" | translate
+              }}</label>
+            </div>
+            <div class="setting-control">
+              <input
+                id="pin-new"
+                name="pin-new"
+                class="form-control control-input"
+                type="password"
+                inputmode="numeric"
+                maxlength="8"
+                autocomplete="new-password"
+                [class.is-invalid]="!!pinForm.next && !pinValid(pinForm.next)"
+                [(ngModel)]="pinForm.next"
+              />
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="pin-repeat">{{
+                "SETTINGS.PARENTAL.REPEAT_PIN" | translate
+              }}</label>
+              <div
+                class="setting-desc text-danger"
+                *ngIf="pinForm.repeat && pinForm.repeat !== pinForm.next"
+                role="alert"
+              >
+                {{ "PARENTAL.PIN_MISMATCH" | translate }}
+              </div>
+            </div>
+            <div class="setting-control">
+              <input
+                id="pin-repeat"
+                name="pin-repeat"
+                class="form-control control-input"
+                type="password"
+                inputmode="numeric"
+                maxlength="8"
+                autocomplete="new-password"
+                [class.is-invalid]="!!pinForm.repeat && pinForm.repeat !== pinForm.next"
+                [(ngModel)]="pinForm.repeat"
+              />
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"></div>
+            <div class="setting-control">
+              <button
+                type="submit"
+                class="btn btn-primary btn-sm"
+                [disabled]="
+                  pinBusy ||
+                  !pinValid(pinForm.next) ||
+                  pinForm.next !== pinForm.repeat ||
+                  (memory.HasParentalPin && !pinForm.current)
+                "
+              >
+                {{
+                  (memory.HasParentalPin
+                    ? "SETTINGS.PARENTAL.CHANGE_PIN"
+                    : "SETTINGS.PARENTAL.SET_PIN"
+                  ) | translate
+                }}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Remove the PIN -->
+        <form
+          *ngIf="memory.HasParentalPin"
+          class="settings-group mt-3"
+          (ngSubmit)="removePin()"
+          novalidate
+        >
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="pin-remove">{{
+                "SETTINGS.PARENTAL.REMOVE_PIN" | translate
+              }}</label>
+              <div class="setting-desc">{{ "SETTINGS.PARENTAL.REMOVE_PIN_DESC" | translate }}</div>
+            </div>
+            <div class="setting-control">
+              <input
+                id="pin-remove"
+                name="pin-remove"
+                class="form-control control-input"
+                type="password"
+                inputmode="numeric"
+                maxlength="8"
+                autocomplete="off"
+                [attr.aria-label]="'SETTINGS.PARENTAL.CURRENT_PIN' | translate"
+                [placeholder]="'SETTINGS.PARENTAL.CURRENT_PIN' | translate"
+                [(ngModel)]="pinForm.remove"
+              />
+              <button
+                type="submit"
+                class="btn btn-danger btn-sm"
+                [disabled]="pinBusy || !pinForm.remove"
+              >
+                {{ "SETTINGS.PARENTAL.REMOVE_BTN" | translate }}
+              </button>
+            </div>
+          </div>
+        </form>
       </section>
     </div>
   </div>

@@ -42,7 +42,8 @@
       "HIDDEN": "Gizli",
       "RECORDINGS": "Kayıtlar",
       "SETTINGS": "Ayarlar",
-      "GUIDE": "TV Rehberi"
+      "GUIDE": "TV Rehberi",
+      "CONTINUE_WATCHING": "İzlemeye devam et"
     },
     "PILL": {
       "LIVESTREAMS": "Canlı yayınlar",
@@ -67,7 +68,9 @@
     "SHARE": "Paylaş",
     "RESTREAM": "Yeniden yayınla",
     "COPY_URL": "URL'yi kopyala",
-    "DELETE": "Sil"
+    "DELETE": "Sil",
+    "LOCK_GROUP": "Grubu kilitle",
+    "UNLOCK_GROUP": "Grubun kilidini aç"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Kanal bulunamadı",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Zamanlanmış kayıt yok",
     "NO_RECORDINGS_HINT": "Bir kanalın TV rehberinden zamanlayın",
     "NO_GUIDE": "Henüz rehber verisi yok",
-    "NO_GUIDE_HINT": "Ayarlar'dan XMLTV kaynakları ekleyin ve kanallarınızın tvg-id değerinin rehberle eşleştiğinden emin olun."
+    "NO_GUIDE_HINT": "Ayarlar'dan XMLTV kaynakları ekleyin ve kanallarınızın tvg-id değerinin rehberle eşleştiğinden emin olun.",
+    "NOTHING_TO_CONTINUE": "Henüz devam edilecek bir şey yok",
+    "NOTHING_TO_CONTINUE_HINT": "Başladığınız filmler ve bölümler burada görünür ve kaldığınız yerden devam eder",
+    "NO_RECORDING_FILES": "Henüz kaydedilmiş dosya yok",
+    "NO_RECORDING_FILES_HINT": "Kayıtlar ve indirmeler kayıt klasörüne kaydedilir (Ayarlar → Kayıt)"
   },
   "RECORDING": {
     "SCHEDULED": "Zamanlanmış kayıt",
@@ -127,7 +134,8 @@
       "NETWORK": "Ağ",
       "SOURCES": "Kaynaklar",
       "DATA": "Veri ve yedekleme",
-      "EPG": "Harici EPG"
+      "EPG": "Harici EPG",
+      "PARENTAL": "Ebeveyn kilidi"
     },
     "GENERAL": {
       "LANGUAGE": "Dil",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "En son program verilerini indir. Bu, kaynak otomatik yenileme zamanlamanıza göre otomatik olarak da gerçekleşir.",
       "FREE_SOURCES": "Ücretsiz EPG kaynakları",
       "FREE_SOURCES_DESC": "Bilinen ücretsiz bir XMLTV rehberini tek tıkla ekleyin. Kanallarınızın ülkelerine uyanları seçin."
+    },
+    "PARENTAL": {
+      "DESC": "Grupları bir PIN ile koruyun. Kilitli gruplar ve kanalları, ana sayfadaki kilit düğmesiyle PIN girilene kadar gizli kalır. Bir grubu Kategoriler'deki bağlam menüsünden kilitleyin.",
+      "SET_PIN": "PIN ayarla",
+      "CHANGE_PIN": "PIN'i değiştir",
+      "CURRENT_PIN": "Mevcut PIN",
+      "NEW_PIN": "Yeni PIN",
+      "REPEAT_PIN": "Yeni PIN'i tekrarla",
+      "REMOVE_PIN": "PIN'i kaldır",
+      "REMOVE_PIN_DESC": "Mevcut PIN'i girin. Tüm kilitli grupların kilidi açılır.",
+      "REMOVE_BTN": "PIN'i kaldır"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Özel kaynak ekle",
     "IMPORT_CUSTOM": "Özel kaynak içe aktar",
     "DELETE_ALL_DATA": "Tüm uygulama verilerini sil",
-    "SELECT_EXPORT_FILE": "streameoIPTV dışa aktarma dosyasını (.otvp) seçin",
+    "SELECT_EXPORT_FILE": "streameoIPTV dışa aktarma dosyasını (.siptvp) seçin",
     "URL": "URL",
     "XTREAM_URL_HINT": "Sunucu adresi http://host:port biçiminde",
     "INVALID_URL": "\"{{url}}\" geçerli bir URL değil. Boşluk veya yazım hatası olup olmadığını kontrol edin.",
@@ -309,8 +328,8 @@
     "RUNNING": "Çalışıyor ve aşağıdaki IP'lerden erişilebilir...",
     "LOCAL_IPS": "Yerel IP'ler:",
     "WAN_ADDRESS": "WAN adresi:",
-    "SHARE_INFO1": "Bir IP seçin ve aşağıdaki paylaş düğmesine basarak bir .otv dosyası oluşturun. Bu dosyayı arkadaşlarınızla paylaşabilir, böylece onu streameoIPTV'ye içe aktarıp yeniden yayınlanan içeriğinizi izleyebilirler.",
-    "SHARE_INFO2": "Özel bir kaynağa sahip olarak veya oluşturarak .otv dosyalarını streameoIPTV'ye içe aktarabilirsiniz. Doğru bağlam için doğru IP'yi seçtiğinizden emin olun; yerel IP'lerinizden biriyle bir .otv dosyası paylaşmak, LAN'ınızın dışındaki biri için çalışmaz.",
+    "SHARE_INFO1": "Bir IP seçin ve aşağıdaki paylaş düğmesine basarak bir .siptv dosyası oluşturun. Bu dosyayı arkadaşlarınızla paylaşabilir, böylece onu streameoIPTV'ye içe aktarıp yeniden yayınlanan içeriğinizi izleyebilirler.",
+    "SHARE_INFO2": "Özel bir kaynağa sahip olarak veya oluşturarak .siptv dosyalarını streameoIPTV'ye içe aktarabilirsiniz. Doğru bağlam için doğru IP'yi seçtiğinizden emin olun; yerel IP'lerinizden biriyle bir .siptv dosyası paylaşmak, LAN'ınızın dışındaki biri için çalışmaz.",
     "SELECT_IP": "Paylaşılacak IP'yi seçin",
     "START": "Başlat",
     "WATCH": "İzle",
@@ -439,7 +458,11 @@
     "ENABLED": "Etkin",
     "MORE_ACTIONS": "Diğer işlemler",
     "SHOW_USERNAME": "Kullanıcı adını göster",
-    "HIDE_USERNAME": "Kullanıcı adını gizle"
+    "HIDE_USERNAME": "Kullanıcı adını gizle",
+    "CHECK": "Bağlantıyı test et",
+    "CHECKING": "Test ediliyor…",
+    "CHECK_OK": "Bağlantı başarılı",
+    "CHECK_FAILED": "Bağlantı başarısız"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Kaydın kaydedileceği yeri seçin",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Geriye dönük izleme mevcut",
-    "IS_FAVORITE": "Favorilerde"
+    "IS_FAVORITE": "Favorilerde",
+    "RESUME": "Devam et",
+    "LOCKED_GROUP": "Kilitli grup"
   },
   "LOADING": {
     "CHANNELS": "Kanallarınız yükleniyor..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Kanal silinsin mi?",
     "DELETE_CHANNEL_BODY": "\"{{name}}\" kanalı kalıcı olarak silinecek.",
     "DELETE_CATEGORY_TITLE": "Kategori silinsin mi?",
-    "DELETE_CATEGORY_BODY": "\"{{name}}\" kategorisi kalıcı olarak silinecek."
+    "DELETE_CATEGORY_BODY": "\"{{name}}\" kategorisi kalıcı olarak silinecek.",
+    "CANCEL_RECORDING_TITLE": "Kayıt iptal edilsin mi?",
+    "CANCEL_RECORDING_BODY": "Zamanlanmış \"{{title}}\" kaydı iptal edilecek.",
+    "STOP_RECORDING_BODY": "\"{{title}}\" kaydı devam ediyor ve durdurulacak. Şimdiye kadar kaydedilen kısım kayıt klasöründe kalır.",
+    "DELETE_RECORDING_TITLE": "Kayıt silinsin mi?",
+    "DELETE_RECORDING_BODY": "\"{{name}}\" dosyası kayıt klasöründen silinecek. Bu işlem geri alınamaz.",
+    "REMOVE_PIN_TITLE": "Ebeveyn PIN'i kaldırılsın mı?",
+    "REMOVE_PIN_BODY": "Tüm kilitli grupların kilidi açılacak ve herkese gösterilecek."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Kanallara dön",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Program ilerlemesi",
     "FILTER_PLACEHOLDER": "Kanalları filtrele...",
     "FILTER_CHANNELS": "Kanal listesini filtrele"
+  },
+  "GUIDE": {
+    "CHANNEL": "Kanal",
+    "NO_EPG": "EPG yok",
+    "NO_CATCHUP": "Bu program arşivde mevcut değil",
+    "PLAY_CHANNEL": "{{name}} oynat"
+  },
+  "PARENTAL": {
+    "CONFIRM": "Tamam",
+    "ENTER_PIN": "PIN girin",
+    "PIN": "PIN",
+    "PIN_FORMAT": "4 ila 8 rakam",
+    "PIN_MISMATCH": "PIN'ler eşleşmiyor",
+    "PIN_SET": "Ebeveyn PIN'i ayarlandı",
+    "PIN_CHANGED": "Ebeveyn PIN'i değiştirildi",
+    "PIN_REMOVED": "Ebeveyn PIN'i kaldırıldı, tüm grupların kilidi açıldı",
+    "SET_PIN_FIRST": "Önce bir ebeveyn PIN'i ayarlayın (Ayarlar → Ebeveyn kilidi)",
+    "SHOW_LOCKED": "Kilitli grupları göster",
+    "HIDE_LOCKED": "Kilitli grupları gizle",
+    "UNLOCK_HINT": "Kilitli grupları bu oturum için göstermek üzere ebeveyn PIN'ini girin.",
+    "WRONG_PIN": "Yanlış PIN",
+    "LOCK_GROUP_TITLE": "\"{{name}}\" grubunu kilitle",
+    "UNLOCK_GROUP_TITLE": "\"{{name}}\" grubunun kilidini aç",
+    "GROUP_LOCKED": "\"{{name}}\" kilitlendi",
+    "GROUP_UNLOCKED": "\"{{name}}\" kilidi açıldı"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Kaydı iptal et",
+    "CLEAR_FINISHED": "Bitenleri temizle",
+    "CLEARED": "Biten kayıtlar kaldırıldı",
+    "CLEAR_FAILED": "Biten kayıtlar temizlenemedi",
+    "FILES": "Kaydedilen dosyalar",
+    "FILES_LOAD_FAILED": "Kaydedilen dosyalar yüklenemedi",
+    "FILE_DELETED": "\"{{name}}\" silindi",
+    "FILE_DELETE_FAILED": "Kayıt silinemedi",
+    "FOLDER": "Klasör:",
+    "COPY_PATH": "Klasör yolunu kopyala",
+    "PATH_COPIED": "Klasör yolu kopyalandı",
+    "PLAY": "Oynat",
+    "PLAY_ARIA": "{{name}} oynat",
+    "UNKNOWN_CHANNEL": "Bilinmeyen kanal",
+    "OPEN_FOLDER": "Klasörü aç"
   }
 }

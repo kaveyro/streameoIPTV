@@ -240,6 +240,16 @@
       >
         {{ "MODAL.CANCEL" | translate }}
       </button>
+      <button
+        *ngIf="canCheck()"
+        type="button"
+        (click)="testConnection()"
+        class="btn btn-outline-secondary btn-sm"
+        [disabled]="checking || memory.Loading"
+        [attr.aria-busy]="checking"
+      >
+        {{ (checking ? "SOURCE.CHECKING" : "SOURCE.CHECK") | translate }}
+      </button>
     </ng-container>
 
     <!-- Not editing: one primary action + overflow menu -->

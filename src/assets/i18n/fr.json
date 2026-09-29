@@ -42,7 +42,8 @@
       "HIDDEN": "Masquées",
       "RECORDINGS": "Enregistrements",
       "SETTINGS": "Paramètres",
-      "GUIDE": "Guide TV"
+      "GUIDE": "Guide TV",
+      "CONTINUE_WATCHING": "Reprendre la lecture"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -67,7 +68,9 @@
     "SHARE": "Partager",
     "RESTREAM": "Re-stream",
     "COPY_URL": "Copier l'URL",
-    "DELETE": "Supprimer"
+    "DELETE": "Supprimer",
+    "LOCK_GROUP": "Verrouiller le groupe",
+    "UNLOCK_GROUP": "Déverrouiller le groupe"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Aucune chaîne trouvée",
@@ -79,7 +82,11 @@
     "NO_RECORDINGS": "Aucun enregistrement programmé",
     "NO_RECORDINGS_HINT": "Programmez-en un depuis le guide TV d'une chaîne",
     "NO_GUIDE": "Aucune donnée de guide",
-    "NO_GUIDE_HINT": "Ajoutez des sources XMLTV dans les Paramètres et vérifiez que le tvg-id de vos chaînes correspond au guide."
+    "NO_GUIDE_HINT": "Ajoutez des sources XMLTV dans les Paramètres et vérifiez que le tvg-id de vos chaînes correspond au guide.",
+    "NOTHING_TO_CONTINUE": "Rien à reprendre pour l'instant",
+    "NOTHING_TO_CONTINUE_HINT": "Les films et épisodes commencés apparaissent ici et reprennent là où vous vous êtes arrêté",
+    "NO_RECORDING_FILES": "Aucun fichier enregistré pour l'instant",
+    "NO_RECORDING_FILES_HINT": "Les enregistrements et téléchargements sont placés dans le dossier d'enregistrement (Paramètres → Enregistrement)"
   },
   "RECORDING": {
     "SCHEDULED": "Enregistrement programmé",
@@ -127,7 +134,8 @@
       "NETWORK": "Réseau",
       "SOURCES": "Sources",
       "DATA": "Données et sauvegarde",
-      "EPG": "EPG externe"
+      "EPG": "EPG externe",
+      "PARENTAL": "Contrôle parental"
     },
     "GENERAL": {
       "LANGUAGE": "Langue",
@@ -261,6 +269,17 @@
       "REFRESH_DESC": "Télécharger les dernières données du guide. Cela se produit aussi automatiquement selon votre planification d'actualisation automatique des sources.",
       "FREE_SOURCES": "Sources EPG gratuites",
       "FREE_SOURCES_DESC": "Ajoutez un guide XMLTV gratuit connu en un clic. Choisissez ceux qui correspondent aux pays de vos chaînes."
+    },
+    "PARENTAL": {
+      "DESC": "Protégez des groupes par un code PIN. Les groupes verrouillés et leurs chaînes restent masqués jusqu'à la saisie du code PIN via le bouton cadenas de la page d'accueil. Verrouillez un groupe depuis son menu contextuel dans Catégories.",
+      "SET_PIN": "Définir le code PIN",
+      "CHANGE_PIN": "Modifier le code PIN",
+      "CURRENT_PIN": "Code PIN actuel",
+      "NEW_PIN": "Nouveau code PIN",
+      "REPEAT_PIN": "Répéter le nouveau code PIN",
+      "REMOVE_PIN": "Supprimer le code PIN",
+      "REMOVE_PIN_DESC": "Saisissez le code PIN actuel. Tous les groupes verrouillés sont déverrouillés.",
+      "REMOVE_BTN": "Supprimer le code PIN"
     }
   },
   "SETUP": {
@@ -284,7 +303,7 @@
     "ADD_CUSTOM": "Ajouter une source personnalisée",
     "IMPORT_CUSTOM": "Importer une source personnalisée",
     "DELETE_ALL_DATA": "Supprimer toutes les données de l'application",
-    "SELECT_EXPORT_FILE": "Sélectionnez le fichier d'export streameoIPTV (.otvp)",
+    "SELECT_EXPORT_FILE": "Sélectionnez le fichier d'export streameoIPTV (.siptvp)",
     "URL": "URL",
     "XTREAM_URL_HINT": "Adresse du serveur au format http://host:port",
     "INVALID_URL": "« {{url}} » n'est pas une URL valide. Vérifiez qu'elle ne contient ni espaces ni fautes de frappe.",
@@ -309,8 +328,8 @@
     "RUNNING": "En cours d'exécution et accessible depuis les IP suivantes...",
     "LOCAL_IPS": "IP locales :",
     "WAN_ADDRESS": "Adresse WAN :",
-    "SHARE_INFO1": "Sélectionnez une IP et appuyez sur le bouton partager ci-dessous pour générer un fichier .otv. Vous pourrez partager ce fichier avec vos amis afin qu'ils puissent l'importer dans streameoIPTV et regarder votre contenu re-diffusé.",
-    "SHARE_INFO2": "Vous pouvez importer des fichiers .otv dans streameoIPTV en possédant ou en créant une source personnalisée. Veillez à sélectionner la bonne IP pour le bon contexte ; partager un fichier .otv avec l'une de vos IP locales ne fonctionnera pas pour quelqu'un en dehors de votre LAN.",
+    "SHARE_INFO1": "Sélectionnez une IP et appuyez sur le bouton partager ci-dessous pour générer un fichier .siptv. Vous pourrez partager ce fichier avec vos amis afin qu'ils puissent l'importer dans streameoIPTV et regarder votre contenu re-diffusé.",
+    "SHARE_INFO2": "Vous pouvez importer des fichiers .siptv dans streameoIPTV en possédant ou en créant une source personnalisée. Veillez à sélectionner la bonne IP pour le bon contexte ; partager un fichier .siptv avec l'une de vos IP locales ne fonctionnera pas pour quelqu'un en dehors de votre LAN.",
     "SELECT_IP": "Sélectionnez l'IP à partager",
     "START": "Démarrer",
     "WATCH": "Regarder",
@@ -439,7 +458,11 @@
     "ENABLED": "Activée",
     "MORE_ACTIONS": "Plus d'actions",
     "SHOW_USERNAME": "Afficher le nom d'utilisateur",
-    "HIDE_USERNAME": "Masquer le nom d'utilisateur"
+    "HIDE_USERNAME": "Masquer le nom d'utilisateur",
+    "CHECK": "Tester la connexion",
+    "CHECKING": "Test en cours…",
+    "CHECK_OK": "Connexion réussie",
+    "CHECK_FAILED": "Échec de la connexion"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Sélectionnez où enregistrer l'enregistrement",
@@ -550,7 +573,9 @@
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Replay disponible",
-    "IS_FAVORITE": "Dans les favoris"
+    "IS_FAVORITE": "Dans les favoris",
+    "RESUME": "Reprendre",
+    "LOCKED_GROUP": "Groupe verrouillé"
   },
   "LOADING": {
     "CHANNELS": "Chargement de vos chaînes..."
@@ -568,7 +593,14 @@
     "DELETE_CHANNEL_TITLE": "Supprimer la chaîne ?",
     "DELETE_CHANNEL_BODY": "La chaîne « {{name}} » sera définitivement supprimée.",
     "DELETE_CATEGORY_TITLE": "Supprimer la catégorie ?",
-    "DELETE_CATEGORY_BODY": "La catégorie « {{name}} » sera définitivement supprimée."
+    "DELETE_CATEGORY_BODY": "La catégorie « {{name}} » sera définitivement supprimée.",
+    "CANCEL_RECORDING_TITLE": "Annuler l'enregistrement ?",
+    "CANCEL_RECORDING_BODY": "L'enregistrement programmé « {{title}} » sera annulé.",
+    "STOP_RECORDING_BODY": "L'enregistrement « {{title}} » est en cours et sera arrêté. La partie déjà enregistrée reste dans le dossier d'enregistrement.",
+    "DELETE_RECORDING_TITLE": "Supprimer l'enregistrement ?",
+    "DELETE_RECORDING_BODY": "Le fichier « {{name}} » sera supprimé du dossier d'enregistrement. Cette action est irréversible.",
+    "REMOVE_PIN_TITLE": "Supprimer le code PIN parental ?",
+    "REMOVE_PIN_BODY": "Tous les groupes verrouillés seront déverrouillés et visibles par tous."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Retour aux chaînes",
@@ -579,5 +611,47 @@
     "PROGRAMME_PROGRESS": "Progression du programme",
     "FILTER_PLACEHOLDER": "Filtrer les chaînes...",
     "FILTER_CHANNELS": "Filtrer la liste des chaînes"
+  },
+  "GUIDE": {
+    "CHANNEL": "Chaîne",
+    "NO_EPG": "Pas d'EPG",
+    "NO_CATCHUP": "Ce programme n'est pas disponible dans l'archive",
+    "PLAY_CHANNEL": "Lire {{name}}"
+  },
+  "PARENTAL": {
+    "CONFIRM": "OK",
+    "ENTER_PIN": "Saisir le code PIN",
+    "PIN": "Code PIN",
+    "PIN_FORMAT": "4 à 8 chiffres",
+    "PIN_MISMATCH": "Les codes PIN ne correspondent pas",
+    "PIN_SET": "Code PIN parental défini",
+    "PIN_CHANGED": "Code PIN parental modifié",
+    "PIN_REMOVED": "Code PIN parental supprimé, tous les groupes sont déverrouillés",
+    "SET_PIN_FIRST": "Définissez d'abord un code PIN parental (Paramètres → Contrôle parental)",
+    "SHOW_LOCKED": "Afficher les groupes verrouillés",
+    "HIDE_LOCKED": "Masquer les groupes verrouillés",
+    "UNLOCK_HINT": "Saisissez le code PIN parental pour afficher les groupes verrouillés pendant cette session.",
+    "WRONG_PIN": "Code PIN incorrect",
+    "LOCK_GROUP_TITLE": "Verrouiller « {{name}} »",
+    "UNLOCK_GROUP_TITLE": "Déverrouiller « {{name}} »",
+    "GROUP_LOCKED": "« {{name}} » verrouillé",
+    "GROUP_UNLOCKED": "« {{name}} » déverrouillé"
+  },
+  "RECORDINGS": {
+    "CANCEL": "Annuler l'enregistrement",
+    "CLEAR_FINISHED": "Effacer les terminés",
+    "CLEARED": "Entrées terminées supprimées",
+    "CLEAR_FAILED": "Impossible d'effacer les enregistrements terminés",
+    "FILES": "Fichiers enregistrés",
+    "FILES_LOAD_FAILED": "Impossible de charger les fichiers enregistrés",
+    "FILE_DELETED": "« {{name}} » supprimé",
+    "FILE_DELETE_FAILED": "Impossible de supprimer l'enregistrement",
+    "FOLDER": "Dossier :",
+    "COPY_PATH": "Copier le chemin du dossier",
+    "PATH_COPIED": "Chemin du dossier copié",
+    "PLAY": "Lire",
+    "PLAY_ARIA": "Lire {{name}}",
+    "UNKNOWN_CHANNEL": "Chaîne inconnue",
+    "OPEN_FOLDER": "Ouvrir le dossier"
   }
 }

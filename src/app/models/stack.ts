@@ -20,6 +20,14 @@ export class Stack {
     return this.nodes[this.nodes.length - 1];
   }
 
+  /** The innermost node of the given type. */
+  findLast(type: Node["type"]): Node | undefined {
+    for (let i = this.nodes.length - 1; i >= 0; i--) {
+      if (this.nodes[i].type === type) return this.nodes[i];
+    }
+    return undefined;
+  }
+
   hasNodes(): boolean {
     return this.nodes.length > 0;
   }

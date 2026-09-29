@@ -25,3 +25,29 @@ export const getExtension = (url: string): string => {
   if (split.length == 1 || last.startsWith("php?")) return "mp4";
   else return last;
 };
+
+/// Locale for Intl formatting: the active UI language, else the default one.
+export const uiLocale = (translate: {
+  currentLang?: string;
+  defaultLang?: string;
+}): string | undefined => translate.currentLang || translate.defaultLang || undefined;
+
+/// Human readable file size (1024-based units), formatted for the locale.
+export const formatFileSize = (bytes: number, locale?: string): string => {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = Math.max(0, bytes || 0);
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  let formatted: string;
+  try {
+    formatted = new Intl.NumberFormat(locale, {
+      maximumFractionDigits: unit === 0 ? 0 : 1,
+    }).format(value);
+  } catch {
+    formatted = value.toFixed(unit === 0 ? 0 : 1);
+  }
+  return `${formatted} ${units[unit]}`;
+};

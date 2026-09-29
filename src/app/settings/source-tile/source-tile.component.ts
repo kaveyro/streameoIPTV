@@ -8,10 +8,12 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { EditGroupModalComponent } from "../../edit-group-modal/edit-group-modal.component";
 import { ImportModalComponent } from "../../import-modal/import-modal.component";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { CHANNEL_EXTENSION, FAVS_BACKUP, PLAYLIST_EXTENSION } from "../../models/extensions";
+import { FAVS_BACKUP, FAVS_BACKUP_EXTENSIONS, PLAYLIST_EXTENSION } from "../../models/extensions";
 import { sanitizeFileName } from "../../utils";
 import { TranslateService } from "@ngx-translate/core";
 import { ConfirmService } from "../../confirm.service";
+import { ToastrService } from "ngx-toastr";
+import { canCheckSource, sourceForCheck } from "../../source-check";
 
 @Component({
   selector: "app-source-tile",
@@ -28,6 +30,8 @@ export class SourceTileComponent {
   loading = false;
   sourceTypeEnum = SourceType;
   editing = false;
+  /// "Test connection" is running.
+  checking = false;
   editableSource: Source = {};
   defaultUserAgent = "streameoIPTV";
 
@@ -36,6 +40,7 @@ export class SourceTileComponent {
     private modal: NgbModal,
     private translate: TranslateService,
     private confirmService: ConfirmService,
+    private toastr: ToastrService,
   ) {}
 
   get_source_type_name() {
@@ -183,6 +188,25 @@ export class SourceTileComponent {
     }
   }
 
+  canCheck(): boolean {
+    return canCheckSource(this.source?.source_type);
+  }
+
+  /** Checks the edited settings without saving or refreshing anything. */
+  async testConnection() {
+    if (this.checking || !this.canCheck()) return;
+    this.checking = true;
+    try {
+      await invoke("check_source", { source: sourceForCheck(this.editableSource) });
+      this.toastr.success(this.translate.instant("SOURCE.CHECK_OK"));
+    } catch (e) {
+      // The backend message is already redacted and meant for the user.
+      this.toastr.error(String(e), this.translate.instant("SOURCE.CHECK_FAILED"));
+    } finally {
+      this.checking = false;
+    }
+  }
+
   cancel() {
     this.editableSource = {};
     this.editing = false;
@@ -212,7 +236,10 @@ export class SourceTileComponent {
       directory: false,
       multiple: false,
       filters: [
-        { name: this.translate.instant("DIALOG.FILTER_FAVS_BACKUP"), extensions: ["otvf"] },
+        {
+          name: this.translate.instant("DIALOG.FILTER_FAVS_BACKUP"),
+          extensions: FAVS_BACKUP_EXTENSIONS,
+        },
       ],
     });
     if (file) {

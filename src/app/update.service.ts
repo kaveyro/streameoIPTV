@@ -4,6 +4,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { getVersion } from "@tauri-apps/api/app";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { TranslateService } from "@ngx-translate/core";
+import { MemoryService } from "./memory.service";
 import { ErrorService } from "./error.service";
 import { UpdateModalComponent } from "./update-modal/update-modal.component";
 
@@ -27,6 +28,7 @@ export class UpdateService {
     private modal: NgbModal,
     private error: ErrorService,
     private translate: TranslateService,
+    private memory: MemoryService,
   ) {}
 
   /**
@@ -68,6 +70,9 @@ export class UpdateService {
     modalRef.componentInstance.version = update.version;
     modalRef.componentInstance.currentVersion = await getVersion();
     modalRef.componentInstance.notes = update.body ?? "";
+    // The startup check can resolve while a channel is playing; the native
+    // video would cover the dialog.
+    void this.memory.hidePlayerWhile(modalRef.result);
     const install = await modalRef.result.catch(() => false);
     if (!install) {
       return;

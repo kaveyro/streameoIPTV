@@ -616,6 +616,12 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* The fixed player overlay does not cover a reserved scrollbar gutter; drop
+   it while the player is shown so no strip of the page shows beside it. */
+html:has(body.player-open) {
+  scrollbar-gutter: auto;
+}
+
 html,
 body {
   height: fit-content;

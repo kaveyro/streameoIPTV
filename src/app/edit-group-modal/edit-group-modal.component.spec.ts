@@ -1,23 +1,38 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
+import {
+  SHARED_DECLARATIONS,
+  TEST_IMPORTS,
+  TEST_PROVIDERS,
+  activeModalStub,
+  mockTauri,
+  resetTauri,
+} from "../../testing/test-helpers";
 
-import { EditGroupModalComponent } from './edit-group-modal.component';
+import { EditGroupModalComponent } from "./edit-group-modal.component";
 
-describe('EditGroupModalComponent', () => {
+describe("EditGroupModalComponent", () => {
   let component: EditGroupModalComponent;
   let fixture: ComponentFixture<EditGroupModalComponent>;
+  let activeModal: jasmine.SpyObj<NgbActiveModal>;
 
   beforeEach(async () => {
+    mockTauri();
+    activeModal = activeModalStub();
     await TestBed.configureTestingModule({
-      declarations: [EditGroupModalComponent]
-    })
-    .compileComponents();
-    
+      declarations: [EditGroupModalComponent, ...SHARED_DECLARATIONS],
+      imports: TEST_IMPORTS,
+      providers: [...TEST_PROVIDERS, { provide: NgbActiveModal, useValue: activeModal }],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(EditGroupModalComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  afterEach(() => resetTauri());
+
+  it("should create", () => {
     expect(component).toBeTruthy();
   });
 });

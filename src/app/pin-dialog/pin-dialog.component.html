@@ -1,0 +1,37 @@
+<form (ngSubmit)="submit()" novalidate>
+  <div class="modal-header">
+    <h4 class="modal-title" id="pin-dialog-title">{{ title | translate: params }}</h4>
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      [attr.aria-label]="'MODAL.CLOSE' | translate"
+      (click)="cancel()"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <p *ngIf="message" id="pin-dialog-message">{{ message | translate: params }}</p>
+    <label class="form-label" for="pin-dialog-input">{{ "PARENTAL.PIN" | translate }}</label>
+    <input
+      id="pin-dialog-input"
+      name="pin"
+      class="form-control pin-input"
+      type="password"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      maxlength="8"
+      autocomplete="off"
+      ngbAutofocus
+      [attr.aria-describedby]="message ? 'pin-dialog-message' : null"
+      [(ngModel)]="pin"
+    />
+    <div class="form-text">{{ "PARENTAL.PIN_FORMAT" | translate }}</div>
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary" [disabled]="!valid">
+      {{ confirmLabel | translate }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">
+      {{ "MODAL.CANCEL" | translate }}
+    </button>
+  </div>
+</form>

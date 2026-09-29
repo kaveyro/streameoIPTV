@@ -4349,6 +4349,7 @@ dependencies = [
  "rusqlite_migration",
  "serde",
  "serde_json",
+ "sha2",
  "shell-words",
  "simplelog",
  "tauri",

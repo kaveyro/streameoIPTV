@@ -22,6 +22,12 @@ use rusqlite_migration::{M, Migrations};
 
 const PAGE_SIZE: u8 = 36;
 
+/// Channel filter hiding everything in a group locked by the parental PIN.
+const NOT_IN_LOCKED_GROUP: &str =
+    "\nAND (group_id IS NULL OR group_id NOT IN (SELECT id FROM groups WHERE locked = 1))";
+/// Group filter hiding groups locked by the parental PIN.
+const GROUP_NOT_LOCKED: &str = "\nAND (locked IS NULL OR locked = 0)";
+
 /// start, end, title, description
 pub type XmltvProgramme = (i64, i64, String, Option<String>);
 
@@ -289,6 +295,12 @@ fn apply_migrations() -> Result<()> {
             r#"
               DELETE FROM channel_http_headers WHERE channel_id NOT IN (SELECT id FROM channels);
               DELETE FROM scheduled_recordings WHERE channel_id NOT IN (SELECT id FROM channels);
+            "#,
+        ),
+        M::up(
+            r#"
+              ALTER TABLE groups ADD COLUMN locked INTEGER DEFAULT 0;
+              CREATE INDEX IF NOT EXISTS index_groups_locked ON groups(locked);
             "#,
         ),
     ]);
@@ -674,6 +686,9 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         generate_placeholders(media_types.len()),
         generate_placeholders(filters.source_ids.len()),
     );
+    if !filters.show_locked {
+        sql_query += NOT_IN_LOCKED_GROUP;
+    }
     let mut baked_params = 2;
     if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
         sql_query += "\nAND favorite = 1";
@@ -964,6 +979,10 @@ fn apply_bulk_channels(
         generate_placeholders(media_types.len()),
         generate_placeholders(filters.source_ids.len()),
     );
+    if !filters.show_locked {
+        // Bulk actions only touch what the user can see.
+        sql_query += NOT_IN_LOCKED_GROUP;
+    }
 
     if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
         sql_query += "\nAND favorite = 1";
@@ -1134,6 +1153,9 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
         generate_placeholders(media_types.len())
     );
     sql_query += "\nAND hidden = 0";
+    if !filters.show_locked {
+        sql_query += GROUP_NOT_LOCKED;
+    }
     if filters.sort != sort_type::PROVIDER {
         let order = match filters.sort {
             sort_type::ALPHABETICAL_ASC => "ASC",
@@ -2240,7 +2262,47 @@ fn row_to_scheduled_recording(row: &Row) -> Result<ScheduledRecording, rusqlite:
         start_timestamp: row.get("start_timestamp")?,
         end_timestamp: row.get("end_timestamp")?,
         status: row.get("status")?,
+        channel_name: row.get("channel_name").ok().flatten(),
     })
+}
+
+/// Every scheduled recording for the recordings view: upcoming and running
+/// ones first, then the 100 most recent finished or failed ones.
+pub fn get_recording_schedule() -> Result<Vec<ScheduledRecording>> {
+    let sql = get_conn()?;
+    let recordings = sql
+        .prepare(
+            r#"
+            SELECT * FROM (
+              SELECT r.*, c.name AS channel_name
+              FROM scheduled_recordings r
+              LEFT JOIN channels c ON c.id = r.channel_id
+              WHERE r.status IN (0, 1)
+              ORDER BY r.start_timestamp ASC
+            )
+            UNION ALL
+            SELECT * FROM (
+              SELECT r.*, c.name AS channel_name
+              FROM scheduled_recordings r
+              LEFT JOIN channels c ON c.id = r.channel_id
+              WHERE r.status NOT IN (0, 1)
+              ORDER BY r.start_timestamp DESC
+              LIMIT 100
+            )
+            "#,
+        )?
+        .query_map(params![], row_to_scheduled_recording)?
+        .collect::<rusqlite::Result<Vec<ScheduledRecording>>>()?;
+    Ok(recordings)
+}
+
+/// Removes finished and failed entries from the schedule (files stay).
+pub fn clear_finished_recordings() -> Result<()> {
+    get_conn()?.execute(
+        "DELETE FROM scheduled_recordings WHERE status NOT IN (0, 1)",
+        params![],
+    )?;
+    Ok(())
 }
 
 pub fn update_source_last_updated(source_id: i64) -> Result<()> {
@@ -2370,4 +2432,28 @@ pub fn get_xmltv_programmes(channel_id: &str, from: i64) -> Result<Vec<XmltvProg
         .filter_map(Result::ok)
         .collect();
     Ok(rows)
+}
+
+pub fn set_group_locked(group_id: i64, locked: bool) -> Result<()> {
+    let count = get_conn()?.execute(
+        "UPDATE groups SET locked = ? WHERE id = ?",
+        params![locked, group_id],
+    )?;
+    if count != 1 {
+        return Err(anyhow!("group not found"));
+    }
+    Ok(())
+}
+
+pub fn get_locked_group_ids() -> Result<Vec<i64>> {
+    let ids = get_conn()?
+        .prepare("SELECT id FROM groups WHERE locked = 1")?
+        .query_map([], |row| row.get(0))?
+        .collect::<rusqlite::Result<Vec<i64>>>()?;
+    Ok(ids)
+}
+
+pub fn unlock_all_groups() -> Result<()> {
+    get_conn()?.execute("UPDATE groups SET locked = 0 WHERE locked = 1", [])?;
+    Ok(())
 }

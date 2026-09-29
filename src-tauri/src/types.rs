@@ -124,6 +124,10 @@ pub struct Filters {
     pub use_keywords: bool,
     pub sort: u8,
     pub season: Option<i64>,
+    /// Include groups locked by the parental PIN (the frontend sets it after
+    /// the PIN was entered in this session).
+    #[serde(default)]
+    pub show_locked: bool,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
@@ -204,6 +208,9 @@ pub struct ScheduledRecording {
     pub start_timestamp: i64,
     pub end_timestamp: i64,
     pub status: u8,
+    /// Filled by the listing queries only.
+    #[serde(default)]
+    pub channel_name: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]

@@ -53,6 +53,9 @@ export class EditChannelModalComponent implements OnInit {
   formatter = (result: IdName) => result.name;
   private loadingExtra = false;
   private checkingExists = false;
+  /// Only the newest duplicate check may report, or an older, slower reply
+  /// would clear `checkingExists` (re-enabling Save) or overwrite the result.
+  private existsSeq = 0;
   private saving = false;
   /// True while anything is pending that must finish before saving.
   get loading(): boolean {
@@ -97,7 +100,10 @@ export class EditChannelModalComponent implements OnInit {
           debounceTime(300),
         )
         .subscribe(([name, url]) => {
-          this.channelExistsFn(url, name).finally(() => (this.checkingExists = false));
+          const seq = ++this.existsSeq;
+          this.channelExistsFn(url, name, seq).finally(() => {
+            if (seq === this.existsSeq) this.checkingExists = false;
+          });
         }),
     );
     if (this.editing === true) {
@@ -164,7 +170,7 @@ export class EditChannelModalComponent implements OnInit {
     }
   }
 
-  async channelExistsFn(url: string, name: string) {
+  async channelExistsFn(url: string, name: string, seq = this.existsSeq) {
     this.channelExists = false;
     if (
       this.editing &&
@@ -174,14 +180,15 @@ export class EditChannelModalComponent implements OnInit {
       return;
     }
     try {
-      this.channelExists = (await invoke("channel_exists", {
+      const exists = (await invoke("channel_exists", {
         name: name,
         url: url,
         sourceId: this.channel.data.source_id,
       })) as boolean;
+      if (seq === this.existsSeq) this.channelExists = exists;
     } catch (e) {
       console.error(e);
-      this.channelExists = false;
+      if (seq === this.existsSeq) this.channelExists = false;
     }
   }
 

@@ -1,0 +1,137 @@
+<div class="guide-head">
+  <h2 class="view-title">
+    {{ "HOME.NAV.GUIDE" | translate }}
+    <span *ngIf="group" class="guide-group">· {{ group.name }}</span>
+  </h2>
+</div>
+
+<span class="visually-hidden" aria-live="polite" role="status">
+  <ng-container *ngIf="loaded && !loading">{{
+    "HOME.CHANNELS_SHOWN" | translate: { count: rows.length }
+  }}</ng-container>
+</span>
+
+<div *ngIf="loaded && !loading && rows.length === 0" class="empty-state">
+  <p class="mb-1">{{ "EMPTY.NO_GUIDE" | translate }}</p>
+  <small>{{ "EMPTY.NO_GUIDE_HINT" | translate }}</small>
+</div>
+
+<div
+  #scroller
+  class="guide-scroller"
+  [hidden]="loaded && rows.length === 0"
+  role="region"
+  [attr.aria-label]="'HOME.NAV.GUIDE' | translate"
+  (keydown)="onKeyDown($event)"
+>
+  <div class="guide-grid">
+    <!-- The times are part of every programme's label for screen readers. -->
+    <div class="guide-header" aria-hidden="true">
+      <div class="guide-corner">{{ "GUIDE.CHANNEL" | translate }}</div>
+      <div class="guide-slots" [style.width.px]="timelineWidth">
+        <div *ngFor="let slot of slots" class="guide-slot" [style.width.px]="slotWidth">
+          {{ slot.label }}
+        </div>
+      </div>
+    </div>
+
+    <div
+      *ngIf="nowVisible()"
+      class="guide-now-line"
+      aria-hidden="true"
+      [style.inset-inline-start]="'calc(var(--guide-name-width) + ' + nowOffset + 'px)'"
+    ></div>
+
+    <div
+      *ngFor="let row of rows; let r = index; trackBy: trackRow"
+      #rowEl
+      class="guide-row"
+      [attr.data-row]="r"
+    >
+      <button
+        type="button"
+        class="guide-channel"
+        [id]="cellId(r, 0)"
+        [tabindex]="tabIndex(r, 0)"
+        [title]="row.channel.name"
+        [attr.aria-label]="'GUIDE.PLAY_CHANNEL' | translate: { name: row.channel.name }"
+        (focus)="onFocusCell(r, 0)"
+        (click)="playChannel(row.channel)"
+      >
+        {{ row.channel.name }}
+      </button>
+      <div class="guide-timeline" [style.width.px]="timelineWidth">
+        <ng-container [ngSwitch]="row.state">
+          <ng-container *ngSwitchCase="'done'">
+            <button
+              *ngFor="let block of row.blocks; let b = index; trackBy: trackBlock"
+              type="button"
+              class="guide-block"
+              [class.is-past]="block.state === 'past'"
+              [class.is-now]="block.state === 'now'"
+              [class.is-future]="block.state === 'future'"
+              [class.is-scheduled]="scheduledId(row, block) !== undefined"
+              [id]="cellId(r, b + 1)"
+              [tabindex]="tabIndex(r, b + 1)"
+              [style.inset-inline-start.px]="block.offset"
+              [style.width.px]="block.width"
+              [title]="block.tooltip"
+              [attr.aria-label]="block.label"
+              (focus)="onFocusCell(r, b + 1)"
+              (click)="activate(row, block, $event)"
+            >
+              {{ block.epg.title }}
+            </button>
+            <span *ngIf="row.blocks.length === 0" class="guide-no-epg">{{
+              "GUIDE.NO_EPG" | translate
+            }}</span>
+          </ng-container>
+          <span *ngSwitchCase="'error'" class="guide-no-epg">{{ "GUIDE.NO_EPG" | translate }}</span>
+          <div *ngSwitchDefault class="guide-loading skeleton" aria-hidden="true"></div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div #sentinel class="guide-sentinel" aria-hidden="true"></div>
+  </div>
+
+  <button
+    *ngIf="loadFailed && !reachedMax"
+    type="button"
+    class="btn btn-outline-primary btn-sm guide-load-more"
+    [disabled]="loading"
+    (click)="loadMore(true)"
+  >
+    {{ "HOME.LOAD_MORE" | translate }}
+  </button>
+</div>
+
+<div
+  class="guide-menu-anchor"
+  [style.left.px]="menuPosition.x"
+  [style.top.px]="menuPosition.y"
+  [matMenuTriggerFor]="futureMenu"
+  [matMenuTriggerRestoreFocus]="false"
+></div>
+
+<mat-menu #futureMenu="matMenu">
+  <ng-template matMenuContent>
+    <div class="guide-menu-title" *ngIf="menuBlock">{{ menuBlock.label }}</div>
+    <button
+      mat-menu-item
+      type="button"
+      [disabled]="memory.LoadingNotification || !memory.trayEnabled"
+      (click)="toggleNotification()"
+    >
+      {{ (notificationOn(menuBlock) ? "EPG.NOTIFY_OFF" : "EPG.NOTIFY_ON") | translate }}
+    </button>
+    <button mat-menu-item type="button" [disabled]="scheduling" (click)="toggleRecording()">
+      {{
+        (scheduledId(menuRow, menuBlock) === undefined
+          ? "EPG.SCHEDULE_RECORDING"
+          : "EPG.CANCEL_SCHEDULED"
+        ) | translate
+      }}
+    </button>
+  </ng-template>
+</mat-menu>

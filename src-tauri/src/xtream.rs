@@ -14,7 +14,7 @@ use crate::utils::download_client_builder;
 use crate::utils::get_local_time;
 use crate::utils::get_user_agent_from_source;
 use anyhow::anyhow;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use chrono::DateTime;
@@ -681,6 +681,29 @@ fn get_timeshift_url(mut url: Url, start: String, end: String, stream_id: &str) 
         .append_pair("start", &start)
         .append_pair("duration", &duration);
     Ok(url.to_string())
+}
+
+/// Logs in once without importing anything, for the "test connection" button.
+pub async fn check(mut source: Source) -> Result<()> {
+    let url = build_xtream_url(&mut source)?;
+    let user_agent = get_user_agent_from_source(&source)?;
+    let client = api_client_builder().user_agent(user_agent).build()?;
+    let response = client.get(url).send().await?.error_for_status()?;
+    let value: serde_json::Value = response
+        .json()
+        .await
+        .context("The server did not answer like an Xtream Codes server")?;
+    let user_info = value
+        .get("user_info")
+        .context("The server did not answer like an Xtream Codes server")?;
+    let auth = user_info.get("auth").and_then(|a| {
+        a.as_u64()
+            .or_else(|| a.as_str().and_then(|s| s.parse().ok()))
+    });
+    if auth == Some(0) {
+        bail!("The provider rejected the username or password");
+    }
+    Ok(())
 }
 
 async fn get_status(source: &mut Source) -> Result<(i64, XtreamStatus)> {

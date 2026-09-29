@@ -81,11 +81,26 @@ pub async fn refresh() -> Result<()> {
         Ok(())
     })
     .await??;
+    settings::set_xmltv_last_updated(now)?;
     log(format!(
         "XMLTV: stored {} programmes and {} channel name mappings",
         programme_count, channel_count
     ));
     Ok(())
+}
+
+/// Refreshes the XMLTV cache when sources are configured and the last refresh
+/// is older than `max_age_secs` (or never happened). Returns whether it ran.
+pub async fn refresh_if_due(max_age_secs: i64) -> Result<bool> {
+    if settings::get_xmltv_sources()?.is_empty() {
+        return Ok(false);
+    }
+    let now = Utc::now().timestamp();
+    if settings::get_xmltv_last_updated()?.is_some_and(|t| now - t < max_age_secs) {
+        return Ok(false);
+    }
+    refresh().await?;
+    Ok(true)
 }
 
 type Programme = (String, i64, i64, String, Option<String>);
@@ -278,6 +293,8 @@ const NAME_STOPWORDS: &[&str] = &[
     "50fps",
     "60fps",
     "multi",
+    "full",
+    "mobile",
     "tvchannel",
     "channel",
     "tv",
@@ -407,19 +424,104 @@ const NAME_STOPWORDS: &[&str] = &[
 static RESOLUTION_RE: std::sync::LazyLock<regex::Regex> =
     std::sync::LazyLock::new(|| regex::Regex::new(r"^\d{2,4}p\d*$").unwrap());
 
-/// Normalizes a channel name/id to a comparison key: lowercased, split on any
-/// non-alphanumeric char, quality/country/resolution tokens dropped, remaining
-/// tokens concatenated. Used for the name-based EPG matching fallback.
+/// Folds the accented letters of European channel names to ASCII, so
+/// "Habertürk", "Sözcü" and "Zürich" match guides that spell them plainly.
+fn fold_char(c: char) -> Option<&'static str> {
+    Some(match c {
+        'ä' | 'à' | 'á' | 'â' | 'ã' | 'å' | 'ą' => "a",
+        'ç' | 'č' | 'ć' => "c",
+        'é' | 'è' | 'ê' | 'ë' | 'ę' | 'ě' => "e",
+        'ğ' => "g",
+        'ı' | 'í' | 'ì' | 'î' | 'ï' => "i",
+        'ł' => "l",
+        'ñ' | 'ń' => "n",
+        'ö' | 'ò' | 'ó' | 'ô' | 'õ' | 'ø' => "o",
+        'ř' => "r",
+        'ş' | 'š' | 'ś' => "s",
+        'ß' => "ss",
+        'ü' | 'ù' | 'ú' | 'û' | 'ů' => "u",
+        'ý' => "y",
+        'ž' | 'ź' | 'ż' => "z",
+        // What is left of the dot of "İ" once lowercased ("i" + U+0307).
+        '\u{307}' => "",
+        _ => return None,
+    })
+}
+
+/// Normalizes a channel name/id to a comparison key: lowercased, accents
+/// folded, split on any non-alphanumeric char, quality/country/resolution
+/// tokens dropped, remaining tokens concatenated. "tv" is a stopword, but
+/// "TV 5" keeps it ("tv5") so it does not collapse to a bare number. Used for
+/// the name-based EPG matching fallback.
 pub fn normalize_name(s: &str) -> String {
-    let lower = s.to_lowercase();
+    let mut folded = String::with_capacity(s.len());
+    for c in s.to_lowercase().chars() {
+        match fold_char(c) {
+            Some(ascii) => folded.push_str(ascii),
+            None => folded.push(c),
+        }
+    }
+    let tokens: Vec<&str> = folded
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|t| !t.is_empty())
+        .collect();
     let mut result = String::new();
-    for token in lower.split(|c: char| !c.is_alphanumeric()) {
-        if token.is_empty() || NAME_STOPWORDS.contains(&token) || RESOLUTION_RE.is_match(token) {
+    for (i, token) in tokens.iter().enumerate() {
+        let keep_tv = *token == "tv"
+            && tokens
+                .get(i + 1)
+                .is_some_and(|next| next.chars().all(|c| c.is_ascii_digit()));
+        if !keep_tv && (NAME_STOPWORDS.contains(token) || RESOLUTION_RE.is_match(token)) {
             continue;
         }
         result.push_str(token);
     }
     result
+}
+
+static COUNTRY_PREFIX_RE: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"^\s*\[?([A-Za-z]{2})\]?\s*[:|\-]").unwrap());
+
+/// The country a playlist name is prefixed with ("TR: Kanal D", "DE| ARD",
+/// "[UK] - BBC One"), lowercased, with "uk" folded into "gb".
+fn country_of_name(name: &str) -> Option<String> {
+    let code = COUNTRY_PREFIX_RE
+        .captures(name)?
+        .get(1)?
+        .as_str()
+        .to_ascii_lowercase();
+    Some(if code == "uk" { "gb".to_string() } else { code })
+}
+
+/// The country suffix of an XMLTV channel id ("KanalD.tr", "BBCOne.uk").
+fn country_of_id(id: &str) -> Option<String> {
+    let (_, suffix) = id.rsplit_once('.')?;
+    if suffix.len() != 2 || !suffix.chars().all(|c| c.is_ascii_alphabetic()) {
+        return None;
+    }
+    let code = suffix.to_ascii_lowercase();
+    Some(if code == "uk" { "gb".to_string() } else { code })
+}
+
+/// Picks the XMLTV channel for a playlist channel matched by name, from
+/// `(id, upcoming programme count)` candidates: ids without upcoming
+/// programmes are dropped, an id from the name's country prefix wins (so
+/// "TR: ATV" gets ATV.tr, not atv.de), then the id with the most programmes.
+pub fn pick_channel(name: &str, candidates: Vec<(String, i64)>) -> Option<String> {
+    let country = country_of_name(name);
+    candidates
+        .into_iter()
+        .filter(|(_, count)| *count > 0)
+        .max_by(|(a_id, a_count), (b_id, b_count)| {
+            let a_match = country.is_some() && country_of_id(a_id) == country;
+            let b_match = country.is_some() && country_of_id(b_id) == country;
+            a_match
+                .cmp(&b_match)
+                .then(a_count.cmp(b_count))
+                // Deterministic among equals.
+                .then(b_id.cmp(a_id))
+        })
+        .map(|(id, _)| id)
 }
 
 /// Parses an XMLTV timestamp into a unix timestamp.
@@ -564,6 +666,37 @@ mod test_xmltv {
     }
 
     #[test]
+    fn test_pick_channel_prefers_country_then_programmes() {
+        let c = |v: &[(&str, i64)]| -> Vec<(String, i64)> {
+            v.iter().map(|(id, n)| (id.to_string(), *n)).collect()
+        };
+        let atv = c(&[("atv.de", 325), ("ATV.tr", 86), ("ATV.HD.tr", 22)]);
+        assert_eq!(
+            pick_channel("TR: ATV", atv.clone()).as_deref(),
+            Some("ATV.tr")
+        );
+        assert_eq!(
+            pick_channel("DE| ATV", atv.clone()).as_deref(),
+            Some("atv.de")
+        );
+        // Without a country prefix the fullest guide wins.
+        assert_eq!(pick_channel("ATV", atv).as_deref(), Some("atv.de"));
+        // An id without upcoming programmes is never picked.
+        let stale = c(&[("KanalD.tr", 0), ("KANAL.D.tr", 21)]);
+        assert_eq!(
+            pick_channel("TR: Kanal D", stale).as_deref(),
+            Some("KANAL.D.tr")
+        );
+        assert_eq!(pick_channel("TR: Kanal D", c(&[("KanalD.tr", 0)])), None);
+        // "UK" in a playlist means the "gb"/"uk" ids alike.
+        let bbc = c(&[("BBCOne.us", 50), ("BBCOne.uk", 40)]);
+        assert_eq!(
+            pick_channel("UK: BBC One", bbc).as_deref(),
+            Some("BBCOne.uk")
+        );
+    }
+
+    #[test]
     fn test_normalize_name_matches_across_prefixes() {
         assert_eq!(normalize_name("SD: beIN Sports 1"), "beinsports1");
         assert_eq!(normalize_name("HD: beIN Sports 1"), "beinsports1");
@@ -572,5 +705,17 @@ mod test_xmltv {
         // Messy provider names: country prefix + quality + resolution token.
         assert_eq!(normalize_name("SY: beIN Sports 1 SD 576p1"), "beinsports1");
         assert_eq!(normalize_name("DE| beIN Sports 1 FHD 1080p"), "beinsports1");
+        assert_eq!(normalize_name("Full HD: beIN Sports 1"), "beinsports1");
+        // Accents fold, both in playlist names and guide display names.
+        assert_eq!(
+            normalize_name("TR: TH Türkhaber"),
+            normalize_name("TH.Turkhaber.tr")
+        );
+        assert_eq!(normalize_name("TR: Sözcü TV"), "sozcu");
+        assert_eq!(normalize_name("İZMİR TV"), "izmir");
+        // "TV 5" is not just "5", and matches the id "TV5.tr".
+        assert_eq!(normalize_name("TR: TV 5"), "tv5");
+        assert_eq!(normalize_name("TV5.tr"), "tv5");
+        assert_eq!(normalize_name("TR: TV8"), "tv8");
     }
 }

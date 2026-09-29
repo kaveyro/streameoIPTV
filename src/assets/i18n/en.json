@@ -235,7 +235,7 @@
       "SOURCES_DESC": "One XMLTV guide URL per line.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Refresh now",
-      "REFRESH_DESC": "Download the latest guide data. This also happens automatically on your source auto-refresh schedule.",
+      "REFRESH_DESC": "Download the latest guide data. This also happens automatically on your source auto-refresh schedule, or once a day when that is off.",
       "FREE_SOURCES": "Free EPG sources",
       "FREE_SOURCES_DESC": "Add a known free XMLTV guide with one click. Pick the ones that match your channels' countries."
     },

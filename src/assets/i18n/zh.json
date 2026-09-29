@@ -266,7 +266,7 @@
       "SOURCES_DESC": "每行一个 XMLTV 网址。",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "立即刷新",
-      "REFRESH_DESC": "下载最新的节目指南数据。这也会按照您的源自动刷新计划自动进行。",
+      "REFRESH_DESC": "下载最新的节目单数据。它也会按照你的来源自动刷新计划自动进行；若该计划已关闭，则每天一次。",
       "FREE_SOURCES": "免费 EPG 源",
       "FREE_SOURCES_DESC": "一键添加已知的免费 XMLTV 指南。选择与您频道所在国家/地区匹配的源。"
     },

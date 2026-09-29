@@ -266,7 +266,7 @@
       "SOURCES_DESC": "Un URL XMLTV per riga.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Aggiorna ora",
-      "REFRESH_DESC": "Scarica i dati della guida più recenti. Questo avviene anche automaticamente in base alla pianificazione di aggiornamento automatico delle fonti.",
+      "REFRESH_DESC": "Scarica i dati della guida più recenti. Avviene anche automaticamente secondo la pianificazione dell'aggiornamento automatico delle sorgenti o, se disattivata, una volta al giorno.",
       "FREE_SOURCES": "Fonti EPG gratuite",
       "FREE_SOURCES_DESC": "Aggiungi una guida XMLTV gratuita nota con un clic. Scegli quelle che corrispondono ai paesi dei tuoi canali."
     },

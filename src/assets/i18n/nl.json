@@ -266,7 +266,7 @@
       "SOURCES_DESC": "Eén XMLTV-URL per regel.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Nu vernieuwen",
-      "REFRESH_DESC": "De nieuwste gidsgegevens downloaden. Dit gebeurt ook automatisch volgens je schema voor automatisch vernieuwen van bronnen.",
+      "REFRESH_DESC": "De nieuwste gidsgegevens downloaden. Dit gebeurt ook automatisch volgens je schema voor het automatisch vernieuwen van bronnen, of één keer per dag als dat uit staat.",
       "FREE_SOURCES": "Gratis EPG-bronnen",
       "FREE_SOURCES_DESC": "Voeg met één klik een bekende gratis XMLTV-gids toe. Kies degene die bij de landen van je kanalen passen."
     },

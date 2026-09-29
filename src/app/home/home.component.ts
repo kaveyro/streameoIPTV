@@ -14,6 +14,7 @@ import { Router } from "@angular/router";
 import { AllowIn, ShortcutInput } from "ng-keyboard-shortcuts";
 import { Subscription, debounceTime, filter, fromEvent, map, skip } from "rxjs";
 import { MemoryService } from "../memory.service";
+import { NowPlayingService } from "../now-playing.service";
 import { Channel } from "../models/channel";
 import { ViewMode } from "../models/viewMode";
 import { MediaType } from "../models/mediaType";
@@ -174,9 +175,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private ngZone: NgZone,
     private translate: TranslateService,
     private parental: ParentalService,
+    private nowPlaying: NowPlayingService,
   ) {
     this.getSources();
     this.listenForAutoRefresh();
+    this.nowPlaying.init();
   }
 
   ngOnInit(): void {

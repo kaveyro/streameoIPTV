@@ -266,7 +266,7 @@
       "SOURCES_DESC": "한 줄에 하나의 XMLTV URL.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "지금 새로 고침",
-      "REFRESH_DESC": "최신 편성표 데이터를 다운로드합니다. 소스 자동 새로 고침 일정에 따라 자동으로도 실행됩니다.",
+      "REFRESH_DESC": "최신 편성표 데이터를 내려받습니다. 소스 자동 새로 고침 일정에 따라 자동으로도 진행되며, 일정이 꺼져 있으면 하루에 한 번 진행됩니다.",
       "FREE_SOURCES": "무료 EPG 소스",
       "FREE_SOURCES_DESC": "알려진 무료 XMLTV 가이드를 한 번의 클릭으로 추가하세요. 채널 국가에 맞는 것을 선택하세요."
     },

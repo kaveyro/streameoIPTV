@@ -156,6 +156,7 @@ pub fn run() {
             get_xmltv_sources,
             set_xmltv_sources,
             refresh_xmltv,
+            has_xmltv_data,
             logo_cache::get_cached_logo
         ])
         .setup(|app| {
@@ -584,6 +585,11 @@ fn set_xmltv_sources(urls: Vec<String>) -> Result<(), String> {
 #[tauri::command(async)]
 async fn refresh_xmltv() -> Result<(), String> {
     xmltv::refresh().await.map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn has_xmltv_data() -> Result<bool, String> {
+    sql::has_xmltv_programmes().map_err(map_err_frontend)
 }
 
 #[tauri::command]

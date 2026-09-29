@@ -266,7 +266,7 @@
       "SOURCES_DESC": "1 行につき 1 つの XMLTV URL。",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "今すぐ更新",
-      "REFRESH_DESC": "最新の番組表データをダウンロードします。ソースの自動更新スケジュールに従って自動的にも実行されます。",
+      "REFRESH_DESC": "最新の番組表データをダウンロードします。ソースの自動更新スケジュールに従って自動でも行われ、それがオフの場合は1日1回行われます。",
       "FREE_SOURCES": "無料 EPG ソース",
       "FREE_SOURCES_DESC": "既知の無料 XMLTV ガイドをワンクリックで追加します。チャンネルの国に合うものを選んでください。"
     },

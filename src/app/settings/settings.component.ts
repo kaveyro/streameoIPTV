@@ -6,6 +6,7 @@ import { Router } from "@angular/router";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Source } from "../models/source";
 import { MemoryService } from "../memory.service";
+import { NowPlayingService } from "../now-playing.service";
 import { ViewMode } from "../models/viewMode";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { SORT_TYPES, SortType, getSortTypeText } from "../models/sortType";
@@ -129,6 +130,7 @@ export class SettingsComponent {
     private error: ErrorService,
     private confirmService: ConfirmService,
     private toastr: ToastrService,
+    private nowPlaying: NowPlayingService,
   ) {}
 
   _getSortTypeText(sortType: SortType) {
@@ -242,11 +244,12 @@ export class SettingsComponent {
   }
 
   async refreshXmltv() {
-    await this.memory.tryIPC(
+    const failed = await this.memory.tryIPC(
       this.translate.instant("TOAST.EPG_REFRESHED"),
       this.translate.instant("TOAST.EPG_REFRESH_FAILED"),
       () => invoke("refresh_xmltv"),
     );
+    if (!failed) this.nowPlaying.xmltvChanged();
   }
 
   getSettings(): Promise<void> {

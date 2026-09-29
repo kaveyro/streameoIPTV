@@ -123,23 +123,27 @@ pub async fn get_epg_combined(channel: Channel) -> Result<Vec<EPG>> {
     // epg_channel_id hashes that never equal the XMLTV channel id).
     let now = chrono::Utc::now().timestamp();
     let mut programmes = Vec::new();
+    let mut xmltv_id = String::new();
     if let Some(id) = channel.epg_channel_id.as_deref().filter(|s| !s.is_empty()) {
         programmes = xmltv::programmes_for_channel(id, now)?;
+        xmltv_id = id.to_string();
     }
     if programmes.is_empty() {
         let norm = xmltv::normalize_name(&channel.name);
-        if !norm.is_empty()
-            && let Some(id) = sql::get_xmltv_channel_id_by_name(&norm)?
-        {
-            programmes = xmltv::programmes_for_channel(&id, now)?;
+        if !norm.is_empty() {
+            let candidates = sql::get_xmltv_channel_candidates(&norm, now)?;
+            if let Some(id) = xmltv::pick_channel(&channel.name, candidates) {
+                programmes = xmltv::programmes_for_channel(&id, now)?;
+                xmltv_id = id;
+            }
         }
     }
-    let epg_id = channel.epg_channel_id.clone().unwrap_or_default();
     let mut epgs = Vec::with_capacity(programmes.len());
     for p in programmes {
         let now_playing = p.now_playing(now);
         epgs.push(EPG {
-            epg_id: epg_id.clone(),
+            // Reminders are keyed by this id, so it must name one programme.
+            epg_id: format!("xmltv:{xmltv_id}:{}", p.start),
             title: p.title,
             description: p.description,
             start_time: utils::get_local_time(p.start)?

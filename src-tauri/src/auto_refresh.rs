@@ -7,6 +7,11 @@
 //! Refreshing reuses `utils::refresh_source`, the same code path the manual
 //! "Refresh"/"Refresh all" buttons and refresh-on-start use, which also
 //! updates `sources.last_updated` on success.
+//!
+//! External XMLTV guides follow the same interval, or once a day when the
+//! automatic source refresh is off: a guide only covers a few days, so
+//! without it the TV guide would silently run empty. They are also checked
+//! shortly after start, since the app is often closed for longer than that.
 
 use std::time::Duration;
 
@@ -16,14 +21,23 @@ use tauri::{AppHandle, Emitter};
 use crate::{log::log, settings, source_type, sql};
 
 const POLL_INTERVAL: Duration = Duration::from_secs(30 * 60);
+/// Delay of the XMLTV check after start, so it does not compete with the
+/// first page of channels.
+const START_DELAY: Duration = Duration::from_secs(20);
+/// XMLTV refresh interval while the automatic source refresh is off.
+const XMLTV_DEFAULT_HOURS: i64 = 24;
 
 /// Event emitted after a round that refreshed at least one source.
 /// Payload: the names of the refreshed sources.
 pub const SOURCES_AUTO_REFRESHED_EVENT: &str = "sources-auto-refreshed";
+/// Event emitted after the XMLTV guides were refreshed in the background.
+pub const XMLTV_REFRESHED_EVENT: &str = "xmltv-refreshed";
 
 /// Starts the background auto refresh loop. Called once from the tauri setup hook.
 pub fn start(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(START_DELAY).await;
+        refresh_xmltv_if_due(&app).await;
         loop {
             tokio::time::sleep(POLL_INTERVAL).await;
             if let Err(e) = tick(&app).await {
@@ -38,6 +52,7 @@ pub fn start(app: AppHandle) {
 async fn tick(app: &AppHandle) -> Result<()> {
     let hours = settings::get_settings()?.auto_refresh_hours.unwrap_or(0);
     if hours == 0 {
+        refresh_xmltv_if_due(app).await;
         return Ok(());
     }
     let threshold = chrono::Utc::now().timestamp() - hours as i64 * 3600;
@@ -66,11 +81,26 @@ async fn tick(app: &AppHandle) -> Result<()> {
         app.emit(SOURCES_AUTO_REFRESHED_EVENT, &refreshed)
             .context("failed to emit sources-auto-refreshed")?;
     }
-    // Refresh external XMLTV EPG on the same schedule (best-effort).
-    if !settings::get_xmltv_sources().unwrap_or_default().is_empty()
-        && let Err(e) = crate::xmltv::refresh().await
-    {
-        log(format!("{:?}", e.context("auto refresh xmltv")));
-    }
+    refresh_xmltv_if_due(app).await;
     Ok(())
+}
+
+/// Refreshes the XMLTV guides once they are older than the refresh interval
+/// (best-effort) and tells the frontend, whose EPG caches are then stale.
+async fn refresh_xmltv_if_due(app: &AppHandle) {
+    let hours = settings::get_settings()
+        .ok()
+        .and_then(|s| s.auto_refresh_hours)
+        .filter(|h| *h > 0)
+        .map(i64::from)
+        .unwrap_or(XMLTV_DEFAULT_HOURS);
+    match crate::xmltv::refresh_if_due(hours * 3600).await {
+        Ok(true) => {
+            if let Err(e) = app.emit(XMLTV_REFRESHED_EVENT, ()) {
+                log(format!("failed to emit {XMLTV_REFRESHED_EVENT}: {e:?}"));
+            }
+        }
+        Ok(false) => {}
+        Err(e) => log(format!("{:?}", e.context("auto refresh xmltv"))),
+    }
 }

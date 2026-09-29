@@ -1,6 +1,8 @@
-import { Injectable } from "@angular/core";
+import { Injectable, NgZone } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { MemoryService } from "./memory.service";
+import { GuideEpgCache } from "./tv-guide/tv-guide.component";
 import { Channel } from "./models/channel";
 import { MediaType } from "./models/mediaType";
 import { EPG } from "./models/epg";
@@ -32,12 +34,44 @@ export class NowPlayingService {
   private inFlight = 0;
   private queue: (() => void)[] = [];
 
-  constructor(private memory: MemoryService) {}
+  private xmltvListening = false;
 
-  /** A channel can have EPG from its Xtream provider or from external XMLTV
-   *  (any channel that carries a tvg-id / epg_channel_id). */
+  constructor(
+    private memory: MemoryService,
+    private guideCache: GuideEpgCache,
+    private ngZone: NgZone,
+  ) {}
+
+  /** Loads whether an XMLTV guide is cached and follows the background
+   *  refreshes of it. Safe to call again. */
+  init() {
+    this.loadXmltvState();
+    if (this.xmltvListening) return;
+    this.xmltvListening = true;
+    listen("xmltv-refreshed", () => this.ngZone.run(() => this.xmltvChanged())).catch((e) => {
+      this.xmltvListening = false;
+      console.error(e);
+    });
+  }
+
+  /** The XMLTV guides were refreshed: cached EPG results are stale. */
+  xmltvChanged() {
+    this.cache.clear();
+    this.guideCache.entries.clear();
+    this.loadXmltvState();
+  }
+
+  private loadXmltvState() {
+    invoke<boolean>("has_xmltv_data")
+      .then((has) => (this.memory.HasXmltv = has))
+      .catch((e) => console.error(e));
+  }
+
+  /** A live channel can have EPG from its Xtream provider, from its tvg-id, or
+   *  from an external XMLTV guide matched by its name. */
   hasEpg(channel: Channel): boolean {
     return (
+      this.memory.HasXmltv ||
       (channel.source_id !== undefined && this.memory.XtreamSourceIds.has(channel.source_id)) ||
       !!channel.epg_channel_id
     );

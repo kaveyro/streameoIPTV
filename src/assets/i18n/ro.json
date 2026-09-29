@@ -266,7 +266,7 @@
       "SOURCES_DESC": "Un URL XMLTV pe linie.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Reîmprospătează acum",
-      "REFRESH_DESC": "Descarcă cele mai recente date de ghid. Acest lucru se întâmplă automat și conform programului de reîmprospătare automată a surselor.",
+      "REFRESH_DESC": "Descarcă cele mai noi date de ghid. Acest lucru se face și automat conform programului de reîmprospătare automată a surselor sau, dacă este oprit, o dată pe zi.",
       "FREE_SOURCES": "Surse EPG gratuite",
       "FREE_SOURCES_DESC": "Adaugă un ghid XMLTV gratuit cunoscut cu un clic. Alege-le pe cele care se potrivesc cu țările canalelor tale."
     },

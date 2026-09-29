@@ -266,7 +266,7 @@
       "SOURCES_DESC": "Her satıra bir XMLTV URL'si.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Şimdi yenile",
-      "REFRESH_DESC": "En son program verilerini indir. Bu, kaynak otomatik yenileme zamanlamanıza göre otomatik olarak da gerçekleşir.",
+      "REFRESH_DESC": "En güncel program verilerini indir. Bu, kaynak otomatik yenileme zamanlamana göre, kapalıysa günde bir kez otomatik olarak da yapılır.",
       "FREE_SOURCES": "Ücretsiz EPG kaynakları",
       "FREE_SOURCES_DESC": "Bilinen ücretsiz bir XMLTV rehberini tek tıkla ekleyin. Kanallarınızın ülkelerine uyanları seçin."
     },

@@ -355,7 +355,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     return (
       this.channel?.media_type == MediaType.livestream &&
       !this.isCustom() &&
-      (this.memory.XtreamSourceIds.has(this.channel.source_id!) || !!this.channel.epg_channel_id)
+      this.nowPlayingService.hasEpg(this.channel)
     );
   }
 

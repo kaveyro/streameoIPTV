@@ -33,6 +33,21 @@ pub const SHOW_CHANNEL_SOURCE: &str = "showChannelSource";
 pub const AUTO_UPDATE: &str = "autoUpdate";
 pub const MPV_DEBUG_LOG: &str = "mpvDebugLog";
 pub const XMLTV_SOURCES: &str = "xmltvSources";
+pub const XMLTV_LAST_UPDATED: &str = "xmltvLastUpdated";
+
+/// Unix seconds of the last XMLTV refresh that loaded at least one source.
+pub fn get_xmltv_last_updated() -> Result<Option<i64>> {
+    Ok(sql::get_settings()?
+        .get(XMLTV_LAST_UPDATED)
+        .and_then(|s| s.parse().ok()))
+}
+
+pub fn set_xmltv_last_updated(timestamp: i64) -> Result<()> {
+    let mut map: HashMap<String, Option<String>> = HashMap::with_capacity(1);
+    map.insert(XMLTV_LAST_UPDATED.to_string(), Some(timestamp.to_string()));
+    sql::update_settings(map)?;
+    Ok(())
+}
 
 /// XMLTV EPG source URLs, stored as a JSON array string in the settings table.
 pub fn get_xmltv_sources() -> Result<Vec<String>> {

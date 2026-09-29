@@ -2399,17 +2399,37 @@ pub fn replace_xmltv_channels(channels: &[(String, String)]) -> Result<()> {
     Ok(())
 }
 
-/// Resolves a normalized channel name to an XMLTV channel id, if known.
-pub fn get_xmltv_channel_id_by_name(norm_name: &str) -> Result<Option<String>> {
+/// XMLTV channel ids known under a normalized channel name, each with the
+/// number of its programmes that end after `from`. Several guides (and a
+/// channel's SD/HD feeds) often share a name, so the caller picks one.
+pub fn get_xmltv_channel_candidates(norm_name: &str, from: i64) -> Result<Vec<(String, i64)>> {
     let sql = get_conn()?;
-    let id = sql
-        .query_row(
-            "SELECT channel_id FROM xmltv_channels WHERE norm_name = ?1 LIMIT 1",
-            params![norm_name],
-            |row| row.get(0),
-        )
-        .optional()?;
-    Ok(id)
+    let rows = sql
+        .prepare(
+            r#"
+            SELECT c.channel_id,
+                   (SELECT COUNT(*) FROM xmltv_programmes p
+                     WHERE p.channel_id = c.channel_id AND p.end_timestamp > ?2)
+            FROM (SELECT DISTINCT channel_id FROM xmltv_channels WHERE norm_name = ?1) c
+            "#,
+        )?
+        .query_map(params![norm_name, from], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// Whether the XMLTV cache holds any programme, so the frontend knows every
+/// live channel may have a guide (matched by name when it has no tvg-id).
+pub fn has_xmltv_programmes() -> Result<bool> {
+    let sql = get_conn()?;
+    Ok(
+        sql.query_row("SELECT EXISTS(SELECT 1 FROM xmltv_programmes)", [], |row| {
+            row.get(0)
+        })?,
+    )
 }
 
 /// Programmes for an XMLTV channel id whose end is still in the future

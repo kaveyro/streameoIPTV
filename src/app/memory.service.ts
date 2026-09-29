@@ -47,6 +47,9 @@ export class MemoryService {
   public HideChannels: Subject<boolean> = new Subject();
   public CustomSourceIds: Set<number> = new Set();
   public XtreamSourceIds: Set<number> = new Set();
+  /** An external XMLTV guide is cached: any live channel may have EPG, matched
+   *  by tvg-id or, without one, by its name. */
+  public HasXmltv: boolean = false;
   public ModalRef?: NgbModalRef;
   public Watched_epgs: Set<string> = new Set();
   private downloadingChannels: Map<number, [number, Subject<boolean>]> = new Map();

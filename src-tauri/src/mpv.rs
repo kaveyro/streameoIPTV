@@ -250,7 +250,7 @@ pub async fn cancel_play(
     key: String,
     state: State<'_, Mutex<AppState>>,
 ) -> Result<()> {
-    log::log(format!("Cancelling play for channel: {}", key));
+    log::info(format!("Cancelling play for channel: {}", key));
     let token = crate::utils::remove_from_play_stop(state, &source_id, &key).await?;
     let token = token.context("no channel found")?;
     token.cancel();

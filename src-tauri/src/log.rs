@@ -7,7 +7,22 @@ static USE_LOGGER: LazyLock<bool> = LazyLock::new(init_logger);
 /// How many log files (one per app start) are kept in the logs folder.
 const MAX_LOG_FILES: usize = 10;
 
+/// Logs an error. Most call sites report a failure, so this is the default.
 pub fn log(message: String) {
+    write(log::Level::Error, message);
+}
+
+/// Logs something that went wrong but was handled (a skipped entry, a cap).
+pub fn warn(message: String) {
+    write(log::Level::Warn, message);
+}
+
+/// Logs normal progress (what was loaded, what was connected).
+pub fn info(message: String) {
+    write(log::Level::Info, message);
+}
+
+fn write(level: log::Level, message: String) {
     let message = crate::redact::redact(&message);
     // Unit tests must not create/write log files in the real app cache dir.
     if cfg!(test) {
@@ -15,7 +30,7 @@ pub fn log(message: String) {
         return;
     }
     if *USE_LOGGER {
-        log::error!("{message}");
+        log::log!(level, "{message}");
     } else {
         eprintln!("{message}");
     }
@@ -30,7 +45,7 @@ fn init_logger() -> bool {
         }
     };
     match simplelog::WriteLogger::init(
-        simplelog::LevelFilter::Error,
+        simplelog::LevelFilter::Info,
         simplelog::Config::default(),
         file,
     ) {
@@ -66,6 +81,10 @@ fn get_log_name() -> String {
 /// forever. File names are timestamps, so name order is age order. mpv.log is
 /// a single file mpv truncates itself and is left alone.
 fn prune_old_logs(dir: &std::path::Path) {
+    prune_logs_keeping(dir, MAX_LOG_FILES);
+}
+
+fn prune_logs_keeping(dir: &std::path::Path, keep: usize) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
     };
@@ -79,8 +98,42 @@ fn prune_old_logs(dir: &std::path::Path) {
         .collect();
     logs.sort();
     // Leave room for the file about to be created.
-    let excess = (logs.len() + 1).saturating_sub(MAX_LOG_FILES);
+    let excess = (logs.len() + 1).saturating_sub(keep);
     for old in logs.into_iter().take(excess) {
         let _ = fs::remove_file(old);
+    }
+}
+
+#[cfg(test)]
+mod test_log {
+    use super::prune_logs_keeping;
+
+    #[test]
+    fn test_prune_keeps_newest_and_mpv_log() {
+        let dir = std::env::temp_dir().join(format!("streameo-log-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        for day in 1..=5 {
+            std::fs::write(dir.join(format!("2026-09-0{day}-10-00-00.log")), "x").unwrap();
+        }
+        std::fs::write(dir.join("mpv.log"), "x").unwrap();
+        std::fs::write(dir.join("notes.txt"), "x").unwrap();
+        // Keep 3 including the file about to be created: 2 old logs stay.
+        prune_logs_keeping(&dir, 3);
+        let mut left: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().to_string())
+            .collect();
+        left.sort();
+        assert_eq!(
+            left,
+            vec![
+                "2026-09-04-10-00-00.log",
+                "2026-09-05-10-00-00.log",
+                "mpv.log",
+                "notes.txt"
+            ]
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }

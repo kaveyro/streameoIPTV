@@ -3,7 +3,10 @@ use std::{collections::HashMap, env::consts::OS};
 use anyhow::{Context, Result};
 use directories::UserDirs;
 
-use crate::{sql, types::Settings};
+use crate::{
+    sql,
+    types::{Settings, XmltvSourceStatus},
+};
 
 pub const MPV_PARAMS: &str = "mpvParams";
 pub const USE_STREAM_CACHING: &str = "useStreamingCaching";
@@ -34,6 +37,27 @@ pub const AUTO_UPDATE: &str = "autoUpdate";
 pub const MPV_DEBUG_LOG: &str = "mpvDebugLog";
 pub const XMLTV_SOURCES: &str = "xmltvSources";
 pub const XMLTV_LAST_UPDATED: &str = "xmltvLastUpdated";
+pub const XMLTV_STATUS: &str = "xmltvStatus";
+pub const COUNTRY_PREFIX: &str = "countryPrefix";
+
+/// Per-source results of the last XMLTV refresh, keyed by URL.
+pub fn get_xmltv_status() -> Result<HashMap<String, XmltvSourceStatus>> {
+    let map = sql::get_settings()?;
+    Ok(map
+        .get(XMLTV_STATUS)
+        .and_then(|raw| serde_json::from_str(raw).ok())
+        .unwrap_or_default())
+}
+
+pub fn set_xmltv_status(status: &HashMap<String, XmltvSourceStatus>) -> Result<()> {
+    let mut map: HashMap<String, Option<String>> = HashMap::with_capacity(1);
+    map.insert(
+        XMLTV_STATUS.to_string(),
+        Some(serde_json::to_string(status)?),
+    );
+    sql::update_settings(map)?;
+    Ok(())
+}
 
 /// Unix seconds of the last XMLTV refresh that loaded at least one source.
 pub fn get_xmltv_last_updated() -> Result<Option<i64>> {
@@ -105,6 +129,7 @@ pub fn get_settings() -> Result<Settings> {
         show_channel_source: map.get(SHOW_CHANNEL_SOURCE).and_then(|s| s.parse().ok()),
         auto_update: map.get(AUTO_UPDATE).and_then(|s| s.parse().ok()),
         mpv_debug_log: map.get(MPV_DEBUG_LOG).and_then(|s| s.parse().ok()),
+        country_prefix: map.get(COUNTRY_PREFIX).map(|s| s.to_string()),
     };
     Ok(settings)
 }
@@ -185,6 +210,9 @@ pub fn update_settings(settings: Settings) -> Result<()> {
             USE_EXTERNAL_PLAYER.to_string(),
             Some(use_external_player.to_string()),
         );
+    }
+    if let Some(country_prefix) = settings.country_prefix {
+        map.insert(COUNTRY_PREFIX.to_string(), Some(country_prefix));
     }
     if let Some(player_ui) = settings.player_ui {
         map.insert(PLAYER_UI.to_string(), Some(player_ui));

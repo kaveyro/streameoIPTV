@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     sync::{
         Arc,
         atomic::{AtomicBool, Ordering::Relaxed},
@@ -15,7 +16,7 @@ use tokio::sync::Mutex;
 
 use crate::{
     log, source_type, sql,
-    types::{AppState, Channel, EPG, EPGNotify},
+    types::{AppState, Channel, EPG, EPGNotify, EpgCoverage, ProgrammeHit},
     utils, xmltv, xtream,
 };
 
@@ -99,11 +100,17 @@ async fn restart_poller(state: &State<'_, Mutex<AppState>>, app: AppHandle) -> R
     Ok(())
 }
 
-/// Returns EPG for a channel, preferring the provider's own guide (Xtream) and
-/// falling back to external XMLTV data matched by the channel's tvg-id.
+/// Returns EPG for a channel: the XMLTV channel assigned by hand wins, then
+/// the provider's own guide (Xtream), then external XMLTV data matched by the
+/// channel's tvg-id or name.
 pub async fn get_epg_combined(channel: Channel) -> Result<Vec<EPG>> {
+    let mapped = match channel.source_id {
+        Some(source_id) => sql::get_epg_mapping(source_id, &channel.name)?,
+        None => None,
+    };
+    let is_mapped = mapped.is_some();
     // Try the Xtream provider EPG first when applicable.
-    if channel.stream_id.is_some() {
+    if !is_mapped && channel.stream_id.is_some() {
         let is_xtream = channel
             .source_id
             .and_then(|id| sql::get_source_from_id(id).ok())
@@ -124,11 +131,15 @@ pub async fn get_epg_combined(channel: Channel) -> Result<Vec<EPG>> {
     let now = chrono::Utc::now().timestamp();
     let mut programmes = Vec::new();
     let mut xmltv_id = String::new();
-    if let Some(id) = channel.epg_channel_id.as_deref().filter(|s| !s.is_empty()) {
+    if let Some(id) = mapped {
+        programmes = xmltv::programmes_for_channel(&id, now)?;
+        xmltv_id = id;
+    } else if let Some(id) = channel.epg_channel_id.as_deref().filter(|s| !s.is_empty()) {
         programmes = xmltv::programmes_for_channel(id, now)?;
         xmltv_id = id.to_string();
     }
-    if programmes.is_empty() {
+    // A channel assigned by hand keeps its choice, even while that guide is empty.
+    if programmes.is_empty() && !is_mapped {
         let norm = xmltv::normalize_name(&channel.name);
         if !norm.is_empty() {
             let candidates = sql::get_xmltv_channel_candidates(&norm, now)?;
@@ -165,4 +176,107 @@ pub async fn get_epg_combined(channel: Channel) -> Result<Vec<EPG>> {
 pub async fn on_start_check_epg(state: State<'_, Mutex<AppState>>, app: AppHandle) -> Result<()> {
     sql::clean_epgs()?;
     restart_poller(&state, app).await
+}
+
+/// Matches many channels to XMLTV channel ids at once, the same way
+/// [`get_epg_combined`] does for one, from data loaded up front.
+pub struct EpgResolver {
+    mappings: HashMap<(i64, String), String>,
+    /// Upcoming programmes per XMLTV channel id.
+    counts: HashMap<String, i64>,
+    /// Normalized name -> XMLTV channel ids.
+    index: HashMap<String, Vec<String>>,
+}
+
+impl EpgResolver {
+    pub fn load(now: i64) -> Result<Self> {
+        let mut index: HashMap<String, Vec<String>> = HashMap::new();
+        for (norm, id) in sql::get_xmltv_name_index()? {
+            index.entry(norm).or_default().push(id);
+        }
+        Ok(Self {
+            mappings: sql::get_all_epg_mappings()?,
+            counts: sql::get_xmltv_programme_counts(now)?,
+            index,
+        })
+    }
+
+    fn has_programmes(&self, id: &str) -> bool {
+        self.counts.get(id).is_some_and(|c| *c > 0)
+    }
+
+    /// The XMLTV channel with upcoming programmes for a playlist channel.
+    pub fn resolve(&self, channel: &Channel) -> Option<String> {
+        if let Some(source_id) = channel.source_id
+            && let Some(id) = self.mappings.get(&(source_id, channel.name.clone()))
+        {
+            return self.has_programmes(id).then(|| id.clone());
+        }
+        if let Some(id) = channel.epg_channel_id.as_deref().filter(|s| !s.is_empty())
+            && self.has_programmes(id)
+        {
+            return Some(id.to_string());
+        }
+        let ids = self.index.get(&xmltv::normalize_name(&channel.name))?;
+        let candidates = ids
+            .iter()
+            .map(|id| (id.clone(), self.counts.get(id).copied().unwrap_or(0)))
+            .collect();
+        xmltv::pick_channel(&channel.name, candidates)
+    }
+}
+
+/// How many live channels of enabled sources the XMLTV guides cover.
+pub fn coverage() -> Result<EpgCoverage> {
+    let now = chrono::Utc::now().timestamp();
+    let resolver = EpgResolver::load(now)?;
+    let channels = sql::get_live_channels_for_epg(true)?;
+    let matched = channels
+        .iter()
+        .filter(|c| resolver.resolve(c).is_some())
+        .count();
+    Ok(EpgCoverage {
+        live: channels.len(),
+        matched,
+    })
+}
+
+/// How far ahead the guide search looks.
+const SEARCH_DAYS: i64 = 7;
+/// Most programmes a guide search returns.
+const SEARCH_LIMIT: usize = 200;
+
+/// Upcoming programmes whose title contains `query`, on the channels of the
+/// playlist that show them (one channel per guide channel, favorites first).
+/// Only the XMLTV guides are searched: provider EPG is fetched per channel.
+pub fn search_programmes(query: &str, show_locked: bool) -> Result<Vec<ProgrammeHit>> {
+    let query = query.trim();
+    if query.chars().count() < 2 {
+        return Ok(Vec::new());
+    }
+    let now = chrono::Utc::now().timestamp();
+    let resolver = EpgResolver::load(now)?;
+    let mut by_id: HashMap<String, Channel> = HashMap::new();
+    for channel in sql::get_live_channels_for_epg(show_locked)? {
+        if let Some(id) = resolver.resolve(&channel) {
+            by_id.entry(id).or_insert(channel);
+        }
+    }
+    if by_id.is_empty() {
+        return Ok(Vec::new());
+    }
+    let rows = sql::search_xmltv_programmes(query, now, now + SEARCH_DAYS * 86_400, 5_000)?;
+    Ok(rows
+        .into_iter()
+        .filter_map(|(id, start, end, title, description)| {
+            by_id.get(&id).map(|channel| ProgrammeHit {
+                channel: channel.clone(),
+                title,
+                description: description.unwrap_or_default(),
+                start_timestamp: start,
+                end_timestamp: end,
+            })
+        })
+        .take(SEARCH_LIMIT)
+        .collect())
 }

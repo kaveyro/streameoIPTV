@@ -193,7 +193,7 @@ pub fn migrate_passwords_to_keychain() {
             }
         }
     }
-    log(format!(
+    crate::log::info(format!(
         "Password migration: moved {migrated}/{total} source password(s) to the OS keychain"
     ));
 }

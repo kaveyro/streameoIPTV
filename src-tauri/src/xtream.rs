@@ -8,6 +8,7 @@ use crate::types::ChannelPreserve;
 use crate::types::EPG;
 use crate::types::Season;
 use crate::types::Source;
+use crate::types::XtreamLogin;
 use crate::types::XtreamStatus;
 use crate::utils::api_client_builder;
 use crate::utils::download_client_builder;
@@ -120,6 +121,63 @@ struct XtreamEPGItem {
     start: String,
     #[serde(default)]
     end: String,
+}
+
+/// The Xtream login inside an M3U link of an Xtream server
+/// (`http://host:port/get.php?username=u&password=p&type=m3u_plus`). Such a
+/// source imports much better as Xtream: provider EPG, catch-up and series.
+pub fn login_from_m3u_url(url: &str) -> Option<XtreamLogin> {
+    let mut url = Url::parse(url.trim()).ok()?;
+    if !matches!(url.scheme(), "http" | "https") {
+        return None;
+    }
+    let last = url.path_segments()?.next_back()?.to_ascii_lowercase();
+    if last != "get.php" {
+        return None;
+    }
+    let query = |key: &str| {
+        url.query_pairs()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+    };
+    let username = query("username")?;
+    let password = query("password")?;
+    url.path_segments_mut().ok()?.pop().push("player_api.php");
+    url.set_query(None);
+    url.set_fragment(None);
+    Some(XtreamLogin {
+        url: url.to_string(),
+        username,
+        password,
+    })
+}
+
+/// Re-imports an M3U link source of an Xtream server as an Xtream source.
+/// Favorites, history, hidden and locked groups and scheduled recordings are
+/// carried over by name, as on a refresh; the source only switches type once
+/// the import worked.
+pub async fn convert_from_m3u(source_id: i64) -> Result<()> {
+    let source = sql::get_source_from_id(source_id)?;
+    if source.source_type != source_type::M3U_LINK {
+        anyhow::bail!("only M3U link sources can be converted");
+    }
+    let login = source
+        .url
+        .as_deref()
+        .and_then(login_from_m3u_url)
+        .context("the link contains no Xtream login")?;
+    let converted = Source {
+        source_type: source_type::XTREAM,
+        url: Some(login.url),
+        username: Some(login.username),
+        password: Some(login.password),
+        use_tvg_id: None,
+        ..source
+    };
+    get_xtream(converted.clone(), true).await?;
+    sql::convert_source_to_xtream(&converted)?;
+    Ok(())
 }
 
 fn build_xtream_url(source: &mut Source) -> Result<Url> {
@@ -613,7 +671,7 @@ pub async fn get_epg(channel: Channel) -> Result<Vec<EPG>> {
         }
     }
     if skipped > 0 {
-        log::log(format!("Xtream EPG: skipped {skipped} malformed listings"));
+        log::warn(format!("Xtream EPG: skipped {skipped} malformed listings"));
     }
     Ok(otv_epgs)
 }
@@ -728,6 +786,34 @@ pub async fn get_all_expiries() -> Result<HashMap<i64, i64>> {
         })
         .collect();
     Ok(statuses)
+}
+
+#[cfg(test)]
+mod test_xtream_login {
+    use super::login_from_m3u_url;
+
+    #[test]
+    fn test_login_from_get_php_link() {
+        let login = login_from_m3u_url(
+            "http://example.com:8080/get.php?username=u1&password=p%402&type=m3u_plus&output=ts",
+        )
+        .unwrap();
+        assert_eq!(login.url, "http://example.com:8080/player_api.php");
+        assert_eq!(login.username, "u1");
+        assert_eq!(login.password, "p@2");
+        // A path prefix before get.php is kept.
+        let login = login_from_m3u_url("https://h.tv/iptv/GET.PHP?username=a&password=b").unwrap();
+        assert_eq!(login.url, "https://h.tv/iptv/player_api.php");
+    }
+
+    #[test]
+    fn test_other_links_are_not_xtream() {
+        assert!(login_from_m3u_url("http://example.com/playlist.m3u").is_none());
+        assert!(login_from_m3u_url("http://example.com/get.php?username=u").is_none());
+        assert!(login_from_m3u_url("http://example.com/get.php?username=&password=p").is_none());
+        assert!(login_from_m3u_url("file:///C:/get.php?username=u&password=p").is_none());
+        assert!(login_from_m3u_url("not a url").is_none());
+    }
 }
 
 #[cfg(test)]

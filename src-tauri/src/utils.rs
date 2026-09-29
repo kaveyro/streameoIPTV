@@ -74,6 +74,8 @@ pub async fn refresh_source(source: Source) -> Result<()> {
     if let Some(id) = id {
         sql::update_source_last_updated(id)?;
     }
+    // A refresh rewrites the whole source: shrink the WAL it left behind.
+    tokio::task::spawn_blocking(sql::checkpoint_wal).await?;
     Ok(())
 }
 

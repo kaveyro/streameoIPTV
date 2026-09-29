@@ -480,7 +480,7 @@ async fn run_ipc(
             return;
         }
     };
-    crate::log::log(format!("mpv IPC connected on {pipe}"));
+    crate::log::info(format!("mpv IPC connected on {pipe}"));
     let (reader, mut writer) = tokio::io::split(client);
     // Read mpv's responses/events (also keeps the pipe buffer from blocking
     // writes): turn our fullscreen script-message into a frontend event, and

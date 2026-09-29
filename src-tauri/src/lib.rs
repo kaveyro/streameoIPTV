@@ -157,6 +157,15 @@ pub fn run() {
             set_xmltv_sources,
             refresh_xmltv,
             has_xmltv_data,
+            detect_xtream_login,
+            convert_source_to_xtream,
+            search_xmltv_channels,
+            get_epg_mapping,
+            set_epg_mapping,
+            get_xmltv_status,
+            get_epg_coverage,
+            search_programmes,
+            get_countries,
             logo_cache::get_cached_logo
         ])
         .setup(|app| {
@@ -590,6 +599,64 @@ async fn refresh_xmltv() -> Result<(), String> {
 #[tauri::command(async)]
 fn has_xmltv_data() -> Result<bool, String> {
     sql::has_xmltv_programmes().map_err(map_err_frontend)
+}
+
+#[tauri::command]
+fn detect_xtream_login(url: String) -> Option<types::XtreamLogin> {
+    xtream::login_from_m3u_url(&url)
+}
+
+#[tauri::command]
+async fn convert_source_to_xtream(source_id: i64) -> Result<(), String> {
+    xtream::convert_from_m3u(source_id)
+        .await
+        .map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn search_xmltv_channels(query: String) -> Result<Vec<types::XmltvChannelHit>, String> {
+    xmltv::search_channels(&query).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_epg_mapping(channel: Channel) -> Result<Option<String>, String> {
+    let Some(source_id) = channel.source_id else {
+        return Ok(None);
+    };
+    sql::get_epg_mapping(source_id, &channel.name).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn set_epg_mapping(channel: Channel, xmltv_id: Option<String>) -> Result<(), String> {
+    let source_id = channel
+        .source_id
+        .ok_or_else(|| "channel has no source".to_string())?;
+    let xmltv_id = xmltv_id
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    sql::set_epg_mapping(source_id, &channel.name, xmltv_id.as_deref()).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_xmltv_status() -> Result<Vec<types::XmltvSourceStatus>, String> {
+    xmltv::get_status().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_epg_coverage() -> Result<types::EpgCoverage, String> {
+    epg::coverage().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn search_programmes(query: String, show_locked: bool) -> Result<Vec<types::ProgrammeHit>, String> {
+    epg::search_programmes(&query, show_locked).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_countries(source_ids: Vec<i64>) -> Result<Vec<types::CountryCount>, String> {
+    sql::get_names_for_countries(&source_ids)
+        .map(|names| xmltv::count_countries(&names))
+        .map_err(map_err_frontend)
 }
 
 #[tauri::command]

@@ -41,11 +41,13 @@ import { TvGuideComponent } from "./tv-guide/tv-guide.component";
 import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
+import { CountryNamePipe } from "./pipes/country-name.pipe";
 
 @NgModule({
   declarations: [
     AppComponent,
     TimeAgoPipe,
+    CountryNamePipe,
     SetupComponent,
     LoadingComponent,
     SourceNameExistsValidator,

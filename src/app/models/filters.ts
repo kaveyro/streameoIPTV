@@ -15,4 +15,6 @@ export class Filters {
   public season?: number;
   /// Include groups locked by the parental PIN; always MemoryService.ShowLocked.
   public show_locked?: boolean;
+  /// Only names with this country prefix ("TR"); undefined for all.
+  public country?: string;
 }

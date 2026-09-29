@@ -110,6 +110,9 @@ pub struct Settings {
     pub show_channel_source: Option<bool>,
     pub auto_update: Option<bool>,
     pub mpv_debug_log: Option<bool>,
+    /// How channel names show their country prefix: "show", "hide" or "badge".
+    #[serde(default)]
+    pub country_prefix: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -128,6 +131,9 @@ pub struct Filters {
     /// the PIN was entered in this session).
     #[serde(default)]
     pub show_locked: bool,
+    /// Only names with this country prefix ("TR" for "TR: Kanal D").
+    #[serde(default)]
+    pub country: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
@@ -252,4 +258,61 @@ pub struct ChannelPreserve {
     pub hidden: Option<bool>,
     #[serde(default)]
     pub is_group: bool,
+    /// Group locked by the parental PIN. A restore only ever adds locks.
+    #[serde(default)]
+    pub locked: bool,
+}
+
+/// Xtream login found in an M3U link such as `http://host/get.php?username=u&password=p`.
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct XtreamLogin {
+    /// The player API of the same server, as an Xtream source stores it.
+    pub url: String,
+    pub username: String,
+    pub password: String,
+}
+
+/// Result of the last refresh of one XMLTV source.
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
+pub struct XmltvSourceStatus {
+    pub url: String,
+    /// Unix seconds of the last successful load.
+    pub updated: Option<i64>,
+    pub programmes: Option<usize>,
+    pub channels: Option<usize>,
+    /// Why the last attempt failed; None when it worked.
+    pub error: Option<String>,
+}
+
+/// How many live channels the XMLTV guides cover.
+#[derive(Clone, PartialEq, Debug, Serialize, Default)]
+pub struct EpgCoverage {
+    pub live: usize,
+    pub matched: usize,
+}
+
+/// An XMLTV channel offered when assigning a guide by hand.
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct XmltvChannelHit {
+    pub id: String,
+    /// Programmes that have not ended yet.
+    pub programmes: i64,
+    pub now_title: Option<String>,
+}
+
+/// A programme found by the guide search, with the channel that shows it.
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct ProgrammeHit {
+    pub channel: Channel,
+    pub title: String,
+    pub description: String,
+    pub start_timestamp: i64,
+    pub end_timestamp: i64,
+}
+
+/// A country prefix of channel names and how many channels carry it.
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct CountryCount {
+    pub code: String,
+    pub count: usize,
 }

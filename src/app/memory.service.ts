@@ -9,6 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SortType } from "./models/sortType";
 import { SetNodeDTO } from "./models/setNodeDTO";
 import { Channel } from "./models/channel";
+import { CountryPrefixMode } from "./country-prefix";
 
 @Injectable({
   providedIn: "root",
@@ -50,6 +51,8 @@ export class MemoryService {
   /** An external XMLTV guide is cached: any live channel may have EPG, matched
    *  by tvg-id or, without one, by its name. */
   public HasXmltv: boolean = false;
+  /** How channel names show their country prefix (appearance setting). */
+  public CountryPrefixMode: CountryPrefixMode = "show";
   public ModalRef?: NgbModalRef;
   public Watched_epgs: Set<string> = new Set();
   private downloadingChannels: Map<number, [number, Subject<boolean>]> = new Map();
@@ -69,6 +72,9 @@ export class MemoryService {
   public UseExternalPlayer: boolean = false;
   /// Whether the embedded player view is currently shown.
   public PlayerVisible: boolean = false;
+  /// Whether the embedded player plays on in the small corner window while
+  /// the rest of the app is used (PlayerVisible is false then).
+  public PlayerMini: boolean = false;
   /// Emits after settings that only apply when mpv spawns were changed and the
   /// embedded player was torn down; the PlayerComponent re-inits on next open.
   public PlayerReset: Subject<void> = new Subject();

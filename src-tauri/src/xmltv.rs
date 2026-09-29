@@ -13,7 +13,14 @@ use flate2::read::GzDecoder;
 use quick_xml::Reader;
 use quick_xml::events::Event;
 
-use crate::{log::log, settings, sql, utils};
+use std::collections::{HashMap, HashSet};
+
+use crate::{
+    log::{info, log, warn},
+    settings, sql,
+    types::{CountryCount, XmltvChannelHit, XmltvSourceStatus},
+    utils,
+};
 
 /// Guard against a malformed/huge feed exhausting memory.
 const MAX_PROGRAMMES: usize = 2_000_000;
@@ -30,8 +37,11 @@ pub async fn refresh() -> Result<()> {
     let urls = settings::get_xmltv_sources()?;
     if urls.is_empty() {
         sql::replace_xmltv_programmes(&[])?;
+        settings::set_xmltv_status(&HashMap::new())?;
         return Ok(());
     }
+    let mut status = settings::get_xmltv_status().unwrap_or_default();
+    status.retain(|url, _| urls.contains(url));
     let now = Utc::now().timestamp();
     let cutoff = now - STALE_SECS;
     let client = utils::download_client_builder().build()?;
@@ -43,25 +53,40 @@ pub async fn refresh() -> Result<()> {
 
     let mut failures = 0usize;
     for url in &urls {
+        let entry = status.entry(url.clone()).or_default();
+        entry.url = url.clone();
         match fetch_and_parse(&client, url, cutoff).await {
             Ok((new_programmes, new_channels)) => {
-                log(format!("XMLTV: loaded {} programmes", new_programmes.len()));
+                info(format!("XMLTV: loaded {} programmes", new_programmes.len()));
+                let channel_ids: HashSet<&str> =
+                    new_programmes.iter().map(|p| p.0.as_str()).collect();
+                entry.updated = Some(now);
+                entry.programmes = Some(new_programmes.len());
+                entry.channels = Some(channel_ids.len());
+                entry.error = None;
                 programmes.extend(new_programmes);
                 channels.extend(new_channels);
             }
             Err(e) => {
                 failures += 1;
+                entry.error = Some(crate::redact::redact(&format!("{e:#}")));
                 log(format!("{:?}", e.context("XMLTV source failed")));
             }
         }
         if programmes.len() >= MAX_PROGRAMMES {
-            log(format!(
+            warn(format!(
                 "XMLTV: reached the {MAX_PROGRAMMES} programme cap, skipping remaining sources"
             ));
             break;
         }
     }
 
+    if let Err(e) = settings::set_xmltv_status(&status) {
+        log(format!(
+            "{:?}",
+            e.context("failed to store the XMLTV status")
+        ));
+    }
     if failures == urls.len() {
         // Nothing loaded (offline, provider down): keep the guide we have.
         anyhow::bail!("All XMLTV sources failed, keeping the cached guide");
@@ -78,11 +103,12 @@ pub async fn refresh() -> Result<()> {
             sql::replace_xmltv_programmes(&programmes)?;
             sql::replace_xmltv_channels(&channels)?;
         }
+        sql::checkpoint_wal();
         Ok(())
     })
     .await??;
     settings::set_xmltv_last_updated(now)?;
-    log(format!(
+    info(format!(
         "XMLTV: stored {} programmes and {} channel name mappings",
         programme_count, channel_count
     ));
@@ -482,15 +508,85 @@ pub fn normalize_name(s: &str) -> String {
 static COUNTRY_PREFIX_RE: std::sync::LazyLock<regex::Regex> =
     std::sync::LazyLock::new(|| regex::Regex::new(r"^\s*\[?([A-Za-z]{2})\]?\s*[:|\-]").unwrap());
 
-/// The country a playlist name is prefixed with ("TR: Kanal D", "DE| ARD",
-/// "[UK] - BBC One"), lowercased, with "uk" folded into "gb".
-fn country_of_name(name: &str) -> Option<String> {
+/// The country code a playlist name is prefixed with ("TR: Kanal D",
+/// "DE| ARD", "[UK] - BBC One"), lowercased as written. "SD:" and "HD:" are
+/// quality markers, not Sudan.
+pub fn country_prefix(name: &str) -> Option<String> {
     let code = COUNTRY_PREFIX_RE
         .captures(name)?
         .get(1)?
         .as_str()
         .to_ascii_lowercase();
+    if code == "sd" || code == "hd" {
+        return None;
+    }
+    Some(code)
+}
+
+/// [`country_prefix`] with "uk" folded into "gb", to compare with ids.
+fn country_of_name(name: &str) -> Option<String> {
+    let code = country_prefix(name)?;
     Some(if code == "uk" { "gb".to_string() } else { code })
+}
+
+/// The country prefixes among `names`, most common first.
+pub fn count_countries(names: &[String]) -> Vec<CountryCount> {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for name in names {
+        if let Some(code) = country_prefix(name) {
+            *counts.entry(code.to_ascii_uppercase()).or_default() += 1;
+        }
+    }
+    let mut out: Vec<CountryCount> = counts
+        .into_iter()
+        .map(|(code, count)| CountryCount { code, count })
+        .collect();
+    out.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.code.cmp(&b.code)));
+    out
+}
+
+/// Status of every configured XMLTV source, in the configured order.
+pub fn get_status() -> anyhow::Result<Vec<XmltvSourceStatus>> {
+    let stored = settings::get_xmltv_status().unwrap_or_default();
+    Ok(settings::get_xmltv_sources()?
+        .into_iter()
+        .map(|url| {
+            stored.get(&url).cloned().unwrap_or(XmltvSourceStatus {
+                url,
+                ..Default::default()
+            })
+        })
+        .collect())
+}
+
+/// XMLTV channels for the "assign guide" search: ids or names containing the
+/// query, those with upcoming programmes first.
+pub fn search_channels(query: &str) -> anyhow::Result<Vec<XmltvChannelHit>> {
+    let query = query.trim();
+    if query.is_empty() {
+        return Ok(Vec::new());
+    }
+    let now = Utc::now().timestamp();
+    let norm = normalize_name(query);
+    let ids = sql::find_xmltv_channel_ids(query, &norm, 60)?;
+    let counts = sql::get_xmltv_programme_counts(now)?;
+    let mut hits = Vec::with_capacity(ids.len());
+    for id in ids {
+        let programmes = counts.get(&id).copied().unwrap_or(0);
+        let now_title = if programmes > 0 {
+            sql::get_xmltv_now_title(&id, now)?
+        } else {
+            None
+        };
+        hits.push(XmltvChannelHit {
+            id,
+            programmes,
+            now_title,
+        });
+    }
+    // Stable: keeps the shorter-id-first order among equals.
+    hits.sort_by_key(|h| h.programmes == 0);
+    Ok(hits)
 }
 
 /// The country suffix of an XMLTV channel id ("KanalD.tr", "BBCOne.uk").
@@ -663,6 +759,24 @@ mod test_xmltv {
         assert_eq!(out[0].4.as_deref(), Some("Evening news"));
         // Both the id and the display-name normalize to the same key -> one entry.
         assert!(channels.contains(&("beinsports1".to_string(), "beINSPORTS1.tr".to_string())));
+    }
+
+    #[test]
+    fn test_country_prefix_and_counts() {
+        assert_eq!(country_prefix("TR: Kanal D").as_deref(), Some("tr"));
+        assert_eq!(country_prefix("[UK] - BBC One").as_deref(), Some("uk"));
+        assert_eq!(country_prefix("DE| ARD").as_deref(), Some("de"));
+        assert_eq!(country_prefix("SD: beIN Sports 1"), None);
+        assert_eq!(country_prefix("HD: beIN Sports 1"), None);
+        assert_eq!(country_prefix("Kanal D"), None);
+        let names: Vec<String> = ["TR: A", "TR: B", "DE: C", "tr | D", "E"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let counts = count_countries(&names);
+        assert_eq!(counts.len(), 2);
+        assert_eq!((counts[0].code.as_str(), counts[0].count), ("TR", 3));
+        assert_eq!((counts[1].code.as_str(), counts[1].count), ("DE", 1));
     }
 
     #[test]

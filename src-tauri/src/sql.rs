@@ -30,6 +30,8 @@ const GROUP_NOT_LOCKED: &str = "\nAND (locked IS NULL OR locked = 0)";
 
 /// start, end, title, description
 pub type XmltvProgramme = (i64, i64, String, Option<String>);
+/// channel id, start, end, title, description
+pub type XmltvProgrammeRow = (String, i64, i64, String, Option<String>);
 
 /// Row offset of a 1-based page. Page 0 is treated as the first page instead
 /// of underflowing.
@@ -301,6 +303,16 @@ fn apply_migrations() -> Result<()> {
             r#"
               ALTER TABLE groups ADD COLUMN locked INTEGER DEFAULT 0;
               CREATE INDEX IF NOT EXISTS index_groups_locked ON groups(locked);
+            "#,
+        ),
+        M::up(
+            r#"
+              CREATE TABLE IF NOT EXISTS "epg_mappings" (
+                "source_id" INTEGER NOT NULL,
+                "channel_name" TEXT NOT NULL,
+                "xmltv_id" TEXT NOT NULL,
+                PRIMARY KEY (source_id, channel_name)
+              );
             "#,
         ),
     ]);
@@ -689,6 +701,8 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     if !filters.show_locked {
         sql_query += NOT_IN_LOCKED_GROUP;
     }
+    let country_patterns = country_like_patterns(filters.country.as_deref());
+    sql_query += &country_sql(country_patterns.len());
     let mut baked_params = 2;
     if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
         sql_query += "\nAND favorite = 1";
@@ -719,11 +733,16 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     }
     sql_query += "\nLIMIT ?, ?";
     let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(
-        baked_params + media_types.len() + filters.source_ids.len() + keywords.len(),
+        baked_params
+            + media_types.len()
+            + filters.source_ids.len()
+            + keywords.len()
+            + country_patterns.len(),
     );
     params.extend(to_to_sql(&keywords));
     params.extend(to_to_sql(&media_types));
     params.extend(to_to_sql(&filters.source_ids));
+    params.extend(to_to_sql(&country_patterns));
     if let Some(ref series_id) = filters.series_id {
         params.push(series_id);
     } else if let Some(ref group) = filters.group_id {
@@ -1156,6 +1175,8 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     if !filters.show_locked {
         sql_query += GROUP_NOT_LOCKED;
     }
+    let country_patterns = country_like_patterns(filters.country.as_deref());
+    sql_query += &country_sql(country_patterns.len());
     if filters.sort != sort_type::PROVIDER {
         let order = match filters.sort {
             sort_type::ALPHABETICAL_ASC => "ASC",
@@ -1168,6 +1189,7 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     params.extend(to_to_sql(&keywords));
     params.extend(to_to_sql(&filters.source_ids));
     params.extend(to_to_sql(&media_types));
+    params.extend(to_to_sql(&country_patterns));
     params.push(&offset);
     params.push(&PAGE_SIZE);
     let channels: Vec<Channel> = sql
@@ -1272,6 +1294,7 @@ pub fn delete_source(id: i64) -> Result<()> {
         delete_channels_by_source(tx, id)?;
         delete_groups_by_source(tx, id)?;
         delete_seasons_by_source(tx, id)?;
+        tx.execute("DELETE FROM epg_mappings WHERE source_id = ?", params![id])?;
         let count = tx.execute("DELETE FROM sources WHERE id = ?", params![id])?;
         if count != 1 {
             return Err(anyhow!("No sources were deleted"));
@@ -1280,6 +1303,7 @@ pub fn delete_source(id: i64) -> Result<()> {
     })?;
     credentials::delete_source_password(id);
     get_conn()?.execute("ANALYZE;", params![])?;
+    checkpoint_wal();
     Ok(())
 }
 
@@ -1973,9 +1997,9 @@ pub fn get_preserve(tx: &Transaction, source_id: i64) -> Result<Vec<ChannelPrese
     let groups: Vec<ChannelPreserve> = tx
         .prepare(
             r#"
-              SELECT name, hidden
+              SELECT name, hidden, locked
               FROM groups
-              WHERE hidden = 1
+              WHERE (hidden = 1 OR locked = 1)
               AND source_id = ?
             "#,
         )?
@@ -1994,6 +2018,7 @@ fn row_to_channel_preserve(row: &Row) -> Result<ChannelPreserve, rusqlite::Error
         last_watched: row.get("last_watched")?,
         hidden: row.get("hidden")?,
         is_group: false,
+        locked: false,
     })
 }
 
@@ -2004,6 +2029,7 @@ fn row_to_group_preserve(row: &Row) -> Result<ChannelPreserve, rusqlite::Error> 
         favorite: false,
         last_watched: None,
         is_group: true,
+        locked: row.get::<_, Option<bool>>("locked")?.unwrap_or(false),
     })
 }
 
@@ -2063,14 +2089,16 @@ pub fn restore_preserve(
 ) -> Result<()> {
     for item in preserve {
         if item.is_group {
+            // A lock is only ever added here: a favorites backup file must
+            // not be a way around the parental PIN.
             tx.execute(
                 r#"
                   UPDATE groups
-                  SET hidden = ?
+                  SET hidden = ?, locked = CASE WHEN ? THEN 1 ELSE locked END
                   WHERE name = ?
                   AND source_id = ?
                 "#,
-                params![item.hidden, item.name, source_id],
+                params![item.hidden, item.locked, item.name, source_id],
             )?;
         } else {
             tx.execute(
@@ -2476,4 +2504,325 @@ pub fn get_locked_group_ids() -> Result<Vec<i64>> {
 pub fn unlock_all_groups() -> Result<()> {
     get_conn()?.execute("UPDATE groups SET locked = 0 WHERE locked = 1", [])?;
     Ok(())
+}
+
+/// LIKE patterns matching the ways playlists prefix a name with a country
+/// code: "TR: x", "TR | x", "TR|x", "TR - x", "[TR] x". Empty without a
+/// (valid, two-letter) code, which disables the filter.
+fn country_like_patterns(country: Option<&str>) -> Vec<String> {
+    let Some(code) = country
+        .map(str::trim)
+        .filter(|c| c.len() == 2 && c.chars().all(|ch| ch.is_ascii_alphabetic()))
+    else {
+        return Vec::new();
+    };
+    let code = code.to_ascii_uppercase();
+    ["{}:%", "{} :%", "{}|%", "{} |%", "{} -%", "{}-%", "[{}]%"]
+        .iter()
+        .map(|p| p.replace("{}", &code))
+        .collect()
+}
+
+fn country_sql(patterns: usize) -> String {
+    if patterns == 0 {
+        return String::new();
+    }
+    format!("\nAND ({})", vec!["name LIKE ?"; patterns].join(" OR "))
+}
+
+/// Moves the write-ahead log back into the database and truncates it. After
+/// a large import the -wal file otherwise stays as big as the import was.
+/// Best-effort: a busy database simply keeps its WAL until next time.
+pub fn checkpoint_wal() {
+    let result = get_conn().and_then(|conn| {
+        conn.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |_| Ok(()))
+            .map_err(anyhow::Error::from)
+    });
+    if let Err(e) = result {
+        crate::log::warn(format!("{:?}", e.context("WAL checkpoint failed")));
+    }
+}
+
+/// Switches a source to Xtream after its channels were imported that way.
+pub fn convert_source_to_xtream(source: &Source) -> Result<()> {
+    let id = source.id.context("no source id")?;
+    let db_password = credentials::password_for_db(source.id, source.password.clone());
+    let count = get_conn()?.execute(
+        r#"
+        UPDATE sources
+        SET source_type = ?, url = ?, username = ?, password = ?, use_tvg_id = NULL
+        WHERE id = ?"#,
+        params![
+            source_type::XTREAM,
+            source.url,
+            source.username,
+            db_password,
+            id
+        ],
+    )?;
+    if count != 1 {
+        return Err(anyhow!("source {id} not found"));
+    }
+    Ok(())
+}
+
+/// The XMLTV channel assigned by hand to a channel (by source and name, so it
+/// survives refreshes that give the channel a new id).
+pub fn get_epg_mapping(source_id: i64, channel_name: &str) -> Result<Option<String>> {
+    Ok(get_conn()?
+        .query_row(
+            "SELECT xmltv_id FROM epg_mappings WHERE source_id = ? AND channel_name = ?",
+            params![source_id, channel_name],
+            |row| row.get(0),
+        )
+        .optional()?)
+}
+
+/// Assigns an XMLTV channel to a channel, or removes the assignment.
+pub fn set_epg_mapping(source_id: i64, channel_name: &str, xmltv_id: Option<&str>) -> Result<()> {
+    let conn = get_conn()?;
+    match xmltv_id {
+        Some(id) => conn.execute(
+            r#"
+            INSERT INTO epg_mappings (source_id, channel_name, xmltv_id) VALUES (?1, ?2, ?3)
+            ON CONFLICT(source_id, channel_name) DO UPDATE SET xmltv_id = ?3
+            "#,
+            params![source_id, channel_name, id],
+        )?,
+        None => conn.execute(
+            "DELETE FROM epg_mappings WHERE source_id = ? AND channel_name = ?",
+            params![source_id, channel_name],
+        )?,
+    };
+    Ok(())
+}
+
+/// Every hand-made assignment, keyed by (source id, channel name).
+pub fn get_all_epg_mappings() -> Result<HashMap<(i64, String), String>> {
+    let conn = get_conn()?;
+    let rows = conn
+        .prepare("SELECT source_id, channel_name, xmltv_id FROM epg_mappings")?
+        .query_map([], |row| Ok(((row.get(0)?, row.get(1)?), row.get(2)?)))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// Number of programmes per XMLTV channel that end after `from`.
+pub fn get_xmltv_programme_counts(from: i64) -> Result<HashMap<String, i64>> {
+    let conn = get_conn()?;
+    let rows = conn
+        .prepare(
+            "SELECT channel_id, COUNT(*) FROM xmltv_programmes WHERE end_timestamp > ? GROUP BY channel_id",
+        )?
+        .query_map(params![from], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// The whole normalized-name index: (norm name, XMLTV channel id) pairs.
+pub fn get_xmltv_name_index() -> Result<Vec<(String, String)>> {
+    let conn = get_conn()?;
+    let rows = conn
+        .prepare("SELECT DISTINCT norm_name, channel_id FROM xmltv_channels")?
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// XMLTV channel ids whose id or normalized name contains the query.
+pub fn find_xmltv_channel_ids(raw: &str, norm: &str, limit: u32) -> Result<Vec<String>> {
+    let conn = get_conn()?;
+    let raw = format!("%{}%", raw.trim());
+    let norm = format!("%{norm}%");
+    let rows = conn
+        .prepare(
+            r#"
+            SELECT channel_id FROM (
+              SELECT channel_id FROM xmltv_channels WHERE norm_name LIKE ?1 OR channel_id LIKE ?2
+              UNION
+              SELECT DISTINCT channel_id FROM xmltv_programmes WHERE channel_id LIKE ?2
+            )
+            ORDER BY length(channel_id), channel_id
+            LIMIT ?3
+            "#,
+        )?
+        .query_map(params![norm, raw, limit], |row| row.get(0))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// Title of the programme on air at `now` on an XMLTV channel.
+pub fn get_xmltv_now_title(channel_id: &str, now: i64) -> Result<Option<String>> {
+    Ok(get_conn()?
+        .query_row(
+            r#"
+            SELECT title FROM xmltv_programmes
+            WHERE channel_id = ?1 AND start_timestamp <= ?2 AND end_timestamp > ?2
+            LIMIT 1
+            "#,
+            params![channel_id, now],
+            |row| row.get(0),
+        )
+        .optional()?)
+}
+
+/// Upcoming XMLTV programmes (not ended, starting before `until`) whose title
+/// contains the query: (channel id, start, end, title, description).
+pub fn search_xmltv_programmes(
+    query: &str,
+    now: i64,
+    until: i64,
+    limit: u32,
+) -> Result<Vec<XmltvProgrammeRow>> {
+    let conn = get_conn()?;
+    let pattern = format!("%{}%", query.trim());
+    let rows = conn
+        .prepare(
+            r#"
+            SELECT channel_id, start_timestamp, end_timestamp, title, description
+            FROM xmltv_programmes
+            WHERE title LIKE ?1 AND end_timestamp > ?2 AND start_timestamp < ?3
+            ORDER BY start_timestamp
+            LIMIT ?4
+            "#,
+        )?
+        .query_map(params![pattern, now, until, limit], |row| {
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+            ))
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// Live channels of enabled sources that are not hidden, for EPG matching in
+/// bulk. Favorites first, so they represent a guide channel shown by several
+/// playlist channels.
+pub fn get_live_channels_for_epg(show_locked: bool) -> Result<Vec<Channel>> {
+    let conn = get_conn()?;
+    let mut query = format!(
+        r#"
+        SELECT * FROM channels
+        WHERE media_type = {}
+        AND hidden = 0
+        AND url IS NOT NULL
+        AND source_id IN (SELECT id FROM sources WHERE enabled = 1)"#,
+        media_type::LIVESTREAM
+    );
+    if !show_locked {
+        query += NOT_IN_LOCKED_GROUP;
+    }
+    query += "\nORDER BY favorite DESC, name";
+    let rows = conn
+        .prepare(&query)?
+        .query_map([], row_to_channel)?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// Names of the visible channels and groups of the given sources, to find
+/// the country prefixes in use.
+pub fn get_names_for_countries(source_ids: &[i64]) -> Result<Vec<String>> {
+    if source_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = get_conn()?;
+    let placeholders = generate_placeholders(source_ids.len());
+    let query = format!(
+        r#"
+        SELECT name FROM channels
+        WHERE source_id IN ({placeholders}) AND hidden = 0 AND series_id IS NULL
+        UNION ALL
+        SELECT name FROM groups
+        WHERE source_id IN ({placeholders}) AND hidden = 0
+        "#
+    );
+    let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(source_ids.len() * 2);
+    params.extend(to_to_sql(source_ids));
+    params.extend(to_to_sql(source_ids));
+    let rows = conn
+        .prepare(&query)?
+        .query_map(params_from_iter(params), |row| row.get(0))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+#[cfg(test)]
+mod test_sql {
+    use super::{country_like_patterns, get_preserve, restore_preserve};
+    use rusqlite::Connection;
+
+    fn groups_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            CREATE TABLE groups (id INTEGER PRIMARY KEY, name TEXT, image TEXT, source_id INTEGER,
+              media_type INTEGER, hidden INTEGER DEFAULT 0, locked INTEGER DEFAULT 0);
+            CREATE TABLE channels (id INTEGER PRIMARY KEY, name TEXT, source_id INTEGER,
+              favorite INTEGER DEFAULT 0, last_watched INTEGER, hidden INTEGER DEFAULT 0,
+              series_id INTEGER);
+            INSERT INTO groups (name, source_id, hidden, locked) VALUES
+              ('Kids', 1, 0, 1), ('Adult', 1, 1, 1), ('News', 1, 0, 0);
+            "#,
+        )
+        .unwrap();
+        conn
+    }
+
+    fn locked(conn: &Connection, name: &str) -> bool {
+        conn.query_row("SELECT locked FROM groups WHERE name = ?", [name], |r| {
+            r.get(0)
+        })
+        .unwrap()
+    }
+
+    #[test]
+    fn test_refresh_keeps_group_locks() {
+        let mut conn = groups_db();
+        let tx = conn.transaction().unwrap();
+        let preserve = get_preserve(&tx, 1).unwrap();
+        // A refresh recreates the groups unlocked.
+        tx.execute("UPDATE groups SET locked = 0, hidden = 0", [])
+            .unwrap();
+        restore_preserve(&tx, 1, preserve).unwrap();
+        tx.commit().unwrap();
+        assert!(locked(&conn, "Kids"));
+        assert!(locked(&conn, "Adult"));
+        assert!(!locked(&conn, "News"));
+    }
+
+    #[test]
+    fn test_restore_never_removes_a_lock() {
+        let mut conn = groups_db();
+        let tx = conn.transaction().unwrap();
+        let mut preserve = get_preserve(&tx, 1).unwrap();
+        // A crafted favorites backup that says "not locked".
+        preserve.iter_mut().for_each(|p| p.locked = false);
+        restore_preserve(&tx, 1, preserve).unwrap();
+        tx.commit().unwrap();
+        assert!(locked(&conn, "Kids"));
+        assert!(locked(&conn, "Adult"));
+    }
+
+    #[test]
+    fn test_country_patterns() {
+        assert!(country_like_patterns(None).is_empty());
+        assert!(country_like_patterns(Some("TUR")).is_empty());
+        assert!(country_like_patterns(Some("1%")).is_empty());
+        let p = country_like_patterns(Some("tr"));
+        assert!(p.contains(&"TR:%".to_string()));
+        assert!(p.contains(&"[TR]%".to_string()));
+        assert!(p.contains(&"TR |%".to_string()));
+    }
 }

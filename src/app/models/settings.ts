@@ -26,4 +26,6 @@ export class Settings {
   show_channel_source?: boolean;
   auto_update?: boolean;
   mpv_debug_log?: boolean;
+  /// "show" | "hide" | "badge", see country-prefix.ts.
+  country_prefix?: string;
 }

@@ -52,7 +52,9 @@
       "SERIES": "Diziler"
     },
     "COLLAPSE_SIDEBAR": "Kenar çubuğunu daralt",
-    "EXPAND_SIDEBAR": "Kenar çubuğunu genişlet"
+    "EXPAND_SIDEBAR": "Kenar çubuğunu genişlet",
+    "COUNTRY_FILTER": "Ülkeye göre filtrele",
+    "ALL_COUNTRIES": "Tüm ülkeler"
   },
   "MENU": {
     "REMOVE": "Kaldır",
@@ -70,7 +72,8 @@
     "COPY_URL": "URL'yi kopyala",
     "DELETE": "Sil",
     "LOCK_GROUP": "Grubu kilitle",
-    "UNLOCK_GROUP": "Grubun kilidini aç"
+    "UNLOCK_GROUP": "Grubun kilidini aç",
+    "MAP_EPG": "EPG ata…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Kanal bulunamadı",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "Mor",
       "ACCENT_TEAL": "Camgöbeği",
       "ACCENT_CORAL": "Mercan",
-      "ACCENT_GREEN": "Yeşil"
+      "ACCENT_GREEN": "Yeşil",
+      "COUNTRY_PREFIX": "Kanal adlarındaki ülke kodu",
+      "COUNTRY_PREFIX_DESC": "Kanal adlarının önündeki “TR:” veya “DE |” gibi kodların nasıl gösterileceği.",
+      "COUNTRY_PREFIX_SHOW": "Göster",
+      "COUNTRY_PREFIX_HIDE": "Gizle",
+      "COUNTRY_PREFIX_BADGE": "Kod rozeti olarak",
+      "COUNTRY_PREFIX_PREVIEW": "Önizleme:"
     },
     "PLAYBACK": {
       "CACHING": "Akış önbelleğini kullan",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "Harici EPG",
-      "INTRO": "Bir kanalın sağlayıcısından program bilgisi yoksa, streameo bunu tvg-id ile eşleştirerek bu XMLTV kaynaklarından tamamlar. Herhangi bir XMLTV URL'si çalışır (örneğin bir IPTV-EPG.org dışa aktarımı); .xml ve .xml.gz desteklenir.",
+      "INTRO": "Bir kanalın sağlayıcısından program verisi yoksa streameo bunları bu XMLTV kaynaklarından tamamlar: tvg-id ile, yoksa kanal adıyla ya da senin elle yaptığın eşleştirmeyle. Her XMLTV URL'si çalışır (örneğin bir IPTV-EPG.org dışa aktarımı); .xml ve .xml.gz desteklenir.",
       "SOURCES_LABEL": "XMLTV kaynakları",
       "SOURCES_DESC": "Her satıra bir XMLTV URL'si.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Şimdi yenile",
       "REFRESH_DESC": "En güncel program verilerini indir. Bu, kaynak otomatik yenileme zamanlamana göre, kapalıysa günde bir kez otomatik olarak da yapılır.",
       "FREE_SOURCES": "Ücretsiz EPG kaynakları",
-      "FREE_SOURCES_DESC": "Bilinen ücretsiz bir XMLTV rehberini tek tıkla ekleyin. Kanallarınızın ülkelerine uyanları seçin."
+      "FREE_SOURCES_DESC": "Bilinen ücretsiz bir XMLTV rehberini tek tıkla ekleyin. Kanallarınızın ülkelerine uyanları seçin.",
+      "SOURCES_LIST_DESC": "Rehberler bu sırayla yüklenir. Her birinde en son ne zaman yüklendiği ve neler içerdiği gösterilir.",
+      "NO_SOURCES": "Henüz XMLTV kaynağı yok. Aşağıya bir URL ekleyin veya ücretsiz kaynaklardan birini seçin.",
+      "STATUS_LOADED": "Yüklendi: {{time}}",
+      "STATUS_PROGRAMMES": "{{count}} program",
+      "STATUS_CHANNELS": "{{count}} kanal",
+      "STATUS_NEVER": "Henüz yüklenmedi",
+      "STATUS_ERROR": "Hata: {{error}}",
+      "REMOVE_SOURCE": "{{url}} kaldır",
+      "REMOVE_SOURCE_TOOLTIP": "Kaldır",
+      "ADD_URL_LABEL": "Eklenecek XMLTV URL'si",
+      "ADD_BTN": "Ekle",
+      "INVALID_URL": "http:// veya https:// ile başlayan tam bir URL girin.",
+      "DUPLICATE_URL": "Bu kaynak zaten listede.",
+      "COVERAGE": "{{live}} canlı kanalın {{matched}} tanesinin rehber verisi var.",
+      "COVERAGE_HINT": "Eşleşmeyen kanallar elle atanabilir: Kanalın menüsünü açın ve “EPG ata…” seçeneğini seçin.",
+      "DUPLICATE_COUNTRY": "{{country}} {{count}} kaynak tarafından kapsanıyor – yinelenen kaynaklar yalnızca yenilemeyi yavaşlatır.",
+      "REFRESHING": "Yenileniyor…"
     },
     "PARENTAL": {
       "DESC": "Grupları bir PIN ile koruyun. Kilitli gruplar ve kanalları, ana sayfadaki kilit düğmesiyle PIN girilene kadar gizli kalır. Bir grubu Kategoriler'deki bağlam menüsünden kilitleyin.",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "Sunucu adresi http://host:port biçiminde",
     "INVALID_URL": "\"{{url}}\" geçerli bir URL değil. Boşluk veya yazım hatası olup olmadığını kontrol edin.",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Xtream girişi algılandı",
+    "XTREAM_DETECTED_BODY1": "Bu M3U bağlantısı bir Xtream girişi içeriyor. Xtream kaynağı olarak içe aktarırsanız sağlayıcınızın EPG'sini, kaçırılan programlar için catch-up'ı ve sezonlara göre dizileri alırsınız.",
+    "XTREAM_DETECTED_BODY2": "Xtream olarak içe aktarmanız önerilir, ancak düz bir M3U bağlantısı olarak da içe aktarabilirsiniz.",
+    "IMPORT_AS_XTREAM": "Xtream olarak içe aktar (önerilen)",
+    "IMPORT_AS_M3U": "M3U bağlantısı olarak içe aktar"
   },
   "EPG": {
     "PLAYING_NOW": "Şu anda oynatılıyor",
@@ -462,7 +493,10 @@
     "CHECK": "Bağlantıyı test et",
     "CHECKING": "Test ediliyor…",
     "CHECK_OK": "Bağlantı başarılı",
-    "CHECK_FAILED": "Bağlantı başarısız"
+    "CHECK_FAILED": "Bağlantı başarısız",
+    "XTREAM_HINT": "Bu bağlantı bir Xtream girişi içeriyor. Xtream kaynağı olarak sağlayıcınızın EPG'sini, kaçırılan programlar için catch-up'ı ve sezonlara göre dizileri alırsınız.",
+    "CONVERT_TO_XTREAM": "Xtream'e dönüştür",
+    "CONVERTING": "Dönüştürülüyor…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Kaydın kaydedileceği yeri seçin",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "Güncelleme yüklendi ancak uygulama yeniden başlatılamadı. Lütfen elle yeniden başlatın",
     "NETWORK_INFO_FAILED": "Ağ bilgileri okunamadı",
     "SETTINGS_SAVED": "Kaydedildi",
-    "SETTINGS_SAVE_FAILED": "Ayarlar kaydedilemedi"
+    "SETTINGS_SAVE_FAILED": "Ayarlar kaydedilemedi",
+    "SOURCE_CONVERTED": "Kaynak Xtream'e dönüştürüldü",
+    "SOURCE_CONVERT_FAILED": "Kaynak Xtream'e dönüştürülemedi",
+    "EPG_MAPPED": "{{name}} artık {{id}} rehberini gösteriyor",
+    "EPG_MAPPING_REMOVED": "{{name}} EPG'sini yeniden otomatik alıyor",
+    "EPG_MAPPING_FAILED": "EPG atanamadı"
   },
   "UPDATE": {
     "TITLE": "Güncelleme mevcut",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "Kayıt silinsin mi?",
     "DELETE_RECORDING_BODY": "\"{{name}}\" dosyası kayıt klasöründen silinecek. Bu işlem geri alınamaz.",
     "REMOVE_PIN_TITLE": "Ebeveyn PIN'i kaldırılsın mı?",
-    "REMOVE_PIN_BODY": "Tüm kilitli grupların kilidi açılacak ve herkese gösterilecek."
+    "REMOVE_PIN_BODY": "Tüm kilitli grupların kilidi açılacak ve herkese gösterilecek.",
+    "CONVERT_XTREAM_TITLE": "“{{name}}” Xtream'e dönüştürülsün mü?",
+    "CONVERT_XTREAM_BODY1": "Kaynak, Xtream girişiyle yeniden içe aktarılır. Favoriler, geçmiş, gizlenen ve kilitli gruplar ile planlanmış kayıtlar kanal adına göre korunur.",
+    "CONVERT_XTREAM_BODY2": "Bu işlem, kaynağı yenilemek kadar sürer. Başarısız olursa kaynak değişmeden kalır."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Kanallara dön",
@@ -610,13 +652,28 @@
     "NEXT": "Sonraki",
     "PROGRAMME_PROGRESS": "Program ilerlemesi",
     "FILTER_PLACEHOLDER": "Kanalları filtrele...",
-    "FILTER_CHANNELS": "Kanal listesini filtrele"
+    "FILTER_CHANNELS": "Kanal listesini filtrele",
+    "MINIMIZE": "Küçült",
+    "EXPAND": "Büyüt",
+    "CLOSE": "Kapat",
+    "MINI_PLAYER": "Mini oynatıcı"
   },
   "GUIDE": {
     "CHANNEL": "Kanal",
     "NO_EPG": "EPG yok",
     "NO_CATCHUP": "Bu program arşivde mevcut değil",
-    "PLAY_CHANNEL": "{{name}} oynat"
+    "PLAY_CHANNEL": "{{name}} oynat",
+    "SEARCH_PLACEHOLDER": "Program ara…",
+    "SEARCH_LABEL": "TV rehberinde program ara",
+    "SEARCH_RESULTS": "Arama sonuçları",
+    "SEARCH_COUNT": "Bulunan program: {{count}}",
+    "SEARCH_NO_RESULTS": "Program bulunamadı.",
+    "SEARCH_SCOPE": "Arama, önümüzdeki 7 günün XMLTV rehber verilerini kapsar.",
+    "SEARCH_NEEDS_XMLTV": "Program araması için harici EPG kaynakları gerekir. Bunları Ayarlar → Harici EPG bölümünden ekle.",
+    "TODAY": "Bugün",
+    "TOMORROW": "Yarın",
+    "WATCH": "İzle",
+    "REMIND": "Hatırlat"
   },
   "PARENTAL": {
     "CONFIRM": "Tamam",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "{{name}} oynat",
     "UNKNOWN_CHANNEL": "Bilinmeyen kanal",
     "OPEN_FOLDER": "Klasörü aç"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "EPG ata",
+    "ASSIGNED": "Atanan:",
+    "AUTOMATIC": "Kanal adına göre otomatik",
+    "SEARCH": "Rehber kanallarında ara",
+    "SEARCH_PLACEHOLDER": "Kanal adı veya XMLTV kimliği",
+    "RESULTS": "Rehber kanalları",
+    "CURRENT": "atandı",
+    "UPCOMING": "Yaklaşan programlar: {{count}}",
+    "NO_CURRENT": "güncel program yok",
+    "NO_RESULTS": "Rehber kanalı bulunamadı.",
+    "AUTO": "Otomatik ata"
   }
 }

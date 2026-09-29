@@ -3,13 +3,13 @@
   placement="top"
   tabindex="0"
   role="button"
-  [attr.aria-label]="channel?.name"
+  [attr.aria-label]="ariaLabel()"
   (keyup.enter)="click()"
   [ngClass]="{
     playing: starting,
     faded: fade,
     'channel-list': format === 'list',
-    'has-now-playing': hasNowPlayingLine,
+    'has-now-playing': !!nowPlaying,
   }"
   [ngbTooltip]="channel?.name"
   triggers="hover focus"
@@ -25,16 +25,31 @@
       [src]="logoSrc"
     />
   </div>
-  <div class="channel-title-container d-flex flex-column justify-content-center">
-    <div class="channel-title">{{ channel?.name }}</div>
-    <div *ngIf="memory.ShowChannelSource" class="channel-source">{{ sourceName }}</div>
-    <div *ngIf="hasNowPlayingLine" class="now-playing-line">
-      <ng-container *ngIf="nowPlaying">
-        <span class="now-playing-title">{{ nowPlaying.title }}</span>
-        <div class="now-playing-track">
-          <div class="now-playing-fill" [style.width.%]="nowPlayingProgress"></div>
-        </div>
-      </ng-container>
+  <div class="channel-title-container">
+    <div class="channel-names">
+      <div class="channel-title">
+        <span
+          *ngIf="countryCode && memory.CountryPrefixMode === 'badge'"
+          class="country-badge"
+          aria-hidden="true"
+          >{{ countryCode }}</span
+        >{{ channel?.name | countryName: memory.CountryPrefixMode }}
+      </div>
+      <div *ngIf="memory.ShowChannelSource" class="channel-source">{{ sourceName }}</div>
+    </div>
+    <!-- Only once a programme is known: tiles without EPG stay compact. The
+         tile's aria-label already carries the programme. -->
+    <div *ngIf="nowPlaying" class="now-playing" aria-hidden="true">
+      <div class="now-line">
+        <span class="now-title">{{ nowPlaying.title }}</span>
+        <span class="now-time">{{ nowPlayingTimes }}</span>
+      </div>
+      <div class="now-playing-track">
+        <div class="now-playing-fill" [style.width.%]="nowPlayingProgress"></div>
+      </div>
+      <div *ngIf="nowPlaying.next" class="next-line">
+        {{ "PLAYER.NEXT" | translate }} {{ nextStart }} &middot; {{ nowPlaying.next.title }}
+      </div>
     </div>
   </div>
   <div class="tile-badges d-flex flex-column justify-content-center align-items-center h-100">
@@ -113,6 +128,9 @@
     </button>
     <button [hidden]="!showEPG()" mat-menu-item (click)="showEPGModal()">
       {{ "MENU.EPG" | translate }}
+    </button>
+    <button [hidden]="!canMapEpg()" mat-menu-item (click)="openEpgMapping()">
+      {{ "MENU.MAP_EPG" | translate }}
     </button>
     <button [hidden]="!isCustom()" mat-menu-item (click)="edit()">
       {{ "MENU.EDIT" | translate }}

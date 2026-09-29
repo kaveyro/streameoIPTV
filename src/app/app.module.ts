@@ -30,6 +30,7 @@ import { ImportModalComponent } from "./import-modal/import-modal.component";
 import { ConfirmDeleteModalComponent } from "./confirm-delete-modal/confirm-delete-modal.component";
 import { EpgModalComponent } from "./epg-modal/epg-modal.component";
 import { EpgModalItemComponent } from "./epg-modal/epg-modal-item/epg-modal-item.component";
+import { EpgMappingModalComponent } from "./epg-mapping-modal/epg-mapping-modal.component";
 import { RestreamModalComponent } from "./restream-modal/restream-modal.component";
 import { SortButtonComponent } from "./home/sort-button/sort-button.component";
 import { SortItemComponent } from "./home/sort-button/sort-item/sort-item.component";
@@ -66,6 +67,7 @@ import { CountryNamePipe } from "./pipes/country-name.pipe";
     ConfirmDeleteModalComponent,
     EpgModalComponent,
     EpgModalItemComponent,
+    EpgMappingModalComponent,
     RestreamModalComponent,
     SortButtonComponent,
     SortItemComponent,

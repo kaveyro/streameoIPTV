@@ -1,0 +1,172 @@
+/* Programme search results (a separate sheet to keep each under the
+   component style budget). */
+
+/* Same box as the grid, so the page does not jump when the results show. */
+.guide-results {
+  overflow: auto;
+  height: calc(100vh - 8rem);
+  min-height: 280px;
+  padding: 0 0.75rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background-color: var(--bg-surface-alt);
+}
+
+/* Older results while the answer to a newer query is pending. */
+.guide-day.is-stale {
+  opacity: 0.6;
+}
+
+.guide-day-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0.75rem 0 0.4rem;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-alt);
+}
+
+.guide-hits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0 0;
+  list-style: none;
+}
+
+.guide-day .guide-hits {
+  padding: 0;
+}
+
+.guide-hit-skeleton {
+  height: 4.5rem;
+}
+
+.guide-hit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-tile);
+  background-color: var(--bg-surface);
+}
+
+/* Running now: accent edge on the inline-start side, like the EPG modal. */
+.guide-hit.is-now {
+  border-color: var(--accent);
+  border-inline-start-width: 4px;
+}
+
+.guide-hit.is-past,
+.guide-hit-time,
+.guide-hit-channel,
+.guide-hit-desc {
+  color: var(--text-secondary);
+}
+
+.guide-hit-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 0 0 7.5rem;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.guide-hit-live {
+  align-self: flex-start;
+  padding: 0 0.4rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  color: var(--on-accent);
+  background-color: var(--accent);
+}
+
+.guide-hit-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.guide-hit-title {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.guide-hit-channel {
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+
+.guide-hit-logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-inline-end: 0.4rem;
+  object-fit: contain;
+}
+
+.guide-hit-channel-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guide-hit-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0.15rem 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.guide-hit-progress {
+  height: 4px;
+  margin-top: 0.35rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--bg-surface-hover);
+  overflow: hidden;
+}
+
+.guide-hit-progress > div {
+  height: 100%;
+  background-color: var(--accent);
+}
+
+.guide-hit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-inline-start: auto;
+}
+
+.guide-hit-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.guide-hit-actions svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+/* A scheduled recording shows in red, like the guide's recording marker. */
+.guide-hit-actions .guide-rec-on {
+  --bs-btn-color: var(--color-danger);
+  --bs-btn-border-color: var(--color-danger);
+  --bs-btn-disabled-color: var(--color-danger);
+  --bs-btn-disabled-border-color: var(--color-danger);
+}

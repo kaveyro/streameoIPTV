@@ -6,10 +6,12 @@ describe("country prefix", () => {
     expect(splitCountryPrefix("DE| ARD")).toEqual({ code: "DE", name: "ARD" });
     expect(splitCountryPrefix("tr - ATV")).toEqual({ code: "TR", name: "ATV" });
     expect(splitCountryPrefix("[UK] BBC One")).toEqual({ code: "UK", name: "BBC One" });
+    expect(splitCountryPrefix("[UK] - BBC One")).toEqual({ code: "UK", name: "BBC One" });
   });
 
   it("leaves other names alone", () => {
     expect(splitCountryPrefix("Kanal D")).toEqual({ name: "Kanal D" });
+    expect(splitCountryPrefix("TV Asia")).toEqual({ name: "TV Asia" });
     expect(splitCountryPrefix("SD: beIN Sports 1")).toEqual({ name: "SD: beIN Sports 1" });
     expect(splitCountryPrefix("TR:")).toEqual({ name: "TR:" });
     expect(splitCountryPrefix(undefined)).toEqual({ name: "" });

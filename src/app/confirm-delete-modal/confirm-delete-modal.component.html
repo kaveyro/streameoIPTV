@@ -6,7 +6,7 @@
     type="button"
     class="btn-close btn-close-white"
     [attr.aria-label]="'MODAL.CLOSE' | translate"
-    (click)="cancel()"
+    (click)="dismiss()"
   ></button>
 </div>
 <div class="modal-body">
@@ -19,6 +19,7 @@
   <button
     type="button"
     (click)="confirm()"
+    [attr.ngbAutofocus]="choice ? '' : null"
     class="btn d-inline-flex align-items-center"
     [class.btn-danger]="danger"
     [class.btn-primary]="!danger"
@@ -39,12 +40,13 @@
   </button>
   <button
     type="button"
-    ngbAutofocus
+    [attr.ngbAutofocus]="choice ? null : ''"
     (click)="cancel()"
     class="btn btn-secondary d-inline-flex align-items-center"
   >
     <span>{{ cancelLabel | translate }}</span>
     <svg
+      *ngIf="!choice"
       class="nuke ms-1"
       aria-hidden="true"
       fill="currentColor"

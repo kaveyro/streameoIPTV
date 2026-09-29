@@ -17,6 +17,7 @@ import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
 import { ErrorService } from "../error.service";
 import { NowPlaying, NowPlayingService } from "../now-playing.service";
+import { splitCountryPrefix } from "../country-prefix";
 
 /// Keys the backend forwards while mpv (not the WebView) has keyboard focus,
 /// see the `player-key` event.
@@ -24,6 +25,9 @@ type PlayerKey = "next" | "prev" | "back" | "last";
 
 /// Class on <body> while the player is shown (the toasts are styled with it).
 const BODY_CLASS = "player-open";
+/// Class on <body> while the mini player is shown: the floating elements of
+/// the page (scroll-to-top, download manager) move out of its corner.
+const MINI_BODY_CLASS = "player-mini";
 
 /// Everything behind the overlay. Marked inert while the player is shown, so
 /// Tab cannot walk the hidden home page and the tile that started playback
@@ -57,6 +61,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   /// How often the now/next line and its progress bar are refreshed.
   private static readonly EPG_REFRESH_MS = 30 * 1000;
   active = false;
+  /// Playing on in the small corner window while the rest of the app is used.
+  mini = false;
   current?: Channel;
   /// The channel played before {@link current}, for the "last channel" key.
   previous?: Channel;
@@ -86,6 +92,13 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private lastErrorAt = 0;
   private epgTimer?: ReturnType<typeof setInterval>;
   private filterCache?: { source: Channel[]; text: string; result: Channel[] };
+  /// Country codes of the names shown as a badge, see {@link countryCode}.
+  private countryCodes = new Map<string, string | undefined>();
+  /// Whether any ng-bootstrap modal is open.
+  private modalsOpen = false;
+  /// The native window was hidden because a modal opened over the mini
+  /// player; it is shown again when the last modal closes.
+  private hiddenForModal = false;
   @ViewChild("videoHost") videoHost?: ElementRef<HTMLDivElement>;
   @ViewChild("playerList") playerList?: ElementRef<HTMLElement>;
 
@@ -96,21 +109,32 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     private translate: TranslateService,
     private nowPlayingService: NowPlayingService,
     private modal: NgbModal,
+    private host: ElementRef<HTMLElement>,
   ) {}
 
   ngAfterViewInit(): void {
     this.subscriptions.push(this.memory.PlayerOpen.subscribe((ch) => this.open(ch)));
     // Settings that only apply when mpv spawns changed and the player was torn
     // down: the next open has to build a new one.
+    // The mini player's video is gone with it: close the mini player.
     this.subscriptions.push(
       this.memory.PlayerReset.subscribe(() => {
         this.initialized = false;
+        if (this.active && this.mini) this.back();
       }),
+    );
+    // The full player's dialogs hide the video through memory.hidePlayerWhile,
+    // which only acts while PlayerVisible. Beside the mini player the page is
+    // usable, so any dialog may open: hide the native window while one is.
+    this.subscriptions.push(
+      this.modal.activeInstances.subscribe((modals) => this.onModalsChanged(modals.length > 0)),
     );
     // mpv reports a double-click / `f` key (rebound to a script-message) here;
     // toggle app-level fullscreen since mpv can't fullscreen an embedded child.
+    // The mini player grows back to the full player instead.
     listen("player-toggle-fullscreen", () => {
-      if (this.active) this.ngZone.run(() => this.toggleFullscreen());
+      if (!this.active) return;
+      this.ngZone.run(() => (this.mini ? this.expand() : this.toggleFullscreen()));
     }).then((unlisten) => this.unlistens.push(unlisten));
     // Channel keys pressed while mpv has keyboard focus (the WebView gets no
     // key events then): PgDn/PgUp/Esc/Backspace.
@@ -137,6 +161,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         this.initialized = false;
         this.currentFailed = true;
         this.error.info(this.translate.instant("TOAST.PLAYER_CRASHED"));
+        // Nothing left to show in the corner. The full player stays open, so
+        // the next channel picked from its list rebuilds mpv.
+        if (this.active && this.mini) this.back();
       });
     }).then((unlisten) => this.unlistens.push(unlisten));
   }
@@ -159,6 +186,17 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
 
   trackById(index: number, channel: Channel) {
     return channel.id ?? index;
+  }
+
+  /// The country code shown as a pill in "badge" mode. Cached per name: the
+  /// side list asks for every item on each change detection.
+  countryCode(name: string | undefined): string | undefined {
+    if (this.memory.CountryPrefixMode !== "badge" || !name) return undefined;
+    if (!this.countryCodes.has(name)) {
+      if (this.countryCodes.size > 5000) this.countryCodes.clear();
+      this.countryCodes.set(name, splitCountryPrefix(name).code);
+    }
+    return this.countryCodes.get(name);
   }
 
   async open(channel: Channel) {
@@ -186,15 +224,13 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.currentFailed = false;
     this.nowPlaying = undefined;
     this.active = true;
-    this.memory.PlayerVisible = true;
-    document.body.classList.add(BODY_CLASS);
-    setBackgroundInert(true);
-    // Stop the home page behind the overlay from scrolling, so its scrollbar
-    // doesn't show at the window edge alongside the channel list's own.
-    this.lockBackgroundScroll(true);
+    // A channel started from the page beside the mini player opens the full
+    // player again.
+    this.mini = false;
+    this.applyMode();
     const switchSeq = ++this.switchSeq;
     try {
-      await invoke("player_set_visible", { visible: true });
+      await this.showNativeWindow();
       if (this.isStale(generation)) {
         await this.undoIfClosed();
         return;
@@ -232,6 +268,78 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         });
     }
     return this.initPromise;
+  }
+
+  /**
+   * Applies the page-level state of the current mode. The full player covers
+   * the page: it owns the keyboard, the page behind it is inert and does not
+   * scroll. Beside the mini player the page stays fully usable.
+   */
+  private applyMode() {
+    const full = this.active && !this.mini;
+    const mini = this.active && this.mini;
+    this.memory.PlayerVisible = full;
+    this.memory.PlayerMini = mini;
+    document.body.classList.toggle(BODY_CLASS, full);
+    document.body.classList.toggle(MINI_BODY_CLASS, mini);
+    setBackgroundInert(full);
+    // Stop the home page behind the overlay from scrolling, so its scrollbar
+    // doesn't show at the window edge alongside the channel list's own.
+    this.lockBackgroundScroll(full);
+  }
+
+  /// Shows the native window, unless it was hidden for a still open modal.
+  private async showNativeWindow() {
+    if (this.hiddenForModal) return;
+    await invoke("player_set_visible", { visible: true });
+  }
+
+  private onModalsChanged(open: boolean) {
+    this.modalsOpen = open;
+    if (!this.active) {
+      this.hiddenForModal = false;
+      return;
+    }
+    // Only the mini player hides for a modal (the full player leaves that to
+    // hidePlayerWhile). Once hidden, the window comes back when the modals are
+    // gone, even if the player grew to the full player meanwhile.
+    if (open && this.mini && !this.hiddenForModal) {
+      this.hiddenForModal = true;
+      invoke("player_set_visible", { visible: false }).catch(() => {});
+    } else if (!open && this.hiddenForModal) {
+      this.hiddenForModal = false;
+      invoke("player_set_visible", { visible: true })
+        .then(() => this.syncBounds())
+        .catch(() => {});
+    }
+  }
+
+  /** Continues playback in the small corner window; the app stays usable. */
+  minimize() {
+    if (!this.active || this.mini || this.fullscreen) return;
+    this.mini = true;
+    this.applyMode();
+    // The modal backdrop covers the player bar, so none should be open here;
+    // if one is, hide the window like for a modal opened later.
+    if (this.modalsOpen) this.onModalsChanged(true);
+    // Wait for the mini layout to render, then align the native window and
+    // keep the focus in the player (Escape there closes it).
+    setTimeout(() => {
+      this.syncBounds();
+      this.host.nativeElement.querySelector<HTMLElement>(".mini-expand")?.focus();
+    }, 0);
+  }
+
+  /** Back from the mini player to the full player. */
+  expand() {
+    if (!this.active || !this.mini) return;
+    this.mini = false;
+    this.applyMode();
+    setTimeout(() => {
+      this.syncBounds();
+      // Focus lands in the list, so the keyboard keeps working in the player.
+      this.scrollActiveIntoView(true);
+    }, 0);
   }
 
   private isStale(generation: number): boolean {
@@ -344,7 +452,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         this.prev();
         break;
       case "back":
-        this.escape();
+        // The mini player has no fullscreen to leave: close it.
+        if (this.mini) this.back();
+        else this.escape();
         break;
       case "last":
         this.last();
@@ -356,10 +466,21 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
    * Player keys while the WebView has focus (side list, filter, player bar).
    * Registered on the document before the home page's listener, so
    * stopImmediatePropagation keeps the home page from also reacting.
+   * Beside the mini player the keys belong to the page, except Escape while
+   * the focus is in the mini player, which closes it.
    */
   @HostListener("document:keydown", ["$event"])
   onKeyDown(event: KeyboardEvent) {
     if (!this.active || event.defaultPrevented || this.modal.hasOpenModals()) return;
+    if (this.mini) {
+      if (event.key !== "Escape" || !this.host.nativeElement.contains(document.activeElement)) {
+        return;
+      }
+      this.back();
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     const target = event.target as HTMLElement | null;
     const inTextInput =
       target instanceof HTMLInputElement ||
@@ -506,7 +627,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
     this.initialized = false;
     await this.ensureInitialized();
-    await invoke("player_set_visible", { visible: true });
+    await this.showNativeWindow();
     await invoke("player_play", { channel });
     this.syncBounds();
   }
@@ -517,12 +638,11 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.switchSeq++;
     if (this.fullscreen) await this.setFullscreen(false);
     this.active = false;
-    this.memory.PlayerVisible = false;
-    document.body.classList.remove(BODY_CLASS);
-    setBackgroundInert(false);
+    this.mini = false;
+    this.hiddenForModal = false;
+    this.applyMode();
     this.filterText = "";
     this.nowPlaying = undefined;
-    this.lockBackgroundScroll(false);
     this.stopBoundsSync();
     this.stopEpgTimer();
     try {
@@ -602,7 +722,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.stopEpgTimer();
     this.unlistens.forEach((unlisten) => unlisten());
     this.lockBackgroundScroll(false);
-    document.body.classList.remove(BODY_CLASS);
+    document.body.classList.remove(BODY_CLASS, MINI_BODY_CLASS);
     setBackgroundInert(false);
+    this.memory.PlayerVisible = false;
+    this.memory.PlayerMini = false;
   }
 }

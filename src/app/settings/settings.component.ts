@@ -19,6 +19,14 @@ import { ErrorService } from "../error.service";
 import { ConfirmService } from "../confirm.service";
 import { ToastrService } from "ngx-toastr";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { EpgCoverage, XmltvSourceStatus } from "../models/epgExtras";
+import {
+  COUNTRY_PREFIX_MODES,
+  CountryPrefixMode,
+  splitCountryPrefix,
+  toCountryPrefixMode,
+} from "../country-prefix";
+import { uiLocale } from "../utils";
 
 /// Settings that are passed to mpv as launch arguments (see
 /// get_global_mpv_args in src-tauri/src/mpv.rs): changing one only takes effect
@@ -39,6 +47,16 @@ const PLAYER_SPAWN_SETTINGS = [
 const SAVE_DEBOUNCE_MS = 300;
 /// At most one "Saved" confirmation per this interval.
 const SAVED_TOAST_INTERVAL_MS = 2000;
+
+/// Channel name the country prefix preview is rendered with.
+const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
+
+/// A curated free XMLTV guide; `country` is an ISO 3166 region code.
+interface FreeEpgSource {
+  label: string;
+  url: string;
+  country: string;
+}
 
 @Component({
   selector: "app-settings",
@@ -86,30 +104,72 @@ export class SettingsComponent {
   /// Parental lock form (set/change and remove the PIN).
   pinForm = { current: "", next: "", repeat: "", remove: "" };
   pinBusy = false;
-  xmltvSourcesText = "";
+  /// Configured XMLTV URLs, in the order the backend loads them.
+  xmltvUrls: string[] = [];
+  /// Result of the last load per URL (get_xmltv_status).
+  xmltvStatus: Record<string, XmltvSourceStatus> = {};
+  epgCoverage?: EpgCoverage;
+  /// Input of the "add XMLTV URL" field and its inline feedback (keys).
+  newXmltvUrl = "";
+  xmltvUrlError?: string;
+  xmltvUrlHint?: string;
+  refreshingXmltv = false;
   /// Version of the running app, shown next to the update controls.
   appVersion = "";
-  // Curated free public XMLTV EPG sources for one-click adding.
-  freeEpgSources = [
-    { label: "IPTV-EPG · Deutschland", url: "https://iptv-epg.org/files/epg-de.xml" },
-    { label: "IPTV-EPG · Türkiye", url: "https://iptv-epg.org/files/epg-tr.xml" },
-    { label: "IPTV-EPG · United Kingdom", url: "https://iptv-epg.org/files/epg-uk.xml" },
-    { label: "IPTV-EPG · United States", url: "https://iptv-epg.org/files/epg-us.xml" },
-    { label: "IPTV-EPG · France", url: "https://iptv-epg.org/files/epg-fr.xml" },
-    { label: "IPTV-EPG · Nederland", url: "https://iptv-epg.org/files/epg-nl.xml" },
-    { label: "IPTV-EPG · España", url: "https://iptv-epg.org/files/epg-es.xml" },
-    { label: "IPTV-EPG · Italia", url: "https://iptv-epg.org/files/epg-it.xml" },
+  // Curated free public XMLTV EPG sources for one-click adding. The country
+  // lets the page point out guides that cover the same one twice.
+  freeEpgSources: FreeEpgSource[] = [
+    {
+      label: "IPTV-EPG · Deutschland",
+      url: "https://iptv-epg.org/files/epg-de.xml",
+      country: "DE",
+    },
+    { label: "IPTV-EPG · Türkiye", url: "https://iptv-epg.org/files/epg-tr.xml", country: "TR" },
+    {
+      label: "IPTV-EPG · United Kingdom",
+      url: "https://iptv-epg.org/files/epg-uk.xml",
+      country: "GB",
+    },
+    {
+      label: "IPTV-EPG · United States",
+      url: "https://iptv-epg.org/files/epg-us.xml",
+      country: "US",
+    },
+    { label: "IPTV-EPG · France", url: "https://iptv-epg.org/files/epg-fr.xml", country: "FR" },
+    { label: "IPTV-EPG · Nederland", url: "https://iptv-epg.org/files/epg-nl.xml", country: "NL" },
+    { label: "IPTV-EPG · España", url: "https://iptv-epg.org/files/epg-es.xml", country: "ES" },
+    { label: "IPTV-EPG · Italia", url: "https://iptv-epg.org/files/epg-it.xml", country: "IT" },
     {
       label: "EPGShare · Germany",
       url: "https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz",
+      country: "DE",
     },
     {
       label: "EPGShare · Turkey",
       url: "https://epgshare01.online/epgshare01/epg_ripper_TR1.xml.gz",
+      country: "TR",
     },
-    { label: "EPGShare · UK", url: "https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz" },
-    { label: "EPGShare · USA", url: "https://epgshare01.online/epgshare01/epg_ripper_US1.xml.gz" },
+    {
+      label: "EPGShare · UK",
+      url: "https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz",
+      country: "GB",
+    },
+    {
+      label: "EPGShare · USA",
+      url: "https://epgshare01.online/epgshare01/epg_ripper_US1.xml.gz",
+      country: "US",
+    },
   ];
+  /// Countries covered by two or more of the added free guides.
+  duplicateCountries: { code: string; count: number }[] = [];
+  countryPrefixModes = COUNTRY_PREFIX_MODES;
+  countryPrefixLabels: Record<CountryPrefixMode, string> = {
+    show: "SETTINGS.APPEARANCE.COUNTRY_PREFIX_SHOW",
+    hide: "SETTINGS.APPEARANCE.COUNTRY_PREFIX_HIDE",
+    badge: "SETTINGS.APPEARANCE.COUNTRY_PREFIX_BADGE",
+  };
+  countryPrefixSampleFull = COUNTRY_PREFIX_SAMPLE;
+  countryPrefixSample = splitCountryPrefix(COUNTRY_PREFIX_SAMPLE);
   activeCategory = "general";
   @ViewChild("mpvParams") mpvParams!: ElementRef;
   private saveTimer?: ReturnType<typeof setTimeout>;
@@ -140,6 +200,7 @@ export class SettingsComponent {
   setCategory(id: string) {
     this.activeCategory = id;
     if (id == "parental") this.refreshParental();
+    if (id == "epg") this.loadXmltvStatus();
     if (id == "sources" && !this.expiriesLoaded) {
       this.expiriesLoaded = true;
       this.getExpiries();
@@ -211,45 +272,135 @@ export class SettingsComponent {
 
   getXmltvSources() {
     invoke<string[]>("get_xmltv_sources")
-      .then((arr) => {
-        this.xmltvSourcesText = (arr ?? []).join("\n");
-      })
-      .catch(() => {
-        this.xmltvSourcesText = "";
-      });
+      .then((arr) => this.setXmltvUrls(arr ?? []))
+      .catch(() => this.setXmltvUrls([]));
   }
 
-  private currentUrls(): string[] {
-    return this.xmltvSourcesText
-      .split("\n")
-      .map((x) => x.trim())
-      .filter((x) => x.length > 0);
+  private setXmltvUrls(urls: string[]) {
+    this.xmltvUrls = urls;
+    this.updateDuplicateCountries();
   }
 
-  async saveXmltvSources() {
-    await invoke("set_xmltv_sources", { urls: this.currentUrls() });
+  /// Status per URL and the coverage only change with the XMLTV sources or a
+  /// refresh, so they are (re)loaded when the EPG category opens and after
+  /// either of those.
+  async loadXmltvStatus() {
+    const [status, coverage] = await Promise.all([
+      invoke<XmltvSourceStatus[]>("get_xmltv_status").catch((e) => {
+        console.error(e);
+        return [] as XmltvSourceStatus[];
+      }),
+      invoke<EpgCoverage>("get_epg_coverage").catch((e) => {
+        console.error(e);
+        return undefined;
+      }),
+    ]);
+    this.xmltvStatus = Object.fromEntries((status ?? []).map((s) => [s.url, s]));
+    this.epgCoverage = coverage ?? undefined;
+  }
+
+  /// Saves the list. On failure the stored list is loaded back, so the page
+  /// never shows URLs that were not saved.
+  private async saveXmltvSources(urls: string[]) {
+    this.setXmltvUrls(urls);
+    try {
+      await invoke("set_xmltv_sources", { urls });
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.SETTINGS_SAVE_FAILED"));
+      this.getXmltvSources();
+    }
+    await this.loadXmltvStatus();
   }
 
   isSourceAdded(url: string): boolean {
-    return this.currentUrls().includes(url);
+    return this.xmltvUrls.includes(url);
   }
 
   async toggleFreeSource(url: string) {
-    const urls = this.currentUrls();
-    const idx = urls.indexOf(url);
-    if (idx >= 0) urls.splice(idx, 1);
-    else urls.push(url);
-    this.xmltvSourcesText = urls.join("\n");
-    await this.saveXmltvSources();
+    const urls = this.xmltvUrls.filter((x) => x !== url);
+    if (urls.length === this.xmltvUrls.length) urls.push(url);
+    await this.saveXmltvSources(urls);
+  }
+
+  async addXmltvSource() {
+    this.onXmltvUrlInput();
+    const url = this.newXmltvUrl.trim();
+    if (!url) return;
+    if (!this.isHttpUrl(url)) {
+      this.xmltvUrlError = "SETTINGS.EPG.INVALID_URL";
+      return;
+    }
+    if (this.xmltvUrls.includes(url)) {
+      this.xmltvUrlHint = "SETTINGS.EPG.DUPLICATE_URL";
+      return;
+    }
+    this.newXmltvUrl = "";
+    await this.saveXmltvSources([...this.xmltvUrls, url]);
+  }
+
+  async removeXmltvSource(url: string) {
+    await this.saveXmltvSources(this.xmltvUrls.filter((x) => x !== url));
+  }
+
+  /// Typing clears the feedback of the previous attempt.
+  onXmltvUrlInput() {
+    this.xmltvUrlError = undefined;
+    this.xmltvUrlHint = undefined;
+  }
+
+  private isHttpUrl(value: string): boolean {
+    try {
+      const url = new URL(value);
+      return (url.protocol === "http:" || url.protocol === "https:") && !!url.hostname;
+    } catch {
+      return false;
+    }
+  }
+
+  private updateDuplicateCountries() {
+    const counts = new Map<string, number>();
+    for (const src of this.freeEpgSources) {
+      if (this.xmltvUrls.includes(src.url))
+        counts.set(src.country, (counts.get(src.country) ?? 0) + 1);
+    }
+    this.duplicateCountries = [...counts]
+      .filter(([, count]) => count > 1)
+      .map(([code, count]) => ({ code, count }));
+  }
+
+  /// Country name in the UI language ("DE" -> "Deutschland").
+  countryName(code: string): string {
+    try {
+      return new Intl.DisplayNames(uiLocale(this.translate), { type: "region" }).of(code) ?? code;
+    } catch {
+      return code;
+    }
+  }
+
+  /// Programme/channel counts with the locale's digit grouping (73.284).
+  formatCount(value: number | undefined): string {
+    try {
+      return new Intl.NumberFormat(uiLocale(this.translate)).format(value ?? 0);
+    } catch {
+      return String(value ?? 0);
+    }
   }
 
   async refreshXmltv() {
-    const failed = await this.memory.tryIPC(
-      this.translate.instant("TOAST.EPG_REFRESHED"),
-      this.translate.instant("TOAST.EPG_REFRESH_FAILED"),
-      () => invoke("refresh_xmltv"),
-    );
-    if (!failed) this.nowPlaying.xmltvChanged();
+    if (this.refreshingXmltv) return;
+    this.refreshingXmltv = true;
+    try {
+      const failed = await this.memory.tryIPC(
+        this.translate.instant("TOAST.EPG_REFRESHED"),
+        this.translate.instant("TOAST.EPG_REFRESH_FAILED"),
+        () => invoke("refresh_xmltv"),
+      );
+      if (!failed) this.nowPlaying.xmltvChanged();
+    } finally {
+      this.refreshingXmltv = false;
+    }
+    // Also after a failure: the status shows which source failed and why.
+    await this.loadXmltvStatus();
   }
 
   getSettings(): Promise<void> {
@@ -277,6 +428,7 @@ export class SettingsComponent {
         if (this.settings.auto_refresh_hours == undefined) this.settings.auto_refresh_hours = 0;
         if (this.settings.show_channel_source == undefined)
           this.settings.show_channel_source = true;
+        this.settings.country_prefix = toCountryPrefixMode(this.settings.country_prefix);
         this.settings.language = this.settings.language ?? "system";
         this.playerSnapshot = this.playerSettingsSnapshot();
       })
@@ -322,6 +474,7 @@ export class SettingsComponent {
     this.theme.apply(this.settings.theme, this.settings.accent_color);
     this.language.apply(this.settings.language === "system" ? undefined : this.settings.language);
     this.memory.ShowChannelSource = this.settings.show_channel_source ?? true;
+    this.memory.CountryPrefixMode = toCountryPrefixMode(this.settings.country_prefix);
     if (this.settings.zoom) {
       getCurrentWebview()
         .setZoom(Math.trunc(this.settings.zoom * 100) / 10000)
@@ -353,6 +506,17 @@ export class SettingsComponent {
     // Apply live so the home tiles reflect it immediately on return.
     this.memory.ShowChannelSource = this.settings.show_channel_source ?? true;
     await this.updateSettings();
+  }
+
+  async updateCountryPrefix(mode?: string) {
+    if (mode !== undefined) this.settings.country_prefix = mode;
+    // Applied live, like the playlist name, so the lists match on return.
+    this.memory.CountryPrefixMode = toCountryPrefixMode(this.settings.country_prefix);
+    await this.updateSettings();
+  }
+
+  get countryPrefixMode(): CountryPrefixMode {
+    return toCountryPrefixMode(this.settings.country_prefix);
   }
 
   getSources() {

@@ -5,10 +5,24 @@
   --guide-row-height: 3.25rem;
 }
 
+.guide-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
 .view-title {
   font-size: var(--fs-xl);
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
+}
+
+.guide-search {
+  flex: 0 1 18rem;
+  min-width: 12rem;
 }
 
 .guide-group {
@@ -200,4 +214,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Country code in front of a channel name ("badge" prefix mode). */
+.guide-country {
+  display: inline-block;
+  margin-inline-end: 0.35rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--text-secondary);
 }

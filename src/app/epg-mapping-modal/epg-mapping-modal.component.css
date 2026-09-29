@@ -1,0 +1,102 @@
+.header-text {
+  min-width: 0;
+}
+
+.channel-name {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mapping-state {
+  margin-bottom: 1rem;
+  min-height: 1.5em;
+}
+
+.xmltv-id {
+  font-family: var(--bs-font-monospace);
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* Results: a listbox driven from the search field (aria-activedescendant),
+   so the options themselves are not tab stops. */
+.results {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  max-height: min(50vh, 26rem);
+  overflow-y: auto;
+  border-radius: var(--radius-control);
+}
+
+.results:empty {
+  display: none;
+}
+
+.result {
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.result + .result {
+  margin-top: 2px;
+}
+
+.result.active {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--accent);
+}
+
+.result-id {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1rem;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.result-now {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Guide channels without programmes that have not ended: still assignable
+   (the guide may fill later), but clearly the weaker choice. */
+.result.muted .xmltv-id,
+.result.muted .result-meta {
+  color: var(--text-placeholder);
+}
+
+.result.muted .result-meta {
+  font-style: italic;
+}
+
+.current-badge {
+  padding: 0 0.4rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.no-results {
+  margin-top: 0.75rem;
+  color: var(--text-secondary);
+}

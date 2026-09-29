@@ -52,7 +52,9 @@
       "SERIES": "المسلسلات"
     },
     "COLLAPSE_SIDEBAR": "طيّ الشريط الجانبي",
-    "EXPAND_SIDEBAR": "توسيع الشريط الجانبي"
+    "EXPAND_SIDEBAR": "توسيع الشريط الجانبي",
+    "COUNTRY_FILTER": "التصفية حسب البلد",
+    "ALL_COUNTRIES": "كل البلدان"
   },
   "MENU": {
     "REMOVE": "إزالة",
@@ -70,7 +72,8 @@
     "COPY_URL": "نسخ عنوان URL",
     "DELETE": "حذف",
     "LOCK_GROUP": "قفل المجموعة",
-    "UNLOCK_GROUP": "إلغاء قفل المجموعة"
+    "UNLOCK_GROUP": "إلغاء قفل المجموعة",
+    "MAP_EPG": "تعيين EPG…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "لم يُعثر على قنوات",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "بنفسجي",
       "ACCENT_TEAL": "أزرق مخضر",
       "ACCENT_CORAL": "مرجاني",
-      "ACCENT_GREEN": "أخضر"
+      "ACCENT_GREEN": "أخضر",
+      "COUNTRY_PREFIX": "رمز البلد في أسماء القنوات",
+      "COUNTRY_PREFIX_DESC": "طريقة عرض البادئات مثل ‎“TR:”‎ أو ‎“DE |”‎ قبل أسماء القنوات.",
+      "COUNTRY_PREFIX_SHOW": "إظهار",
+      "COUNTRY_PREFIX_HIDE": "إخفاء",
+      "COUNTRY_PREFIX_BADGE": "كشارة رمز",
+      "COUNTRY_PREFIX_PREVIEW": "معاينة:"
     },
     "PLAYBACK": {
       "CACHING": "استخدام التخزين المؤقت للبث",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "دليل EPG خارجي",
-      "INTRO": "عندما لا تتوفر بيانات الدليل لقناة من مزوّدها، يملؤها streameo من مصادر XMLTV هذه، مع المطابقة عبر tvg-id. يعمل أي رابط XMLTV (على سبيل المثال تصدير من IPTV-EPG.org)؛ وكلتا الصيغتين .xml و .xml.gz مدعومتان.",
+      "INTRO": "عندما لا تتوفر لقناة بيانات دليل من مزودها، يكملها streameo من مصادر XMLTV هذه: بمطابقة tvg-id، وإلا باسم القناة، أو كما تعيّنها يدويًا. يعمل أي عنوان XMLTV (مثل تصدير من IPTV-EPG.org)، ويدعم ‎.xml و‎.xml.gz.",
       "SOURCES_LABEL": "مصادر XMLTV",
       "SOURCES_DESC": "رابط XMLTV واحد في كل سطر.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "تحديث الآن",
       "REFRESH_DESC": "تنزيل أحدث بيانات دليل البرامج. يحدث ذلك أيضًا تلقائيًا وفق جدول التحديث التلقائي للمصادر، أو مرة يوميًا إذا كان متوقفًا.",
       "FREE_SOURCES": "مصادر EPG مجانية",
-      "FREE_SOURCES_DESC": "أضف دليل XMLTV مجاني معروف بنقرة واحدة. اختر ما يناسب بلدان قنواتك."
+      "FREE_SOURCES_DESC": "أضف دليل XMLTV مجاني معروف بنقرة واحدة. اختر ما يناسب بلدان قنواتك.",
+      "SOURCES_LIST_DESC": "يتم تحميل الأدلة بهذا الترتيب. يظهر لكل دليل وقت آخر تحميل وما يحتويه.",
+      "NO_SOURCES": "لا توجد مصادر XMLTV بعد. أضف عنوان URL أدناه أو اختر أحد المصادر المجانية.",
+      "STATUS_LOADED": "تم التحميل: {{time}}",
+      "STATUS_PROGRAMMES": "البرامج: {{count}}",
+      "STATUS_CHANNELS": "القنوات: {{count}}",
+      "STATUS_NEVER": "لم يتم التحميل بعد",
+      "STATUS_ERROR": "خطأ: {{error}}",
+      "REMOVE_SOURCE": "إزالة {{url}}",
+      "REMOVE_SOURCE_TOOLTIP": "إزالة",
+      "ADD_URL_LABEL": "عنوان URL لـ XMLTV المراد إضافته",
+      "ADD_BTN": "إضافة",
+      "INVALID_URL": "أدخل عنوان URL كاملًا يبدأ بـ http:// أو https://.",
+      "DUPLICATE_URL": "هذا المصدر موجود بالفعل في القائمة.",
+      "COVERAGE": "{{matched}} من أصل {{live}} قناة مباشرة لديها بيانات دليل.",
+      "COVERAGE_HINT": "يمكن تعيين القنوات غير المطابقة يدويًا: افتح قائمة القناة واختر “تعيين EPG…”.",
+      "DUPLICATE_COUNTRY": "{{country}} مغطاة بعدد {{count}} من المصادر – المصادر المكررة تبطئ التحديث فقط.",
+      "REFRESHING": "جارٍ التحديث…"
     },
     "PARENTAL": {
       "DESC": "احمِ المجموعات برمز PIN. تبقى المجموعات المقفلة وقنواتها مخفية حتى يتم إدخال الرمز عبر زر القفل في الصفحة الرئيسية. اقفل مجموعة من قائمة السياق الخاصة بها في الفئات.",
@@ -307,7 +333,12 @@
     "URL": "الرابط",
     "XTREAM_URL_HINT": "عنوان الخادم بالصيغة http://host:port",
     "INVALID_URL": "\"{{url}}\" ليس عنوان URL صالحًا. تحقّق من عدم وجود مسافات أو أخطاء كتابية.",
-    "URL_PLACEHOLDER": "عنوان URL"
+    "URL_PLACEHOLDER": "عنوان URL",
+    "XTREAM_DETECTED_TITLE": "تم اكتشاف بيانات دخول Xtream",
+    "XTREAM_DETECTED_BODY1": "يحتوي رابط M3U هذا على بيانات دخول Xtream. عند استيراده كمصدر Xtream تحصل على دليل البرامج من مزودك، والمشاهدة اللاحقة للبرامج الفائتة، والمسلسلات مرتبة حسب المواسم.",
+    "XTREAM_DETECTED_BODY2": "يُنصح باستيراده كـ Xtream، لكن يمكنك أيضًا استيراده كرابط M3U عادي.",
+    "IMPORT_AS_XTREAM": "الاستيراد كـ Xtream (موصى به)",
+    "IMPORT_AS_M3U": "الاستيراد كرابط M3U"
   },
   "EPG": {
     "PLAYING_NOW": "يُعرض الآن",
@@ -462,7 +493,10 @@
     "CHECK": "اختبار الاتصال",
     "CHECKING": "جارٍ الاختبار…",
     "CHECK_OK": "تم الاتصال بنجاح",
-    "CHECK_FAILED": "فشل الاتصال"
+    "CHECK_FAILED": "فشل الاتصال",
+    "XTREAM_HINT": "يحتوي هذا الرابط على بيانات دخول Xtream. كمصدر Xtream تحصل على دليل البرامج من مزودك، والمشاهدة اللاحقة للبرامج الفائتة، والمسلسلات مرتبة حسب المواسم.",
+    "CONVERT_TO_XTREAM": "التحويل إلى Xtream",
+    "CONVERTING": "جارٍ التحويل…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "حدد مكان حفظ التسجيل",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "تم تثبيت التحديث، لكن تعذّر إعادة تشغيل التطبيق. يُرجى إعادة تشغيله يدويًا",
     "NETWORK_INFO_FAILED": "تعذّرت قراءة معلومات الشبكة",
     "SETTINGS_SAVED": "تم الحفظ",
-    "SETTINGS_SAVE_FAILED": "تعذّر حفظ الإعدادات"
+    "SETTINGS_SAVE_FAILED": "تعذّر حفظ الإعدادات",
+    "SOURCE_CONVERTED": "تم تحويل المصدر إلى Xtream",
+    "SOURCE_CONVERT_FAILED": "تعذر تحويل المصدر إلى Xtream",
+    "EPG_MAPPED": "تعرض {{name}} الآن دليل {{id}}",
+    "EPG_MAPPING_REMOVED": "تحصل {{name}} على دليل البرامج تلقائيًا مرة أخرى",
+    "EPG_MAPPING_FAILED": "تعذّر تعيين EPG"
   },
   "UPDATE": {
     "TITLE": "يتوفر تحديث",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "حذف التسجيل؟",
     "DELETE_RECORDING_BODY": "سيتم حذف الملف \"{{name}}\" من مجلد التسجيل. لا يمكن التراجع عن ذلك.",
     "REMOVE_PIN_TITLE": "إزالة رمز PIN للرقابة الأبوية؟",
-    "REMOVE_PIN_BODY": "سيتم إلغاء قفل كل المجموعات المقفلة وستظهر للجميع."
+    "REMOVE_PIN_BODY": "سيتم إلغاء قفل كل المجموعات المقفلة وستظهر للجميع.",
+    "CONVERT_XTREAM_TITLE": "هل تريد تحويل “{{name}}” إلى Xtream؟",
+    "CONVERT_XTREAM_BODY1": "سيتم استيراد المصدر من جديد عبر بيانات دخول Xtream. تُحفظ المفضلة والسجل والمجموعات المخفية والمقفلة والتسجيلات المجدولة حسب اسم القناة.",
+    "CONVERT_XTREAM_BODY2": "يستغرق ذلك تقريبًا مدة تحديث المصدر نفسها. إذا فشل، يبقى المصدر دون تغيير."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "العودة إلى القنوات",
@@ -610,13 +652,28 @@
     "NEXT": "التالي",
     "PROGRAMME_PROGRESS": "تقدّم البرنامج",
     "FILTER_PLACEHOLDER": "تصفية القنوات...",
-    "FILTER_CHANNELS": "تصفية قائمة القنوات"
+    "FILTER_CHANNELS": "تصفية قائمة القنوات",
+    "MINIMIZE": "تصغير",
+    "EXPAND": "تكبير",
+    "CLOSE": "إغلاق",
+    "MINI_PLAYER": "المشغّل المصغّر"
   },
   "GUIDE": {
     "CHANNEL": "القناة",
     "NO_EPG": "لا يوجد دليل برامج",
     "NO_CATCHUP": "هذا البرنامج غير متاح في الأرشيف",
-    "PLAY_CHANNEL": "تشغيل {{name}}"
+    "PLAY_CHANNEL": "تشغيل {{name}}",
+    "SEARCH_PLACEHOLDER": "ابحث عن البرامج…",
+    "SEARCH_LABEL": "ابحث عن البرامج في دليل التلفزيون",
+    "SEARCH_RESULTS": "نتائج البحث",
+    "SEARCH_COUNT": "البرامج التي تم العثور عليها: {{count}}",
+    "SEARCH_NO_RESULTS": "لم يتم العثور على برامج.",
+    "SEARCH_SCOPE": "يشمل البحث بيانات دليل XMLTV للأيام السبعة القادمة.",
+    "SEARCH_NEEDS_XMLTV": "يحتاج البحث عن البرامج إلى مصادر EPG خارجية. أضفها من الإعدادات ← دليل EPG خارجي.",
+    "TODAY": "اليوم",
+    "TOMORROW": "غدًا",
+    "WATCH": "مشاهدة",
+    "REMIND": "ذكّرني"
   },
   "PARENTAL": {
     "CONFIRM": "موافق",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "تشغيل {{name}}",
     "UNKNOWN_CHANNEL": "قناة غير معروفة",
     "OPEN_FOLDER": "فتح المجلد"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "تعيين EPG",
+    "ASSIGNED": "المعيَّن:",
+    "AUTOMATIC": "تلقائي حسب اسم القناة",
+    "SEARCH": "البحث في قنوات الدليل",
+    "SEARCH_PLACEHOLDER": "اسم القناة أو معرّف XMLTV",
+    "RESULTS": "قنوات الدليل",
+    "CURRENT": "معيَّن",
+    "UPCOMING": "البرامج القادمة: {{count}}",
+    "NO_CURRENT": "لا توجد برامج حالية",
+    "NO_RESULTS": "لم يتم العثور على قناة في الدليل.",
+    "AUTO": "تعيين تلقائي"
   }
 }

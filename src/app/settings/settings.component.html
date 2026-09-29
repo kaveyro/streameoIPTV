@@ -373,6 +373,44 @@
               </div>
             </div>
           </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-country-prefix">{{
+                "SETTINGS.APPEARANCE.COUNTRY_PREFIX" | translate
+              }}</label>
+              <div class="setting-desc">
+                {{ "SETTINGS.APPEARANCE.COUNTRY_PREFIX_DESC" | translate }}
+              </div>
+            </div>
+            <div class="setting-control country-prefix-control">
+              <select
+                id="set-country-prefix"
+                [(ngModel)]="settings.country_prefix"
+                (ngModelChange)="updateCountryPrefix($event)"
+                class="form-select control-input"
+                aria-describedby="country-prefix-preview"
+              >
+                <option *ngFor="let mode of countryPrefixModes" [ngValue]="mode">
+                  {{ countryPrefixLabels[mode] | translate }}
+                </option>
+              </select>
+              <!-- Live preview of the chosen mode -->
+              <div id="country-prefix-preview" class="country-preview" aria-live="polite">
+                <span class="visually-hidden">{{
+                  "SETTINGS.APPEARANCE.COUNTRY_PREFIX_PREVIEW" | translate
+                }}</span>
+                <ng-container [ngSwitch]="countryPrefixMode">
+                  <span *ngSwitchCase="'show'">{{ countryPrefixSampleFull }}</span>
+                  <span *ngSwitchCase="'hide'">{{ countryPrefixSample.name }}</span>
+                  <ng-container *ngSwitchCase="'badge'">
+                    <span class="country-preview-badge">{{ countryPrefixSample.code }}</span>
+                    <span>{{ countryPrefixSample.name }}</span>
+                  </ng-container>
+                </ng-container>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -805,34 +843,135 @@
 
           <div class="setting-row setting-row--stack">
             <div class="setting-info">
-              <label class="setting-title" for="xmltvSources">{{
+              <span class="setting-title" id="xmltv-sources-title">{{
                 "SETTINGS.EPG.SOURCES_LABEL" | translate
-              }}</label>
-              <div class="setting-desc">{{ "SETTINGS.EPG.SOURCES_DESC" | translate }}</div>
+              }}</span>
+              <div class="setting-desc">{{ "SETTINGS.EPG.SOURCES_LIST_DESC" | translate }}</div>
             </div>
-            <div class="setting-control">
-              <textarea
-                id="xmltvSources"
-                [(ngModel)]="xmltvSourcesText"
-                [placeholder]="'SETTINGS.EPG.SOURCES_PLACEHOLDER' | translate"
-                (change)="saveXmltvSources()"
-                class="form-control"
-              ></textarea>
+            <div class="setting-control xmltv-control">
+              <ul
+                *ngIf="xmltvUrls.length; else noXmltvSources"
+                class="xmltv-list"
+                aria-labelledby="xmltv-sources-title"
+              >
+                <li *ngFor="let url of xmltvUrls" class="xmltv-item">
+                  <div class="xmltv-item-info">
+                    <div class="xmltv-url selectable" [title]="url">{{ url }}</div>
+                    <ng-container *ngIf="xmltvStatus[url] as status">
+                      <div class="xmltv-status" *ngIf="status.updated">
+                        {{
+                          "SETTINGS.EPG.STATUS_LOADED"
+                            | translate: { time: (status.updated * 1000 | timeAgo) }
+                        }}
+                        ·
+                        {{
+                          "SETTINGS.EPG.STATUS_PROGRAMMES"
+                            | translate: { count: formatCount(status.programmes) }
+                        }}
+                        ·
+                        {{
+                          "SETTINGS.EPG.STATUS_CHANNELS"
+                            | translate: { count: formatCount(status.channels) }
+                        }}
+                      </div>
+                      <div class="xmltv-status xmltv-status--error" *ngIf="status.error">
+                        {{ "SETTINGS.EPG.STATUS_ERROR" | translate: { error: status.error } }}
+                      </div>
+                    </ng-container>
+                    <div
+                      class="xmltv-status"
+                      *ngIf="!xmltvStatus[url]?.updated && !xmltvStatus[url]?.error"
+                    >
+                      {{ "SETTINGS.EPG.STATUS_NEVER" | translate }}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="icon-btn xmltv-remove"
+                    [disabled]="refreshingXmltv"
+                    [attr.aria-label]="'SETTINGS.EPG.REMOVE_SOURCE' | translate: { url: url }"
+                    [ngbTooltip]="'SETTINGS.EPG.REMOVE_SOURCE_TOOLTIP' | translate"
+                    (click)="removeXmltvSource(url)"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"
+                      />
+                    </svg>
+                  </button>
+                </li>
+              </ul>
+              <ng-template #noXmltvSources>
+                <p class="setting-desc m-0">{{ "SETTINGS.EPG.NO_SOURCES" | translate }}</p>
+              </ng-template>
+
+              <form class="xmltv-add" (ngSubmit)="addXmltvSource()" novalidate>
+                <input
+                  id="xmltv-new-url"
+                  name="xmltv-new-url"
+                  class="form-control"
+                  type="url"
+                  inputmode="url"
+                  autocomplete="off"
+                  spellcheck="false"
+                  [placeholder]="'SETTINGS.EPG.SOURCES_PLACEHOLDER' | translate"
+                  [attr.aria-label]="'SETTINGS.EPG.ADD_URL_LABEL' | translate"
+                  [attr.aria-invalid]="xmltvUrlError ? true : null"
+                  aria-describedby="xmltv-url-feedback"
+                  [class.is-invalid]="!!xmltvUrlError"
+                  [(ngModel)]="newXmltvUrl"
+                  (ngModelChange)="onXmltvUrlInput()"
+                />
+                <button
+                  type="submit"
+                  class="btn btn-primary d-inline-flex align-items-center"
+                  [disabled]="!newXmltvUrl.trim()"
+                >
+                  <span>{{ "SETTINGS.EPG.ADD_BTN" | translate }}</span>
+                  <svg class="plus ms-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+                  </svg>
+                </button>
+              </form>
+              <div id="xmltv-url-feedback" aria-live="polite">
+                <div class="setting-desc text-danger" *ngIf="xmltvUrlError">
+                  {{ xmltvUrlError | translate }}
+                </div>
+                <div class="setting-desc" *ngIf="xmltvUrlHint">{{ xmltvUrlHint | translate }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-row" *ngIf="xmltvUrls.length && epgCoverage">
+            <div class="setting-info">
+              <span class="setting-title">{{
+                "SETTINGS.EPG.COVERAGE"
+                  | translate
+                    : {
+                        matched: formatCount(epgCoverage.matched),
+                        live: formatCount(epgCoverage.live),
+                      }
+              }}</span>
+              <div class="setting-desc">{{ "SETTINGS.EPG.COVERAGE_HINT" | translate }}</div>
             </div>
           </div>
 
           <div class="setting-row setting-row--stack">
             <div class="setting-info">
-              <span class="setting-title">{{ "SETTINGS.EPG.FREE_SOURCES" | translate }}</span>
+              <span class="setting-title" id="free-epg-title">{{
+                "SETTINGS.EPG.FREE_SOURCES" | translate
+              }}</span>
               <div class="setting-desc">{{ "SETTINGS.EPG.FREE_SOURCES_DESC" | translate }}</div>
             </div>
-            <div class="setting-control">
-              <div class="free-epg-list">
+            <div class="setting-control xmltv-control">
+              <div class="free-epg-list" role="group" aria-labelledby="free-epg-title">
                 <button
                   *ngFor="let src of freeEpgSources"
                   type="button"
                   class="free-epg-chip"
                   [class.free-epg-chip--added]="isSourceAdded(src.url)"
+                  [attr.aria-pressed]="isSourceAdded(src.url)"
+                  [disabled]="refreshingXmltv"
                   (click)="toggleFreeSource(src.url)"
                 >
                   <span>{{ src.label }}</span>
@@ -850,6 +989,19 @@
                   </svg>
                 </button>
               </div>
+              <!-- Non-blocking: several guides for one country only slow the refresh down -->
+              <div class="epg-duplicate-hint" *ngFor="let dup of duplicateCountries" role="note">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                  />
+                </svg>
+                <span>{{
+                  "SETTINGS.EPG.DUPLICATE_COUNTRY"
+                    | translate: { country: countryName(dup.code), count: dup.count }
+                }}</span>
+              </div>
             </div>
           </div>
 
@@ -860,12 +1012,27 @@
             </div>
             <div class="setting-control">
               <button
-                [disabled]="memory.Loading"
+                type="button"
+                [disabled]="refreshingXmltv || memory.Loading"
+                [attr.aria-busy]="refreshingXmltv"
                 (click)="refreshXmltv()"
-                class="btn btn-secondary btn-sm d-inline-flex align-items-center"
+                class="btn btn-primary btn-sm d-inline-flex align-items-center"
               >
-                {{ "SETTINGS.EPG.REFRESH" | translate }}
-                <svg class="refresh ms-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <span
+                  *ngIf="refreshingXmltv"
+                  class="spinner-border spinner-border-sm me-2"
+                  aria-hidden="true"
+                ></span>
+                {{
+                  (refreshingXmltv ? "SETTINGS.EPG.REFRESHING" : "SETTINGS.EPG.REFRESH") | translate
+                }}
+                <svg
+                  *ngIf="!refreshingXmltv"
+                  class="refresh ms-1"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path
                     fill="currentColor"
                     d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"

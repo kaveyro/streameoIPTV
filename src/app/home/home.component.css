@@ -143,6 +143,40 @@
   pointer-events: none;
 }
 
+/* ---------------------------- Country filter --------------------------- */
+/* Compact select in the pill style of the media filters. */
+.country-select {
+  width: auto;
+  max-width: 12rem;
+  padding-block: 0.15rem;
+  padding-inline-start: 0.75rem;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  background-color: transparent;
+  border-color: var(--border-subtle);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.country-select:hover {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+/* A country is chosen: accent outline, like an active pill but without the
+   fill (the caret image is drawn for the regular surface). */
+.country-select.active {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.country-select:focus-visible {
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+}
+
 /* ---------------------------- Format switcher -------------------------- */
 .format-switcher {
   display: flex;

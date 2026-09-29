@@ -135,4 +135,78 @@ describe("HomeComponent", () => {
     expect(component.panel).toBe("library");
     expect(lastSearch().group_id).toBe(5);
   });
+
+  it("takes the country prefix display mode from the settings", async () => {
+    await create({ get_settings: { country_prefix: "badge" } });
+    expect(TestBed.inject(MemoryService).CountryPrefixMode).toBe("badge");
+  });
+
+  describe("country filter", () => {
+    const countries = [
+      { code: "TR", count: 299 },
+      { code: "DE", count: 120 },
+    ];
+
+    function select(): HTMLSelectElement | null {
+      return element.querySelector("select.country-select");
+    }
+
+    it("loads the countries of the shown sources", async () => {
+      await create({ get_countries: countries });
+      expect(callsOf(calls, "get_countries").map((c) => c.args)).toEqual([{ sourceIds: [1] }]);
+      const options = Array.from(select()!.options).map((o) => o.textContent?.trim());
+      expect(options).toEqual(["HOME.ALL_COUNTRIES", "TR · 299", "DE · 120"]);
+      expect(select()!.getAttribute("aria-label")).toBe("HOME.COUNTRY_FILTER");
+    });
+
+    it("is hidden with fewer than two countries", async () => {
+      await create({ get_countries: [{ code: "TR", count: 5 }] });
+      expect(select()).toBeNull();
+    });
+
+    it("reloads the list for the chosen country, from the first page", async () => {
+      await create({ get_countries: countries });
+      component.filters!.page = 3;
+      const s = select()!;
+      s.value = s.options[1].value;
+      s.dispatchEvent(new Event("change"));
+      await settle();
+      expect(lastSearch().country).toBe("TR");
+      expect(lastSearch().page).toBe(1);
+
+      component.setCountry("");
+      await settle();
+      expect(lastSearch().country).toBeUndefined();
+    });
+
+    it("does not apply inside a category and is hidden there", async () => {
+      await create({ get_countries: countries });
+      component.setCountry("TR");
+      await settle();
+      component.filters!.group_id = 5;
+      await component.reload();
+      fixture.detectChanges();
+      expect(lastSearch().country).toBeUndefined();
+      expect(select()).toBeNull();
+      // Kept for the level above.
+      expect(component.filters!.country).toBe("TR");
+    });
+
+    it("drops a chosen country that is no longer offered", async () => {
+      let offered = countries;
+      await create({ get_countries: () => offered });
+      component.setCountry("DE");
+      await settle();
+      offered = [
+        { code: "TR", count: 299 },
+        { code: "UK", count: 12 },
+      ];
+      const searches = callsOf(calls, "search").length;
+      await component.loadCountries();
+      await settle();
+      expect(component.filters!.country).toBeUndefined();
+      expect(callsOf(calls, "search").length).toBe(searches + 1);
+      expect(lastSearch().country).toBeUndefined();
+    });
+  });
 });

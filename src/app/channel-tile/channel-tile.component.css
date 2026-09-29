@@ -1,6 +1,8 @@
-/* The host is a grid cell of .tile-grid (home.component.css); fill it. */
+/* The host is a grid cell of .tile-grid (home.component.css); fill it. As a
+   flex container it stretches the tile to the row's height, so a tile with a
+   now/next block and one without still line up. */
 :host {
-  display: block;
+  display: flex;
   min-width: 0;
   width: 100%;
 }
@@ -8,7 +10,7 @@
 .channel {
   position: relative;
   border-radius: var(--radius-tile);
-  height: 4.5em;
+  min-height: 4.5em;
   width: 100%;
   background-color: var(--bg-surface);
   color: var(--text-primary);
@@ -21,10 +23,17 @@
 }
 
 .channel-title-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   margin-inline: 10px;
   flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+
+.channel-names {
+  min-width: 0;
 }
 
 .channel-title {
@@ -48,8 +57,10 @@
   object-fit: contain;
 }
 
+/* Fixed height (the tile's content height) instead of 100%: the tile grows
+   with its content, and a percentage of an auto height would not resolve. */
 .image-container {
-  height: 100%;
+  height: 3.5em;
   width: 50px;
   min-width: 50px;
   margin-inline-end: 0.5rem;
@@ -96,9 +107,16 @@
 }
 
 .playing .channel-source,
-.playing .now-playing-title,
+.playing .now-title,
+.playing .now-time,
+.playing .next-line,
+.playing .country-badge,
 .playing .favorite-icon {
   color: var(--on-accent);
+}
+
+.playing .country-badge {
+  border-color: currentColor;
 }
 
 /* Clicking a starting tile cancels it: show that with a danger outline. */
@@ -164,6 +182,41 @@
   min-height: 4.5em;
 }
 
+/* List format: the now/next block sits beside the name instead of under it
+   (full-width rows have the room); stacked again on narrow windows. */
+.channel-list .channel-title-container {
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.channel-list .channel-names {
+  flex: 1 1 0;
+}
+
+.channel-list .now-playing {
+  flex: 1.5 1 0;
+  margin-top: 0;
+}
+
+/* Same width with or without an icon, so the now/next column lines up. */
+.channel-list .tile-badges {
+  min-width: var(--icon-size-sm);
+}
+
+@media (max-width: 575.98px) {
+  .channel-list .channel-title-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .channel-list .now-playing {
+    flex: none;
+    margin-top: 3px;
+  }
+}
+
 .channel-list .channel-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -203,23 +256,63 @@
   pointer-events: none;
 }
 
-/* Now playing (live xtream channels, grid + list formats). The line is
-   always reserved for eligible channels so the async load causes no jump. */
+/* Country code of the name ("TR"), shown as a pill in the "badge" prefix mode. */
+.country-badge {
+  display: inline-block;
+  margin-inline-end: 0.35rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  vertical-align: 0.1em;
+}
+
+/* Now/next (live channels with EPG, grid + list formats). Only rendered once
+   a programme is known, so tiles without EPG keep the compact height; the
+   block fits the tile's minimum height when the source line is hidden. */
 .has-now-playing .channel-title,
 .has-now-playing .channel-source {
   line-height: 1.25;
 }
 
-.now-playing-line {
-  height: 15px;
-  margin-top: 2px;
-  overflow: hidden;
+.now-playing {
+  min-width: 0;
+  margin-top: 3px;
 }
 
-.now-playing-title {
-  display: block;
+.now-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+}
+
+.now-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.now-time {
+  flex-shrink: 0;
   font-size: var(--fs-2xs);
-  line-height: 1;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.next-line {
+  margin-top: 2px;
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -228,9 +321,9 @@
 
 /* Track uses --border-strong so it stays visible on the hover surface. */
 .now-playing-track {
-  height: 2px;
-  margin-top: 2px;
-  border-radius: 1px;
+  height: 3px;
+  margin-top: 3px;
+  border-radius: 2px;
   background-color: var(--border-strong);
   overflow: hidden;
 }

@@ -52,7 +52,9 @@
       "SERIES": "Seriale"
     },
     "COLLAPSE_SIDEBAR": "Restrânge bara laterală",
-    "EXPAND_SIDEBAR": "Extinde bara laterală"
+    "EXPAND_SIDEBAR": "Extinde bara laterală",
+    "COUNTRY_FILTER": "Filtrează după țară",
+    "ALL_COUNTRIES": "Toate țările"
   },
   "MENU": {
     "REMOVE": "Elimină",
@@ -70,7 +72,8 @@
     "COPY_URL": "Copiază URL-ul",
     "DELETE": "Șterge",
     "LOCK_GROUP": "Blochează grupul",
-    "UNLOCK_GROUP": "Deblochează grupul"
+    "UNLOCK_GROUP": "Deblochează grupul",
+    "MAP_EPG": "Atribuie EPG…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nu s-au găsit canale",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "Violet",
       "ACCENT_TEAL": "Verde-albăstrui",
       "ACCENT_CORAL": "Coral",
-      "ACCENT_GREEN": "Verde"
+      "ACCENT_GREEN": "Verde",
+      "COUNTRY_PREFIX": "Codul țării în numele canalelor",
+      "COUNTRY_PREFIX_DESC": "Cum sunt afișate prefixele precum „TR:” sau „DE |” din fața numelor canalelor.",
+      "COUNTRY_PREFIX_SHOW": "Afișează",
+      "COUNTRY_PREFIX_HIDE": "Ascunde",
+      "COUNTRY_PREFIX_BADGE": "Ca insignă cu cod",
+      "COUNTRY_PREFIX_PREVIEW": "Previzualizare:"
     },
     "PLAYBACK": {
       "CACHING": "Folosește caching pentru flux",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "EPG extern",
-      "INTRO": "Când un canal nu are date de ghid de la furnizorul său, streameo le completează din aceste surse XMLTV, potrivite după tvg-id. Funcționează orice URL XMLTV (de exemplu un export IPTV-EPG.org); sunt acceptate atât .xml, cât și .xml.gz.",
+      "INTRO": "Când un canal nu are date de ghid de la furnizor, streameo le completează din aceste surse XMLTV: potrivite după tvg-id, altfel după numele canalului sau așa cum le atribui manual. Funcționează orice URL XMLTV (de exemplu un export IPTV-EPG.org); sunt acceptate .xml și .xml.gz.",
       "SOURCES_LABEL": "Surse XMLTV",
       "SOURCES_DESC": "Un URL XMLTV pe linie.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Reîmprospătează acum",
       "REFRESH_DESC": "Descarcă cele mai noi date de ghid. Acest lucru se face și automat conform programului de reîmprospătare automată a surselor sau, dacă este oprit, o dată pe zi.",
       "FREE_SOURCES": "Surse EPG gratuite",
-      "FREE_SOURCES_DESC": "Adaugă un ghid XMLTV gratuit cunoscut cu un clic. Alege-le pe cele care se potrivesc cu țările canalelor tale."
+      "FREE_SOURCES_DESC": "Adaugă un ghid XMLTV gratuit cunoscut cu un clic. Alege-le pe cele care se potrivesc cu țările canalelor tale.",
+      "SOURCES_LIST_DESC": "Ghidurile se încarcă în această ordine. Pentru fiecare vezi când a fost încărcat ultima dată și ce conține.",
+      "NO_SOURCES": "Încă nu există surse XMLTV. Adaugă un URL mai jos sau alege una dintre sursele gratuite.",
+      "STATUS_LOADED": "Încărcat: {{time}}",
+      "STATUS_PROGRAMMES": "Emisiuni: {{count}}",
+      "STATUS_CHANNELS": "Canale: {{count}}",
+      "STATUS_NEVER": "Încă neîncărcat",
+      "STATUS_ERROR": "Eroare: {{error}}",
+      "REMOVE_SOURCE": "Elimină {{url}}",
+      "REMOVE_SOURCE_TOOLTIP": "Elimină",
+      "ADD_URL_LABEL": "URL XMLTV de adăugat",
+      "ADD_BTN": "Adaugă",
+      "INVALID_URL": "Introdu un URL complet care începe cu http:// sau https://.",
+      "DUPLICATE_URL": "Această sursă este deja în listă.",
+      "COVERAGE": "{{matched}} din {{live}} canale live au date de ghid.",
+      "COVERAGE_HINT": "Canalele fără potrivire pot fi asociate manual: deschide meniul canalului și alege „Asociază EPG…”.",
+      "DUPLICATE_COUNTRY": "{{country}} este acoperită de {{count}} surse – sursele duplicate doar încetinesc reîmprospătarea.",
+      "REFRESHING": "Se reîmprospătează…"
     },
     "PARENTAL": {
       "DESC": "Protejează grupurile cu un PIN. Grupurile blocate și canalele lor rămân ascunse până când PIN-ul este introdus cu butonul lacăt de pe pagina principală. Blochează un grup din meniul său contextual din Categorii.",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "Adresa serverului în formatul http://host:port",
     "INVALID_URL": "„{{url}}” nu este un URL valid. Verificați dacă are spații sau greșeli de scriere.",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Autentificare Xtream detectată",
+    "XTREAM_DETECTED_BODY1": "Acest link M3U conține o autentificare Xtream. Importat ca sursă Xtream, primești EPG-ul furnizorului, catch-up pentru emisiunile ratate și seriale pe sezoane.",
+    "XTREAM_DETECTED_BODY2": "Se recomandă importul ca Xtream, dar îl poți importa și ca link M3U simplu.",
+    "IMPORT_AS_XTREAM": "Importă ca Xtream (recomandat)",
+    "IMPORT_AS_M3U": "Importă ca link M3U"
   },
   "EPG": {
     "PLAYING_NOW": "Acum se redă",
@@ -462,7 +493,10 @@
     "CHECK": "Testează conexiunea",
     "CHECKING": "Se testează…",
     "CHECK_OK": "Conexiune reușită",
-    "CHECK_FAILED": "Conexiune eșuată"
+    "CHECK_FAILED": "Conexiune eșuată",
+    "XTREAM_HINT": "Acest link conține o autentificare Xtream. Ca sursă Xtream primești EPG-ul furnizorului, catch-up pentru emisiunile ratate și seriale pe sezoane.",
+    "CONVERT_TO_XTREAM": "Convertește în Xtream",
+    "CONVERTING": "Se convertește…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selectează unde se salvează înregistrarea",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "Actualizarea a fost instalată, dar aplicația nu a putut reporni. Reporniți-o manual",
     "NETWORK_INFO_FAILED": "Informațiile de rețea nu au putut fi citite",
     "SETTINGS_SAVED": "Salvat",
-    "SETTINGS_SAVE_FAILED": "Setările nu au putut fi salvate"
+    "SETTINGS_SAVE_FAILED": "Setările nu au putut fi salvate",
+    "SOURCE_CONVERTED": "Sursa a fost convertită în Xtream",
+    "SOURCE_CONVERT_FAILED": "Sursa nu a putut fi convertită în Xtream",
+    "EPG_MAPPED": "{{name}} afișează acum ghidul {{id}}",
+    "EPG_MAPPING_REMOVED": "{{name}} primește din nou EPG automat",
+    "EPG_MAPPING_FAILED": "EPG-ul nu a putut fi atribuit"
   },
   "UPDATE": {
     "TITLE": "Actualizare disponibilă",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "Ștergi înregistrarea?",
     "DELETE_RECORDING_BODY": "Fișierul „{{name}}” va fi șters din folderul de înregistrări. Acțiunea nu poate fi anulată.",
     "REMOVE_PIN_TITLE": "Elimini PIN-ul parental?",
-    "REMOVE_PIN_BODY": "Toate grupurile blocate vor fi deblocate și afișate tuturor."
+    "REMOVE_PIN_BODY": "Toate grupurile blocate vor fi deblocate și afișate tuturor.",
+    "CONVERT_XTREAM_TITLE": "Convertești „{{name}}” în Xtream?",
+    "CONVERT_XTREAM_BODY1": "Sursa este importată din nou prin autentificarea Xtream. Favoritele, istoricul, grupurile ascunse și blocate și înregistrările programate se păstrează după numele canalului.",
+    "CONVERT_XTREAM_BODY2": "Durează cam cât o reîmprospătare a sursei. Dacă eșuează, sursa rămâne neschimbată."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Înapoi la canale",
@@ -610,13 +652,28 @@
     "NEXT": "Urmează",
     "PROGRAMME_PROGRESS": "Progresul emisiunii",
     "FILTER_PLACEHOLDER": "Filtrați canalele...",
-    "FILTER_CHANNELS": "Filtrați lista de canale"
+    "FILTER_CHANNELS": "Filtrați lista de canale",
+    "MINIMIZE": "Micșorează",
+    "EXPAND": "Mărește",
+    "CLOSE": "Închide",
+    "MINI_PLAYER": "Mini player"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
     "NO_EPG": "Fără EPG",
     "NO_CATCHUP": "Acest program nu este disponibil în arhivă",
-    "PLAY_CHANNEL": "Redă {{name}}"
+    "PLAY_CHANNEL": "Redă {{name}}",
+    "SEARCH_PLACEHOLDER": "Caută emisiuni…",
+    "SEARCH_LABEL": "Caută emisiuni în ghidul TV",
+    "SEARCH_RESULTS": "Rezultatele căutării",
+    "SEARCH_COUNT": "Emisiuni găsite: {{count}}",
+    "SEARCH_NO_RESULTS": "Nu s-au găsit emisiuni.",
+    "SEARCH_SCOPE": "Căutarea acoperă datele ghidului XMLTV din următoarele 7 zile.",
+    "SEARCH_NEEDS_XMLTV": "Căutarea emisiunilor are nevoie de surse EPG externe. Adaugă-le în Setări → EPG extern.",
+    "TODAY": "Astăzi",
+    "TOMORROW": "Mâine",
+    "WATCH": "Vizionează",
+    "REMIND": "Amintește-mi"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "Redă {{name}}",
     "UNKNOWN_CHANNEL": "Canal necunoscut",
     "OPEN_FOLDER": "Deschide folderul"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "Atribuie EPG",
+    "ASSIGNED": "Atribuit:",
+    "AUTOMATIC": "Automat după numele canalului",
+    "SEARCH": "Caută canale din ghid",
+    "SEARCH_PLACEHOLDER": "Numele canalului sau ID XMLTV",
+    "RESULTS": "Canale din ghid",
+    "CURRENT": "atribuit",
+    "UPCOMING": "Emisiuni viitoare: {{count}}",
+    "NO_CURRENT": "nicio emisiune actuală",
+    "NO_RESULTS": "Niciun canal din ghid găsit.",
+    "AUTO": "Atribuie automat"
   }
 }

@@ -16,6 +16,11 @@ import { ThemeService } from "../theme.service";
 import { Settings } from "../models/settings";
 import { PLAYLIST_EXTENSIONS } from "../models/extensions";
 import { canCheckSource, sourceForCheck } from "../source-check";
+import { XtreamLogin } from "../models/epgExtras";
+import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
+
+/// How to import an M3U link that turned out to be an Xtream login.
+type LinkImportChoice = "xtream" | "m3u" | "abort";
 
 @Component({
   selector: "app-setup",
@@ -238,6 +243,19 @@ export class SetupComponent implements OnInit {
   async getM3ULink() {
     this.removeUnusedFieldsFromSource();
     this.source.url = this.source.url?.trim();
+    const login = await this.detectXtreamLogin(this.source.url);
+    if (login) {
+      const choice = await this.askImportAsXtream();
+      if (choice == "abort") return;
+      if (choice == "xtream") {
+        this.source.source_type = SourceType.Xtream;
+        this.source.url = login.url;
+        this.source.username = login.username;
+        this.source.password = login.password;
+        await this.getXtream();
+        return;
+      }
+    }
     this.loading = true;
     try {
       await invoke("get_m3u8_from_link", { source: this.source });
@@ -246,6 +264,39 @@ export class SetupComponent implements OnInit {
       this.error.handleError(e, this.translate.instant("TOAST.INVALID_CREDENTIALS"));
     }
     this.loading = false;
+  }
+
+  /// The Xtream login inside an M3U link (`.../get.php?username=..`), if any.
+  /// Best effort: without an answer the link is imported as before.
+  private async detectXtreamLogin(url?: string): Promise<XtreamLogin | undefined> {
+    if (!url) return undefined;
+    try {
+      return (await invoke<XtreamLogin | null>("detect_xtream_login", { url })) ?? undefined;
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
+  }
+
+  /// Offers the Xtream import (provider EPG, catch-up, series by season). Not
+  /// ConfirmService: its cancel and dismiss mean the same, but here the cancel
+  /// button is the explicit "import as M3U link" choice and only closing the
+  /// dialog (cross, Escape, backdrop: a rejected result) aborts.
+  askImportAsXtream(): Promise<LinkImportChoice> {
+    const ref = this.modalService.open(ConfirmDeleteModalComponent, { centered: true });
+    const dialog = ref.componentInstance as ConfirmDeleteModalComponent;
+    dialog.title = "SETUP.XTREAM_DETECTED_TITLE";
+    dialog.messages = ["SETUP.XTREAM_DETECTED_BODY1", "SETUP.XTREAM_DETECTED_BODY2"];
+    dialog.confirmLabel = "SETUP.IMPORT_AS_XTREAM";
+    dialog.cancelLabel = "SETUP.IMPORT_AS_M3U";
+    dialog.danger = false;
+    dialog.choice = true;
+    const choice = ref.result.then(
+      (value): LinkImportChoice => (value === true ? "xtream" : "m3u"),
+      (): LinkImportChoice => "abort",
+    );
+    void this.memory.hidePlayerWhile(choice);
+    return choice;
   }
 
   async getXtream() {

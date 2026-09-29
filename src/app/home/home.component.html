@@ -195,6 +195,20 @@
         </label>
       </div>
 
+      <select
+        *ngIf="countryFilterVisible()"
+        class="form-select country-select"
+        [class.active]="!!filters?.country"
+        [ngModel]="filters?.country ?? ''"
+        (ngModelChange)="setCountry($event)"
+        [attr.aria-label]="'HOME.COUNTRY_FILTER' | translate"
+      >
+        <option value="">{{ "HOME.ALL_COUNTRIES" | translate }}</option>
+        <option *ngFor="let country of countries" [value]="country.code">
+          {{ country.code }} &middot; {{ country.count }}
+        </option>
+      </select>
+
       <div class="toolbar-actions">
         <button
           *ngIf="memory.HasParentalPin"

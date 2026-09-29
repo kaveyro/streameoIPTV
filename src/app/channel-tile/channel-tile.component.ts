@@ -22,6 +22,7 @@ import { EditChannelModalComponent } from "../edit-channel-modal/edit-channel-mo
 import { EditGroupModalComponent } from "../edit-group-modal/edit-group-modal.component";
 import { DeleteGroupModalComponent } from "../delete-group-modal/delete-group-modal.component";
 import { EpgModalComponent } from "../epg-modal/epg-modal.component";
+import { EpgMappingModalComponent } from "../epg-mapping-modal/epg-mapping-modal.component";
 import { EPG } from "../models/epg";
 import { RestreamModalComponent } from "../restream-modal/restream-modal.component";
 import { DownloadService } from "../download.service";
@@ -29,7 +30,7 @@ import { Download } from "../models/download";
 import { Subscription, take } from "rxjs";
 import { save } from "@tauri-apps/plugin-dialog";
 import { CHANNEL_EXTENSION, GROUP_EXTENSION, RECORD_EXTENSION } from "../models/extensions";
-import { getDateFormatted, getExtension, sanitizeFileName } from "../utils";
+import { getDateFormatted, getExtension, sanitizeFileName, uiLocale } from "../utils";
 import { NodeType, fromMediaType } from "../models/nodeType";
 
 import { ViewMode } from "../models/viewMode";
@@ -41,6 +42,24 @@ import { TranslateService } from "@ngx-translate/core";
 import { ConfirmService } from "../confirm.service";
 import { PlaybackService } from "../playback.service";
 import { ParentalService } from "../parental.service";
+import { splitCountryPrefix } from "../country-prefix";
+
+/// One clock formatter per locale, shared by all tiles (a grid page shows dozens).
+const clockFormats = new Map<string, Intl.DateTimeFormat>();
+
+function formatClock(timestamp: number, locale?: string): string {
+  const key = locale ?? "";
+  let format = clockFormats.get(key);
+  if (!format) {
+    try {
+      format = new Intl.DateTimeFormat(locale, { timeStyle: "short" });
+    } catch {
+      format = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
+    }
+    clockFormats.set(key, format);
+  }
+  return format.format(timestamp * 1000);
+}
 
 @Component({
   selector: "app-channel-tile",
@@ -81,10 +100,16 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   logoSrc?: string;
   nowPlaying?: NowPlaying;
   nowPlayingProgress = 0;
+  /// "20:15–21:15" of the current programme and the start of the next one,
+  /// formatted once when the programme loads.
+  nowPlayingTimes = "";
+  nextStart = "";
+  /// "Playing now: <title> (20:15–21:15)" for the tile's accessible name.
+  private nowPlayingSummary = "";
   private nowPlayingRequested = false;
-  /// Computed once per `channel` change instead of on every change detection.
-  hasNowPlayingLine = false;
   sourceName = "";
+  /// Country prefix of the name ("TR"), for the badge display mode.
+  countryCode?: string;
   /// A series/category is being opened (get_episodes can take a while); a
   /// second click meanwhile must not push the same level twice.
   private opening = false;
@@ -99,8 +124,8 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes["channel"]) {
-      this.hasNowPlayingLine = this.showNowPlayingLine();
       this.sourceName = this.getSourceName();
+      this.countryCode = splitCountryPrefix(this.channel?.name).code;
     }
     if (changes["format"] && !changes["format"].firstChange) {
       this.loadNowPlaying();
@@ -117,7 +142,26 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       const elapsed = Date.now() / 1000 - nowPlaying.start_timestamp;
       this.nowPlayingProgress =
         duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
+      const locale = uiLocale(this.translate);
+      this.nowPlayingTimes = `${formatClock(nowPlaying.start_timestamp, locale)}–${formatClock(nowPlaying.end_timestamp, locale)}`;
+      this.nextStart = nowPlaying.next ? formatClock(nowPlaying.next.start_timestamp, locale) : "";
+      this.nowPlayingSummary = `${this.translate.instant("EPG.PLAYING_NOW")}: ${nowPlaying.title} (${this.nowPlayingTimes})`;
     });
+  }
+
+  /** Loads the now-playing line again, e.g. after the EPG was assigned. */
+  reloadNowPlaying() {
+    this.nowPlaying = undefined;
+    this.nowPlayingProgress = 0;
+    this.nowPlayingSummary = "";
+    this.nowPlayingRequested = false;
+    this.loadNowPlaying();
+  }
+
+  /** Accessible name: the full channel name plus what is on right now. */
+  ariaLabel(): string {
+    const name = this.channel?.name ?? "";
+    return this.nowPlayingSummary ? `${name}, ${this.nowPlayingSummary}` : name;
   }
 
   showNowPlayingLine(): boolean {
@@ -359,6 +403,11 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     );
   }
 
+  /** Assigning a guide by hand needs an XMLTV guide to pick from. */
+  canMapEpg(): boolean {
+    return this.isLivestream() && this.memory.HasXmltv;
+  }
+
   getSourceName(): string {
     if (!this.channel?.source_id) return "";
     return this.memory.Sources.get(this.channel.source_id)?.name || "";
@@ -384,6 +433,20 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.EPG_MISSING_STREAM_ID"));
     }
+  }
+
+  openEpgMapping() {
+    this.memory.ModalRef = this.modal.open(EpgMappingModalComponent, {
+      backdrop: "static",
+      size: "lg",
+      keyboard: false,
+      ariaLabelledBy: "epg-mapping-title",
+    });
+    this.memory.ModalRef.componentInstance.channel = this.channel;
+    this.memory.ModalRef.result.then((changed) => {
+      this.memory.ModalRef = undefined;
+      if (changed === true) this.reloadNowPlaying();
+    });
   }
 
   edit() {

@@ -52,7 +52,9 @@
       "SERIES": "Series"
     },
     "COLLAPSE_SIDEBAR": "Zijbalk inklappen",
-    "EXPAND_SIDEBAR": "Zijbalk uitklappen"
+    "EXPAND_SIDEBAR": "Zijbalk uitklappen",
+    "COUNTRY_FILTER": "Filteren op land",
+    "ALL_COUNTRIES": "Alle landen"
   },
   "MENU": {
     "REMOVE": "Verwijderen",
@@ -70,7 +72,8 @@
     "COPY_URL": "URL kopiëren",
     "DELETE": "Verwijderen",
     "LOCK_GROUP": "Groep vergrendelen",
-    "UNLOCK_GROUP": "Groep ontgrendelen"
+    "UNLOCK_GROUP": "Groep ontgrendelen",
+    "MAP_EPG": "EPG toewijzen…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Geen kanalen gevonden",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "Paars",
       "ACCENT_TEAL": "Blauwgroen",
       "ACCENT_CORAL": "Koraal",
-      "ACCENT_GREEN": "Groen"
+      "ACCENT_GREEN": "Groen",
+      "COUNTRY_PREFIX": "Landcode in kanaalnamen",
+      "COUNTRY_PREFIX_DESC": "Hoe voorvoegsels zoals “TR:” of “DE |” voor kanaalnamen worden weergegeven.",
+      "COUNTRY_PREFIX_SHOW": "Tonen",
+      "COUNTRY_PREFIX_HIDE": "Verbergen",
+      "COUNTRY_PREFIX_BADGE": "Als codebadge",
+      "COUNTRY_PREFIX_PREVIEW": "Voorbeeld:"
     },
     "PLAYBACK": {
       "CACHING": "Streamcaching gebruiken",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "Externe EPG",
-      "INTRO": "Als een kanaal geen gidsgegevens van zijn provider heeft, vult streameo deze aan uit deze XMLTV-bronnen, gekoppeld via tvg-id. Elke XMLTV-URL werkt (bijvoorbeeld een export van IPTV-EPG.org); zowel .xml als .xml.gz worden ondersteund.",
+      "INTRO": "Als een zender geen gidsgegevens van zijn aanbieder heeft, vult streameo die aan uit deze XMLTV-bronnen: gekoppeld via tvg-id, anders via de zendernaam, of zoals jij ze met de hand koppelt. Elke XMLTV-URL werkt (bijvoorbeeld een export van IPTV-EPG.org); .xml en .xml.gz worden allebei ondersteund.",
       "SOURCES_LABEL": "XMLTV-bronnen",
       "SOURCES_DESC": "Eén XMLTV-URL per regel.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Nu vernieuwen",
       "REFRESH_DESC": "De nieuwste gidsgegevens downloaden. Dit gebeurt ook automatisch volgens je schema voor het automatisch vernieuwen van bronnen, of één keer per dag als dat uit staat.",
       "FREE_SOURCES": "Gratis EPG-bronnen",
-      "FREE_SOURCES_DESC": "Voeg met één klik een bekende gratis XMLTV-gids toe. Kies degene die bij de landen van je kanalen passen."
+      "FREE_SOURCES_DESC": "Voeg met één klik een bekende gratis XMLTV-gids toe. Kies degene die bij de landen van je kanalen passen.",
+      "SOURCES_LIST_DESC": "De gidsen worden in deze volgorde geladen. Bij elke gids zie je wanneer die voor het laatst is geladen en wat erin staat.",
+      "NO_SOURCES": "Nog geen XMLTV-bronnen. Voeg hieronder een URL toe of kies een van de gratis bronnen.",
+      "STATUS_LOADED": "Geladen: {{time}}",
+      "STATUS_PROGRAMMES": "{{count}} programma’s",
+      "STATUS_CHANNELS": "{{count}} kanalen",
+      "STATUS_NEVER": "Nog niet geladen",
+      "STATUS_ERROR": "Fout: {{error}}",
+      "REMOVE_SOURCE": "{{url}} verwijderen",
+      "REMOVE_SOURCE_TOOLTIP": "Verwijderen",
+      "ADD_URL_LABEL": "XMLTV-URL om toe te voegen",
+      "ADD_BTN": "Toevoegen",
+      "INVALID_URL": "Voer een volledige URL in die begint met http:// of https://.",
+      "DUPLICATE_URL": "Deze bron staat al in de lijst.",
+      "COVERAGE": "{{matched}} van {{live}} livekanalen hebben gidsgegevens.",
+      "COVERAGE_HINT": "Kanalen zonder match kun je handmatig koppelen: open het menu van het kanaal en kies “EPG koppelen…”.",
+      "DUPLICATE_COUNTRY": "{{country}} wordt door {{count}} bronnen gedekt – dubbele bronnen maken het vernieuwen alleen trager.",
+      "REFRESHING": "Vernieuwen…"
     },
     "PARENTAL": {
       "DESC": "Beveilig groepen met een pincode. Vergrendelde groepen en hun kanalen blijven verborgen tot de pincode is ingevoerd via de slotknop op de startpagina. Vergrendel een groep via het contextmenu in Categorieën.",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "Serveradres in de vorm http://host:port",
     "INVALID_URL": "\"{{url}}\" is geen geldige URL. Controleer op spaties of typfouten.",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Xtream-login herkend",
+    "XTREAM_DETECTED_BODY1": "Deze M3U-link bevat een Xtream-login. Geïmporteerd als Xtream-bron krijg je de EPG van je provider, catch-up voor gemiste programma’s en series per seizoen.",
+    "XTREAM_DETECTED_BODY2": "Importeren als Xtream wordt aanbevolen, maar je kunt de link ook als gewone M3U-link importeren.",
+    "IMPORT_AS_XTREAM": "Importeren als Xtream (aanbevolen)",
+    "IMPORT_AS_M3U": "Importeren als M3U-link"
   },
   "EPG": {
     "PLAYING_NOW": "Nu bezig",
@@ -462,7 +493,10 @@
     "CHECK": "Verbinding testen",
     "CHECKING": "Bezig met testen…",
     "CHECK_OK": "Verbinding geslaagd",
-    "CHECK_FAILED": "Verbinding mislukt"
+    "CHECK_FAILED": "Verbinding mislukt",
+    "XTREAM_HINT": "Deze link bevat een Xtream-login. Als Xtream-bron krijg je de EPG van je provider, catch-up voor gemiste programma’s en series per seizoen.",
+    "CONVERT_TO_XTREAM": "Omzetten naar Xtream",
+    "CONVERTING": "Omzetten…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecteer waar de opname wordt opgeslagen",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "De update is geïnstalleerd, maar de app kon niet opnieuw starten. Start hem handmatig opnieuw",
     "NETWORK_INFO_FAILED": "Netwerkinformatie kon niet worden gelezen",
     "SETTINGS_SAVED": "Opgeslagen",
-    "SETTINGS_SAVE_FAILED": "Instellingen opslaan mislukt"
+    "SETTINGS_SAVE_FAILED": "Instellingen opslaan mislukt",
+    "SOURCE_CONVERTED": "Bron omgezet naar Xtream",
+    "SOURCE_CONVERT_FAILED": "De bron kon niet worden omgezet naar Xtream",
+    "EPG_MAPPED": "{{name}} toont nu de gids van {{id}}",
+    "EPG_MAPPING_REMOVED": "{{name}} krijgt zijn EPG weer automatisch",
+    "EPG_MAPPING_FAILED": "EPG kon niet worden toegewezen"
   },
   "UPDATE": {
     "TITLE": "Update beschikbaar",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "Opname verwijderen?",
     "DELETE_RECORDING_BODY": "Het bestand \"{{name}}\" wordt uit de opnamemap verwijderd. Dit kan niet ongedaan worden gemaakt.",
     "REMOVE_PIN_TITLE": "Ouderlijke pincode verwijderen?",
-    "REMOVE_PIN_BODY": "Alle vergrendelde groepen worden ontgrendeld en voor iedereen getoond."
+    "REMOVE_PIN_BODY": "Alle vergrendelde groepen worden ontgrendeld en voor iedereen getoond.",
+    "CONVERT_XTREAM_TITLE": "“{{name}}” omzetten naar Xtream?",
+    "CONVERT_XTREAM_BODY1": "De bron wordt opnieuw geïmporteerd via de Xtream-login. Favorieten, geschiedenis, verborgen en vergrendelde groepen en geplande opnames blijven behouden op basis van de kanaalnaam.",
+    "CONVERT_XTREAM_BODY2": "Dit duurt ongeveer even lang als het vernieuwen van de bron. Mislukt het, dan blijft de bron ongewijzigd."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Terug naar kanalen",
@@ -610,13 +652,28 @@
     "NEXT": "Hierna",
     "PROGRAMME_PROGRESS": "Voortgang van het programma",
     "FILTER_PLACEHOLDER": "Kanalen filteren...",
-    "FILTER_CHANNELS": "Kanaallijst filteren"
+    "FILTER_CHANNELS": "Kanaallijst filteren",
+    "MINIMIZE": "Verkleinen",
+    "EXPAND": "Vergroten",
+    "CLOSE": "Sluiten",
+    "MINI_PLAYER": "Minispeler"
   },
   "GUIDE": {
     "CHANNEL": "Kanaal",
     "NO_EPG": "Geen EPG",
     "NO_CATCHUP": "Dit programma is niet beschikbaar in het archief",
-    "PLAY_CHANNEL": "{{name}} afspelen"
+    "PLAY_CHANNEL": "{{name}} afspelen",
+    "SEARCH_PLACEHOLDER": "Programma's zoeken…",
+    "SEARCH_LABEL": "Programma's zoeken in de tv-gids",
+    "SEARCH_RESULTS": "Zoekresultaten",
+    "SEARCH_COUNT": "Gevonden programma's: {{count}}",
+    "SEARCH_NO_RESULTS": "Geen programma's gevonden.",
+    "SEARCH_SCOPE": "Er wordt gezocht in de XMLTV-gidsgegevens van de komende 7 dagen.",
+    "SEARCH_NEEDS_XMLTV": "Voor het zoeken naar programma's heb je externe EPG-bronnen nodig. Voeg ze toe via Instellingen → Externe EPG.",
+    "TODAY": "Vandaag",
+    "TOMORROW": "Morgen",
+    "WATCH": "Bekijken",
+    "REMIND": "Herinneren"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "{{name}} afspelen",
     "UNKNOWN_CHANNEL": "Onbekend kanaal",
     "OPEN_FOLDER": "Map openen"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "EPG toewijzen",
+    "ASSIGNED": "Toegewezen:",
+    "AUTOMATIC": "Automatisch op zendernaam",
+    "SEARCH": "Gidszenders zoeken",
+    "SEARCH_PLACEHOLDER": "Zendernaam of XMLTV-ID",
+    "RESULTS": "Gidszenders",
+    "CURRENT": "toegewezen",
+    "UPCOMING": "Komende programma's: {{count}}",
+    "NO_CURRENT": "geen actuele programma's",
+    "NO_RESULTS": "Geen gidszender gevonden.",
+    "AUTO": "Automatisch toewijzen"
   }
 }

@@ -52,7 +52,9 @@
       "SERIES": "시리즈"
     },
     "COLLAPSE_SIDEBAR": "사이드바 접기",
-    "EXPAND_SIDEBAR": "사이드바 펼치기"
+    "EXPAND_SIDEBAR": "사이드바 펼치기",
+    "COUNTRY_FILTER": "국가별 필터",
+    "ALL_COUNTRIES": "모든 국가"
   },
   "MENU": {
     "REMOVE": "제거",
@@ -70,7 +72,8 @@
     "COPY_URL": "URL 복사",
     "DELETE": "삭제",
     "LOCK_GROUP": "그룹 잠금",
-    "UNLOCK_GROUP": "그룹 잠금 해제"
+    "UNLOCK_GROUP": "그룹 잠금 해제",
+    "MAP_EPG": "EPG 지정…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "채널을 찾을 수 없습니다",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "보라",
       "ACCENT_TEAL": "청록",
       "ACCENT_CORAL": "코랄",
-      "ACCENT_GREEN": "초록"
+      "ACCENT_GREEN": "초록",
+      "COUNTRY_PREFIX": "채널 이름의 국가 코드",
+      "COUNTRY_PREFIX_DESC": "채널 이름 앞의 “TR:” 또는 “DE |” 같은 접두사를 표시하는 방식입니다.",
+      "COUNTRY_PREFIX_SHOW": "표시",
+      "COUNTRY_PREFIX_HIDE": "숨기기",
+      "COUNTRY_PREFIX_BADGE": "코드 배지로 표시",
+      "COUNTRY_PREFIX_PREVIEW": "미리 보기:"
     },
     "PLAYBACK": {
       "CACHING": "스트림 캐싱 사용",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "외부 EPG",
-      "INTRO": "채널에 제공업체의 편성표 데이터가 없으면 streameo가 tvg-id로 매칭하여 이러한 XMLTV 소스에서 채웁니다. 모든 XMLTV URL을 사용할 수 있습니다(예: IPTV-EPG.org 내보내기). .xml과 .xml.gz를 모두 지원합니다.",
+      "INTRO": "채널에 제공자의 편성표 데이터가 없으면 streameo가 이 XMLTV 소스에서 채웁니다. tvg-id로 연결하고, 없으면 채널 이름으로, 또는 직접 지정한 대로 연결합니다. 어떤 XMLTV URL이든 사용할 수 있으며(예: IPTV-EPG.org 내보내기) .xml과 .xml.gz를 모두 지원합니다.",
       "SOURCES_LABEL": "XMLTV 소스",
       "SOURCES_DESC": "한 줄에 하나의 XMLTV URL.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "지금 새로 고침",
       "REFRESH_DESC": "최신 편성표 데이터를 내려받습니다. 소스 자동 새로 고침 일정에 따라 자동으로도 진행되며, 일정이 꺼져 있으면 하루에 한 번 진행됩니다.",
       "FREE_SOURCES": "무료 EPG 소스",
-      "FREE_SOURCES_DESC": "알려진 무료 XMLTV 가이드를 한 번의 클릭으로 추가하세요. 채널 국가에 맞는 것을 선택하세요."
+      "FREE_SOURCES_DESC": "알려진 무료 XMLTV 가이드를 한 번의 클릭으로 추가하세요. 채널 국가에 맞는 것을 선택하세요.",
+      "SOURCES_LIST_DESC": "가이드는 이 순서대로 불러옵니다. 각 가이드마다 마지막으로 불러온 시점과 포함된 내용이 표시됩니다.",
+      "NO_SOURCES": "아직 XMLTV 소스가 없습니다. 아래에 URL을 추가하거나 무료 소스 중 하나를 선택하세요.",
+      "STATUS_LOADED": "불러옴: {{time}}",
+      "STATUS_PROGRAMMES": "프로그램 {{count}}개",
+      "STATUS_CHANNELS": "채널 {{count}}개",
+      "STATUS_NEVER": "아직 불러오지 않음",
+      "STATUS_ERROR": "오류: {{error}}",
+      "REMOVE_SOURCE": "{{url}} 제거",
+      "REMOVE_SOURCE_TOOLTIP": "제거",
+      "ADD_URL_LABEL": "추가할 XMLTV URL",
+      "ADD_BTN": "추가",
+      "INVALID_URL": "http:// 또는 https://로 시작하는 전체 URL을 입력하세요.",
+      "DUPLICATE_URL": "이 소스는 이미 목록에 있습니다.",
+      "COVERAGE": "라이브 채널 {{live}}개 중 {{matched}}개에 편성 데이터가 있습니다.",
+      "COVERAGE_HINT": "일치하지 않는 채널은 직접 지정할 수 있습니다. 채널 메뉴를 열고 “EPG 지정…”을 선택하세요.",
+      "DUPLICATE_COUNTRY": "{{country}}은(는) {{count}}개 소스에서 다룹니다. 중복 소스는 새로 고침만 느리게 합니다.",
+      "REFRESHING": "새로 고치는 중…"
     },
     "PARENTAL": {
       "DESC": "PIN으로 그룹을 보호합니다. 잠긴 그룹과 해당 채널은 홈 화면의 잠금 버튼으로 PIN을 입력할 때까지 숨겨집니다. 카테고리에서 그룹의 컨텍스트 메뉴로 그룹을 잠글 수 있습니다.",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "서버 주소 (형식: http://host:port)",
     "INVALID_URL": "\"{{url}}\"은(는) 올바른 URL이 아닙니다. 공백이나 오타가 있는지 확인하세요.",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Xtream 로그인 감지됨",
+    "XTREAM_DETECTED_BODY1": "이 M3U 링크에는 Xtream 로그인이 포함되어 있습니다. Xtream 소스로 가져오면 제공업체의 EPG, 놓친 프로그램 다시보기, 시즌별 시리즈를 이용할 수 있습니다.",
+    "XTREAM_DETECTED_BODY2": "Xtream으로 가져오는 것을 권장하지만, 일반 M3U 링크로 가져올 수도 있습니다.",
+    "IMPORT_AS_XTREAM": "Xtream으로 가져오기(권장)",
+    "IMPORT_AS_M3U": "M3U 링크로 가져오기"
   },
   "EPG": {
     "PLAYING_NOW": "지금 재생 중",
@@ -462,7 +493,10 @@
     "CHECK": "연결 테스트",
     "CHECKING": "테스트 중…",
     "CHECK_OK": "연결에 성공했습니다",
-    "CHECK_FAILED": "연결에 실패했습니다"
+    "CHECK_FAILED": "연결에 실패했습니다",
+    "XTREAM_HINT": "이 링크에는 Xtream 로그인이 포함되어 있습니다. Xtream 소스로 사용하면 제공업체의 EPG, 놓친 프로그램 다시보기, 시즌별 시리즈를 이용할 수 있습니다.",
+    "CONVERT_TO_XTREAM": "Xtream으로 변환",
+    "CONVERTING": "변환 중…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "녹화를 저장할 위치 선택",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "업데이트가 설치되었지만 앱을 다시 시작하지 못했습니다. 직접 다시 시작해 주세요",
     "NETWORK_INFO_FAILED": "네트워크 정보를 읽을 수 없습니다",
     "SETTINGS_SAVED": "저장됨",
-    "SETTINGS_SAVE_FAILED": "설정을 저장하지 못했습니다"
+    "SETTINGS_SAVE_FAILED": "설정을 저장하지 못했습니다",
+    "SOURCE_CONVERTED": "소스를 Xtream으로 변환했습니다",
+    "SOURCE_CONVERT_FAILED": "소스를 Xtream으로 변환하지 못했습니다",
+    "EPG_MAPPED": "{{name}}에 이제 {{id}}의 편성표가 표시됩니다",
+    "EPG_MAPPING_REMOVED": "{{name}}의 EPG가 다시 자동으로 지정됩니다",
+    "EPG_MAPPING_FAILED": "EPG를 지정할 수 없습니다"
   },
   "UPDATE": {
     "TITLE": "업데이트 있음",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "녹화를 삭제할까요?",
     "DELETE_RECORDING_BODY": "파일 \"{{name}}\"이(가) 녹화 폴더에서 삭제됩니다. 되돌릴 수 없습니다.",
     "REMOVE_PIN_TITLE": "자녀 보호 PIN을 제거할까요?",
-    "REMOVE_PIN_BODY": "잠긴 모든 그룹의 잠금이 해제되어 모두에게 표시됩니다."
+    "REMOVE_PIN_BODY": "잠긴 모든 그룹의 잠금이 해제되어 모두에게 표시됩니다.",
+    "CONVERT_XTREAM_TITLE": "“{{name}}”을(를) Xtream으로 변환할까요?",
+    "CONVERT_XTREAM_BODY1": "소스를 Xtream 로그인으로 다시 가져옵니다. 즐겨찾기, 기록, 숨긴 그룹과 잠긴 그룹, 예약 녹화는 채널 이름 기준으로 유지됩니다.",
+    "CONVERT_XTREAM_BODY2": "소스를 새로 고치는 것과 비슷한 시간이 걸립니다. 실패하면 소스는 변경되지 않습니다."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "채널로 돌아가기",
@@ -610,13 +652,28 @@
     "NEXT": "다음",
     "PROGRAMME_PROGRESS": "프로그램 진행률",
     "FILTER_PLACEHOLDER": "채널 필터...",
-    "FILTER_CHANNELS": "채널 목록 필터링"
+    "FILTER_CHANNELS": "채널 목록 필터링",
+    "MINIMIZE": "축소",
+    "EXPAND": "확대",
+    "CLOSE": "닫기",
+    "MINI_PLAYER": "미니 플레이어"
   },
   "GUIDE": {
     "CHANNEL": "채널",
     "NO_EPG": "EPG 없음",
     "NO_CATCHUP": "이 프로그램은 아카이브에서 볼 수 없습니다",
-    "PLAY_CHANNEL": "{{name}} 재생"
+    "PLAY_CHANNEL": "{{name}} 재생",
+    "SEARCH_PLACEHOLDER": "프로그램 검색…",
+    "SEARCH_LABEL": "TV 편성표에서 프로그램 검색",
+    "SEARCH_RESULTS": "검색 결과",
+    "SEARCH_COUNT": "찾은 프로그램: {{count}}",
+    "SEARCH_NO_RESULTS": "프로그램을 찾을 수 없습니다.",
+    "SEARCH_SCOPE": "앞으로 7일간의 XMLTV 편성 데이터를 검색합니다.",
+    "SEARCH_NEEDS_XMLTV": "프로그램 검색에는 외부 EPG 소스가 필요합니다. 설정 → 외부 EPG에서 추가하세요.",
+    "TODAY": "오늘",
+    "TOMORROW": "내일",
+    "WATCH": "시청",
+    "REMIND": "알림 받기"
   },
   "PARENTAL": {
     "CONFIRM": "확인",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "{{name}} 재생",
     "UNKNOWN_CHANNEL": "알 수 없는 채널",
     "OPEN_FOLDER": "폴더 열기"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "EPG 지정",
+    "ASSIGNED": "지정됨:",
+    "AUTOMATIC": "채널 이름으로 자동",
+    "SEARCH": "편성표 채널 검색",
+    "SEARCH_PLACEHOLDER": "채널 이름 또는 XMLTV ID",
+    "RESULTS": "편성표 채널",
+    "CURRENT": "지정됨",
+    "UPCOMING": "예정된 프로그램: {{count}}",
+    "NO_CURRENT": "현재 프로그램 없음",
+    "NO_RESULTS": "편성표 채널을 찾을 수 없습니다.",
+    "AUTO": "자동 지정"
   }
 }

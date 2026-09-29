@@ -52,7 +52,9 @@
       "SERIES": "剧集"
     },
     "COLLAPSE_SIDEBAR": "收起侧边栏",
-    "EXPAND_SIDEBAR": "展开侧边栏"
+    "EXPAND_SIDEBAR": "展开侧边栏",
+    "COUNTRY_FILTER": "按国家/地区筛选",
+    "ALL_COUNTRIES": "所有国家/地区"
   },
   "MENU": {
     "REMOVE": "移除",
@@ -70,7 +72,8 @@
     "COPY_URL": "复制 URL",
     "DELETE": "删除",
     "LOCK_GROUP": "锁定分组",
-    "UNLOCK_GROUP": "解锁分组"
+    "UNLOCK_GROUP": "解锁分组",
+    "MAP_EPG": "分配 EPG…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "未找到频道",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "紫色",
       "ACCENT_TEAL": "青绿色",
       "ACCENT_CORAL": "珊瑚色",
-      "ACCENT_GREEN": "绿色"
+      "ACCENT_GREEN": "绿色",
+      "COUNTRY_PREFIX": "频道名称中的国家/地区前缀",
+      "COUNTRY_PREFIX_DESC": "频道名称前的“TR:”或“DE |”等前缀的显示方式。",
+      "COUNTRY_PREFIX_SHOW": "显示",
+      "COUNTRY_PREFIX_HIDE": "隐藏",
+      "COUNTRY_PREFIX_BADGE": "显示为代码徽标",
+      "COUNTRY_PREFIX_PREVIEW": "预览："
     },
     "PLAYBACK": {
       "CACHING": "使用流缓存",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "外部 EPG",
-      "INTRO": "当频道没有来自其提供商的节目指南数据时，streameo 会通过 tvg-id 匹配，从这些 XMLTV 源补充。任何 XMLTV 网址均可使用（例如 IPTV-EPG.org 的导出）；同时支持 .xml 和 .xml.gz。",
+      "INTRO": "当频道没有来自提供商的节目单数据时，streameo 会从这些 XMLTV 来源补充：按 tvg-id 匹配，否则按频道名称，或按你的手动指定。任何 XMLTV 网址都可以（例如 IPTV-EPG.org 的导出）；支持 .xml 和 .xml.gz。",
       "SOURCES_LABEL": "XMLTV 源",
       "SOURCES_DESC": "每行一个 XMLTV 网址。",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "立即刷新",
       "REFRESH_DESC": "下载最新的节目单数据。它也会按照你的来源自动刷新计划自动进行；若该计划已关闭，则每天一次。",
       "FREE_SOURCES": "免费 EPG 源",
-      "FREE_SOURCES_DESC": "一键添加已知的免费 XMLTV 指南。选择与您频道所在国家/地区匹配的源。"
+      "FREE_SOURCES_DESC": "一键添加已知的免费 XMLTV 指南。选择与您频道所在国家/地区匹配的源。",
+      "SOURCES_LIST_DESC": "指南按此顺序加载。每个指南都会显示上次加载时间及其包含的内容。",
+      "NO_SOURCES": "尚无 XMLTV 源。请在下方添加 URL，或选择一个免费源。",
+      "STATUS_LOADED": "已加载：{{time}}",
+      "STATUS_PROGRAMMES": "{{count}} 个节目",
+      "STATUS_CHANNELS": "{{count}} 个频道",
+      "STATUS_NEVER": "尚未加载",
+      "STATUS_ERROR": "错误：{{error}}",
+      "REMOVE_SOURCE": "移除 {{url}}",
+      "REMOVE_SOURCE_TOOLTIP": "移除",
+      "ADD_URL_LABEL": "要添加的 XMLTV URL",
+      "ADD_BTN": "添加",
+      "INVALID_URL": "请输入以 http:// 或 https:// 开头的完整 URL。",
+      "DUPLICATE_URL": "此源已在列表中。",
+      "COVERAGE": "{{live}} 个直播频道中有 {{matched}} 个有节目指南数据。",
+      "COVERAGE_HINT": "未匹配的频道可以手动分配：打开频道菜单并选择“分配 EPG…”。",
+      "DUPLICATE_COUNTRY": "{{country}} 由 {{count}} 个源覆盖——重复的源只会让刷新变慢。",
+      "REFRESHING": "正在刷新…"
     },
     "PARENTAL": {
       "DESC": "用 PIN 保护分组。在主页上通过锁按钮输入 PIN 之前，已锁定的分组及其频道将保持隐藏。可在“分类”中通过分组的右键菜单锁定分组。",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "服务器地址，格式为 http://host:port",
     "INVALID_URL": "“{{url}}”不是有效的 URL。请检查是否有空格或拼写错误。",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "检测到 Xtream 登录",
+    "XTREAM_DETECTED_BODY1": "此 M3U 链接包含 Xtream 登录信息。以 Xtream 源导入后，你可以获得提供商的 EPG、错过节目的回看以及按季排列的剧集。",
+    "XTREAM_DETECTED_BODY2": "建议以 Xtream 导入，但你也可以将其作为普通 M3U 链接导入。",
+    "IMPORT_AS_XTREAM": "以 Xtream 导入（推荐）",
+    "IMPORT_AS_M3U": "作为 M3U 链接导入"
   },
   "EPG": {
     "PLAYING_NOW": "正在播放",
@@ -462,7 +493,10 @@
     "CHECK": "测试连接",
     "CHECKING": "正在测试…",
     "CHECK_OK": "连接成功",
-    "CHECK_FAILED": "连接失败"
+    "CHECK_FAILED": "连接失败",
+    "XTREAM_HINT": "此链接包含 Xtream 登录信息。作为 Xtream 源，你可以获得提供商的 EPG、错过节目的回看以及按季排列的剧集。",
+    "CONVERT_TO_XTREAM": "转换为 Xtream",
+    "CONVERTING": "正在转换…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "选择录制的保存位置",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "更新已安装，但应用无法重新启动。请手动重新启动",
     "NETWORK_INFO_FAILED": "无法读取网络信息",
     "SETTINGS_SAVED": "已保存",
-    "SETTINGS_SAVE_FAILED": "保存设置失败"
+    "SETTINGS_SAVE_FAILED": "保存设置失败",
+    "SOURCE_CONVERTED": "源已转换为 Xtream",
+    "SOURCE_CONVERT_FAILED": "无法将源转换为 Xtream",
+    "EPG_MAPPED": "{{name}} 现在显示 {{id}} 的节目指南",
+    "EPG_MAPPING_REMOVED": "{{name}} 重新自动获取 EPG",
+    "EPG_MAPPING_FAILED": "无法分配 EPG"
   },
   "UPDATE": {
     "TITLE": "有可用更新",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "删除录制文件？",
     "DELETE_RECORDING_BODY": "文件“{{name}}”将从录制文件夹中删除。此操作无法撤销。",
     "REMOVE_PIN_TITLE": "移除家长 PIN？",
-    "REMOVE_PIN_BODY": "所有已锁定的分组都将解锁并对所有人可见。"
+    "REMOVE_PIN_BODY": "所有已锁定的分组都将解锁并对所有人可见。",
+    "CONVERT_XTREAM_TITLE": "将“{{name}}”转换为 Xtream？",
+    "CONVERT_XTREAM_BODY1": "该源将通过其 Xtream 登录重新导入。收藏、历史记录、隐藏和锁定的分组以及计划的录制会按频道名称保留。",
+    "CONVERT_XTREAM_BODY2": "所需时间与刷新该源大致相同。如果失败，源将保持不变。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "返回频道",
@@ -610,13 +652,28 @@
     "NEXT": "接下来",
     "PROGRAMME_PROGRESS": "节目进度",
     "FILTER_PLACEHOLDER": "筛选频道...",
-    "FILTER_CHANNELS": "筛选频道列表"
+    "FILTER_CHANNELS": "筛选频道列表",
+    "MINIMIZE": "缩小",
+    "EXPAND": "放大",
+    "CLOSE": "关闭",
+    "MINI_PLAYER": "迷你播放器"
   },
   "GUIDE": {
     "CHANNEL": "频道",
     "NO_EPG": "无节目单",
     "NO_CATCHUP": "此节目无法从存档中观看",
-    "PLAY_CHANNEL": "播放 {{name}}"
+    "PLAY_CHANNEL": "播放 {{name}}",
+    "SEARCH_PLACEHOLDER": "搜索节目…",
+    "SEARCH_LABEL": "在电视节目指南中搜索节目",
+    "SEARCH_RESULTS": "搜索结果",
+    "SEARCH_COUNT": "找到的节目：{{count}}",
+    "SEARCH_NO_RESULTS": "未找到节目。",
+    "SEARCH_SCOPE": "搜索范围为未来 7 天的 XMLTV 节目数据。",
+    "SEARCH_NEEDS_XMLTV": "节目搜索需要外部 EPG 源。请在 设置 → 外部 EPG 中添加。",
+    "TODAY": "今天",
+    "TOMORROW": "明天",
+    "WATCH": "观看",
+    "REMIND": "提醒我"
   },
   "PARENTAL": {
     "CONFIRM": "确定",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "播放 {{name}}",
     "UNKNOWN_CHANNEL": "未知频道",
     "OPEN_FOLDER": "打开文件夹"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "分配 EPG",
+    "ASSIGNED": "已分配：",
+    "AUTOMATIC": "按频道名称自动匹配",
+    "SEARCH": "搜索节目指南频道",
+    "SEARCH_PLACEHOLDER": "频道名称或 XMLTV ID",
+    "RESULTS": "节目指南频道",
+    "CURRENT": "已分配",
+    "UPCOMING": "即将播出的节目：{{count}}",
+    "NO_CURRENT": "暂无当前节目",
+    "NO_RESULTS": "未找到节目指南频道。",
+    "AUTO": "自动分配"
   }
 }

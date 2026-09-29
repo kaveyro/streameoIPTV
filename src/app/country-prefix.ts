@@ -4,8 +4,8 @@ export type CountryPrefixMode = "show" | "hide" | "badge";
 export const COUNTRY_PREFIX_MODES: CountryPrefixMode[] = ["show", "hide", "badge"];
 
 /// Same prefixes the backend recognizes (xmltv.rs COUNTRY_PREFIX_RE):
-/// "TR: x", "DE| x", "TR - x", "[UK] x".
-const PREFIX_RE = /^\s*\[?([A-Za-z]{2})\]?\s*[:|-]\s*/;
+/// "TR: x", "DE| x", "TR - x", "[UK] x" (brackets need no separator).
+const PREFIX_RE = /^\s*(?:\[([A-Za-z]{2})\]\s*[:|-]?|([A-Za-z]{2})\s*[:|-])\s*/;
 
 export interface CountrySplit {
   /// Upper-case country code, when the name has one.
@@ -20,7 +20,7 @@ export function splitCountryPrefix(name: string | undefined | null): CountrySpli
   const full = name ?? "";
   const match = PREFIX_RE.exec(full);
   if (!match) return { name: full };
-  const code = match[1].toUpperCase();
+  const code = (match[1] ?? match[2]).toUpperCase();
   const rest = full.slice(match[0].length).trim();
   if (code === "SD" || code === "HD" || !rest) return { name: full };
   return { code, name: rest };

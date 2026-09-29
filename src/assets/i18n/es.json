@@ -52,7 +52,9 @@
       "SERIES": "Series"
     },
     "COLLAPSE_SIDEBAR": "Contraer barra lateral",
-    "EXPAND_SIDEBAR": "Expandir barra lateral"
+    "EXPAND_SIDEBAR": "Expandir barra lateral",
+    "COUNTRY_FILTER": "Filtrar por país",
+    "ALL_COUNTRIES": "Todos los países"
   },
   "MENU": {
     "REMOVE": "Quitar",
@@ -70,7 +72,8 @@
     "COPY_URL": "Copiar URL",
     "DELETE": "Eliminar",
     "LOCK_GROUP": "Bloquear grupo",
-    "UNLOCK_GROUP": "Desbloquear grupo"
+    "UNLOCK_GROUP": "Desbloquear grupo",
+    "MAP_EPG": "Asignar EPG…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "No se encontraron canales",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "Morado",
       "ACCENT_TEAL": "Verde azulado",
       "ACCENT_CORAL": "Coral",
-      "ACCENT_GREEN": "Verde"
+      "ACCENT_GREEN": "Verde",
+      "COUNTRY_PREFIX": "Prefijo de país en los nombres de canal",
+      "COUNTRY_PREFIX_DESC": "Cómo se muestran prefijos como «TR:» o «DE |» delante de los nombres de canal.",
+      "COUNTRY_PREFIX_SHOW": "Mostrar",
+      "COUNTRY_PREFIX_HIDE": "Ocultar",
+      "COUNTRY_PREFIX_BADGE": "Como distintivo de código",
+      "COUNTRY_PREFIX_PREVIEW": "Vista previa:"
     },
     "PLAYBACK": {
       "CACHING": "Usar almacenamiento en caché del stream",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "EPG externa",
-      "INTRO": "Cuando un canal no tiene guía de su proveedor, streameo la completa desde estas fuentes XMLTV, emparejadas por tvg-id. Funciona cualquier URL de XMLTV (por ejemplo una exportación de IPTV-EPG.org); se admiten .xml y .xml.gz.",
+      "INTRO": "Cuando un canal no tiene datos de programación de su proveedor, streameo los completa con estas fuentes XMLTV: asignados por tvg-id, si no por el nombre del canal, o como tú los asignes a mano. Funciona cualquier URL XMLTV (por ejemplo, una exportación de IPTV-EPG.org); se admiten .xml y .xml.gz.",
       "SOURCES_LABEL": "Fuentes XMLTV",
       "SOURCES_DESC": "Una URL de XMLTV por línea.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Actualizar ahora",
       "REFRESH_DESC": "Descarga los datos de programación más recientes. También ocurre automáticamente según tu programación de actualización automática de fuentes o, si está desactivada, una vez al día.",
       "FREE_SOURCES": "Fuentes EPG gratuitas",
-      "FREE_SOURCES_DESC": "Añade una guía XMLTV gratuita conocida con un clic. Elige las que coincidan con los países de tus canales."
+      "FREE_SOURCES_DESC": "Añade una guía XMLTV gratuita conocida con un clic. Elige las que coincidan con los países de tus canales.",
+      "SOURCES_LIST_DESC": "Las guías se cargan en este orden. Cada una muestra cuándo se cargó por última vez y qué contiene.",
+      "NO_SOURCES": "Aún no hay fuentes XMLTV. Añade una URL abajo o elige una de las fuentes gratuitas.",
+      "STATUS_LOADED": "Cargada: {{time}}",
+      "STATUS_PROGRAMMES": "{{count}} programas",
+      "STATUS_CHANNELS": "{{count}} canales",
+      "STATUS_NEVER": "Aún no cargada",
+      "STATUS_ERROR": "Error: {{error}}",
+      "REMOVE_SOURCE": "Quitar {{url}}",
+      "REMOVE_SOURCE_TOOLTIP": "Quitar",
+      "ADD_URL_LABEL": "URL de XMLTV que quieres añadir",
+      "ADD_BTN": "Añadir",
+      "INVALID_URL": "Introduce una URL completa que empiece por http:// o https://.",
+      "DUPLICATE_URL": "Esta fuente ya está en la lista.",
+      "COVERAGE": "{{matched}} de {{live}} canales en directo tienen datos de guía.",
+      "COVERAGE_HINT": "Puedes asignar a mano los canales sin coincidencia: abre el menú del canal y elige «Asignar EPG…».",
+      "DUPLICATE_COUNTRY": "{{country}} está cubierto por {{count}} fuentes: las fuentes duplicadas solo hacen más lenta la actualización.",
+      "REFRESHING": "Actualizando…"
     },
     "PARENTAL": {
       "DESC": "Protege grupos con un PIN. Los grupos bloqueados y sus canales permanecen ocultos hasta que se introduce el PIN con el botón del candado de la página de inicio. Bloquea un grupo desde su menú contextual en Categorías.",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "Dirección del servidor con el formato http://host:port",
     "INVALID_URL": "\"{{url}}\" no es una URL válida. Comprueba que no tenga espacios ni errores.",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Inicio de sesión Xtream detectado",
+    "XTREAM_DETECTED_BODY1": "Este enlace M3U contiene un inicio de sesión Xtream. Si lo importas como fuente Xtream, obtienes la EPG de tu proveedor, catch-up para los programas que te perdiste y series por temporadas.",
+    "XTREAM_DETECTED_BODY2": "Se recomienda importarlo como Xtream, pero también puedes importarlo como un enlace M3U normal.",
+    "IMPORT_AS_XTREAM": "Importar como Xtream (recomendado)",
+    "IMPORT_AS_M3U": "Importar como enlace M3U"
   },
   "EPG": {
     "PLAYING_NOW": "En emisión ahora",
@@ -462,7 +493,10 @@
     "CHECK": "Probar conexión",
     "CHECKING": "Probando…",
     "CHECK_OK": "Conexión correcta",
-    "CHECK_FAILED": "Error de conexión"
+    "CHECK_FAILED": "Error de conexión",
+    "XTREAM_HINT": "Este enlace contiene un inicio de sesión Xtream. Como fuente Xtream obtienes la EPG de tu proveedor, catch-up para los programas que te perdiste y series por temporadas.",
+    "CONVERT_TO_XTREAM": "Convertir a Xtream",
+    "CONVERTING": "Convirtiendo…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecciona dónde guardar la grabación",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "La actualización se instaló, pero la aplicación no pudo reiniciarse. Reiníciala manualmente",
     "NETWORK_INFO_FAILED": "No se pudo leer la información de red",
     "SETTINGS_SAVED": "Guardado",
-    "SETTINGS_SAVE_FAILED": "No se pudieron guardar los ajustes"
+    "SETTINGS_SAVE_FAILED": "No se pudieron guardar los ajustes",
+    "SOURCE_CONVERTED": "Fuente convertida a Xtream",
+    "SOURCE_CONVERT_FAILED": "No se pudo convertir la fuente a Xtream",
+    "EPG_MAPPED": "{{name}} ahora muestra la guía de {{id}}",
+    "EPG_MAPPING_REMOVED": "{{name}} vuelve a obtener su EPG automáticamente",
+    "EPG_MAPPING_FAILED": "No se pudo asignar el EPG"
   },
   "UPDATE": {
     "TITLE": "Actualización disponible",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "¿Eliminar la grabación?",
     "DELETE_RECORDING_BODY": "El archivo \"{{name}}\" se eliminará de la carpeta de grabación. No se puede deshacer.",
     "REMOVE_PIN_TITLE": "¿Eliminar el PIN parental?",
-    "REMOVE_PIN_BODY": "Todos los grupos bloqueados se desbloquearán y se mostrarán a todos."
+    "REMOVE_PIN_BODY": "Todos los grupos bloqueados se desbloquearán y se mostrarán a todos.",
+    "CONVERT_XTREAM_TITLE": "¿Convertir «{{name}}» a Xtream?",
+    "CONVERT_XTREAM_BODY1": "La fuente se importa de nuevo con su inicio de sesión Xtream. Los favoritos, el historial, los grupos ocultos y bloqueados y las grabaciones programadas se conservan por nombre de canal.",
+    "CONVERT_XTREAM_BODY2": "Tarda más o menos lo mismo que actualizar la fuente. Si falla, la fuente no cambia."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Volver a los canales",
@@ -610,13 +652,28 @@
     "NEXT": "A continuación",
     "PROGRAMME_PROGRESS": "Progreso del programa",
     "FILTER_PLACEHOLDER": "Filtrar canales...",
-    "FILTER_CHANNELS": "Filtrar la lista de canales"
+    "FILTER_CHANNELS": "Filtrar la lista de canales",
+    "MINIMIZE": "Minimizar",
+    "EXPAND": "Ampliar",
+    "CLOSE": "Cerrar",
+    "MINI_PLAYER": "Minirreproductor"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
     "NO_EPG": "Sin EPG",
     "NO_CATCHUP": "Este programa no está disponible en el archivo",
-    "PLAY_CHANNEL": "Reproducir {{name}}"
+    "PLAY_CHANNEL": "Reproducir {{name}}",
+    "SEARCH_PLACEHOLDER": "Buscar programas…",
+    "SEARCH_LABEL": "Buscar programas en la guía de TV",
+    "SEARCH_RESULTS": "Resultados de la búsqueda",
+    "SEARCH_COUNT": "Programas encontrados: {{count}}",
+    "SEARCH_NO_RESULTS": "No se encontraron programas.",
+    "SEARCH_SCOPE": "La búsqueda abarca los datos de la guía XMLTV de los próximos 7 días.",
+    "SEARCH_NEEDS_XMLTV": "La búsqueda de programas necesita fuentes de EPG externas. Añádelas en Ajustes → EPG externa.",
+    "TODAY": "Hoy",
+    "TOMORROW": "Mañana",
+    "WATCH": "Ver",
+    "REMIND": "Recordar"
   },
   "PARENTAL": {
     "CONFIRM": "Aceptar",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "Reproducir {{name}}",
     "UNKNOWN_CHANNEL": "Canal desconocido",
     "OPEN_FOLDER": "Abrir carpeta"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "Asignar EPG",
+    "ASSIGNED": "Asignado:",
+    "AUTOMATIC": "Automático por nombre del canal",
+    "SEARCH": "Buscar canales de la guía",
+    "SEARCH_PLACEHOLDER": "Nombre del canal o ID de XMLTV",
+    "RESULTS": "Canales de la guía",
+    "CURRENT": "asignado",
+    "UPCOMING": "Próximos programas: {{count}}",
+    "NO_CURRENT": "sin programas actuales",
+    "NO_RESULTS": "No se encontró ningún canal de la guía.",
+    "AUTO": "Asignar automáticamente"
   }
 }

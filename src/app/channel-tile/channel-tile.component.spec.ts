@@ -7,6 +7,10 @@ import { PlaybackService } from "../playback.service";
 import { Channel } from "../models/channel";
 import { MediaType } from "../models/mediaType";
 import { ViewMode } from "../models/viewMode";
+import { EPG } from "../models/epg";
+import { CountryNamePipe } from "../pipes/country-name.pipe";
+import { NowPlayingService } from "../now-playing.service";
+import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -23,10 +27,15 @@ describe("ChannelTileComponent", () => {
   let element: HTMLElement;
   let calls: IpcCall[];
 
-  async function create(channel: Channel, viewMode = ViewMode.All) {
-    calls = mockTauri();
+  async function create(
+    channel: Channel,
+    viewMode = ViewMode.All,
+    handlers: Record<string, unknown> = {},
+    setup: () => void = () => {},
+  ) {
+    calls = mockTauri(handlers);
     await TestBed.configureTestingModule({
-      declarations: [ChannelTileComponent],
+      declarations: [ChannelTileComponent, CountryNamePipe],
       imports: TEST_IMPORTS,
       providers: TEST_PROVIDERS,
     }).compileComponents();
@@ -36,7 +45,39 @@ describe("ChannelTileComponent", () => {
     component.channel = channel;
     component.id = 0;
     component.viewMode = viewMode;
+    setup();
+    // Inputs set directly do not run ngOnChanges on their own.
+    component.ngOnChanges({ channel: { currentValue: channel } as never });
     fixture.detectChanges();
+  }
+
+  function tile(): HTMLElement {
+    return element.querySelector("#tile-0") as HTMLElement;
+  }
+
+  /// A live channel with a tvg-id, so it is eligible for the now/next line.
+  const live: Channel = {
+    id: 3,
+    name: "TR: Kanal D",
+    media_type: MediaType.livestream,
+    source_id: 1,
+    favorite: false,
+    epg_channel_id: "KanalD.tr",
+  };
+
+  function programme(title: string, startOffsetMin: number, endOffsetMin: number): EPG {
+    const now = Math.floor(Date.now() / 1000);
+    return {
+      epg_id: title,
+      title,
+      description: "",
+      start_time: "",
+      start_timestamp: now + startOffsetMin * 60,
+      end_time: "",
+      end_timestamp: now + endOffsetMin * 60,
+      has_archive: false,
+      now_playing: false,
+    };
   }
 
   afterEach(() => resetTauri());
@@ -97,5 +138,83 @@ describe("ChannelTileComponent", () => {
     await component.click();
     expect(play).not.toHaveBeenCalled();
     expect(node).toHaveBeenCalled();
+  });
+
+  it("shows the full name by default", async () => {
+    await create(live, ViewMode.All, { get_epg: [] });
+    expect(element.querySelector(".channel-title")?.textContent?.trim()).toBe("TR: Kanal D");
+    expect(element.querySelector(".country-badge")).toBeNull();
+  });
+
+  it("drops the country prefix in the 'hide' mode", async () => {
+    await create(live, ViewMode.All, { get_epg: [] }, () => {
+      TestBed.inject(MemoryService).CountryPrefixMode = "hide";
+    });
+    expect(element.querySelector(".channel-title")?.textContent?.trim()).toBe("Kanal D");
+    expect(element.querySelector(".country-badge")).toBeNull();
+    expect(tile().getAttribute("aria-label")).toBe("TR: Kanal D");
+  });
+
+  it("shows the country code as a badge in the 'badge' mode", async () => {
+    await create(live, ViewMode.All, { get_epg: [] }, () => {
+      TestBed.inject(MemoryService).CountryPrefixMode = "badge";
+    });
+    expect(element.querySelector(".country-badge")?.textContent?.trim()).toBe("TR");
+    expect(element.querySelector(".channel-title")?.textContent).toContain("Kanal D");
+    expect(element.querySelector(".channel-title")?.textContent).not.toContain("TR:");
+    expect(tile().getAttribute("aria-label")).toBe("TR: Kanal D");
+  });
+
+  it("shows the current and the next programme of a live channel", async () => {
+    await create(live, ViewMode.All, {
+      get_epg: [programme("Haberler", -30, 30), programme("Film", 30, 120)],
+    });
+    await settle();
+    fixture.detectChanges();
+    expect(element.querySelector(".now-title")?.textContent).toContain("Haberler");
+    expect(element.querySelector(".now-time")?.textContent).toContain("–");
+    expect(component.nowPlayingProgress).toBeCloseTo(50, 0);
+    const next = element.querySelector(".next-line")?.textContent ?? "";
+    expect(next).toContain("PLAYER.NEXT");
+    expect(next).toContain("Film");
+    expect(tile().getAttribute("aria-label")).toContain("Haberler");
+  });
+
+  it("keeps a live channel without EPG compact", async () => {
+    await create(live, ViewMode.All, { get_epg: [] });
+    await settle();
+    fixture.detectChanges();
+    expect(element.querySelector(".now-playing")).toBeNull();
+    expect(tile().classList).not.toContain("has-now-playing");
+  });
+
+  it("offers the EPG assignment for live channels when an XMLTV guide exists", async () => {
+    await create(live, ViewMode.All, { get_epg: [] });
+    const memory = TestBed.inject(MemoryService);
+    memory.HasXmltv = false;
+    expect(component.canMapEpg()).toBeFalse();
+    memory.HasXmltv = true;
+    expect(component.canMapEpg()).toBeTrue();
+    component.channel = movie;
+    expect(component.canMapEpg()).toBeFalse();
+  });
+
+  it("reloads the now-playing line after the EPG was assigned", async () => {
+    await create(live, ViewMode.All, { get_epg: [] });
+    await settle();
+    const getNowPlaying = spyOn(TestBed.inject(NowPlayingService), "getNowPlaying").and.resolveTo(
+      undefined,
+    );
+    const instance: Record<string, unknown> = {};
+    const open = spyOn(TestBed.inject(NgbModal), "open").and.returnValue({
+      componentInstance: instance,
+      result: Promise.resolve(true),
+    } as unknown as NgbModalRef);
+    component.openEpgMapping();
+    expect(open).toHaveBeenCalled();
+    expect(instance["channel"]).toBe(live);
+    await settle();
+    expect(getNowPlaying).toHaveBeenCalledOnceWith(live);
+    expect(TestBed.inject(MemoryService).ModalRef).toBeUndefined();
   });
 });

@@ -1,0 +1,93 @@
+<div class="modal-header">
+  <div class="header-text">
+    <h4 class="modal-title" id="epg-mapping-title">{{ "EPG_MAPPING.TITLE" | translate }}</h4>
+    <div class="channel-name" [title]="channel?.name ?? ''">{{ channel?.name }}</div>
+  </div>
+  <button
+    type="button"
+    class="btn-close btn-close-white"
+    [attr.aria-label]="'MODAL.CLOSE' | translate"
+    (click)="cancel()"
+  ></button>
+</div>
+<div class="modal-body">
+  <p class="mapping-state" aria-live="polite">
+    <ng-container *ngIf="current">
+      {{ "EPG_MAPPING.ASSIGNED" | translate }} <code class="xmltv-id">{{ current }}</code>
+    </ng-container>
+    <ng-container *ngIf="current === null">{{ "EPG_MAPPING.AUTOMATIC" | translate }}</ng-container>
+  </p>
+
+  <label class="form-label" for="epg-mapping-search">{{ "EPG_MAPPING.SEARCH" | translate }}</label>
+  <input
+    id="epg-mapping-search"
+    class="form-control"
+    type="text"
+    autocomplete="off"
+    spellcheck="false"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-controls="epg-mapping-results"
+    [attr.aria-expanded]="results.length > 0"
+    [attr.aria-activedescendant]="active >= 0 ? 'epg-mapping-option-' + active : null"
+    [placeholder]="'EPG_MAPPING.SEARCH_PLACEHOLDER' | translate"
+    ngbAutofocus
+    [ngModel]="query"
+    (ngModelChange)="onQueryChange($event)"
+    (keydown)="onKeyDown($event)"
+  />
+
+  <ul
+    id="epg-mapping-results"
+    class="results"
+    role="listbox"
+    [attr.aria-label]="'EPG_MAPPING.RESULTS' | translate"
+    [attr.aria-busy]="searching"
+  >
+    <li
+      *ngFor="let hit of results; let i = index"
+      id="epg-mapping-option-{{ i }}"
+      role="option"
+      class="result"
+      [attr.aria-selected]="i === active"
+      [class.active]="i === active"
+      [class.muted]="hit.programmes === 0"
+      (mousemove)="active = i"
+      (click)="assign(hit)"
+    >
+      <div class="result-id">
+        <span class="xmltv-id">{{ hit.id }}</span>
+        <span *ngIf="hit.id === current" class="current-badge">{{
+          "EPG_MAPPING.CURRENT" | translate
+        }}</span>
+      </div>
+      <div class="result-meta">
+        <ng-container *ngIf="hit.programmes > 0; else noProgrammes">
+          <span *ngIf="hit.now_title" class="result-now"
+            >{{ "EPG.PLAYING_NOW" | translate }}: {{ hit.now_title }}</span
+          >
+          <span class="result-count">{{
+            "EPG_MAPPING.UPCOMING" | translate: { count: hit.programmes }
+          }}</span>
+        </ng-container>
+        <ng-template #noProgrammes>{{ "EPG_MAPPING.NO_CURRENT" | translate }}</ng-template>
+      </div>
+    </li>
+  </ul>
+  <p *ngIf="searched && !searching && results.length === 0" class="no-results" role="status">
+    {{ "EPG_MAPPING.NO_RESULTS" | translate }}
+  </p>
+</div>
+<div class="modal-footer">
+  <button
+    type="button"
+    class="btn btn-outline-secondary me-auto"
+    [disabled]="saving || current === null"
+    (click)="automatic()"
+  >
+    {{ "EPG_MAPPING.AUTO" | translate }}
+  </button>
+  <button type="button" class="btn btn-secondary" (click)="cancel()">
+    {{ "MODAL.CANCEL" | translate }}
+  </button>
+</div>

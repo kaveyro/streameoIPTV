@@ -505,16 +505,20 @@ pub fn normalize_name(s: &str) -> String {
     result
 }
 
-static COUNTRY_PREFIX_RE: std::sync::LazyLock<regex::Regex> =
-    std::sync::LazyLock::new(|| regex::Regex::new(r"^\s*\[?([A-Za-z]{2})\]?\s*[:|\-]").unwrap());
+/// "[UK] x" needs no separator; "TR: x", "DE| x" and "TR - x" do, so a
+/// two-letter word such as "TV Asia" is no prefix.
+static COUNTRY_PREFIX_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"^\s*(?:\[([A-Za-z]{2})\]|([A-Za-z]{2})\s*[:|\-])").unwrap()
+});
 
 /// The country code a playlist name is prefixed with ("TR: Kanal D",
 /// "DE| ARD", "[UK] - BBC One"), lowercased as written. "SD:" and "HD:" are
 /// quality markers, not Sudan.
 pub fn country_prefix(name: &str) -> Option<String> {
-    let code = COUNTRY_PREFIX_RE
-        .captures(name)?
-        .get(1)?
+    let captures = COUNTRY_PREFIX_RE.captures(name)?;
+    let code = captures
+        .get(1)
+        .or_else(|| captures.get(2))?
         .as_str()
         .to_ascii_lowercase();
     if code == "sd" || code == "hd" {
@@ -765,6 +769,8 @@ mod test_xmltv {
     fn test_country_prefix_and_counts() {
         assert_eq!(country_prefix("TR: Kanal D").as_deref(), Some("tr"));
         assert_eq!(country_prefix("[UK] - BBC One").as_deref(), Some("uk"));
+        assert_eq!(country_prefix("[UK] BBC One").as_deref(), Some("uk"));
+        assert_eq!(country_prefix("TV Asia"), None);
         assert_eq!(country_prefix("DE| ARD").as_deref(), Some("de"));
         assert_eq!(country_prefix("SD: beIN Sports 1"), None);
         assert_eq!(country_prefix("HD: beIN Sports 1"), None);

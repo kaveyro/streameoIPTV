@@ -52,7 +52,9 @@
       "SERIES": "Series"
     },
     "COLLAPSE_SIDEBAR": "Collapse sidebar",
-    "EXPAND_SIDEBAR": "Expand sidebar"
+    "EXPAND_SIDEBAR": "Expand sidebar",
+    "COUNTRY_FILTER": "Filter by country",
+    "ALL_COUNTRIES": "All countries"
   },
   "MENU": {
     "REMOVE": "Remove",
@@ -70,7 +72,8 @@
     "COPY_URL": "Copy URL",
     "DELETE": "Delete",
     "LOCK_GROUP": "Lock group",
-    "UNLOCK_GROUP": "Unlock group"
+    "UNLOCK_GROUP": "Unlock group",
+    "MAP_EPG": "Assign EPG…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "No channels found",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "Purple",
       "ACCENT_TEAL": "Teal",
       "ACCENT_CORAL": "Coral",
-      "ACCENT_GREEN": "Green"
+      "ACCENT_GREEN": "Green",
+      "COUNTRY_PREFIX": "Country prefix in channel names",
+      "COUNTRY_PREFIX_DESC": "How prefixes such as “TR:” or “DE |” in front of channel names are shown.",
+      "COUNTRY_PREFIX_SHOW": "Show",
+      "COUNTRY_PREFIX_HIDE": "Hide",
+      "COUNTRY_PREFIX_BADGE": "As code badge",
+      "COUNTRY_PREFIX_PREVIEW": "Preview:"
     },
     "PLAYBACK": {
       "CACHING": "Use stream caching",
@@ -230,14 +239,31 @@
     },
     "EPG": {
       "TITLE": "External EPG",
-      "INTRO": "When a channel has no guide data from its provider, streameo fills it in from these XMLTV sources, matched by tvg-id. Any XMLTV URL works (for example an IPTV-EPG.org export); .xml and .xml.gz are both supported.",
+      "INTRO": "When a channel has no guide data from its provider, streameo fills it in from these XMLTV sources: matched by tvg-id, otherwise by channel name, or as you assign it by hand. Any XMLTV URL works (for example an IPTV-EPG.org export); .xml and .xml.gz are both supported.",
       "SOURCES_LABEL": "XMLTV sources",
       "SOURCES_DESC": "One XMLTV guide URL per line.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Refresh now",
       "REFRESH_DESC": "Download the latest guide data. This also happens automatically on your source auto-refresh schedule, or once a day when that is off.",
       "FREE_SOURCES": "Free EPG sources",
-      "FREE_SOURCES_DESC": "Add a known free XMLTV guide with one click. Pick the ones that match your channels' countries."
+      "FREE_SOURCES_DESC": "Add a known free XMLTV guide with one click. Pick the ones that match your channels' countries.",
+      "SOURCES_LIST_DESC": "Guides are loaded in this order. Each one shows when it was last loaded and what it contains.",
+      "NO_SOURCES": "No XMLTV sources yet. Add a URL below or pick one of the free sources.",
+      "STATUS_LOADED": "Loaded: {{time}}",
+      "STATUS_PROGRAMMES": "{{count}} programmes",
+      "STATUS_CHANNELS": "{{count}} channels",
+      "STATUS_NEVER": "Not loaded yet",
+      "STATUS_ERROR": "Error: {{error}}",
+      "REMOVE_SOURCE": "Remove {{url}}",
+      "REMOVE_SOURCE_TOOLTIP": "Remove",
+      "ADD_URL_LABEL": "XMLTV URL to add",
+      "ADD_BTN": "Add",
+      "INVALID_URL": "Enter a complete URL starting with http:// or https://.",
+      "DUPLICATE_URL": "This source is already in the list.",
+      "COVERAGE": "{{matched}} of {{live}} live channels have guide data.",
+      "COVERAGE_HINT": "Channels without a match can be assigned by hand: open the channel's menu and choose “Assign EPG…”.",
+      "DUPLICATE_COUNTRY": "{{country}} is covered by {{count}} sources – duplicate sources only make the refresh slower.",
+      "REFRESHING": "Refreshing…"
     },
     "DATA": {
       "BACKUP": "Backup database",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "Server address in the form http://host:port",
     "INVALID_URL": "\"{{url}}\" is not a valid URL. Check it for spaces or typos.",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Xtream login detected",
+    "XTREAM_DETECTED_BODY1": "This M3U link contains an Xtream login. Imported as an Xtream source, you get your provider's EPG, catch-up for missed programmes and series sorted by season.",
+    "XTREAM_DETECTED_BODY2": "Importing it as Xtream is recommended, but you can also import it as a plain M3U link.",
+    "IMPORT_AS_XTREAM": "Import as Xtream (recommended)",
+    "IMPORT_AS_M3U": "Import as M3U link"
   },
   "EPG": {
     "PLAYING_NOW": "Playing now",
@@ -462,7 +493,10 @@
     "CHECK": "Test connection",
     "CHECKING": "Testing…",
     "CHECK_OK": "Connection successful",
-    "CHECK_FAILED": "Connection failed"
+    "CHECK_FAILED": "Connection failed",
+    "XTREAM_HINT": "This link contains an Xtream login. As an Xtream source you get your provider's EPG, catch-up for missed programmes and series sorted by season.",
+    "CONVERT_TO_XTREAM": "Convert to Xtream",
+    "CONVERTING": "Converting…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Select where to save recording",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "The update was installed, but the app could not restart. Please restart it manually",
     "NETWORK_INFO_FAILED": "Could not read the network information",
     "SETTINGS_SAVED": "Saved",
-    "SETTINGS_SAVE_FAILED": "Failed to save settings"
+    "SETTINGS_SAVE_FAILED": "Failed to save settings",
+    "SOURCE_CONVERTED": "Source converted to Xtream",
+    "SOURCE_CONVERT_FAILED": "Failed to convert the source to Xtream",
+    "EPG_MAPPED": "{{name}} now shows the guide of {{id}}",
+    "EPG_MAPPING_REMOVED": "{{name}} gets its EPG automatically again",
+    "EPG_MAPPING_FAILED": "Could not assign the EPG"
   },
   "UPDATE": {
     "TITLE": "Update available",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "Delete recording?",
     "DELETE_RECORDING_BODY": "The file \"{{name}}\" will be deleted from the recording folder. This cannot be undone.",
     "REMOVE_PIN_TITLE": "Remove parental PIN?",
-    "REMOVE_PIN_BODY": "All locked groups will be unlocked and shown to everyone."
+    "REMOVE_PIN_BODY": "All locked groups will be unlocked and shown to everyone.",
+    "CONVERT_XTREAM_TITLE": "Convert “{{name}}” to Xtream?",
+    "CONVERT_XTREAM_BODY1": "The source is imported again through its Xtream login. Favorites, history, hidden and locked groups and scheduled recordings are kept by channel name.",
+    "CONVERT_XTREAM_BODY2": "This takes about as long as refreshing the source. If it fails, the source stays unchanged."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Back to channels",
@@ -610,13 +652,28 @@
     "NEXT": "Next",
     "PROGRAMME_PROGRESS": "Programme progress",
     "FILTER_PLACEHOLDER": "Filter channels...",
-    "FILTER_CHANNELS": "Filter the channel list"
+    "FILTER_CHANNELS": "Filter the channel list",
+    "MINIMIZE": "Minimize",
+    "EXPAND": "Enlarge",
+    "CLOSE": "Close",
+    "MINI_PLAYER": "Mini player"
   },
   "GUIDE": {
     "CHANNEL": "Channel",
     "NO_EPG": "No EPG",
     "NO_CATCHUP": "This programme is not available from the archive",
-    "PLAY_CHANNEL": "Play {{name}}"
+    "PLAY_CHANNEL": "Play {{name}}",
+    "SEARCH_PLACEHOLDER": "Search programmes…",
+    "SEARCH_LABEL": "Search programmes in the TV guide",
+    "SEARCH_RESULTS": "Search results",
+    "SEARCH_COUNT": "Programmes found: {{count}}",
+    "SEARCH_NO_RESULTS": "No programmes found.",
+    "SEARCH_SCOPE": "The search covers the XMLTV guide data of the next 7 days.",
+    "SEARCH_NEEDS_XMLTV": "The programme search needs external EPG sources. Add them in Settings → External EPG.",
+    "TODAY": "Today",
+    "TOMORROW": "Tomorrow",
+    "WATCH": "Watch",
+    "REMIND": "Remind me"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "Play {{name}}",
     "UNKNOWN_CHANNEL": "Unknown channel",
     "OPEN_FOLDER": "Open folder"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "Assign EPG",
+    "ASSIGNED": "Assigned:",
+    "AUTOMATIC": "Automatic by channel name",
+    "SEARCH": "Search guide channels",
+    "SEARCH_PLACEHOLDER": "Channel name or XMLTV ID",
+    "RESULTS": "Guide channels",
+    "CURRENT": "assigned",
+    "UPCOMING": "Upcoming programmes: {{count}}",
+    "NO_CURRENT": "no current programmes",
+    "NO_RESULTS": "No guide channel found.",
+    "AUTO": "Assign automatically"
   }
 }

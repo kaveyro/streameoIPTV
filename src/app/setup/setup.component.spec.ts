@@ -79,6 +79,46 @@ describe("SetupComponent", () => {
     expect(component.checking).toBeFalse();
   });
 
+  describe("M3U links with an Xtream login", () => {
+    const link = "http://example.test:8080/get.php?username=u&password=p&type=m3u_plus";
+    const login = { url: "http://example.test:8080/player_api.php", username: "u", password: "p" };
+
+    async function submitLink(choice: "xtream" | "m3u" | "abort") {
+      await create({ detect_xtream_login: login });
+      component.switchMode(SourceType.M3ULink);
+      component.source.name = "Provider";
+      component.source.url = ` ${link} `;
+      spyOn(component, "askImportAsXtream").and.resolveTo(choice);
+      await component.submit();
+    }
+
+    it("imports them as Xtream when chosen", async () => {
+      await submitLink("xtream");
+      expect(callsOf(calls, "detect_xtream_login").map((c) => c.args)).toEqual([{ url: link }]);
+      const imported = callsOf(calls, "get_xtream")[0].args["source"] as Source;
+      expect(imported.source_type).toBe(SourceType.Xtream);
+      expect(imported.url).toBe(login.url);
+      expect(imported.username).toBe("u");
+      expect(imported.password).toBe("p");
+      expect(callsOf(calls, "get_m3u8_from_link").length).toBe(0);
+    });
+
+    it("imports them as M3U link when chosen", async () => {
+      await submitLink("m3u");
+      const imported = callsOf(calls, "get_m3u8_from_link")[0].args["source"] as Source;
+      expect(imported.url).toBe(link);
+      expect(imported.source_type).toBe(SourceType.M3ULink);
+      expect(callsOf(calls, "get_xtream").length).toBe(0);
+    });
+
+    it("imports nothing when the question is closed", async () => {
+      await submitLink("abort");
+      expect(callsOf(calls, "get_m3u8_from_link").length).toBe(0);
+      expect(callsOf(calls, "get_xtream").length).toBe(0);
+      expect(component.loading).toBeFalse();
+    });
+  });
+
   it("drops credentials when testing an M3U link and reports failures", async () => {
     await create({
       check_source: () => Promise.reject("The link does not point to an M3U playlist"),

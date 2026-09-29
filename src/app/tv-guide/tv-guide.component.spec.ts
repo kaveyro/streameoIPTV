@@ -7,6 +7,8 @@ import { Channel } from "../models/channel";
 import { EPG } from "../models/epg";
 import { Filters } from "../models/filters";
 import { MediaType } from "../models/mediaType";
+import { ProgrammeHit } from "../models/epgExtras";
+import { CountryNamePipe } from "../pipes/country-name.pipe";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -58,7 +60,7 @@ describe("TvGuideComponent", () => {
       ...handlers,
     });
     await TestBed.configureTestingModule({
-      declarations: [TvGuideComponent],
+      declarations: [TvGuideComponent, CountryNamePipe],
       imports: TEST_IMPORTS,
       providers: TEST_PROVIDERS,
     }).compileComponents();
@@ -214,5 +216,158 @@ describe("TvGuideComponent", () => {
     await settle();
     fixture.detectChanges();
     expect(document.activeElement?.id).toBe(component.cellId(0, 0));
+  });
+
+  it("shows the country prefix as a pill in badge mode", async () => {
+    await create({ search: [{ ...channels[0], name: "TR: Kanal D" }] });
+    const memory = TestBed.inject(MemoryService);
+    const label = () => element.querySelector(".guide-channel") as HTMLElement;
+    expect(label().textContent?.trim()).toBe("TR: Kanal D");
+    memory.CountryPrefixMode = "badge";
+    fixture.detectChanges();
+    expect(label().querySelector(".guide-country")?.textContent?.trim()).toBe("TR");
+    expect(label().textContent).not.toContain("TR:");
+    memory.CountryPrefixMode = "hide";
+    fixture.detectChanges();
+    expect(label().querySelector(".guide-country")).toBeNull();
+    expect(label().textContent?.trim()).toBe("Kanal D");
+  });
+
+  describe("programme search", () => {
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const debounce = TvGuideComponent.SEARCH_DEBOUNCE_MS + 30;
+    const at = (daysAhead: number, hour: number) => {
+      const date = new Date();
+      date.setDate(date.getDate() + daysAhead);
+      date.setHours(hour, 0, 0, 0);
+      return Math.floor(date.getTime() / 1000);
+    };
+    const hit = (title: string, start: number, end: number, channel = channels[0]) =>
+      ({
+        channel,
+        epg_id: `id-${title}`,
+        title,
+        description: `About ${title}`,
+        start_timestamp: start,
+        end_timestamp: end,
+      }) as ProgrammeHit;
+    const hits: ProgrammeHit[] = [
+      hit("Tatort live", now - 600, now + 1200),
+      hit("Tatort", at(1, 12), at(1, 13), channels[1]),
+      hit("Tatort classic", at(3, 12), at(3, 13)),
+    ];
+    const input = () => element.querySelector(".guide-search") as HTMLInputElement;
+    async function type(query: string) {
+      input().value = query;
+      input().dispatchEvent(new Event("input"));
+      await wait(debounce);
+      await settle();
+      fixture.detectChanges();
+    }
+
+    it("searches after a pause and replaces the grid until Escape clears it", async () => {
+      await create({ search_programmes: hits });
+      await type("Tatort");
+      expect(callsOf(calls, "search_programmes").map((c) => c.args)).toEqual([
+        { query: "Tatort", showLocked: false },
+      ]);
+      const scroller = element.querySelector(".guide-scroller") as HTMLElement;
+      expect(scroller.hidden).toBeTrue();
+      const days = Array.from(element.querySelectorAll(".guide-day-title")).map((d) =>
+        d.textContent?.trim(),
+      );
+      expect(days.slice(0, 2)).toEqual(["GUIDE.TODAY", "GUIDE.TOMORROW"]);
+      expect(days[2]).not.toContain("GUIDE.");
+      const items = element.querySelectorAll(".guide-hit");
+      expect(items.length).toBe(3);
+      expect(items[0].classList).toContain("is-now");
+      expect(items[0].querySelector(".guide-hit-progress")).not.toBeNull();
+      expect(items[1].textContent).toContain("Two");
+      expect(items[1].textContent).toContain("About Tatort");
+
+      const escape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+      input().dispatchEvent(escape);
+      fixture.detectChanges();
+      // ngModel writes the emptied value to the field asynchronously.
+      await settle();
+      // Handled here: the home page must not navigate back as well.
+      expect(escape.defaultPrevented).toBeTrue();
+      expect(input().value).toBe("");
+      expect(element.querySelector(".guide-results")).toBeNull();
+      expect(scroller.hidden).toBeFalse();
+      expect(element.querySelectorAll(".guide-row").length).toBe(2);
+      expect(callsOf(calls, "search").length).toBe(1);
+    });
+
+    it("needs two characters and drops the answers to older queries", async () => {
+      await create({
+        search_programmes: (args: Record<string, unknown>) =>
+          args["query"] === "Ta"
+            ? new Promise((resolve) => setTimeout(() => resolve([hits[2]]), 600))
+            : [hits[1]],
+      });
+      await type("T");
+      expect(callsOf(calls, "search_programmes").length).toBe(0);
+      expect(element.querySelector(".guide-results")).toBeNull();
+
+      await type("Ta"); // its answer is still pending when the next query runs
+      await type("Tat");
+      await wait(450);
+      await settle();
+      fixture.detectChanges();
+      expect(callsOf(calls, "search_programmes").map((c) => c.args["query"])).toEqual([
+        "Ta",
+        "Tat",
+      ]);
+      expect(component.searchResults).toEqual([hits[1]]);
+      expect(element.querySelectorAll(".guide-hit").length).toBe(1);
+    });
+
+    it("watches a running hit, and reminds of and records an upcoming one", async () => {
+      await create({ search_programmes: hits });
+      TestBed.inject(MemoryService).trayEnabled = true;
+      const play = spyOn(TestBed.inject(PlaybackService), "play").and.resolveTo();
+      await type("Tatort");
+      const items = element.querySelectorAll(".guide-hit");
+      const buttons = (i: number) =>
+        Array.from(items[i].querySelectorAll<HTMLButtonElement>(".guide-hit-actions button"));
+      expect(buttons(0).length).toBe(1);
+      expect(buttons(0)[0].getAttribute("aria-label")).toBe("GUIDE.WATCH: Tatort live");
+      buttons(0)[0].click();
+      await settle();
+      expect(play).toHaveBeenCalledOnceWith(channels[0]);
+
+      const [remind, record] = buttons(1);
+      expect(remind.getAttribute("aria-pressed")).toBe("false");
+      remind.click();
+      await settle();
+      expect(callsOf(calls, "add_epg").map((c) => c.args["epg"])).toEqual([
+        {
+          channel_name: "Two",
+          epg_id: "id-Tatort",
+          start_timestamp: at(1, 12),
+          title: "Tatort",
+        },
+      ]);
+      record.click();
+      await settle();
+      expect(callsOf(calls, "schedule_recording").map((c) => c.args)).toEqual([
+        { channelId: 2, title: "Tatort", startTimestamp: at(1, 12), endTimestamp: at(1, 13) },
+      ]);
+    });
+
+    it("explains an empty result and that it needs external EPG sources", async () => {
+      await create({ search_programmes: [] });
+      const memory = TestBed.inject(MemoryService);
+      memory.HasXmltv = false;
+      await type("Nothing");
+      const results = () => element.querySelector(".guide-results")?.textContent ?? "";
+      expect(results()).toContain("GUIDE.SEARCH_NO_RESULTS");
+      expect(results()).toContain("GUIDE.SEARCH_NEEDS_XMLTV");
+      memory.HasXmltv = true;
+      fixture.detectChanges();
+      expect(results()).toContain("GUIDE.SEARCH_SCOPE");
+      expect(results()).not.toContain("GUIDE.SEARCH_NEEDS_XMLTV");
+    });
   });
 });

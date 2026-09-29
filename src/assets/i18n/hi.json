@@ -52,7 +52,9 @@
       "SERIES": "सीरीज़"
     },
     "COLLAPSE_SIDEBAR": "साइडबार संक्षिप्त करें",
-    "EXPAND_SIDEBAR": "साइडबार विस्तृत करें"
+    "EXPAND_SIDEBAR": "साइडबार विस्तृत करें",
+    "COUNTRY_FILTER": "देश के अनुसार फ़िल्टर करें",
+    "ALL_COUNTRIES": "सभी देश"
   },
   "MENU": {
     "REMOVE": "हटाएँ",
@@ -70,7 +72,8 @@
     "COPY_URL": "URL कॉपी करें",
     "DELETE": "हटाएँ",
     "LOCK_GROUP": "समूह लॉक करें",
-    "UNLOCK_GROUP": "समूह अनलॉक करें"
+    "UNLOCK_GROUP": "समूह अनलॉक करें",
+    "MAP_EPG": "EPG असाइन करें…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "कोई चैनल नहीं मिला",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "बैंगनी",
       "ACCENT_TEAL": "हरा-नीला",
       "ACCENT_CORAL": "मूंगा",
-      "ACCENT_GREEN": "हरा"
+      "ACCENT_GREEN": "हरा",
+      "COUNTRY_PREFIX": "चैनल नामों में देश कोड",
+      "COUNTRY_PREFIX_DESC": "चैनल नामों से पहले “TR:” या “DE |” जैसे उपसर्ग कैसे दिखाए जाएँ।",
+      "COUNTRY_PREFIX_SHOW": "दिखाएँ",
+      "COUNTRY_PREFIX_HIDE": "छिपाएँ",
+      "COUNTRY_PREFIX_BADGE": "कोड बैज के रूप में",
+      "COUNTRY_PREFIX_PREVIEW": "पूर्वावलोकन:"
     },
     "PLAYBACK": {
       "CACHING": "स्ट्रीम कैशिंग उपयोग करें",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "बाहरी EPG",
-      "INTRO": "जब किसी चैनल के पास उसके प्रदाता से गाइड डेटा नहीं होता, तो streameo इसे tvg-id से मिलान करके इन XMLTV स्रोतों से भर देता है। कोई भी XMLTV URL काम करता है (उदाहरण के लिए IPTV-EPG.org निर्यात); .xml और .xml.gz दोनों समर्थित हैं।",
+      "INTRO": "जब किसी चैनल के पास उसके प्रदाता से गाइड डेटा नहीं होता, तो streameo उसे इन XMLTV स्रोतों से भरता है: tvg-id से मिलाकर, नहीं तो चैनल के नाम से, या जैसा आप हाथ से तय करें। कोई भी XMLTV URL काम करता है (जैसे IPTV-EPG.org का एक्सपोर्ट); .xml और .xml.gz दोनों समर्थित हैं।",
       "SOURCES_LABEL": "XMLTV स्रोत",
       "SOURCES_DESC": "प्रति पंक्ति एक XMLTV URL।",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "अभी ताज़ा करें",
       "REFRESH_DESC": "नवीनतम गाइड डेटा डाउनलोड करें। यह आपके स्रोत स्वतः-रीफ़्रेश शेड्यूल के अनुसार अपने-आप भी होता है, और वह बंद हो तो दिन में एक बार।",
       "FREE_SOURCES": "मुफ़्त EPG स्रोत",
-      "FREE_SOURCES_DESC": "एक क्लिक में एक ज्ञात मुफ़्त XMLTV गाइड जोड़ें। अपने चैनलों के देशों से मेल खाने वाले चुनें।"
+      "FREE_SOURCES_DESC": "एक क्लिक में एक ज्ञात मुफ़्त XMLTV गाइड जोड़ें। अपने चैनलों के देशों से मेल खाने वाले चुनें।",
+      "SOURCES_LIST_DESC": "गाइड इसी क्रम में लोड होते हैं। हर गाइड के साथ दिखता है कि वह आखिरी बार कब लोड हुआ और उसमें क्या है।",
+      "NO_SOURCES": "अभी कोई XMLTV स्रोत नहीं है। नीचे एक URL जोड़ें या कोई मुफ़्त स्रोत चुनें।",
+      "STATUS_LOADED": "लोड किया गया: {{time}}",
+      "STATUS_PROGRAMMES": "{{count}} कार्यक्रम",
+      "STATUS_CHANNELS": "{{count}} चैनल",
+      "STATUS_NEVER": "अभी लोड नहीं हुआ",
+      "STATUS_ERROR": "त्रुटि: {{error}}",
+      "REMOVE_SOURCE": "{{url}} हटाएँ",
+      "REMOVE_SOURCE_TOOLTIP": "हटाएँ",
+      "ADD_URL_LABEL": "जोड़ने के लिए XMLTV URL",
+      "ADD_BTN": "जोड़ें",
+      "INVALID_URL": "http:// या https:// से शुरू होने वाला पूरा URL दर्ज करें।",
+      "DUPLICATE_URL": "यह स्रोत पहले से सूची में है।",
+      "COVERAGE": "{{live}} लाइव चैनलों में से {{matched}} के पास गाइड डेटा है।",
+      "COVERAGE_HINT": "बिना मिलान वाले चैनल हाथ से असाइन किए जा सकते हैं: चैनल का मेनू खोलें और “EPG असाइन करें…” चुनें।",
+      "DUPLICATE_COUNTRY": "{{country}} {{count}} स्रोतों से कवर है – दोहराए गए स्रोत केवल रीफ़्रेश को धीमा करते हैं।",
+      "REFRESHING": "ताज़ा हो रहा है…"
     },
     "PARENTAL": {
       "DESC": "समूहों को PIN से सुरक्षित करें। होम पेज पर लॉक बटन से PIN दर्ज करने तक लॉक किए गए समूह और उनके चैनल छिपे रहते हैं। श्रेणियों में किसी समूह को उसके संदर्भ मेनू से लॉक करें।",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "सर्वर पता http://host:port के रूप में",
     "INVALID_URL": "\"{{url}}\" मान्य URL नहीं है। रिक्त स्थान या टाइपिंग की गलतियाँ जाँचें।",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Xtream लॉगिन मिला",
+    "XTREAM_DETECTED_BODY1": "इस M3U लिंक में Xtream लॉगिन है। Xtream स्रोत के रूप में इंपोर्ट करने पर आपको अपने प्रदाता का EPG, छूटे कार्यक्रमों के लिए कैच-अप और सीज़न के अनुसार सीरीज़ मिलती हैं।",
+    "XTREAM_DETECTED_BODY2": "इसे Xtream के रूप में इंपोर्ट करने की सलाह दी जाती है, लेकिन आप इसे सामान्य M3U लिंक के रूप में भी इंपोर्ट कर सकते हैं।",
+    "IMPORT_AS_XTREAM": "Xtream के रूप में इंपोर्ट करें (अनुशंसित)",
+    "IMPORT_AS_M3U": "M3U लिंक के रूप में इंपोर्ट करें"
   },
   "EPG": {
     "PLAYING_NOW": "अभी चल रहा है",
@@ -462,7 +493,10 @@
     "CHECK": "कनेक्शन जाँचें",
     "CHECKING": "जाँच हो रही है…",
     "CHECK_OK": "कनेक्शन सफल",
-    "CHECK_FAILED": "कनेक्शन विफल"
+    "CHECK_FAILED": "कनेक्शन विफल",
+    "XTREAM_HINT": "इस लिंक में Xtream लॉगिन है। Xtream स्रोत के रूप में आपको अपने प्रदाता का EPG, छूटे कार्यक्रमों के लिए कैच-अप और सीज़न के अनुसार सीरीज़ मिलती हैं।",
+    "CONVERT_TO_XTREAM": "Xtream में बदलें",
+    "CONVERTING": "बदला जा रहा है…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "रिकॉर्डिंग कहाँ सहेजें, चुनें",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "अपडेट इंस्टॉल हो गया, लेकिन ऐप पुनः आरंभ नहीं हो सका। कृपया इसे मैन्युअल रूप से पुनः आरंभ करें",
     "NETWORK_INFO_FAILED": "नेटवर्क जानकारी नहीं पढ़ी जा सकी",
     "SETTINGS_SAVED": "सहेजा गया",
-    "SETTINGS_SAVE_FAILED": "सेटिंग्स सहेजी नहीं जा सकीं"
+    "SETTINGS_SAVE_FAILED": "सेटिंग्स सहेजी नहीं जा सकीं",
+    "SOURCE_CONVERTED": "स्रोत Xtream में बदल दिया गया",
+    "SOURCE_CONVERT_FAILED": "स्रोत को Xtream में बदला नहीं जा सका",
+    "EPG_MAPPED": "{{name}} अब {{id}} की गाइड दिखाता है",
+    "EPG_MAPPING_REMOVED": "{{name}} को फिर से स्वचालित रूप से EPG मिलता है",
+    "EPG_MAPPING_FAILED": "EPG असाइन नहीं किया जा सका"
   },
   "UPDATE": {
     "TITLE": "अपडेट उपलब्ध",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "रिकॉर्डिंग हटाएँ?",
     "DELETE_RECORDING_BODY": "फ़ाइल \"{{name}}\" रिकॉर्डिंग फ़ोल्डर से हटा दी जाएगी। इसे पूर्ववत नहीं किया जा सकता।",
     "REMOVE_PIN_TITLE": "पैरेंटल PIN हटाएँ?",
-    "REMOVE_PIN_BODY": "सभी लॉक किए गए समूह अनलॉक होकर सभी को दिखेंगे।"
+    "REMOVE_PIN_BODY": "सभी लॉक किए गए समूह अनलॉक होकर सभी को दिखेंगे।",
+    "CONVERT_XTREAM_TITLE": "“{{name}}” को Xtream में बदलें?",
+    "CONVERT_XTREAM_BODY1": "स्रोत को उसके Xtream लॉगिन से फिर से इंपोर्ट किया जाएगा। पसंदीदा, इतिहास, छिपे और लॉक किए गए समूह और शेड्यूल की गई रिकॉर्डिंग चैनल नाम के आधार पर बनी रहती हैं।",
+    "CONVERT_XTREAM_BODY2": "इसमें लगभग उतना ही समय लगता है जितना स्रोत को रीफ़्रेश करने में। विफल होने पर स्रोत अपरिवर्तित रहता है।"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "चैनलों पर वापस जाएँ",
@@ -610,13 +652,28 @@
     "NEXT": "अगला",
     "PROGRAMME_PROGRESS": "कार्यक्रम की प्रगति",
     "FILTER_PLACEHOLDER": "चैनल फ़िल्टर करें...",
-    "FILTER_CHANNELS": "चैनल सूची फ़िल्टर करें"
+    "FILTER_CHANNELS": "चैनल सूची फ़िल्टर करें",
+    "MINIMIZE": "छोटा करें",
+    "EXPAND": "बड़ा करें",
+    "CLOSE": "बंद करें",
+    "MINI_PLAYER": "मिनी प्लेयर"
   },
   "GUIDE": {
     "CHANNEL": "चैनल",
     "NO_EPG": "कोई EPG नहीं",
     "NO_CATCHUP": "यह कार्यक्रम आर्काइव में उपलब्ध नहीं है",
-    "PLAY_CHANNEL": "{{name}} चलाएँ"
+    "PLAY_CHANNEL": "{{name}} चलाएँ",
+    "SEARCH_PLACEHOLDER": "कार्यक्रम खोजें…",
+    "SEARCH_LABEL": "टीवी गाइड में कार्यक्रम खोजें",
+    "SEARCH_RESULTS": "खोज परिणाम",
+    "SEARCH_COUNT": "मिले कार्यक्रम: {{count}}",
+    "SEARCH_NO_RESULTS": "कोई कार्यक्रम नहीं मिला।",
+    "SEARCH_SCOPE": "खोज अगले 7 दिनों के XMLTV गाइड डेटा में की जाती है।",
+    "SEARCH_NEEDS_XMLTV": "कार्यक्रम खोज के लिए बाहरी EPG स्रोत चाहिए। उन्हें सेटिंग्स → बाहरी EPG में जोड़ें।",
+    "TODAY": "आज",
+    "TOMORROW": "कल",
+    "WATCH": "देखें",
+    "REMIND": "याद दिलाएं"
   },
   "PARENTAL": {
     "CONFIRM": "ठीक है",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "{{name}} चलाएँ",
     "UNKNOWN_CHANNEL": "अज्ञात चैनल",
     "OPEN_FOLDER": "फ़ोल्डर खोलें"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "EPG असाइन करें",
+    "ASSIGNED": "असाइन किया गया:",
+    "AUTOMATIC": "चैनल के नाम से स्वचालित",
+    "SEARCH": "गाइड चैनल खोजें",
+    "SEARCH_PLACEHOLDER": "चैनल का नाम या XMLTV ID",
+    "RESULTS": "गाइड चैनल",
+    "CURRENT": "असाइन",
+    "UPCOMING": "आने वाले कार्यक्रम: {{count}}",
+    "NO_CURRENT": "कोई मौजूदा कार्यक्रम नहीं",
+    "NO_RESULTS": "कोई गाइड चैनल नहीं मिला।",
+    "AUTO": "स्वचालित रूप से असाइन करें"
   }
 }

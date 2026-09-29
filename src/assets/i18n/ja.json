@@ -52,7 +52,9 @@
       "SERIES": "シリーズ"
     },
     "COLLAPSE_SIDEBAR": "サイドバーを折りたたむ",
-    "EXPAND_SIDEBAR": "サイドバーを展開する"
+    "EXPAND_SIDEBAR": "サイドバーを展開する",
+    "COUNTRY_FILTER": "国で絞り込む",
+    "ALL_COUNTRIES": "すべての国"
   },
   "MENU": {
     "REMOVE": "削除",
@@ -70,7 +72,8 @@
     "COPY_URL": "URL をコピー",
     "DELETE": "削除",
     "LOCK_GROUP": "グループをロック",
-    "UNLOCK_GROUP": "グループのロックを解除"
+    "UNLOCK_GROUP": "グループのロックを解除",
+    "MAP_EPG": "EPG を割り当て…"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "チャンネルが見つかりません",
@@ -182,7 +185,13 @@
       "ACCENT_PURPLE": "紫",
       "ACCENT_TEAL": "ティール",
       "ACCENT_CORAL": "コーラル",
-      "ACCENT_GREEN": "緑"
+      "ACCENT_GREEN": "緑",
+      "COUNTRY_PREFIX": "チャンネル名の国コード",
+      "COUNTRY_PREFIX_DESC": "チャンネル名の前にある「TR:」や「DE |」などの接頭辞の表示方法。",
+      "COUNTRY_PREFIX_SHOW": "表示",
+      "COUNTRY_PREFIX_HIDE": "非表示",
+      "COUNTRY_PREFIX_BADGE": "コードバッジで表示",
+      "COUNTRY_PREFIX_PREVIEW": "プレビュー："
     },
     "PLAYBACK": {
       "CACHING": "ストリームキャッシュを使用",
@@ -261,14 +270,31 @@
     },
     "EPG": {
       "TITLE": "外部 EPG",
-      "INTRO": "チャンネルにプロバイダーからの番組表データがない場合、streameo は tvg-id で照合してこれらの XMLTV ソースから補完します。任意の XMLTV URL が使用できます（例: IPTV-EPG.org のエクスポート）。.xml と .xml.gz の両方に対応しています。",
+      "INTRO": "チャンネルにプロバイダーの番組表データがない場合、streameo はこれらの XMLTV ソースから補います。tvg-id で照合し、なければチャンネル名で、または手動で割り当てたとおりに照合します。どの XMLTV URL でも使えます（例: IPTV-EPG.org のエクスポート）。.xml と .xml.gz の両方に対応しています。",
       "SOURCES_LABEL": "XMLTV ソース",
       "SOURCES_DESC": "1 行につき 1 つの XMLTV URL。",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "今すぐ更新",
       "REFRESH_DESC": "最新の番組表データをダウンロードします。ソースの自動更新スケジュールに従って自動でも行われ、それがオフの場合は1日1回行われます。",
       "FREE_SOURCES": "無料 EPG ソース",
-      "FREE_SOURCES_DESC": "既知の無料 XMLTV ガイドをワンクリックで追加します。チャンネルの国に合うものを選んでください。"
+      "FREE_SOURCES_DESC": "既知の無料 XMLTV ガイドをワンクリックで追加します。チャンネルの国に合うものを選んでください。",
+      "SOURCES_LIST_DESC": "ガイドはこの順序で読み込まれます。それぞれに最終読み込み日時と内容が表示されます。",
+      "NO_SOURCES": "XMLTV ソースはまだありません。下に URL を追加するか、無料ソースから選んでください。",
+      "STATUS_LOADED": "読み込み：{{time}}",
+      "STATUS_PROGRAMMES": "番組 {{count}} 件",
+      "STATUS_CHANNELS": "チャンネル {{count}} 件",
+      "STATUS_NEVER": "未読み込み",
+      "STATUS_ERROR": "エラー：{{error}}",
+      "REMOVE_SOURCE": "{{url}} を削除",
+      "REMOVE_SOURCE_TOOLTIP": "削除",
+      "ADD_URL_LABEL": "追加する XMLTV の URL",
+      "ADD_BTN": "追加",
+      "INVALID_URL": "http:// または https:// で始まる完全な URL を入力してください。",
+      "DUPLICATE_URL": "このソースはすでにリストにあります。",
+      "COVERAGE": "ライブチャンネル {{live}} 件中 {{matched}} 件に番組データがあります。",
+      "COVERAGE_HINT": "一致しないチャンネルは手動で割り当てられます。チャンネルのメニューを開き、「EPG を割り当て…」を選んでください。",
+      "DUPLICATE_COUNTRY": "{{country}} は {{count}} 件のソースでカバーされています。重複したソースは更新を遅くするだけです。",
+      "REFRESHING": "更新中…"
     },
     "PARENTAL": {
       "DESC": "PINでグループを保護します。ロックされたグループとそのチャンネルは、ホーム画面の鍵ボタンでPINを入力するまで表示されません。グループは「カテゴリ」のコンテキストメニューからロックできます。",
@@ -307,7 +333,12 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "サーバーアドレス（形式: http://host:port）",
     "INVALID_URL": "「{{url}}」は有効な URL ではありません。スペースや入力ミスがないか確認してください。",
-    "URL_PLACEHOLDER": "URL"
+    "URL_PLACEHOLDER": "URL",
+    "XTREAM_DETECTED_TITLE": "Xtream ログインを検出しました",
+    "XTREAM_DETECTED_BODY1": "この M3U リンクには Xtream のログイン情報が含まれています。Xtream ソースとしてインポートすると、プロバイダーの EPG、見逃した番組のキャッチアップ、シーズン別のシリーズが利用できます。",
+    "XTREAM_DETECTED_BODY2": "Xtream としてのインポートをおすすめしますが、通常の M3U リンクとしてインポートすることもできます。",
+    "IMPORT_AS_XTREAM": "Xtream としてインポート（推奨）",
+    "IMPORT_AS_M3U": "M3U リンクとしてインポート"
   },
   "EPG": {
     "PLAYING_NOW": "再生中",
@@ -462,7 +493,10 @@
     "CHECK": "接続をテスト",
     "CHECKING": "テスト中…",
     "CHECK_OK": "接続に成功しました",
-    "CHECK_FAILED": "接続に失敗しました"
+    "CHECK_FAILED": "接続に失敗しました",
+    "XTREAM_HINT": "このリンクには Xtream のログイン情報が含まれています。Xtream ソースにすると、プロバイダーの EPG、見逃した番組のキャッチアップ、シーズン別のシリーズが利用できます。",
+    "CONVERT_TO_XTREAM": "Xtream に変換",
+    "CONVERTING": "変換中…"
   },
   "DIALOG": {
     "SAVE_RECORDING": "録画の保存先を選択",
@@ -562,7 +596,12 @@
     "UPDATE_RELAUNCH_FAILED": "アップデートはインストールされましたが、アプリを再起動できませんでした。手動で再起動してください",
     "NETWORK_INFO_FAILED": "ネットワーク情報を取得できませんでした",
     "SETTINGS_SAVED": "保存しました",
-    "SETTINGS_SAVE_FAILED": "設定を保存できませんでした"
+    "SETTINGS_SAVE_FAILED": "設定を保存できませんでした",
+    "SOURCE_CONVERTED": "ソースを Xtream に変換しました",
+    "SOURCE_CONVERT_FAILED": "ソースを Xtream に変換できませんでした",
+    "EPG_MAPPED": "{{name}} は {{id}} の番組表を表示します",
+    "EPG_MAPPING_REMOVED": "{{name}} の EPG は再び自動で割り当てられます",
+    "EPG_MAPPING_FAILED": "EPG を割り当てられませんでした"
   },
   "UPDATE": {
     "TITLE": "更新があります",
@@ -600,7 +639,10 @@
     "DELETE_RECORDING_TITLE": "録画を削除しますか？",
     "DELETE_RECORDING_BODY": "ファイル「{{name}}」は録画フォルダーから削除されます。元に戻すことはできません。",
     "REMOVE_PIN_TITLE": "保護者用PINを削除しますか？",
-    "REMOVE_PIN_BODY": "ロックされたすべてのグループのロックが解除され、全員に表示されます。"
+    "REMOVE_PIN_BODY": "ロックされたすべてのグループのロックが解除され、全員に表示されます。",
+    "CONVERT_XTREAM_TITLE": "「{{name}}」を Xtream に変換しますか？",
+    "CONVERT_XTREAM_BODY1": "ソースは Xtream ログインで再インポートされます。お気に入り、履歴、非表示・ロック中のグループ、予約録画はチャンネル名で引き継がれます。",
+    "CONVERT_XTREAM_BODY2": "ソースの更新とほぼ同じ時間がかかります。失敗した場合、ソースは変更されません。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "チャンネルに戻る",
@@ -610,13 +652,28 @@
     "NEXT": "次",
     "PROGRAMME_PROGRESS": "番組の進行状況",
     "FILTER_PLACEHOLDER": "チャンネルを絞り込む...",
-    "FILTER_CHANNELS": "チャンネルリストを絞り込む"
+    "FILTER_CHANNELS": "チャンネルリストを絞り込む",
+    "MINIMIZE": "縮小",
+    "EXPAND": "拡大",
+    "CLOSE": "閉じる",
+    "MINI_PLAYER": "ミニプレーヤー"
   },
   "GUIDE": {
     "CHANNEL": "チャンネル",
     "NO_EPG": "EPGなし",
     "NO_CATCHUP": "この番組はアーカイブにありません",
-    "PLAY_CHANNEL": "{{name}} を再生"
+    "PLAY_CHANNEL": "{{name}} を再生",
+    "SEARCH_PLACEHOLDER": "番組を検索…",
+    "SEARCH_LABEL": "番組表で番組を検索",
+    "SEARCH_RESULTS": "検索結果",
+    "SEARCH_COUNT": "見つかった番組：{{count}}",
+    "SEARCH_NO_RESULTS": "番組が見つかりませんでした。",
+    "SEARCH_SCOPE": "今後 7 日間の XMLTV 番組表データが検索対象です。",
+    "SEARCH_NEEDS_XMLTV": "番組検索には外部 EPG ソースが必要です。設定 → 外部 EPG で追加してください。",
+    "TODAY": "今日",
+    "TOMORROW": "明日",
+    "WATCH": "視聴",
+    "REMIND": "リマインド"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -653,5 +710,18 @@
     "PLAY_ARIA": "{{name}} を再生",
     "UNKNOWN_CHANNEL": "不明なチャンネル",
     "OPEN_FOLDER": "フォルダーを開く"
+  },
+  "EPG_MAPPING": {
+    "TITLE": "EPG の割り当て",
+    "ASSIGNED": "割り当て済み:",
+    "AUTOMATIC": "チャンネル名で自動",
+    "SEARCH": "番組表のチャンネルを検索",
+    "SEARCH_PLACEHOLDER": "チャンネル名または XMLTV ID",
+    "RESULTS": "番組表のチャンネル",
+    "CURRENT": "割り当て中",
+    "UPCOMING": "今後の番組: {{count}}",
+    "NO_CURRENT": "現在の番組なし",
+    "NO_RESULTS": "番組表のチャンネルが見つかりません。",
+    "AUTO": "自動で割り当て"
   }
 }

@@ -88,6 +88,8 @@ const DEFAULTS: Record<string, unknown> = {
   get_recording_folder: "C:\\Recordings",
   has_parental_pin: false,
   get_locked_group_ids: [],
+  get_countries: [],
+  has_xmltv_data: false,
   search: [],
   group_auto_complete: [],
   get_network_info: { port: 3000, local_ips: ["192.168.1.2"], wan_ip: "203.0.113.1" },

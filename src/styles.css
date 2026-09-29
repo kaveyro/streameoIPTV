@@ -770,6 +770,43 @@ body:has(app-download-manager) {
   }
 }
 
+/* The mini player (player.component.css) takes the same corner: the
+   scroll-to-top button moves above it, the download manager beside it, or
+   above it too when the window is too narrow for both side by side. These
+   global selectors outrank the components' encapsulated ones. */
+:root {
+  --mini-player-width: min(400px, calc(100vw - 2rem));
+  --mini-player-bar-height: 2.75rem;
+  --mini-player-height: calc(var(--mini-player-width) * 9 / 16 + var(--mini-player-bar-height));
+}
+
+body.player-mini .scroll-to-top {
+  bottom: calc(var(--mini-player-height) + 2rem);
+  inset-inline-end: 2rem;
+}
+
+body.player-mini .download-box {
+  inset-inline-end: calc(var(--mini-player-width) + 2rem);
+}
+
+@media (max-width: 849.98px) {
+  body.player-mini .download-box {
+    inset-inline-end: 1rem;
+    bottom: calc(var(--mini-player-height) + 2rem);
+  }
+
+  /* Keep the stacked download manager inside the window. */
+  body.player-mini .download-body {
+    max-height: min(60vh, calc(100vh - var(--mini-player-height) - 8rem));
+  }
+
+  /* The download manager now sits above the mini player: scroll-to-top goes
+     to the other edge. */
+  body.player-mini:has(app-download-manager) .scroll-to-top {
+    inset-inline-end: calc(100% - var(--icon-size-xl) - 2rem);
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Navigation items, shared by the home sidebar (.nav-item.active) and the
    settings navigation (.nav-item--active). Layout tweaks stay in the

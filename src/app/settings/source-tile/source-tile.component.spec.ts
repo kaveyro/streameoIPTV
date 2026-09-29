@@ -4,6 +4,8 @@ import { ToastrService } from "ngx-toastr";
 import { SourceTileComponent } from "./source-tile.component";
 import { Source } from "../../models/source";
 import { SourceType } from "../../models/sourceType";
+import { ConfirmService } from "../../confirm.service";
+import { MemoryService } from "../../memory.service";
 import {
   IpcCall,
   SHARED_DECLARATIONS,
@@ -12,6 +14,7 @@ import {
   callsOf,
   mockTauri,
   resetTauri,
+  settle,
 } from "../../../testing/test-helpers";
 
 describe("SourceTileComponent", () => {
@@ -91,6 +94,55 @@ describe("SourceTileComponent", () => {
       "The provider rejected the username or password",
       "SOURCE.CHECK_FAILED",
     );
+  });
+
+  const link: Source = {
+    id: 3,
+    name: "Link",
+    source_type: SourceType.M3ULink,
+    url: "http://example.test:8080/get.php?username=u&password=p&type=m3u_plus",
+    enabled: true,
+  };
+  const login = { url: "http://example.test:8080/player_api.php", username: "u", password: "p" };
+
+  it("offers converting an M3U link that is an Xtream login", async () => {
+    await create(link, { detect_xtream_login: login });
+    await settle();
+    fixture.detectChanges();
+    expect(callsOf(calls, "detect_xtream_login").map((c) => c.args)).toEqual([{ url: link.url }]);
+    const memory = TestBed.inject(MemoryService);
+    const refreshSources = spyOn(memory.RefreshSources, "next");
+    const refresh = spyOn(memory.Refresh, "next");
+    const confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(true);
+    buttonWithText("SOURCE.CONVERT_TO_XTREAM")!.click();
+    await settle();
+    expect(confirm).toHaveBeenCalled();
+    expect(callsOf(calls, "convert_source_to_xtream").map((c) => c.args)).toEqual([
+      { sourceId: 3 },
+    ]);
+    expect(refreshSources).toHaveBeenCalledWith(true);
+    expect(refresh).toHaveBeenCalledWith(false);
+    expect(memory.XtreamSourceIds.has(3)).toBeTrue();
+    expect(component.converting).toBeFalse();
+  });
+
+  it("keeps the source when the conversion is not confirmed", async () => {
+    await create(link, { detect_xtream_login: login });
+    await settle();
+    spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(false);
+    await component.convertToXtream();
+    expect(callsOf(calls, "convert_source_to_xtream").length).toBe(0);
+  });
+
+  it("offers no conversion for plain M3U links and Xtream sources", async () => {
+    await create({ ...link, url: "http://example.test/list.m3u" });
+    await settle();
+    fixture.detectChanges();
+    expect(buttonWithText("SOURCE.CONVERT_TO_XTREAM")).toBeUndefined();
+    resetTauri();
+    await create(xtream);
+    await settle();
+    expect(callsOf(calls, "detect_xtream_login").length).toBe(0);
   });
 
   it("has no test for local M3U files", async () => {

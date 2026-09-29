@@ -40,6 +40,8 @@ import { VIEW_FORMAT, ViewFormat } from "../models/viewFormat";
 import { TranslateService } from "@ngx-translate/core";
 import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
 import { ParentalService } from "../parental.service";
+import { CountryCount } from "../models/epgExtras";
+import { toCountryPrefixMode } from "../country-prefix";
 
 /// What the main area shows: the channel library (all view modes, also
 /// "continue watching"), the TV guide or the recordings. Frontend only; the
@@ -131,6 +133,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private savedMediaTypes?: MediaType[];
   /// Group the TV guide is restricted to (the one open when it was opened).
   guideGroup?: { id: number; name: string };
+  /// Country prefixes of the shown sources' names, most common first.
+  countries: CountryCount[] = [];
+  /// Sequence number of the latest loadCountries(); older answers are dropped.
+  private countriesSeq = 0;
 
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -227,6 +233,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.memory.AlwaysAskSave = settings.always_ask_save ?? false;
         this.memory.ShowChannelSource = settings.show_channel_source ?? true;
         this.memory.UseExternalPlayer = settings.use_external_player ?? false;
+        this.memory.CountryPrefixMode = toCountryPrefixMode(settings.country_prefix);
         // Best effort: without it the lock button stays hidden.
         this.memory.refreshParental().catch((e) => console.error(e));
         this.memory.Sources = new Map(sources.filter((x) => x.enabled).map((s) => [s.id!, s]));
@@ -267,6 +274,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             this.refreshOnStart().then((_) => _);
           }
           this.load().then((_) => _);
+          this.loadCountries();
         }
       })
       .catch((e) => {
@@ -328,6 +336,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.push(
       this.memory.Refresh.subscribe((scroll) => {
         this.load();
+        // A refresh or an edited source can bring or drop country prefixes.
+        this.loadCountries();
         if (scroll) window.scrollTo({ top: 0, behavior: "instant" });
       }),
     );
@@ -365,7 +375,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const page = more ? this.filters.page + 1 : 1;
     // The page is only committed once it loaded: a failed request must not
     // skip a page (or grow it forever) on the next attempt.
-    const filters: Filters = { ...this.filters, page, show_locked: this.memory.ShowLocked };
+    const filters: Filters = {
+      ...this.filters,
+      page,
+      show_locked: this.memory.ShowLocked,
+      country: this.countryApplies() ? this.filters.country : undefined,
+    };
     this.loading = true;
     if (!more) {
       this.gridLoading = true;
@@ -618,6 +633,51 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     let index = this.filters!.media_types.indexOf(mediaType);
     if (index == -1) this.filters!.media_types.push(mediaType);
     else this.filters!.media_types.splice(index, 1);
+    this.load();
+  }
+
+  /**
+   * Loads the country prefixes of the enabled sources (what the top level
+   * shows; inside a series `filters.source_ids` is narrowed to one source,
+   * where the filter does not apply). A selected country that is no longer
+   * offered (or when there is nothing left to choose from) is dropped and the
+   * list reloaded without it.
+   */
+  async loadCountries() {
+    if (!this.filters) return;
+    const seq = ++this.countriesSeq;
+    const sourceIds = Array.from(this.memory.Sources.keys());
+    let countries: CountryCount[] = [];
+    try {
+      countries = (await invoke<CountryCount[]>("get_countries", { sourceIds })) ?? [];
+    } catch (e) {
+      // Best effort: without it the country filter stays hidden.
+      console.error(e);
+    }
+    if (seq !== this.countriesSeq || !this.filters) return;
+    this.countries = countries.length >= 2 ? countries : [];
+    const selected = this.filters.country;
+    if (selected && !this.countries.some((c) => c.code === selected)) {
+      this.filters.country = undefined;
+      if (this.countryApplies()) await this.load();
+    }
+  }
+
+  /// Inside a category or series the names often carry no prefix: the
+  /// filter only narrows the top level (channels or the category list).
+  countryApplies(): boolean {
+    return !this.filters?.group_id && !this.filters?.series_id;
+  }
+
+  countryFilterVisible(): boolean {
+    return this.panel === "library" && this.countries.length >= 2 && this.countryApplies();
+  }
+
+  setCountry(code: string) {
+    if (!this.filters) return;
+    const country = code || undefined;
+    if (country === this.filters.country) return;
+    this.filters.country = country;
     this.load();
   }
 

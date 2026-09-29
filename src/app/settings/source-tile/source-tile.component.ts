@@ -14,6 +14,7 @@ import { TranslateService } from "@ngx-translate/core";
 import { ConfirmService } from "../../confirm.service";
 import { ToastrService } from "ngx-toastr";
 import { canCheckSource, sourceForCheck } from "../../source-check";
+import { XtreamLogin } from "../../models/epgExtras";
 
 @Component({
   selector: "app-source-tile",
@@ -23,7 +24,14 @@ import { canCheckSource, sourceForCheck } from "../../source-check";
 })
 export class SourceTileComponent {
   @Input("source")
-  source?: Source;
+  set source(value: Source | undefined) {
+    this._source = value;
+    this.detectXtreamLogin();
+  }
+  get source(): Source | undefined {
+    return this._source;
+  }
+  private _source?: Source;
   @Input("expiry")
   expiry?: number;
   showUsername = false;
@@ -33,6 +41,9 @@ export class SourceTileComponent {
   editing = false;
   /// "Test connection" is running.
   checking = false;
+  /// The M3U link is an Xtream login (get.php?username=..): offer converting.
+  xtreamLogin?: XtreamLogin;
+  converting = false;
   editableSource: Source = {};
   defaultUserAgent = "streameoIPTV";
 
@@ -65,6 +76,47 @@ export class SourceTileComponent {
     if (!this.expiry) return false;
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
     return this.expiry * 1000 - Date.now() < sevenDaysMs;
+  }
+
+  private detectXtreamLogin() {
+    this.xtreamLogin = undefined;
+    const url = this._source?.url;
+    if (this._source?.source_type != SourceType.M3ULink || !url) return;
+    invoke<XtreamLogin | null>("detect_xtream_login", { url })
+      .then((login) => {
+        // Ignore a late answer for a URL the tile no longer shows.
+        if (this._source?.url === url) this.xtreamLogin = login ?? undefined;
+      })
+      .catch((e) => console.error(e));
+  }
+
+  /** Re-imports the M3U link as Xtream source; the backend keeps favorites,
+   *  history, locks and recordings by channel name, as on a refresh. */
+  async convertToXtream() {
+    const id = this.source?.id;
+    if (this.converting || id === undefined || !this.xtreamLogin) return;
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.CONVERT_XTREAM_TITLE",
+      messages: ["CONFIRM.CONVERT_XTREAM_BODY1", "CONFIRM.CONVERT_XTREAM_BODY2"],
+      confirmLabel: "SOURCE.CONVERT_TO_XTREAM",
+      params: { name: this.source?.name ?? "" },
+      danger: false,
+    });
+    if (!confirmed) return;
+    this.converting = true;
+    try {
+      const failed = await this.memory.tryIPC(
+        this.translate.instant("TOAST.SOURCE_CONVERTED"),
+        this.translate.instant("TOAST.SOURCE_CONVERT_FAILED"),
+        () => invoke("convert_source_to_xtream", { sourceId: id }),
+      );
+      if (failed) return;
+      this.memory.XtreamSourceIds.add(id);
+      this.memory.RefreshSources.next(true);
+      this.memory.Refresh.next(false);
+    } finally {
+      this.converting = false;
+    }
   }
 
   async refresh() {

@@ -49,11 +49,33 @@
 .ptitle {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* A channel name (bar title and list items), see #channelName. */
+.cname {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--text-primary);
+}
+
+/* Country code of the name in the "badge" prefix mode. */
+.country-pill {
+  flex-shrink: 0;
+  padding: 0 0.35rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
   font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
 }
 
 .pbtn {
@@ -190,20 +212,55 @@
   flex-shrink: 0;
 }
 
-.pli-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.player-list-item .cname {
+  font-size: var(--fs-md);
 }
 
-.pli-name {
-  font-size: var(--fs-md);
+/* Mini player: a small box in the bottom inline-end corner, the page beside
+   it stays usable. Its size comes from the --mini-player-* tokens in
+   styles.css, which also move the page's scroll-to-top button and the
+   download manager out of the way. The video row keeps 16:9. The top corners
+   stay square: the native video window is a plain rectangle above them. */
+.player-overlay.mini {
+  inset: auto 1rem 1rem auto;
+  width: var(--mini-player-width);
+  grid-template-columns: 1fr;
+  grid-template-rows: calc(var(--mini-player-width) * 9 / 16) var(--mini-player-bar-height);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0 0 var(--radius-card) var(--radius-card);
+}
+
+.mini-bar {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-block: 0;
+  padding-inline: 0.75rem 0.35rem;
+  background: var(--bg-surface-alt);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.mini-bar .ptitle {
+  font-size: var(--fs-sm);
+}
+
+.pbtn-icon {
+  padding: 0.3rem;
 }
 
 /* Restore the UI direction inside the bar and the list (the overlay itself
    is forced to ltr above to keep the grid layout fixed). */
 :host-context([dir="rtl"]) .player-bar,
+:host-context([dir="rtl"]) .mini-bar,
 :host-context([dir="rtl"]) .player-list {
   direction: rtl;
+}
+
+/* The mini player mirrors to the bottom left like the download manager (the
+   overlay's own direction is forced to ltr, so inset-inline-end would not). */
+:host-context([dir="rtl"]) .player-overlay.mini {
+  inset: auto auto 1rem 1rem;
 }

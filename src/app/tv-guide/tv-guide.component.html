@@ -3,23 +3,163 @@
     {{ "HOME.NAV.GUIDE" | translate }}
     <span *ngIf="group" class="guide-group">· {{ group.name }}</span>
   </h2>
+  <input
+    type="search"
+    class="form-control form-control-sm guide-search"
+    autocomplete="off"
+    spellcheck="false"
+    [ngModel]="searchQuery"
+    (ngModelChange)="onSearchChange($event)"
+    (keydown)="onSearchKeyDown($event)"
+    [placeholder]="'GUIDE.SEARCH_PLACEHOLDER' | translate"
+    [attr.aria-label]="'GUIDE.SEARCH_LABEL' | translate"
+  />
 </div>
 
 <span class="visually-hidden" aria-live="polite" role="status">
-  <ng-container *ngIf="loaded && !loading">{{
-    "HOME.CHANNELS_SHOWN" | translate: { count: rows.length }
-  }}</ng-container>
+  <ng-container *ngIf="searchActive(); else channelCount">
+    <ng-container *ngIf="searched && !searching">{{
+      "GUIDE.SEARCH_COUNT" | translate: { count: searchResults.length }
+    }}</ng-container>
+  </ng-container>
+  <ng-template #channelCount>
+    <ng-container *ngIf="loaded && !loading">{{
+      "HOME.CHANNELS_SHOWN" | translate: { count: rows.length }
+    }}</ng-container>
+  </ng-template>
 </span>
 
-<div *ngIf="loaded && !loading && rows.length === 0" class="empty-state">
+<div *ngIf="!searchActive() && loaded && !loading && rows.length === 0" class="empty-state">
   <p class="mb-1">{{ "EMPTY.NO_GUIDE" | translate }}</p>
   <small>{{ "EMPTY.NO_GUIDE_HINT" | translate }}</small>
 </div>
 
 <div
+  *ngIf="searchActive()"
+  class="guide-results"
+  role="region"
+  [attr.aria-label]="'GUIDE.SEARCH_RESULTS' | translate"
+  [attr.aria-busy]="searching"
+>
+  <div *ngIf="searching && searchDays.length === 0" class="guide-hits" aria-hidden="true">
+    <div *ngFor="let _ of [1, 2, 3]" class="guide-hit-skeleton skeleton"></div>
+  </div>
+
+  <div *ngIf="searched && !searching && searchDays.length === 0" class="empty-state">
+    <p class="mb-1">{{ "GUIDE.SEARCH_NO_RESULTS" | translate }}</p>
+    <small>{{
+      (memory.HasXmltv ? "GUIDE.SEARCH_SCOPE" : "GUIDE.SEARCH_NEEDS_XMLTV") | translate
+    }}</small>
+  </div>
+
+  <section
+    *ngFor="let day of searchDays; trackBy: trackDay"
+    class="guide-day"
+    [class.is-stale]="searching"
+    [attr.aria-labelledby]="'guide-day-' + day.key"
+  >
+    <h3 class="guide-day-title" [id]="'guide-day-' + day.key">{{ day.label }}</h3>
+    <ul class="guide-hits">
+      <li
+        *ngFor="let item of day.hits; trackBy: trackHit"
+        class="guide-hit"
+        [class.is-now]="item.state === 'now'"
+        [class.is-past]="item.state === 'past'"
+      >
+        <div class="guide-hit-time">
+          <span>{{ item.time }}</span>
+          <span *ngIf="item.state === 'now'" class="guide-hit-live">{{
+            "EPG.PLAYING_NOW" | translate
+          }}</span>
+        </div>
+        <div class="guide-hit-main">
+          <span class="guide-hit-title">{{ item.hit.title }}</span>
+          <span class="guide-hit-channel" [title]="item.hit.channel.name">
+            <img
+              *ngIf="item.hit.channel.image"
+              [src]="item.hit.channel.image"
+              class="guide-hit-logo"
+              alt=""
+              loading="lazy"
+              onerror="this.style.visibility = 'hidden'"
+            />
+            <span *ngIf="countryCode(item.hit.channel.name) as code" class="guide-country">{{
+              code
+            }}</span>
+            <span class="guide-hit-channel-name">{{
+              item.hit.channel.name | countryName: memory.CountryPrefixMode
+            }}</span>
+          </span>
+          <p *ngIf="item.hit.description" class="guide-hit-desc">{{ item.hit.description }}</p>
+          <div *ngIf="item.state === 'now'" class="guide-hit-progress" aria-hidden="true">
+            <div [style.width.%]="item.progress"></div>
+          </div>
+        </div>
+        <div class="guide-hit-actions">
+          <button
+            *ngIf="item.state === 'now'"
+            type="button"
+            class="btn btn-sm btn-primary"
+            [attr.aria-label]="('GUIDE.WATCH' | translate) + ': ' + item.hit.title"
+            (click)="playChannel(item.hit.channel)"
+          >
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+            </svg>
+            {{ "GUIDE.WATCH" | translate }}
+          </button>
+          <ng-container *ngIf="item.state === 'future'">
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="reminderOn(item.hit)"
+              [class.btn-outline-primary]="!reminderOn(item.hit)"
+              [disabled]="memory.LoadingNotification || !memory.trayEnabled"
+              [attr.aria-pressed]="reminderOn(item.hit)"
+              [title]="(reminderOn(item.hit) ? 'EPG.NOTIFY_OFF' : 'EPG.NOTIFY_ON') | translate"
+              [attr.aria-label]="('GUIDE.REMIND' | translate) + ': ' + item.hit.title"
+              (click)="toggleReminder(item.hit.channel, item.hit)"
+            >
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                  d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+                />
+              </svg>
+              {{ "GUIDE.REMIND" | translate }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary"
+              [class.guide-rec-on]="scheduledFor(item.hit.channel, item.hit) !== undefined"
+              [disabled]="scheduling"
+              [attr.aria-pressed]="scheduledFor(item.hit.channel, item.hit) !== undefined"
+              [title]="
+                (scheduledFor(item.hit.channel, item.hit) === undefined
+                  ? 'EPG.SCHEDULE_RECORDING'
+                  : 'EPG.CANCEL_SCHEDULED'
+                ) | translate
+              "
+              [attr.aria-label]="('MENU.RECORD' | translate) + ': ' + item.hit.title"
+              (click)="toggleSchedule(item.hit.channel, item.hit)"
+            >
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                  d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
+                />
+              </svg>
+              {{ "MENU.RECORD" | translate }}
+            </button>
+          </ng-container>
+        </div>
+      </li>
+    </ul>
+  </section>
+</div>
+
+<div
   #scroller
   class="guide-scroller"
-  [hidden]="loaded && rows.length === 0"
+  [hidden]="searchActive() || (loaded && rows.length === 0)"
   role="region"
   [attr.aria-label]="'HOME.NAV.GUIDE' | translate"
   (keydown)="onKeyDown($event)"
@@ -58,7 +198,8 @@
         (focus)="onFocusCell(r, 0)"
         (click)="playChannel(row.channel)"
       >
-        {{ row.channel.name }}
+        <span *ngIf="countryCode(row.channel.name) as code" class="guide-country">{{ code }}</span>
+        {{ row.channel.name | countryName: memory.CountryPrefixMode }}
       </button>
       <div class="guide-timeline" [style.width.px]="timelineWidth">
         <ng-container [ngSwitch]="row.state">

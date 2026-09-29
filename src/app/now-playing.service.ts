@@ -61,6 +61,13 @@ export class NowPlayingService {
     this.loadXmltvState();
   }
 
+  /** Drops the cached EPG of one channel, e.g. after its guide was assigned
+   *  by hand: the next lookup (tile, guide) asks the backend again. */
+  invalidate(channelId: number) {
+    this.cache.delete(channelId);
+    this.guideCache.entries.delete(channelId);
+  }
+
   private loadXmltvState() {
     invoke<boolean>("has_xmltv_data")
       .then((has) => (this.memory.HasXmltv = has))

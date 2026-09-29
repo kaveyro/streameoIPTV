@@ -25,6 +25,8 @@ import { Filters } from "../models/filters";
 import { MediaType } from "../models/mediaType";
 import { ViewMode } from "../models/viewMode";
 import { ScheduledRecording } from "../models/scheduledRecording";
+import { ProgrammeHit } from "../models/epgExtras";
+import { splitCountryPrefix } from "../country-prefix";
 import { uiLocale } from "../utils";
 
 /// Session cache of the guide data per channel id, kept when the guide closes.
@@ -34,6 +36,9 @@ export class GuideEpgCache {
 }
 
 type ProgrammeState = "past" | "now" | "future";
+
+/// What the programme actions need: a guide block's EPG or a search hit.
+type Programme = Pick<EPG, "epg_id" | "title" | "start_timestamp" | "end_timestamp">;
 
 export interface GuideBlock {
   epg: EPG;
@@ -59,6 +64,23 @@ export interface GuideSlot {
   label: string;
 }
 
+export interface GuideSearchHit {
+  hit: ProgrammeHit;
+  state: ProgrammeState;
+  /// "20:15 – 21:45".
+  time: string;
+  /// How much of a running programme has aired, 0..100.
+  progress: number;
+}
+
+export interface GuideSearchDay {
+  /// Local date, "2026-9-29".
+  key: string;
+  /// "Today", "Tomorrow" or weekday and date.
+  label: string;
+  hits: GuideSearchHit[];
+}
+
 /**
  * TV guide: live channels as rows, time (now - 1 h .. now + 6 h, 30 minute
  * slots) as columns. EPG data is fetched lazily for the rows near the
@@ -69,7 +91,7 @@ export interface GuideSlot {
   standalone: false,
   selector: "app-tv-guide",
   templateUrl: "./tv-guide.component.html",
-  styleUrl: "./tv-guide.component.css",
+  styleUrls: ["./tv-guide.component.css", "./tv-guide-search.css"],
 })
 export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   static readonly PAGE_SIZE = 36;
@@ -78,6 +100,9 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   /// Width of one 30 minute slot in px (keep in sync with --guide-slot-width).
   static readonly SLOT_WIDTH = 120;
   static readonly PX_PER_SECOND = TvGuideComponent.SLOT_WIDTH / TvGuideComponent.SLOT_SECONDS;
+  static readonly SEARCH_DEBOUNCE_MS = 300;
+  /// The backend answers shorter queries with nothing.
+  static readonly SEARCH_MIN_LENGTH = 2;
 
   /// Restricts the rows to one group (the one open in the library).
   @Input() group?: { id: number; name: string };
@@ -104,6 +129,14 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   /// "channelId:start" -> scheduled recording id.
   scheduled: Map<string, number> = new Map();
   scheduling = false;
+  /// Programme search: while a query is active the results replace the grid
+  /// (which is only hidden, so it comes back as it was).
+  searchQuery = "";
+  searchResults: ProgrammeHit[] = [];
+  searchDays: GuideSearchDay[] = [];
+  searching = false;
+  /// An answer for the current query has arrived.
+  searched = false;
 
   @ViewChild("scroller") scroller?: ElementRef<HTMLElement>;
   @ViewChild("sentinel") sentinel?: ElementRef<HTMLElement>;
@@ -121,6 +154,10 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private subscriptions: Subscription[] = [];
   private timeFormat?: Intl.DateTimeFormat;
+  private dayFormat?: Intl.DateTimeFormat;
+  /// Bumped on every query change, so answers to older queries are dropped.
+  private searchSeq = 0;
+  private searchTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     public memory: MemoryService,
@@ -173,6 +210,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     this.rowObserver?.disconnect();
     this.sentinelObserver?.disconnect();
     if (this.timer !== undefined) clearInterval(this.timer);
+    if (this.searchTimer !== undefined) clearTimeout(this.searchTimer);
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.queue = [];
   }
@@ -207,11 +245,12 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     for (const row of this.rows) {
       for (const block of row.blocks) block.state = this.stateOf(block.epg, now);
     }
+    if (this.searchResults.length > 0) this.groupResults(now);
   }
 
-  private stateOf(epg: EPG, now = Date.now() / 1000): ProgrammeState {
-    if (epg.end_timestamp <= now) return "past";
-    if (epg.start_timestamp > now) return "future";
+  private stateOf(programme: Programme, now = Date.now() / 1000): ProgrammeState {
+    if (programme.end_timestamp <= now) return "past";
+    if (programme.start_timestamp > now) return "future";
     return "now";
   }
 
@@ -224,6 +263,35 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
     return this.timeFormat.format(timestamp * 1000);
+  }
+
+  private timeRange(programme: Programme): string {
+    return `${this.formatTime(programme.start_timestamp)} – ${this.formatTime(programme.end_timestamp)}`;
+  }
+
+  /// "Today", "Tomorrow", else weekday and date in the UI language.
+  private dayLabel(date: Date): string {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const day = new Date(date);
+    day.setHours(0, 0, 0, 0);
+    // Rounded: a day with a DST switch has 23 or 25 hours.
+    const diff = Math.round((day.getTime() - today.getTime()) / (24 * 3600 * 1000));
+    if (diff === 0) return this.translate.instant("GUIDE.TODAY");
+    if (diff === 1) return this.translate.instant("GUIDE.TOMORROW");
+    if (!this.dayFormat) {
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      };
+      try {
+        this.dayFormat = new Intl.DateTimeFormat(uiLocale(this.translate), options);
+      } catch {
+        this.dayFormat = new Intl.DateTimeFormat(undefined, options);
+      }
+    }
+    return this.dayFormat.format(date);
   }
 
   // ------------------------------------------------------------------- rows
@@ -347,7 +415,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       .map((e) => {
         const start = Math.max(e.start_timestamp, this.windowStart);
         const end = Math.min(e.end_timestamp, this.windowEnd);
-        const time = `${this.formatTime(e.start_timestamp)} – ${this.formatTime(e.end_timestamp)}`;
+        const time = this.timeRange(e);
         return {
           epg: e,
           offset: (start - this.windowStart) * px,
@@ -378,6 +446,105 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
 
   tabIndex(row: number, col: number): number {
     return row === this.activeRow && col === this.activeCol ? 0 : -1;
+  }
+
+  /// The country code shown as a pill in front of the name ("badge" mode).
+  countryCode(name?: string): string | undefined {
+    return this.memory.CountryPrefixMode === "badge" ? splitCountryPrefix(name).code : undefined;
+  }
+
+  // ----------------------------------------------------------------- search
+
+  searchActive(): boolean {
+    return this.searchQuery.trim().length >= TvGuideComponent.SEARCH_MIN_LENGTH;
+  }
+
+  onSearchChange(query: string) {
+    this.searchQuery = query;
+    const seq = ++this.searchSeq;
+    if (this.searchTimer !== undefined) clearTimeout(this.searchTimer);
+    this.searchTimer = undefined;
+    const term = query.trim();
+    if (term.length < TvGuideComponent.SEARCH_MIN_LENGTH) {
+      this.searching = false;
+      this.searched = false;
+      this.searchResults = [];
+      this.searchDays = [];
+      return;
+    }
+    this.searching = true;
+    this.searchTimer = setTimeout(
+      () => this.runSearch(term, seq),
+      TvGuideComponent.SEARCH_DEBOUNCE_MS,
+    );
+  }
+
+  /** Escape empties the field; only an empty field lets it navigate back. */
+  onSearchKeyDown(event: KeyboardEvent) {
+    if (event.key !== "Escape" || !this.searchQuery) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.clearSearch();
+  }
+
+  clearSearch() {
+    this.onSearchChange("");
+  }
+
+  private async runSearch(query: string, seq: number) {
+    this.searchTimer = undefined;
+    try {
+      const hits = await invoke<ProgrammeHit[]>("search_programmes", {
+        query,
+        showLocked: this.memory.ShowLocked,
+      });
+      if (seq !== this.searchSeq || this.destroyed) return;
+      this.searchResults = hits;
+      this.groupResults();
+    } catch (e) {
+      if (seq !== this.searchSeq || this.destroyed) return;
+      this.searchResults = [];
+      this.searchDays = [];
+      this.error.handleError(e);
+    } finally {
+      if (seq === this.searchSeq) {
+        this.searching = false;
+        this.searched = true;
+      }
+    }
+  }
+
+  /// Groups the hits (ordered by start) by local day; a programme that is
+  /// already running counts as today even when it started yesterday.
+  private groupResults(now = Date.now() / 1000) {
+    const days = new Map<string, GuideSearchDay>();
+    for (const hit of this.searchResults) {
+      const date = new Date(Math.max(hit.start_timestamp, now) * 1000);
+      const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      let day = days.get(key);
+      if (!day) {
+        day = { key, label: this.dayLabel(date), hits: [] };
+        days.set(key, day);
+      }
+      const duration = hit.end_timestamp - hit.start_timestamp;
+      const aired = duration > 0 ? ((now - hit.start_timestamp) / duration) * 100 : 0;
+      day.hits.push({
+        hit,
+        state: this.stateOf(hit, now),
+        time: this.timeRange(hit),
+        progress: Math.min(100, Math.max(0, aired)),
+      });
+    }
+    this.searchDays = Array.from(days.values());
+  }
+
+  trackDay(_: number, day: GuideSearchDay) {
+    return day.key;
+  }
+
+  /// One guide programme can be on several playlist channels.
+  trackHit(_: number, item: GuideSearchHit) {
+    return `${item.hit.channel.id}:${item.hit.epg_id}`;
   }
 
   // ---------------------------------------------------------------- actions
@@ -440,7 +607,11 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
 
   scheduledId(row?: GuideRow, block?: GuideBlock): number | undefined {
     if (!row || !block) return undefined;
-    return this.scheduled.get(this.scheduleKey(row.channel.id, block.epg.start_timestamp));
+    return this.scheduledFor(row.channel, block.epg);
+  }
+
+  scheduledFor(channel: Channel, programme: Programme): number | undefined {
+    return this.scheduled.get(this.scheduleKey(channel.id, programme.start_timestamp));
   }
 
   async loadScheduled() {
@@ -454,19 +625,24 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** Recording of the programme the menu was opened for. */
   async toggleRecording() {
-    const row = this.menuRow;
-    const block = this.menuBlock;
-    if (!row || !block || this.scheduling || row.channel.id === undefined) return;
+    if (!this.menuRow || !this.menuBlock) return;
+    await this.toggleSchedule(this.menuRow.channel, this.menuBlock.epg);
+  }
+
+  /** Schedules or cancels a recording (guide menu and search results). */
+  async toggleSchedule(channel: Channel, programme: Programme) {
+    if (this.scheduling || channel.id === undefined) return;
     this.scheduling = true;
-    const id = this.scheduledId(row, block);
+    const id = this.scheduledFor(channel, programme);
     try {
       if (id === undefined) {
         await invoke("schedule_recording", {
-          channelId: row.channel.id,
-          title: block.epg.title,
-          startTimestamp: block.epg.start_timestamp,
-          endTimestamp: block.epg.end_timestamp,
+          channelId: channel.id,
+          title: programme.title,
+          startTimestamp: programme.start_timestamp,
+          endTimestamp: programme.end_timestamp,
         });
         this.error.success(this.translate.instant("TOAST.RECORDING_SCHEDULED"));
       } else {
@@ -482,27 +658,36 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   notificationOn(block?: GuideBlock): boolean {
-    return !!block && this.memory.Watched_epgs.has(block.epg.epg_id);
+    return !!block && this.reminderOn(block.epg);
   }
 
-  /** Reminder, the same commands as the EPG modal's bell. */
+  reminderOn(programme: Programme): boolean {
+    return this.memory.Watched_epgs.has(programme.epg_id);
+  }
+
+  /** Reminder for the programme the menu was opened for. */
   async toggleNotification() {
-    const row = this.menuRow;
-    const block = this.menuBlock;
-    if (!row || !block || this.memory.LoadingNotification || !this.memory.trayEnabled) return;
+    if (!this.menuRow || !this.menuBlock) return;
+    await this.toggleReminder(this.menuRow.channel, this.menuBlock.epg);
+  }
+
+  /** Reminder, the same commands as the EPG modal's bell (guide menu and
+   *  search results). */
+  async toggleReminder(channel: Channel, programme: Programme) {
+    if (this.memory.LoadingNotification || !this.memory.trayEnabled) return;
     this.memory.LoadingNotification = true;
     try {
-      if (!this.notificationOn(block)) {
+      if (!this.reminderOn(programme)) {
         const epg: EPGNotify = {
-          channel_name: row.channel.name ?? "",
-          epg_id: block.epg.epg_id,
-          start_timestamp: block.epg.start_timestamp,
-          title: block.epg.title,
+          channel_name: channel.name ?? "",
+          epg_id: programme.epg_id,
+          start_timestamp: programme.start_timestamp,
+          title: programme.title,
         };
         await invoke("add_epg", { epg });
         this.error.success(this.translate.instant("TOAST.NOTIFICATION_ADDED"));
       } else {
-        await invoke("remove_epg", { epgId: block.epg.epg_id });
+        await invoke("remove_epg", { epgId: programme.epg_id });
         this.error.success(this.translate.instant("TOAST.NOTIFICATION_REMOVED"));
       }
       await this.memory.get_epg_ids();

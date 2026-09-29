@@ -775,9 +775,10 @@ body:has(app-download-manager) {
    above it too when the window is too narrow for both side by side. These
    global selectors outrank the components' encapsulated ones. */
 :root {
-  --mini-player-width: min(400px, calc(100vw - 2rem));
+  --mini-player-width: min(320px, calc(100vw - 2rem));
   --mini-player-bar-height: 2.75rem;
-  --mini-player-height: calc(var(--mini-player-width) * 9 / 16 + var(--mini-player-bar-height));
+  /* Only the bar stays in the app: the video floats in its own window. */
+  --mini-player-height: var(--mini-player-bar-height);
 }
 
 body.player-mini .scroll-to-top {
@@ -789,8 +790,8 @@ body.player-mini .download-box {
   inset-inline-end: calc(var(--mini-player-width) + 2rem);
 }
 
-/* The native mini window hides whatever lies under it: leave room at the end
-   of the page, so the last tiles and list rows can be scrolled out of it. */
+/* Leave room at the end of the page, so the last tiles and list rows can be
+   scrolled out from under the mini player's bar. */
 body.player-mini main {
   padding-bottom: calc(var(--mini-player-height) + 2rem);
 }

@@ -13,7 +13,6 @@ import { UnlistenFn, listen } from "@tauri-apps/api/event";
 import { Subscription } from "rxjs";
 import { TranslateService } from "@ngx-translate/core";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
-import { OverlayContainer } from "@angular/cdk/overlay";
 import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
 import { ErrorService } from "../error.service";
@@ -95,15 +94,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private filterCache?: { source: Channel[]; text: string; result: Channel[] };
   /// Country codes of the names shown as a badge, see {@link countryCode}.
   private countryCodes = new Map<string, string | undefined>();
-  /// Whether any ng-bootstrap modal is open.
-  private modalsOpen = false;
-  /// Whether a CDK overlay (context menu, select panel) overlaps the mini
-  /// player: it would be painted under the native window.
-  private overlayOverMini = false;
-  private overlayObserver?: MutationObserver;
-  /// The native window was hidden because a modal opened over the mini
-  /// player; it is shown again when the last modal closes.
-  private hiddenForModal = false;
   @ViewChild("videoHost") videoHost?: ElementRef<HTMLDivElement>;
   @ViewChild("playerList") playerList?: ElementRef<HTMLElement>;
 
@@ -115,7 +105,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     private nowPlayingService: NowPlayingService,
     private modal: NgbModal,
     private host: ElementRef<HTMLElement>,
-    private overlayContainer: OverlayContainer,
   ) {}
 
   ngAfterViewInit(): void {
@@ -129,25 +118,14 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         if (this.active && this.mini) this.back();
       }),
     );
-    // The full player's dialogs hide the video through memory.hidePlayerWhile,
-    // which only acts while PlayerVisible. Beside the mini player the page is
-    // usable, so any dialog may open: hide the native window while one is.
-    this.subscriptions.push(
-      this.modal.activeInstances.subscribe((modals) => {
-        this.modalsOpen = modals.length > 0;
-        this.updateCoverHiding();
-      }),
-    );
-    // Context menus of the tiles beside the mini player open in CDK overlays.
-    this.ngZone.runOutsideAngular(() => {
-      this.overlayObserver = new MutationObserver(() =>
-        requestAnimationFrame(() => this.checkOverlays()),
-      );
-      this.overlayObserver.observe(this.overlayContainer.getContainerElement(), {
-        childList: true,
-        subtree: true,
-      });
-    });
+    // The mini player's own window frame: its close button ends playback,
+    // a double-click on its caption brings the video back into the app.
+    listen("player-popout-close", () => {
+      if (this.active && this.mini) this.ngZone.run(() => this.back());
+    }).then((unlisten) => this.unlistens.push(unlisten));
+    listen("player-popout-dock", () => {
+      if (this.active && this.mini) this.ngZone.run(() => this.expand());
+    }).then((unlisten) => this.unlistens.push(unlisten));
     // mpv reports a double-click / `f` key (rebound to a script-message) here;
     // toggle app-level fullscreen since mpv can't fullscreen an embedded child.
     // The mini player grows back to the full player instead.
@@ -245,17 +223,21 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       await this.undoIfClosed();
       return;
     }
+    // A channel started from the app while the mini player floats plays in
+    // the full player again: the video goes back into the app first.
+    if (this.mini) {
+      await this.setPopout(false);
+      this.mini = false;
+      if (this.isStale(generation)) return;
+    }
     this.setCurrent(channel);
     this.currentFailed = false;
     this.nowPlaying = undefined;
     this.active = true;
-    // A channel started from the page beside the mini player opens the full
-    // player again.
-    this.mini = false;
     this.applyMode();
     const switchSeq = ++this.switchSeq;
     try {
-      await this.showNativeWindow();
+      await invoke("player_set_visible", { visible: true });
       if (this.isStale(generation)) {
         await this.undoIfClosed();
         return;
@@ -298,7 +280,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   /**
    * Applies the page-level state of the current mode. The full player covers
    * the page: it owns the keyboard, the page behind it is inert and does not
-   * scroll. Beside the mini player the page stays fully usable.
+   * scroll. While the mini player floats the app stays fully usable; only a
+   * small bar with the way back stays in the app.
    */
   private applyMode() {
     const full = this.active && !this.mini;
@@ -313,81 +296,40 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.lockBackgroundScroll(full);
   }
 
-  /// Shows the native window, unless it was hidden for a still open modal.
-  private async showNativeWindow() {
-    if (this.hiddenForModal) return;
-    await invoke("player_set_visible", { visible: true });
-  }
-
-  /// Whether a visible CDK overlay pane intersects the mini video.
-  private checkOverlays() {
-    let over = false;
-    const video = this.videoHost?.nativeElement.getBoundingClientRect();
-    if (this.active && this.mini && video) {
-      const panes = this.overlayContainer
-        .getContainerElement()
-        .querySelectorAll<HTMLElement>(".cdk-overlay-pane");
-      over = Array.from(panes).some((pane) => {
-        if (pane.childElementCount === 0) return false;
-        const r = pane.getBoundingClientRect();
-        return (
-          r.width > 0 &&
-          r.left < video.right &&
-          r.right > video.left &&
-          r.top < video.bottom &&
-          r.bottom > video.top
-        );
+  /**
+   * Moves the video into its own always-on-top window, or back into the app.
+   * The backend re-parents mpv's host window, so playback goes on; the user
+   * drags and resizes the floating window, and it stays up when the app is
+   * minimized. With `popout` it also (re)sets the window title.
+   */
+  private async setPopout(popout: boolean) {
+    try {
+      await invoke("player_set_popout", {
+        popout,
+        title: popout ? (this.current?.name ?? "") : null,
       });
-    }
-    if (over === this.overlayOverMini) return;
-    this.ngZone.run(() => {
-      this.overlayOverMini = over;
-      this.updateCoverHiding();
-    });
-  }
-
-  private updateCoverHiding() {
-    this.onModalsChanged(this.modalsOpen || this.overlayOverMini);
-  }
-
-  /// `open`: a modal, or an overlay over the mini video, is shown.
-  private onModalsChanged(open: boolean) {
-    if (!this.active) {
-      this.hiddenForModal = false;
-      return;
-    }
-    // Only the mini player hides for a modal (the full player leaves that to
-    // hidePlayerWhile). Once hidden, the window comes back when the modals are
-    // gone, even if the player grew to the full player meanwhile.
-    if (open && this.mini && !this.hiddenForModal) {
-      this.hiddenForModal = true;
-      invoke("player_set_visible", { visible: false }).catch(() => {});
-    } else if (!open && this.hiddenForModal) {
-      this.hiddenForModal = false;
-      invoke("player_set_visible", { visible: true })
-        .then(() => this.syncBounds())
-        .catch(() => {});
+    } catch (e) {
+      console.error(e);
     }
   }
 
-  /** Continues playback in the small corner window; the app stays usable. */
-  minimize() {
+  /** Continues playback in a small floating window; the app stays usable. */
+  async minimize() {
     if (!this.active || this.mini || this.fullscreen) return;
     this.mini = true;
     this.applyMode();
-    // The modal backdrop covers the player bar, so none should be open here;
-    // if one is, hide the window like for a modal opened later.
-    if (this.modalsOpen) this.updateCoverHiding();
-    // Wait for the mini layout to render, then align the native window and
-    // keep the focus in the player (Escape there closes it).
+    await this.setPopout(true);
+    // Keep the focus in the app's mini bar (Escape there closes it).
     setTimeout(() => {
-      this.syncBounds();
       this.host.nativeElement.querySelector<HTMLElement>(".mini-expand")?.focus();
     }, 0);
   }
 
   /** Back from the mini player to the full player. */
-  expand() {
+  async expand() {
+    if (!this.active || !this.mini) return;
+    await this.setPopout(false);
+    // Closed or taken over by open() meanwhile.
     if (!this.active || !this.mini) return;
     this.mini = false;
     this.applyMode();
@@ -570,6 +512,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private setCurrent(channel: Channel) {
     if (this.current && this.current.id !== channel.id) this.previous = this.current;
     this.current = channel;
+    // mpv keys switch channels in the floating window too: keep its title.
+    if (this.active && this.mini) this.setPopout(true);
   }
 
   private isFocusInList(): boolean {
@@ -683,7 +627,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
     this.initialized = false;
     await this.ensureInitialized();
-    await this.showNativeWindow();
+    await invoke("player_set_visible", { visible: true });
     await invoke("player_play", { channel });
     this.syncBounds();
   }
@@ -698,8 +642,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     const focusToPage = this.mini && this.host.nativeElement.contains(document.activeElement);
     this.active = false;
     this.mini = false;
-    this.hiddenForModal = false;
-    this.overlayOverMini = false;
     this.applyMode();
     if (focusToPage) {
       const main = document.querySelector<HTMLElement>("main");
@@ -713,6 +655,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.stopBoundsSync();
     this.stopEpgTimer();
     try {
+      // Back into the app first (a no-op when it is there), so the next open
+      // finds the video where the page expects it.
+      await invoke("player_set_popout", { popout: false, title: null });
       await invoke("player_set_visible", { visible: false });
       await invoke("player_stop");
     } catch {
@@ -784,7 +729,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.overlayObserver?.disconnect();
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.stopBoundsSync();
     this.stopEpgTimer();

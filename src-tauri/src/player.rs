@@ -55,6 +55,28 @@ const MPV_DEFAULT_USER_AGENT: &str = "libmpv";
 /// show/hide it. 0 means "no player window".
 static PLAYER_HWND: AtomicIsize = AtomicIsize::new(0);
 
+/// Whether the host window floats as its own always-on-top window (the mini
+/// player) instead of sitting inside the main window. The frontend's in-app
+/// bounds are ignored meanwhile, and the tray keeps it visible.
+static POPPED_OUT: AtomicBool = AtomicBool::new(false);
+
+/// Settings key of the floating window's last position and size ("x,y,w,h",
+/// physical screen pixels, outer window rectangle).
+#[cfg(target_os = "windows")]
+const POPOUT_BOUNDS: &str = "miniPlayerBounds";
+
+/// For the host window procedure, which reports the floating window's close
+/// button and caption double-click to the frontend.
+#[cfg(target_os = "windows")]
+static APP_HANDLE: std::sync::OnceLock<AppHandle> = std::sync::OnceLock::new();
+
+/// The floating window's close button was pressed.
+#[cfg(target_os = "windows")]
+const POPOUT_CLOSE_EVENT: &str = "player-popout-close";
+/// The floating window's caption was double-clicked: back into the app.
+#[cfg(target_os = "windows")]
+const POPOUT_DOCK_EVENT: &str = "player-popout-dock";
+
 /// Process id of the embedded mpv, for the synchronous exit path. 0 means "no
 /// player process".
 static PLAYER_MPV_PID: AtomicU32 = AtomicU32::new(0);
@@ -95,6 +117,7 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
     #[cfg(target_os = "windows")]
     {
         let _init = INIT_LOCK.lock().await;
+        let _ = APP_HANDLE.set(app.clone());
         // Reuse a healthy player; tear down a dead one (mpv crashed, IPC pipe
         // broke) so this call rebuilds it instead of leaving a black window
         // whose commands go nowhere.
@@ -270,6 +293,10 @@ pub async fn set_bounds(
 ) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
+        // The floating window is placed by the user, not by the page.
+        if POPPED_OUT.load(Ordering::SeqCst) {
+            return Ok(());
+        }
         let child = state.lock().await.player_child_hwnd;
         if let Some(child) = child {
             app.run_on_main_thread(move || unsafe { win::set_bounds(child, x, y, w, h) })?;
@@ -278,6 +305,86 @@ pub async fn set_bounds(
     #[cfg(not(target_os = "windows"))]
     let _ = (&app, &state, x, y, w, h);
     Ok(())
+}
+
+/// Whether the video floats in its own window (the mini player).
+pub fn is_popped_out() -> bool {
+    POPPED_OUT.load(Ordering::SeqCst)
+}
+
+/// Moves the video out of the main window into a small always-on-top window
+/// the user can drag and resize anywhere on the desktop (`popout`), or back
+/// into the main window. mpv keeps playing: only its host window changes
+/// parent. Called again while floating, it just updates the window title.
+pub async fn set_popout(
+    app: AppHandle,
+    state: State<'_, Mutex<AppState>>,
+    popout: bool,
+    title: Option<String>,
+) -> Result<()> {
+    #[cfg(target_os = "windows")]
+    {
+        let Some(child) = state.lock().await.player_child_hwnd else {
+            return Ok(());
+        };
+        let main: isize = app
+            .get_webview_window("main")
+            .context("no main window")?
+            .hwnd()?
+            .0 as isize;
+        let title = title.unwrap_or_default();
+        if popout {
+            if POPPED_OUT.swap(true, Ordering::SeqCst) {
+                app.run_on_main_thread(move || unsafe { win::set_title(child, &title) })?;
+                return Ok(());
+            }
+            let saved = crate::sql::get_settings()
+                .ok()
+                .and_then(|map| map.get(POPOUT_BOUNDS).and_then(|v| parse_bounds(v)));
+            app.run_on_main_thread(move || unsafe { win::pop_out(child, main, saved, &title) })?;
+        } else if POPPED_OUT.swap(false, Ordering::SeqCst) {
+            let (tx, rx) = std::sync::mpsc::channel();
+            app.run_on_main_thread(move || {
+                let _ = tx.send(unsafe { win::dock(child, main) });
+            })?;
+            if let Ok((x, y, w, h)) = rx.recv() {
+                let map = std::collections::HashMap::from([(
+                    POPOUT_BOUNDS.to_string(),
+                    Some(format!("{x},{y},{w},{h}")),
+                )]);
+                if let Err(e) = crate::sql::update_settings(map) {
+                    crate::log::warn(format!(
+                        "{:?}",
+                        e.context("saving the mini player position")
+                    ));
+                }
+            }
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    let _ = (&app, &state, popout, title);
+    Ok(())
+}
+
+/// Parses the stored "x,y,w,h" of the floating window.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+fn parse_bounds(value: &str) -> Option<(i32, i32, i32, i32)> {
+    let parts: Vec<i32> = value
+        .split(',')
+        .map(|p| p.trim().parse().ok())
+        .collect::<Option<Vec<i32>>>()?;
+    match parts[..] {
+        [x, y, w, h] if w > 0 && h > 0 => Some((x, y, w, h)),
+        _ => None,
+    }
+}
+
+/// Tells the frontend what happened in the floating window's frame.
+#[cfg(target_os = "windows")]
+fn emit_popout(event: &str) {
+    if let Some(app) = APP_HANDLE.get() {
+        let _ = app.emit(event, ());
+    }
 }
 
 /// Shows or hides the native video window (used when entering/leaving the
@@ -359,6 +466,7 @@ pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Resul
         (s.player_child_hwnd.take(), s.player_mpv.take())
     };
     PLAYER_MPV_PID.store(0, Ordering::SeqCst);
+    POPPED_OUT.store(false, Ordering::SeqCst);
     if let Some(mut mpv) = mpv {
         let _ = mpv.kill().await;
     }
@@ -589,9 +697,14 @@ async fn connect_pipe(name: &str) -> Result<tokio::net::windows::named_pipe::Nam
 #[cfg(target_os = "windows")]
 mod win {
     use std::sync::OnceLock;
-    use windows_sys::Win32::Foundation::{COLORREF, HWND};
-    use windows_sys::Win32::Graphics::Gdi::CreateSolidBrush;
+    use std::sync::atomic::Ordering;
+    use windows_sys::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, RECT, WPARAM};
+    use windows_sys::Win32::Graphics::Gdi::{
+        CreateSolidBrush, GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTONULL,
+        MONITORINFO, MonitorFromRect, MonitorFromWindow,
+    };
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows_sys::Win32::UI::HiDpi::GetDpiForWindow;
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::EnableWindow;
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
@@ -612,7 +725,7 @@ mod win {
                     let wc = WNDCLASSEXW {
                         cbSize: std::mem::size_of::<WNDCLASSEXW>() as u32,
                         style: 0,
-                        lpfnWndProc: Some(DefWindowProcW),
+                        lpfnWndProc: Some(host_proc),
                         cbClsExtra: 0,
                         cbWndExtra: 0,
                         hInstance: hinstance,
@@ -632,6 +745,188 @@ mod win {
             .as_ptr()
     }
 
+    /// Styles of the host while it floats: a thin tool-window caption (drag
+    /// it to move, the frame to resize, x to close) around mpv's video.
+    const POPOUT_STYLE: WINDOW_STYLE =
+        WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_CLIPCHILDREN | WS_VISIBLE;
+    const POPOUT_EX_STYLE: WINDOW_EX_STYLE = WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
+    const CHILD_STYLE: WINDOW_STYLE = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS;
+    /// Default and minimum width of the video in the floating window, in
+    /// 96-dpi pixels.
+    const POPOUT_WIDTH: i32 = 480;
+    const POPOUT_MIN_WIDTH: i32 = 240;
+
+    fn scale(hwnd: HWND, value: i32) -> i32 {
+        let dpi = unsafe { GetDpiForWindow(hwnd) };
+        let dpi = if dpi == 0 { 96 } else { dpi as i32 };
+        value * dpi / 96
+    }
+
+    /// Frame size around the client area for the floating styles.
+    fn frame_size(hwnd: HWND) -> (i32, i32) {
+        let mut r = RECT {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+        };
+        unsafe { AdjustWindowRectEx(&mut r, POPOUT_STYLE, 0, POPOUT_EX_STYLE) };
+        let _ = hwnd;
+        (r.right - r.left, r.bottom - r.top)
+    }
+
+    /// Only the floating window gets the special frame behaviour; inside the
+    /// main window the host is a plain child.
+    unsafe extern "system" fn host_proc(
+        hwnd: HWND,
+        msg: u32,
+        wparam: WPARAM,
+        lparam: LPARAM,
+    ) -> LRESULT {
+        if super::POPPED_OUT.load(Ordering::SeqCst) {
+            match msg {
+                // Destroying the host would take mpv's window with it.
+                WM_CLOSE => {
+                    super::emit_popout(super::POPOUT_CLOSE_EVENT);
+                    return 0;
+                }
+                WM_NCLBUTTONDBLCLK if wparam as u32 == HTCAPTION => {
+                    super::emit_popout(super::POPOUT_DOCK_EVENT);
+                    return 0;
+                }
+                WM_SIZING => {
+                    unsafe { keep_aspect(hwnd, wparam as u32, lparam as *mut RECT) };
+                    return 1;
+                }
+                WM_GETMINMAXINFO => {
+                    let (fw, fh) = frame_size(hwnd);
+                    let min_w = scale(hwnd, POPOUT_MIN_WIDTH);
+                    let info = lparam as *mut MINMAXINFO;
+                    unsafe {
+                        (*info).ptMinTrackSize.x = min_w + fw;
+                        (*info).ptMinTrackSize.y = min_w * 9 / 16 + fh;
+                    }
+                    return 0;
+                }
+                _ => {}
+            }
+        }
+        unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
+    }
+
+    /// Keeps the video area 16:9 while the user drags a frame edge.
+    unsafe fn keep_aspect(hwnd: HWND, edge: u32, rect: *mut RECT) {
+        let (fw, fh) = frame_size(hwnd);
+        let r = unsafe { &mut *rect };
+        let width = (r.right - r.left - fw).max(1);
+        let height = (r.bottom - r.top - fh).max(1);
+        match edge {
+            WMSZ_TOP | WMSZ_BOTTOM => r.right = r.left + height * 16 / 9 + fw,
+            WMSZ_TOPLEFT | WMSZ_TOPRIGHT => r.top = r.bottom - width * 9 / 16 - fh,
+            _ => r.bottom = r.top + width * 9 / 16 + fh,
+        }
+    }
+
+    fn on_screen(x: i32, y: i32, w: i32, h: i32) -> bool {
+        let r = RECT {
+            left: x,
+            top: y,
+            right: x + w,
+            bottom: y + h,
+        };
+        !unsafe { MonitorFromRect(&r, MONITOR_DEFAULTTONULL) }.is_null()
+    }
+
+    /// Bottom right of the work area of the main window's monitor.
+    unsafe fn default_bounds(host: HWND, main: HWND) -> (i32, i32, i32, i32) {
+        let (fw, fh) = frame_size(host);
+        let w = scale(main, POPOUT_WIDTH);
+        let (w, h) = (w + fw, w * 9 / 16 + fh);
+        let margin = scale(main, 24);
+        let mut info: MONITORINFO = unsafe { std::mem::zeroed() };
+        info.cbSize = std::mem::size_of::<MONITORINFO>() as u32;
+        let monitor = unsafe { MonitorFromWindow(main, MONITOR_DEFAULTTONEAREST) };
+        if unsafe { GetMonitorInfoW(monitor, &mut info) } == 0 {
+            return (margin, margin, w, h);
+        }
+        let work = info.rcWork;
+        (work.right - w - margin, work.bottom - h - margin, w, h)
+    }
+
+    pub unsafe fn set_title(host: isize, title: &str) {
+        let text = wide(title);
+        unsafe { SetWindowTextW(host as HWND, text.as_ptr()) };
+    }
+
+    /// Turns the host into a floating top-level window. Not owned by the main
+    /// window, so it stays up while the app is minimized.
+    pub unsafe fn pop_out(
+        host: isize,
+        main: isize,
+        saved: Option<(i32, i32, i32, i32)>,
+        title: &str,
+    ) {
+        let host = host as HWND;
+        let main = main as HWND;
+        let (x, y, w, h) = saved
+            .filter(|&(x, y, w, h)| on_screen(x, y, w, h))
+            .unwrap_or_else(|| unsafe { default_bounds(host, main) });
+        unsafe {
+            // SetParent(NULL) first, then the popup styles (see SetParent).
+            SetParent(host, std::ptr::null_mut());
+            SetWindowLongPtrW(host, GWL_STYLE, POPOUT_STYLE as isize);
+            SetWindowLongPtrW(host, GWL_EXSTYLE, POPOUT_EX_STYLE as isize);
+            set_title(host as isize, title);
+            SetWindowPos(
+                host,
+                HWND_TOPMOST,
+                x,
+                y,
+                w,
+                h,
+                SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            );
+        }
+    }
+
+    /// Puts the host back into the main window as a child. Returns the
+    /// floating window's last position and size, to be remembered.
+    pub unsafe fn dock(host: isize, main: isize) -> (i32, i32, i32, i32) {
+        let host = host as HWND;
+        let mut r = RECT {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+        };
+        unsafe {
+            GetWindowRect(host, &mut r);
+            SetWindowPos(
+                host,
+                HWND_NOTOPMOST,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+            );
+            // The child style first, then SetParent (see SetParent).
+            SetWindowLongPtrW(host, GWL_EXSTYLE, 0);
+            SetWindowLongPtrW(host, GWL_STYLE, CHILD_STYLE as isize);
+            SetParent(host, main as HWND);
+            SetWindowPos(
+                host,
+                HWND_TOP,
+                0,
+                0,
+                1,
+                1,
+                SWP_FRAMECHANGED | SWP_NOACTIVATE,
+            );
+        }
+        (r.left, r.top, r.right - r.left, r.bottom - r.top)
+    }
+
     pub unsafe fn create_child(parent: isize, x: i32, y: i32, w: i32, h: i32) -> isize {
         let class = ensure_class();
         let title = wide("");
@@ -641,7 +936,7 @@ mod win {
                 0,
                 class,
                 title.as_ptr(),
-                WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+                CHILD_STYLE,
                 x,
                 y,
                 w,
@@ -711,6 +1006,16 @@ mod test_player {
 
     /// The provider only allows so many connections at once, so the running
     /// stream has to be closed before the next one is opened.
+    #[test]
+    fn test_parse_bounds() {
+        assert_eq!(parse_bounds("10,-20,640,380"), Some((10, -20, 640, 380)));
+        assert_eq!(parse_bounds(" 1, 2, 3, 4 "), Some((1, 2, 3, 4)));
+        assert_eq!(parse_bounds("1,2,0,4"), None);
+        assert_eq!(parse_bounds("1,2,3"), None);
+        assert_eq!(parse_bounds("a,b,c,d"), None);
+        assert_eq!(parse_bounds(""), None);
+    }
+
     #[test]
     fn test_stops_before_loading_the_next_stream() {
         let cmds = commands(None);

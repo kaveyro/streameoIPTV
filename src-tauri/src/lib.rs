@@ -152,6 +152,7 @@ pub fn run() {
             player_osd,
             player_set_bounds,
             player_set_visible,
+            player_set_popout,
             player_destroy,
             get_xmltv_sources,
             set_xmltv_sources,
@@ -202,8 +203,11 @@ pub fn run() {
                 }
 
                 // Hide the native player window too, so the embedded video does
-                // not float over the desktop while the app is in the tray.
-                player::set_visible_sync(false);
+                // not float over the desktop while the app is in the tray. The
+                // mini player is meant to float: it keeps playing.
+                if !player::is_popped_out() {
+                    player::set_visible_sync(false);
+                }
                 _window.hide().unwrap();
                 api.prevent_close();
             }
@@ -352,6 +356,18 @@ async fn player_set_visible(
     visible: bool,
 ) -> Result<(), String> {
     player::set_visible(app, state, visible)
+        .await
+        .map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn player_set_popout(
+    app: AppHandle,
+    state: State<'_, Mutex<AppState>>,
+    popout: bool,
+    title: Option<String>,
+) -> Result<(), String> {
+    player::set_popout(app, state, popout, title)
         .await
         .map_err(map_err_frontend)
 }

@@ -225,14 +225,21 @@
   inset: auto 1rem 1rem auto;
   width: var(--mini-player-width);
   grid-template-columns: 1fr;
-  grid-template-rows: calc(var(--mini-player-width) * 9 / 16) var(--mini-player-bar-height);
+  grid-template-rows: var(--mini-player-bar-height);
   border: 1px solid var(--border-subtle);
-  border-radius: 0 0 var(--radius-card) var(--radius-card);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+}
+
+/* The video is in the floating window meanwhile. */
+.player-overlay.mini .video-host {
+  display: none;
 }
 
 .mini-bar {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 1;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -240,7 +247,6 @@
   padding-block: 0;
   padding-inline: 0.75rem 0.35rem;
   background: var(--bg-surface-alt);
-  border-top: 1px solid var(--border-subtle);
 }
 
 .mini-bar .ptitle {

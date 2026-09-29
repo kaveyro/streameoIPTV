@@ -8,8 +8,7 @@
 >
   <!-- The native mpv window is positioned exactly over this element. Never put
        DOM on top of it: on Windows it always composites above the WebView.
-       The same element hosts the mini player, so the bounds sync keeps
-       observing it across both modes. -->
+       While the mini player floats in its own window, it is not shown. -->
   <div #videoHost class="video-host"></div>
 
   <div class="player-bar" *ngIf="!fullscreen && !mini">
@@ -91,7 +90,8 @@
     </button>
   </div>
 
-  <!-- Mini player: the channel and the way back, nothing more. -->
+  <!-- Mini player: the video floats in its own window; the app keeps the
+       channel name and the way back. -->
   <div class="mini-bar" *ngIf="mini">
     <span class="ptitle" [title]="current?.name">
       <ng-container *ngTemplateOutlet="channelName; context: { $implicit: current }"></ng-container>

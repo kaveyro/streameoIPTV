@@ -49,6 +49,17 @@ const MODERN_UI_OSD_ARGS: [&str; 3] = ["--osd-bar-w=45", "--osd-bar-h=1.5", "--o
 const TETHYS_LUA: &str = include_str!("../player_ui/tethys.lua");
 const TETHYS_FILE_NAME: &str = "osc_tethys.lua";
 const ARG_OSC_OFF: &str = "--osc=no";
+/// Only for the player embedded in the app window:
+/// - mpv's window dragging would move its video window inside our host
+///   window (the picture slides out of the frame); the floating mini player
+///   is moved by its own caption instead.
+/// - Tethys' picture-in-picture button resizes mpv's own window, which does
+///   nothing for an embedded child; the app has its own mini player. The
+///   separate mpv window keeps the button, it works there.
+const EMBEDDED_ARGS: [&str; 2] = [
+    "--window-dragging=no",
+    "--script-opts-append=tethys-showPictureInPictureButton=no",
+];
 const ARG_SCRIPT: &str = "--script=";
 const ARG_VOLUME: &str = "--volume=";
 const ARG_HTTP_HEADERS: &str = "--http-header-fields=";
@@ -331,6 +342,7 @@ pub fn get_global_mpv_args(wid: isize, ipc_pipe: &str) -> Result<Vec<String>> {
         settings.player_ui.as_deref(),
         tethys_script.as_deref(),
     ));
+    args.extend(EMBEDDED_ARGS.iter().map(|s| s.to_string()));
     if settings.normalize_volume == Some(true) {
         args.push(ARG_NORMALIZE_AUDIO.to_string());
     }

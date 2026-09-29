@@ -10,6 +10,7 @@ import { TranslateService } from "@ngx-translate/core";
  */
 @Pipe({
   name: "timeAgo",
+  standalone: false,
   pure: false,
 })
 export class TimeAgoPipe implements PipeTransform {

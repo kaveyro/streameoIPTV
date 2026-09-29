@@ -5,6 +5,7 @@ import { from, map, Observable, of, switchMap, timer } from 'rxjs';
 
 @Directive({
   selector: '[group-name-exists]',
+  standalone: false,
   providers: [
     {
       provide: NG_ASYNC_VALIDATORS,

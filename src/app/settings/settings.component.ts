@@ -41,6 +41,7 @@ const SAVED_TOAST_INTERVAL_MS = 2000;
 
 @Component({
   selector: "app-settings",
+  standalone: false,
   templateUrl: "./settings.component.html",
   styleUrl: "./settings.component.css",
 })

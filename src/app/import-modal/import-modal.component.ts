@@ -7,6 +7,7 @@ import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: "app-import-modal",
+  standalone: false,
   templateUrl: "./import-modal.component.html",
   styleUrl: "./import-modal.component.css",
 })

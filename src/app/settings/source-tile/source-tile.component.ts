@@ -15,6 +15,7 @@ import { ConfirmService } from "../../confirm.service";
 
 @Component({
   selector: "app-source-tile",
+  standalone: false,
   templateUrl: "./source-tile.component.html",
   styleUrl: "./source-tile.component.css",
 })

@@ -8,6 +8,7 @@ import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: "app-edit-group-modal",
+  standalone: false,
   templateUrl: "./edit-group-modal.component.html",
   styleUrl: "./edit-group-modal.component.css",
 })

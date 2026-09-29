@@ -17,6 +17,7 @@ import { Settings } from "../models/settings";
 
 @Component({
   selector: "app-setup",
+  standalone: false,
   templateUrl: "./setup.component.html",
   styleUrl: "./setup.component.css",
 })

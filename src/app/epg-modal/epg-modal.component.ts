@@ -8,6 +8,7 @@ import { MemoryService } from "../memory.service";
 
 @Component({
   selector: "app-epg-modal",
+  standalone: false,
   templateUrl: "./epg-modal.component.html",
   styleUrl: "./epg-modal.component.css",
 })

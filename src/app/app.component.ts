@@ -8,6 +8,7 @@ import { Settings } from "./models/settings";
 
 @Component({
   selector: "app-root",
+  standalone: false,
   templateUrl: "./app.component.html",
   styleUrl: "./app.component.css",
 })

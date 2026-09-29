@@ -15,6 +15,7 @@ import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: "app-epg-modal-item",
+  standalone: false,
   templateUrl: "./epg-modal-item.component.html",
   styleUrl: "./epg-modal-item.component.css",
 })

@@ -5,6 +5,7 @@ import { SORT_TYPES, SortType } from "../../models/sortType";
 
 @Component({
   selector: "app-sort-button",
+  standalone: false,
   templateUrl: "./sort-button.component.html",
   styleUrl: "./sort-button.component.css",
 })

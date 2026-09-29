@@ -42,6 +42,7 @@ import { ConfirmService } from "../confirm.service";
 
 @Component({
   selector: "app-channel-tile",
+  standalone: false,
   templateUrl: "./channel-tile.component.html",
   styleUrl: "./channel-tile.component.css",
 })

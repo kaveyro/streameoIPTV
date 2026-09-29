@@ -12,6 +12,7 @@ import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
  */
 @Component({
   selector: "app-confirm-delete-modal",
+  standalone: false,
   templateUrl: "./confirm-delete-modal.component.html",
   styleUrl: "./confirm-delete-modal.component.css",
 })

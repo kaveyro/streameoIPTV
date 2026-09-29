@@ -12,6 +12,7 @@ import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: "app-restream-modal",
+  standalone: false,
   templateUrl: "./restream-modal.component.html",
   styleUrl: "./restream-modal.component.css",
 })

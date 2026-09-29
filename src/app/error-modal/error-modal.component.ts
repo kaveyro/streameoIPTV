@@ -6,6 +6,7 @@ import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-error-modal',
+  standalone: false,
   templateUrl: './error-modal.component.html',
   styleUrl: './error-modal.component.css'
 })

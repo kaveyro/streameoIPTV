@@ -1,6 +1,7 @@
 use std::{
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
+    sync::{LazyLock, Mutex as StdMutex},
     time::Duration,
 };
 
@@ -30,35 +31,43 @@ const FFMPEG_BIN_NAME: &str = "ffmpeg";
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
+/// The running restream ffmpeg. Owned here rather than by the task that runs
+/// the restream, so the app's exit path can kill it: a std `Child` is not
+/// killed on drop, and a leftover ffmpeg keeps pulling the provider stream
+/// (and occupies the subscription's only connection) forever.
+static FFMPEG: StdMutex<Option<Child>> = StdMutex::new(None);
+
+/// Random path segment every restream URL has to carry. The server listens on
+/// all interfaces, so without it anyone on the network (or the internet, with
+/// a forwarded port) could watch through the user's subscription.
+static TOKEN: LazyLock<String> = LazyLock::new(|| {
+    let mut bytes = [0u8; 16];
+    getrandom::getrandom(&mut bytes).expect("the OS random source is unavailable");
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+});
+
+fn stream_path() -> String {
+    format!("{}/stream.m3u8", *TOKEN)
+}
+
 fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Child> {
+    let url = mpv::checked_stream_url(channel.url.as_deref())?;
     let headers = sql::get_channel_headers_by_id(channel.id.context("no channel id")?)?;
+    let source = channel
+        .source_id
+        .and_then(|id| sql::get_source_from_id(id).ok());
     let playlist_dir = get_playlist_dir(restream_dir);
     let mut command = Command::new(get_bin(FFMPEG_BIN_NAME));
-    if let Some(headers) = headers {
-        if let Some(referrer) = headers.referrer {
-            command.arg("-headers");
-            command.arg(format!("Referer: {referrer}"));
-        }
-        if let Some(user_agent) = headers.user_agent {
-            command.arg("-headers");
-            command.arg(format!("User-Agent: {user_agent}"));
-        }
-        if let Some(origin) = headers.http_origin {
-            command.arg("-headers");
-            command.arg(format!("Origin: {origin}"));
-        }
-        if let Some(ignore_ssl) = headers.ignore_ssl {
-            if ignore_ssl {
-                command.arg("-tls_verify");
-                command.arg("0");
-            }
-        }
-    }
+    command.args(crate::utils::ffmpeg_input_args(
+        headers,
+        source.as_ref(),
+        &url,
+    ));
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
     let child = command
         .arg("-i")
-        .arg(channel.url.context("no channel url")?)
+        .arg(url)
         .arg("-c")
         .arg("copy")
         .arg("-f")
@@ -69,14 +78,6 @@ fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Chi
         .arg("6")
         .arg("-hls_flags")
         .arg("delete_segments")
-        .arg("-reconnect")
-        .arg("1")
-        .arg("-reconnect_at_eof")
-        .arg("1")
-        .arg("-reconnect_streamed")
-        .arg("1")
-        .arg("-reconnect_on_network_error")
-        .arg("1")
         .arg(playlist_dir)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -85,18 +86,22 @@ fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Chi
     Ok(child)
 }
 
-async fn start_web_server(
+/// Binds the web server before anything else is started, so a busy port is a
+/// plain error instead of a panic that leaves ffmpeg running.
+fn start_web_server(
     restream_dir: PathBuf,
     port: u16,
 ) -> Result<(Sender<bool>, tokio::task::JoinHandle<()>)> {
-    let file_server = warp::fs::dir(restream_dir);
+    use warp::Filter;
+    let file_server = warp::path(TOKEN.as_str()).and(warp::fs::dir(restream_dir));
     let (tx, rx) = oneshot::channel::<bool>();
-    let (_, server) =
-        warp::serve(file_server).bind_with_graceful_shutdown(([0, 0, 0, 0], port), async {
+    let (_, server) = warp::serve(file_server)
+        .try_bind_with_graceful_shutdown(([0, 0, 0, 0], port), async {
             rx.await.ok();
-        });
+        })
+        .with_context(|| format!("Port {port} is already in use, pick another restream port"))?;
     let handle = tokio::spawn(server);
-    return Ok((tx, handle));
+    Ok((tx, handle))
 }
 
 pub async fn start_restream(
@@ -105,27 +110,57 @@ pub async fn start_restream(
     app: AppHandle,
     channel: Channel,
 ) -> Result<()> {
+    if FFMPEG.lock().map(|f| f.is_some()).unwrap_or(false) {
+        anyhow::bail!("A restream is already running");
+    }
     let stop = state.lock().await.restream_stop_signal.clone();
     stop.store(false, std::sync::atomic::Ordering::Relaxed);
     let restream_dir = get_restream_folder()?;
     delete_old_segments(&restream_dir).await?;
-    let mut ffmpeg_child = start_ffmpeg_listening(channel, restream_dir.clone())?;
-    let (web_server_tx, web_server_handle) = start_web_server(restream_dir, port).await?;
+    let (web_server_tx, web_server_handle) = start_web_server(restream_dir.clone(), port)?;
+    let child = match start_ffmpeg_listening(channel, restream_dir) {
+        Ok(child) => child,
+        Err(e) => {
+            let _ = web_server_tx.send(true);
+            let _ = web_server_handle.await;
+            return Err(e);
+        }
+    };
+    if let Ok(mut slot) = FFMPEG.lock() {
+        *slot = Some(child);
+    }
     let _ = app.emit("restream_started", true);
     while !stop.load(std::sync::atomic::Ordering::Relaxed)
-        && ffmpeg_child
-            .try_wait()
-            .map(|option| option.is_none())
-            .unwrap_or(true)
+        && ffmpeg_running()
         && !web_server_handle.is_finished()
     {
         tokio::time::sleep(Duration::from_millis(500)).await
     }
-    let _ = ffmpeg_child.kill();
+    kill_sync();
     let _ = web_server_tx.send(true);
-    let _ = ffmpeg_child.wait();
     let _ = web_server_handle.await;
     Ok(())
+}
+
+fn ffmpeg_running() -> bool {
+    match FFMPEG.lock() {
+        Ok(mut slot) => match slot.as_mut() {
+            Some(child) => child.try_wait().map(|s| s.is_none()).unwrap_or(true),
+            None => false,
+        },
+        Err(_) => false,
+    }
+}
+
+/// Kills the restream ffmpeg, if any. Synchronous so the app exit path can
+/// call it.
+pub fn kill_sync() {
+    if let Ok(mut slot) = FFMPEG.lock()
+        && let Some(mut child) = slot.take()
+    {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
 }
 
 pub async fn stop_restream(state: State<'_, Mutex<AppState>>) -> Result<()> {
@@ -161,7 +196,7 @@ async fn delete_old_segments(dir: &Path) -> Result<()> {
 
 pub async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<()> {
     let channel = Channel {
-        url: Some(format!("http://127.0.0.1:{port}/stream.m3u8").to_string()),
+        url: Some(format!("http://127.0.0.1:{port}/{}", stream_path())),
         name: "Local livestream".to_string(),
         favorite: false,
         group: None,
@@ -211,7 +246,7 @@ pub async fn get_network_info() -> Result<NetworkInfo> {
     Ok(NetworkInfo {
         port,
         local_ips: get_ips(port)?,
-        wan_ip: get_wan_ip(port).await?,
+        wan_ip: get_wan_ip(port).await,
     })
 }
 
@@ -219,19 +254,33 @@ fn get_ips(port: u16) -> Result<Vec<String>> {
     Ok(if_addrs::get_if_addrs()?
         .iter()
         .filter(|i| i.ip().is_ipv4() && !i.ip().is_loopback())
-        .map(|i| format!("http://{}:{port}/stream.m3u8", i.ip().to_string()))
+        .map(|i| format!("http://{}:{port}/{}", i.ip(), stream_path()))
         .collect())
 }
 
-async fn get_wan_ip(port: u16) -> Result<String> {
-    Ok(format!(
-        "http://{}:{port}/stream.m3u8",
-        api_client_builder()
+/// The public address, or an empty string when it cannot be determined
+/// (offline, the lookup service is down) — the LAN addresses still work then.
+async fn get_wan_ip(port: u16) -> String {
+    let lookup = async {
+        let ip = api_client_builder()
             .build()?
             .get(WAN_IP_API)
             .send()
             .await?
+            .error_for_status()?
             .text()
-            .await?
-    ))
+            .await?;
+        anyhow::Ok(ip.trim().to_string())
+    };
+    match lookup.await {
+        Ok(ip) if !ip.is_empty() => format!("http://{ip}:{port}/{}", stream_path()),
+        Ok(_) => String::new(),
+        Err(e) => {
+            crate::log::log(format!(
+                "{:?}",
+                e.context("failed to look up the public IP")
+            ));
+            String::new()
+        }
+    }
 }

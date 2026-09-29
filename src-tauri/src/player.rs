@@ -59,6 +59,23 @@ static PLAYER_HWND: AtomicIsize = AtomicIsize::new(0);
 /// player process".
 static PLAYER_MPV_PID: AtomicU32 = AtomicU32::new(0);
 
+/// Serializes `init`: its liveness check and the state update are separate
+/// lock scopes, so two overlapping calls (a double-click on a channel) would
+/// both create a window and an mpv, leaving a stray black window behind.
+#[cfg(target_os = "windows")]
+static INIT_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// mpv keys that control the app while the video has keyboard focus. The
+/// WebView gets no key events then, so they come back as script-messages and
+/// are forwarded to the frontend as a `player-key` event with the action.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+const APP_KEYS: [(&str, &str); 4] = [
+    ("PGDWN", "next"),
+    ("PGUP", "prev"),
+    ("ESC", "back"),
+    ("BS", "last"),
+];
+
 /// Creates the native child window + persistent mpv process and wires up IPC.
 /// Idempotent: a second call while a player already exists is a no-op.
 pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<()> {
@@ -69,6 +86,7 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
     }
     #[cfg(target_os = "windows")]
     {
+        let _init = INIT_LOCK.lock().await;
         // Reuse a healthy player; tear down a dead one (mpv crashed, IPC pipe
         // broke) so this call rebuilds it instead of leaving a black window
         // whose commands go nowhere.
@@ -123,6 +141,11 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         let _ = ipc_tx.send(json!({
             "command": ["keybind", "f", "script-message streameo-fullscreen"]
         }));
+        for (key, action) in APP_KEYS {
+            let _ = ipc_tx.send(json!({
+                "command": ["keybind", key, format!("script-message streameo-key {action}")]
+            }));
+        }
 
         // mpv creates its video window (a WS_DISABLED child of our host) a moment
         // after spawn. Windows routes a disabled child's mouse/keyboard input to
@@ -383,7 +406,10 @@ fn build_play_commands(
 
     let is_live = channel.media_type == crate::media_type::LIVESTREAM;
     cmds.push(set_prop("save-position-on-quit", json!(!is_live)));
-    cmds.push(set_prop("loop-playlist", json!(if is_live { "inf" } else { "no" })));
+    cmds.push(set_prop(
+        "loop-playlist",
+        json!(if is_live { "inf" } else { "no" }),
+    ));
 
     // Providers serve live streams as HTTP 206 responses with a fixed content
     // length, so mpv takes them for seekable files: FFmpeg then seeks to the end
@@ -446,40 +472,45 @@ async fn run_ipc(
             };
             match v.get("event").and_then(Value::as_str) {
                 Some("client-message") => {
-                    if v.get("args")
+                    let args: Vec<&str> = v
+                        .get("args")
                         .and_then(Value::as_array)
-                        .and_then(|a| a.first())
-                        .and_then(Value::as_str)
-                        == Some("streameo-fullscreen")
-                    {
-                        let _ = reader_app.emit("player-toggle-fullscreen", ());
+                        .map(|a| a.iter().filter_map(Value::as_str).collect())
+                        .unwrap_or_default();
+                    match args.as_slice() {
+                        ["streameo-fullscreen", ..] => {
+                            let _ = reader_app.emit("player-toggle-fullscreen", ());
+                        }
+                        ["streameo-key", action, ..]
+                            if APP_KEYS.iter().any(|(_, a)| a == action) =>
+                        {
+                            let _ = reader_app.emit("player-key", action.to_string());
+                        }
+                        _ => {}
                     }
                 }
                 // mpv could not open or keep reading the stream. The other
                 // reasons ("eof", "stop", "quit") are ordinary playback ends.
-                Some("end-file") => {
-                    if v.get("reason").and_then(Value::as_str) == Some("error") {
-                        let message = v
-                            .get("file_error")
-                            .and_then(Value::as_str)
-                            .unwrap_or("mpv could not play this channel");
-                        crate::log::log(format!("player: playback failed: {message}"));
-                        let _ = reader_app.emit("player-error", message.to_string());
-                    }
+                Some("end-file") if v.get("reason").and_then(Value::as_str) == Some("error") => {
+                    let message = v
+                        .get("file_error")
+                        .and_then(Value::as_str)
+                        .unwrap_or("mpv could not play this channel");
+                    crate::log::log(format!("player: playback failed: {message}"));
+                    let _ = reader_app.emit("player-error", message.to_string());
                 }
                 // No event field: a reply to one of our commands. Only the
                 // loadfile reply is surfaced - a property an mpv build happens
                 // to reject must not spam the user with toasts.
                 None => {
-                    if v.get("request_id").and_then(Value::as_u64) == Some(LOADFILE_REQUEST_ID) {
-                        if let Some(error) = v
+                    if v.get("request_id").and_then(Value::as_u64) == Some(LOADFILE_REQUEST_ID)
+                        && let Some(error) = v
                             .get("error")
                             .and_then(Value::as_str)
                             .filter(|e| *e != "success")
-                        {
-                            crate::log::log(format!("player: loadfile rejected: {error}"));
-                            let _ = reader_app.emit("player-error", error.to_string());
-                        }
+                    {
+                        crate::log::log(format!("player: loadfile rejected: {error}"));
+                        let _ = reader_app.emit("player-error", error.to_string());
                     }
                 }
                 _ => {}
@@ -516,9 +547,7 @@ async fn handle_player_lost(app: &AppHandle) {
 }
 
 #[cfg(target_os = "windows")]
-async fn connect_pipe(
-    name: &str,
-) -> Result<tokio::net::windows::named_pipe::NamedPipeClient> {
+async fn connect_pipe(name: &str) -> Result<tokio::net::windows::named_pipe::NamedPipeClient> {
     use tokio::net::windows::named_pipe::ClientOptions;
     // mpv creates the pipe a short moment after it starts; retry with backoff.
     const ERROR_PIPE_BUSY: i32 = 231;
@@ -623,7 +652,9 @@ mod win {
         if child.is_null() {
             return false;
         }
-        unsafe { EnableWindow(child, 1 /* TRUE */) };
+        unsafe {
+            EnableWindow(child, 1 /* TRUE */)
+        };
         true
     }
 }
@@ -679,7 +710,10 @@ mod test_player {
                 user_agent,
                 ..Default::default()
             };
-            assert_eq!(user_agent_of(&commands(Some(headers))), MPV_DEFAULT_USER_AGENT);
+            assert_eq!(
+                user_agent_of(&commands(Some(headers))),
+                MPV_DEFAULT_USER_AGENT
+            );
         }
     }
 
@@ -705,8 +739,7 @@ mod test_player {
     fn test_live_streams_skip_the_duration_probe() {
         let mut channel = channel();
         channel.media_type = crate::media_type::LIVESTREAM;
-        let cmds =
-            build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
+        let cmds = build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
         assert_eq!(
             prop_of(&cmds, "demuxer-lavf-probe-info"),
             Some(json!("nostreams"))
@@ -718,9 +751,11 @@ mod test_player {
     fn test_vod_keeps_probing() {
         let mut channel = channel();
         channel.media_type = crate::media_type::MOVIE;
-        let cmds =
-            build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
-        assert_eq!(prop_of(&cmds, "demuxer-lavf-probe-info"), Some(json!("auto")));
+        let cmds = build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
+        assert_eq!(
+            prop_of(&cmds, "demuxer-lavf-probe-info"),
+            Some(json!("auto"))
+        );
     }
 
     /// mpv has no such property - setting it only logged "property not found".

@@ -91,7 +91,9 @@ pub fn store_source_password(source_id: i64, password: &str) -> bool {
     match get_password(&account) {
         Some(read_back) if read_back == password => true,
         _ => {
-            log(format!("Keychain read-back verification failed for {account}"));
+            log(format!(
+                "Keychain read-back verification failed for {account}"
+            ));
             false
         }
     }
@@ -164,7 +166,10 @@ pub fn migrate_passwords_to_keychain() {
     let sources = match sql::get_plaintext_source_passwords() {
         Ok(sources) => sources,
         Err(e) => {
-            log(format!("{:?}", e.context("Password migration failed to read sources")));
+            log(format!(
+                "{:?}",
+                e.context("Password migration failed to read sources")
+            ));
             return;
         }
     };
@@ -180,7 +185,10 @@ pub fn migrate_passwords_to_keychain() {
                 Err(e) => {
                     // DB write failed after the keychain write; the plaintext
                     // row remains authoritative, the keychain entry is ignored.
-                    log(format!("{:?}", e.context("Password migration DB update failed")));
+                    log(format!(
+                        "{:?}",
+                        e.context("Password migration DB update failed")
+                    ));
                 }
             }
         }
@@ -263,10 +271,7 @@ mod tests {
             set_password(&account, "round-trip-value"),
             "keychain write failed"
         );
-        assert_eq!(
-            get_password(&account).as_deref(),
-            Some("round-trip-value")
-        );
+        assert_eq!(get_password(&account).as_deref(), Some("round-trip-value"));
         delete_password(&account);
         assert_eq!(get_password(&account), None);
     }

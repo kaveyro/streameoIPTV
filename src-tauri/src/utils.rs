@@ -10,7 +10,6 @@ use crate::{
 use anyhow::{Context, Result, anyhow, bail};
 use chrono::{DateTime, Local, Utc};
 use directories::ProjectDirs;
-use indexmap::IndexMap;
 use regex::Regex;
 use reqwest::{
     Client,
@@ -64,7 +63,9 @@ static ILLEGAL_CHARS_REGEX: LazyLock<Regex> =
 pub async fn refresh_source(source: Source) -> Result<()> {
     let id = source.id;
     match source.source_type {
-        source_type::M3U => m3u::read_m3u8(source, true)?,
+        source_type::M3U => {
+            tokio::task::spawn_blocking(move || m3u::read_m3u8(source, true)).await??
+        }
         source_type::M3U_LINK => m3u::get_m3u8_from_link(source, true).await?,
         source_type::XTREAM => xtream::get_xtream(source, true).await?,
         source_type::CUSTOM => {}
@@ -76,10 +77,25 @@ pub async fn refresh_source(source: Source) -> Result<()> {
     Ok(())
 }
 
+/// Refreshes every enabled source. One broken provider no longer stops the
+/// others: all of them are tried, and the failures are reported together.
 pub async fn refresh_all() -> Result<()> {
-    let sources = sql::get_sources()?;
-    for source in sources {
-        refresh_source(source).await?;
+    let mut failed: Vec<String> = Vec::new();
+    for source in sql::get_enabled_sources()? {
+        if source.source_type == source_type::CUSTOM {
+            continue;
+        }
+        let name = source.name.clone();
+        if let Err(e) = refresh_source(source).await {
+            log(format!(
+                "{:?}",
+                e.context(format!("refresh failed for source {name}"))
+            ));
+            failed.push(name);
+        }
+    }
+    if !failed.is_empty() {
+        return Err(anyhow!("Refreshing failed for: {}", failed.join(", ")));
     }
     Ok(())
 }
@@ -119,10 +135,10 @@ pub async fn download(
         if let Some(referrer) = headers.referrer.as_ref() {
             headers_map.insert("Referer", HeaderValue::from_str(referrer)?);
         }
-        if let Some(ignore_ssl) = headers.ignore_ssl {
-            if ignore_ssl {
-                client = client.danger_accept_invalid_certs(true);
-            }
+        if let Some(ignore_ssl) = headers.ignore_ssl
+            && ignore_ssl
+        {
+            client = client.danger_accept_invalid_certs(true);
         }
     }
     let user_agent = headers
@@ -135,26 +151,46 @@ pub async fn download(
         .build()?;
     let url = channel.url.clone().context("no url provided")?;
     let name = channel.name.clone();
-    let mut response = client.get(&url).send().await?;
-    let total_size = response.content_length().unwrap_or(0);
-    let mut downloaded = 0;
-    let path = match path {
-        Some(p) => p,
-        None => get_download_path(get_filename(name, url)?)?,
-    };
-    let mut file = tokio::fs::File::create(&path).await?;
-    let mut send_threshold: f64 = 0.1;
+    let result = download_to_file(&client, &url, name, path, &token, &app, download_id).await;
+
+    // Always release the stream slot, also when the request itself failed —
+    // a stale token would keep counting against the source's max_streams.
+    _ = remove_from_play_stop(state, &source_id, download_id)
+        .await
+        .map_err(|e| log(format!("{:?}", e)));
+    result
+}
+
+async fn download_to_file(
+    client: &reqwest::Client,
+    url: &str,
+    name: String,
+    path: Option<String>,
+    token: &CancellationToken,
+    app: &AppHandle,
+    download_id: &str,
+) -> Result<()> {
+    let mut response = client.get(url).send().await?;
+    // Checked before the file exists, so an HTTP error leaves no empty file.
     if !response.status().is_success() {
         let error = response.status();
         bail!("Failed to download movie: HTTP {error}")
     }
+    let total_size = response.content_length().unwrap_or(0);
+    let mut downloaded = 0;
+    let path = match path {
+        Some(p) => p,
+        None => get_download_path(get_filename(name, url))?,
+    };
+    let mut file = tokio::fs::File::create(&path).await?;
+    let mut send_threshold: f64 = 0.1;
 
-    let result: Result<()> = loop {
+    let mut result: Result<()> = loop {
         tokio::select! {
           chunk = response.chunk() => {
                match chunk {
                    Ok(Some(chunk)) => {
-                       if let Err(e) = file.write(&chunk).await {
+                       if let Err(e) = file.write_all(&chunk).await {
                            break Err(e.into());
                        }
                        downloaded += chunk.len() as u64;
@@ -163,7 +199,7 @@ pub async fn download(
                            let progress = (progress * 10.0).trunc() / 10.0;
                            if progress > send_threshold {
                                let _ = app.emit(&format!("progress-{}", download_id), progress);
-                               send_threshold = progress + 0.1 as f64;
+                               send_threshold = progress + 0.1_f64;
                            }
                        }
                    }
@@ -177,18 +213,18 @@ pub async fn download(
         }
     };
 
-    _ = remove_from_play_stop(state, &source_id, &download_id.to_string())
-        .await
-        .map_err(|e| log(format!("{:?}", e)));
-
-    if let Err(e) = &result {
-        if e.to_string() == "download aborted" {
-            drop(file);
-            let _ = tokio::fs::remove_file(path).await;
-            bail!("download aborted");
-        }
+    if result.is_ok() {
+        // Surface a failing final write instead of reporting success early.
+        result = file.flush().await.map_err(Into::into);
     }
-    result
+    drop(file);
+    if let Err(e) = result {
+        // A partial file looks like a finished movie in the folder; remove it
+        // whatever the reason (abort, network error, full disk).
+        let _ = tokio::fs::remove_file(&path).await;
+        return Err(e);
+    }
+    Ok(())
 }
 
 pub async fn remove_from_play_stop(
@@ -199,7 +235,7 @@ pub async fn remove_from_play_stop(
     let mut state = state.lock().await;
     let map = state
         .play_stop
-        .get_mut(&source_id)
+        .get_mut(source_id)
         .context("no indexMap for sourceId")?;
     Ok(map.shift_remove(key))
 }
@@ -231,32 +267,43 @@ pub async fn insert_play_token(
     state: &State<'_, Mutex<AppState>>,
 ) -> Result<()> {
     let mut guard = state.lock().await;
-    if guard.play_stop.get(&source_id).is_none() {
-        guard
-            .play_stop
-            .insert(source_id, IndexMap::<String, CancellationToken>::new());
-    }
-    let map = guard
+    guard
         .play_stop
-        .get_mut(&source_id)
-        .context("no indexMap found")?;
-    map.insert(key, token);
+        .entry(source_id)
+        .or_default()
+        .insert(key, token);
     Ok(())
 }
 
-fn get_filename(channel_name: String, url: String) -> Result<String> {
+fn get_filename(channel_name: String, url: &str) -> String {
     let extension = get_extension(url);
-    let channel_name = sanitize(channel_name);
-    let filename = format!("{channel_name}.{extension}").to_string();
-    Ok(filename)
+    let mut channel_name = sanitize(channel_name)
+        .trim()
+        .trim_end_matches('.')
+        .to_string();
+    if channel_name.is_empty() {
+        channel_name = "download".to_string();
+    }
+    format!("{channel_name}.{extension}")
 }
 
-fn get_extension(url: String) -> String {
-    url.rsplit(".")
-        .next()
-        .filter(|ext| !ext.starts_with("php?"))
-        .unwrap_or("mp4")
-        .to_string()
+/// Extension of the URL's last path segment, ignoring query and fragment.
+/// Anything that does not look like a real extension (`php`, a path, a token)
+/// falls back to mp4, so the name can never contain `?`, `/` or `..`.
+fn get_extension(url: &str) -> String {
+    let path = url::Url::parse(url)
+        .map(|u| u.path().to_string())
+        .unwrap_or_else(|_| url.split(['?', '#']).next().unwrap_or("").to_string());
+    let segment = path.rsplit('/').next().unwrap_or("");
+    segment
+        .rsplit_once('.')
+        .map(|(_, ext)| ext.to_ascii_lowercase())
+        .filter(|ext| {
+            (1..=5).contains(&ext.len())
+                && ext.chars().all(|c| c.is_ascii_alphanumeric())
+                && ext != "php"
+        })
+        .unwrap_or_else(|| "mp4".to_string())
 }
 
 pub fn sanitize(str: String) -> String {
@@ -279,7 +326,7 @@ pub fn get_bin(bin: &str) -> String {
     } else if OS == "macos" {
         return find_macos_bin(bin);
     }
-    return get_bin_from_deps(bin);
+    get_bin_from_deps(bin)
 }
 
 /// Turns the raw io error from spawning an external binary into a message a
@@ -299,23 +346,23 @@ fn get_bin_from_deps(bin: &str) -> String {
     path.pop();
     path.push("deps");
     path.push(bin);
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 pub fn find_macos_bin(bin: &str) -> String {
-    return MACOS_POTENTIAL_PATHS
+    MACOS_POTENTIAL_PATHS
         .iter()
         .map(|path| {
             let mut path = Path::new(path).to_path_buf();
             path.push(bin);
-            return path;
+            path
         })
         .find(|path| path.exists())
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| {
             log(format!("Could not find {} on MacOS host", bin));
-            return bin.to_string();
-        });
+            bin.to_string()
+        })
 }
 
 pub fn serialize_to_file<T: Serialize>(obj: T, path: String) -> Result<()> {
@@ -358,7 +405,8 @@ pub fn create_nuke_request() -> Result<()> {
 }
 
 fn get_nuke_path() -> Result<PathBuf> {
-    let path = ProjectDirs::from("dev", "kaveyro", "streameoIPTV").context("project dir not found")?;
+    let path =
+        ProjectDirs::from("dev", "kaveyro", "streameoIPTV").context("project dir not found")?;
     let path = path.cache_dir();
     let path = path.join("nuke.txt");
     Ok(path)
@@ -370,7 +418,8 @@ pub fn check_nuke() -> Result<()> {
         return Ok(());
     }
     std::fs::remove_file(path)?;
-    let path = ProjectDirs::from("dev", "kaveyro", "streameoIPTV").context("project dir not found")?;
+    let path =
+        ProjectDirs::from("dev", "kaveyro", "streameoIPTV").context("project dir not found")?;
     let path = path.data_dir();
     let path = path.join(sql::DB_NAME);
     if path.exists() {
@@ -398,5 +447,113 @@ mod test_utils {
             "SuperShow Who will win the million".to_string(),
             sanitize("SuperShow: Who will win the million?".to_string())
         );
+    }
+}
+
+/// ffmpeg input options for a channel: HTTP headers, TLS and reconnects. They
+/// must come before `-i`, or ffmpeg applies them to the output.
+///
+/// `-headers` is a single string option — every repetition replaces the
+/// previous value — so all headers go into one CRLF-separated value, and the
+/// user agent uses its dedicated option. The source's stream user agent is the
+/// fallback, as in mpv.
+pub fn ffmpeg_input_args(
+    headers: Option<crate::types::ChannelHttpHeaders>,
+    source: Option<&Source>,
+    url: &str,
+) -> Vec<String> {
+    let headers = headers.unwrap_or_default();
+    let mut args = Vec::new();
+    let mut header_lines = String::new();
+    if let Some(referrer) = headers.referrer.filter(|v| !v.trim().is_empty()) {
+        header_lines.push_str(&format!("Referer: {referrer}\r\n"));
+    }
+    if let Some(origin) = headers.http_origin.filter(|v| !v.trim().is_empty()) {
+        header_lines.push_str(&format!("Origin: {origin}\r\n"));
+    }
+    if !header_lines.is_empty() {
+        args.push("-headers".to_string());
+        args.push(header_lines);
+    }
+    if let Some(user_agent) = headers
+        .user_agent
+        .or_else(|| source.and_then(|s| s.stream_user_agent.clone()))
+        .filter(|v| !v.trim().is_empty())
+    {
+        args.push("-user_agent".to_string());
+        args.push(user_agent);
+    }
+    if headers.ignore_ssl == Some(true) {
+        args.push("-tls_verify".to_string());
+        args.push("0".to_string());
+    }
+    if url.starts_with("http://") || url.starts_with("https://") {
+        for flag in [
+            "-reconnect",
+            "-reconnect_at_eof",
+            "-reconnect_streamed",
+            "-reconnect_on_network_error",
+        ] {
+            args.push(flag.to_string());
+            args.push("1".to_string());
+        }
+    }
+    args
+}
+
+#[cfg(test)]
+mod test_ffmpeg_input_args {
+    use super::ffmpeg_input_args;
+    use crate::types::ChannelHttpHeaders;
+
+    #[test]
+    fn test_all_headers_go_into_one_option() {
+        let headers = ChannelHttpHeaders {
+            referrer: Some("http://ref".to_string()),
+            http_origin: Some("http://origin".to_string()),
+            user_agent: Some("UA".to_string()),
+            ..Default::default()
+        };
+        let args = ffmpeg_input_args(Some(headers), None, "http://h/s.ts");
+        assert_eq!(args.iter().filter(|a| *a == "-headers").count(), 1);
+        let pos = args.iter().position(|a| a == "-headers").unwrap();
+        assert_eq!(
+            args[pos + 1],
+            "Referer: http://ref\r\nOrigin: http://origin\r\n"
+        );
+        let pos = args.iter().position(|a| a == "-user_agent").unwrap();
+        assert_eq!(args[pos + 1], "UA");
+    }
+
+    #[test]
+    fn test_reconnect_only_for_http() {
+        assert!(ffmpeg_input_args(None, None, "http://h/s.ts").contains(&"-reconnect".to_string()));
+        assert!(!ffmpeg_input_args(None, None, "rtmp://h/s").contains(&"-reconnect".to_string()));
+    }
+}
+
+#[cfg(test)]
+mod test_download_filename {
+    use super::{get_extension, get_filename};
+
+    #[test]
+    fn test_extension_ignores_the_query() {
+        assert_eq!(
+            get_extension("http://h/movie/u/p/1.mkv?token=abc.def"),
+            "mkv"
+        );
+    }
+
+    #[test]
+    fn test_extensionless_url_falls_back_to_mp4() {
+        assert_eq!(get_extension("http://cdn.example.com/vod/abc"), "mp4");
+        assert_eq!(get_extension("http://h/a.x/../../.."), "mp4");
+        assert_eq!(get_extension("http://h/get.php?id=1"), "mp4");
+    }
+
+    #[test]
+    fn test_filename_has_no_path_characters() {
+        let name = get_filename("A/B: C?".to_string(), "http://h/x.mp4?t=1");
+        assert_eq!(name, "AB C.mp4");
     }
 }

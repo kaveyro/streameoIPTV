@@ -36,7 +36,7 @@ pub fn share_custom_group(group: Channel, path: String) -> Result<()> {
 }
 
 pub fn share_custom_source(mut source: Source, path: String) -> Result<()> {
-    let id = source.id.context("No source id?")?.clone();
+    let id = source.id.context("No source id?")?;
     source.id = None;
     let to_export = ExportedSource {
         source,
@@ -92,13 +92,13 @@ fn import_group(data: String, source_id: i64, name_override: Option<String>) -> 
     }
     sql::do_tx(|tx| {
         data.group.source_id = Some(source_id);
-        let group_id = sql::add_custom_group(&tx, data.group)?;
+        let group_id = sql::add_custom_group(tx, data.group)?;
         for mut channel in data.channels {
             channel.data.group_id = Some(group_id);
             channel.data.source_id = Some(source_id);
-            sql::add_custom_channel(&tx, channel)?;
+            sql::add_custom_channel(tx, channel)?;
         }
-        sql::analyze(&tx)?;
+        sql::analyze(tx)?;
         Ok(())
     })?;
     Ok(())
@@ -116,7 +116,7 @@ fn import_playlist(data: String, name_override: Option<String>) -> Result<()> {
         let source_id = sql::create_or_find_source_by_name(tx, &data.source)?;
         for mut group in data.groups {
             group.group.source_id = Some(source_id);
-            let group_id = sql::add_custom_group(&tx, group.group)?;
+            let group_id = sql::add_custom_group(tx, group.group)?;
             for mut channel in group.channels {
                 channel.data.group_id = Some(group_id);
                 channel.data.source_id = Some(source_id);
@@ -125,9 +125,9 @@ fn import_playlist(data: String, name_override: Option<String>) -> Result<()> {
         }
         for mut channel in data.channels {
             channel.data.source_id = Some(source_id);
-            sql::add_custom_channel(&tx, channel)?;
+            sql::add_custom_channel(tx, channel)?;
         }
-        sql::analyze(&tx)?;
+        sql::analyze(tx)?;
         Ok(())
     })?;
     Ok(())

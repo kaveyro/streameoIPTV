@@ -1,10 +1,10 @@
-use std::io::Write;
 use std::sync::LazyLock;
 use std::{
     collections::HashMap,
     fs::File,
     io::{BufRead, BufReader},
 };
+use tokio::io::AsyncWriteExt;
 
 use anyhow::{Context, Result, bail};
 use regex::{Captures, Regex};
@@ -13,7 +13,7 @@ use types::{Channel, Source};
 
 use crate::types::ChannelPreserve;
 use crate::{
-    log, media_type, source_type,
+    log, media_type,
     sql::{self, set_channel_group_id},
     types::{self, ChannelHttpHeaders},
     utils::{download_client_builder, get_user_agent_from_source},
@@ -48,20 +48,23 @@ struct M3UProcessing {
     line_count: usize,
 }
 
-pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
-    let path = match source.source_type {
-        source_type::M3U_LINK => get_tmp_path(),
-        _ => source.url.clone().context("no file path found")?,
-    };
+pub fn read_m3u8(source: Source, wipe: bool) -> Result<()> {
+    let path = source.url.clone().context("no file path found")?;
+    read_m3u8_file(&path, source, wipe)
+}
+
+fn read_m3u8_file(path: &str, mut source: Source, wipe: bool) -> Result<()> {
     let file = File::open(path).context("Failed to open m3u8 file")?;
     let reader = BufReader::new(file);
-    let mut lines = reader.lines().enumerate();
+    let lines = reader.lines().enumerate();
     let mut sql = sql::get_conn()?;
     let mut channel_preserve: Vec<ChannelPreserve> = Vec::new();
+    let mut recording_preserve: Vec<(i64, String)> = Vec::new();
     let tx = sql.transaction()?;
     if wipe {
         channel_preserve =
             sql::get_preserve(&tx, source.id.context("no source id")?).unwrap_or_default();
+        recording_preserve = sql::get_recording_preserve(&tx, source.id.context("no source id")?)?;
         sql::wipe(&tx, source.id.context("no source id")?)?;
     } else {
         source.id = Some(sql::create_or_find_source_by_name(&tx, &source)?);
@@ -76,7 +79,7 @@ pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
         use_tvg_id: source.use_tvg_id,
         line_count: 0,
     };
-    while let Some((c1, l1)) = lines.next() {
+    for (c1, l1) in lines {
         processing.line_count = c1;
         let l1 = match l1.with_context(|| format!("Failed to process line {c1}")) {
             Ok(r) => r,
@@ -109,6 +112,11 @@ pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
     try_commit_channel(&mut processing, &tx);
     if wipe {
         sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
+        sql::restore_recording_preserve(
+            &tx,
+            source.id.context("no source id")?,
+            recording_preserve,
+        )?;
     }
     sql::analyze(&tx)?;
     tx.commit()?;
@@ -127,7 +135,7 @@ fn try_commit_channel(processing: &mut M3UProcessing, tx: &Transaction) {
             processing.channel_headers.take(),
             processing.source_id,
             processing.use_tvg_id,
-            &tx,
+            tx,
         )
         .with_context(|| {
             format!(
@@ -186,23 +194,36 @@ pub async fn get_m3u8_from_link(source: Source, wipe: bool) -> Result<()> {
             response.status()
         );
     }
-    let mut file = std::fs::File::create(get_tmp_path())?;
-    while let Some(chunk) = response.chunk().await? {
-        file.write(&chunk)?;
+    // One file per download: two link sources refreshing at the same time
+    // (auto refresh + a manual one) used to overwrite each other's playlist.
+    let path = get_tmp_path()?;
+    let result = async {
+        let mut file = tokio::fs::File::create(&path).await?;
+        while let Some(chunk) = response.chunk().await? {
+            file.write_all(&chunk).await?;
+        }
+        file.flush().await?;
+        drop(file);
+        let parse_path = path.clone();
+        // Parsing and the insert transaction take seconds on big playlists;
+        // keep them off the async runtime's worker threads.
+        tokio::task::spawn_blocking(move || read_m3u8_file(&parse_path, source, wipe)).await?
     }
-    read_m3u8(source, wipe)
+    .await;
+    let _ = std::fs::remove_file(&path);
+    result
 }
 
-fn get_tmp_path() -> String {
+fn get_tmp_path() -> Result<String> {
+    static COUNTER: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
     let mut path = directories::ProjectDirs::from("dev", "kaveyro", "streameoIPTV")
-        .unwrap()
+        .context("project dir not found")?
         .cache_dir()
         .to_owned();
-    if !path.exists() {
-        std::fs::create_dir_all(&path).unwrap();
-    }
-    path.push("get.m3u");
-    return path.to_string_lossy().to_string();
+    std::fs::create_dir_all(&path)?;
+    let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    path.push(format!("get-{}-{n}.m3u", std::process::id()));
+    Ok(path.to_string_lossy().to_string())
 }
 
 fn extract_non_empty_capture(caps: Captures) -> Option<String> {
@@ -213,25 +234,25 @@ fn extract_non_empty_capture(caps: Captures) -> Option<String> {
 
 fn set_http_headers(line: &str, headers: &mut ChannelHttpHeaders) -> bool {
     if let Some(origin) = HTTP_ORIGIN_REGEX
-        .captures(&line)
+        .captures(line)
         .and_then(extract_non_empty_capture)
     {
         headers.http_origin = Some(origin);
         return true;
     } else if let Some(referrer) = HTTP_REFERRER_REGEX
-        .captures(&line)
+        .captures(line)
         .and_then(extract_non_empty_capture)
     {
         headers.referrer = Some(referrer);
         return true;
     } else if let Some(user_agent) = HTTP_USER_AGENT_REGEX
-        .captures(&line)
+        .captures(line)
         .and_then(extract_non_empty_capture)
     {
         headers.user_agent = Some(user_agent);
         return true;
     }
-    return false;
+    false
 }
 
 fn get_channel_from_lines(
@@ -259,9 +280,9 @@ fn get_channel_from_lines(
                     .and_then(extract_non_empty_capture)
             };
             if let Some(true) = use_tvg_id {
-                return id().or(name_alt());
+                id().or(name_alt())
             } else {
-                return name_alt().or(id());
+                name_alt().or(id())
             }
         })
         .context("Couldn't find name from Name or ID")?;
@@ -350,12 +371,11 @@ fn strip_newlines(value: &str) -> String {
 }
 
 fn get_media_type(url: String) -> u8 {
-    let media_type = if url.ends_with(".mp4") || url.ends_with(".mkv") {
+    if url.ends_with(".mp4") || url.ends_with(".mkv") {
         media_type::MOVIE
     } else {
         media_type::LIVESTREAM
-    };
-    return media_type;
+    }
 }
 
 #[cfg(test)]
@@ -366,7 +386,12 @@ mod test_m3u {
         types::{Channel, ChannelHttpHeaders},
     };
 
-    fn favorite(name: &str, url: Option<&str>, group: Option<&str>, image: Option<&str>) -> Channel {
+    fn favorite(
+        name: &str,
+        url: Option<&str>,
+        group: Option<&str>,
+        image: Option<&str>,
+    ) -> Channel {
         Channel {
             id: None,
             name: name.to_string(),
@@ -460,7 +485,10 @@ mod test_m3u {
             channel.image.as_deref(),
             Some("http://myurl.local/logos/one.png")
         );
-        assert_eq!(channel.url.as_deref(), Some("http://myurl.local/1234/5678/9"));
+        assert_eq!(
+            channel.url.as_deref(),
+            Some("http://myurl.local/1234/5678/9")
+        );
         assert_eq!(channel.source_id, Some(42));
         assert_eq!(channel.media_type, media_type::LIVESTREAM);
     }
@@ -573,7 +601,10 @@ mod test_m3u {
         ));
         assert_eq!(headers.referrer.as_deref(), Some("http://myurl.local/"));
         assert_eq!(headers.user_agent.as_deref(), Some("CoolAgent/1.0"));
-        assert!(!set_http_headers("#EXTVLCOPT:unknown-option=x", &mut headers));
+        assert!(!set_http_headers(
+            "#EXTVLCOPT:unknown-option=x",
+            &mut headers
+        ));
     }
 
     #[test]

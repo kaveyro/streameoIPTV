@@ -30,6 +30,7 @@ pub mod media_type;
 pub mod mpv;
 pub mod player;
 pub mod recording_scheduler;
+pub mod redact;
 pub mod restream;
 pub mod settings;
 pub mod share;
@@ -164,10 +165,8 @@ pub fn run() {
             // a hardcoded string in tauri.conf.json, which silently kept
             // claiming an old version after every release.
             if let Some(window) = app.get_webview_window("main") {
-                let _ = window.set_title(&format!(
-                    "streameoIPTV (v{})",
-                    app.package_info().version
-                ));
+                let _ =
+                    window.set_title(&format!("streameoIPTV (v{})", app.package_info().version));
             }
             Ok(())
         })
@@ -192,7 +191,10 @@ pub fn run() {
             // Managed state is not dropped when the process ends, so the
             // embedded mpv would outlive the app, keep a provider connection
             // open and hold on to its IPC pipe.
-            tauri::RunEvent::Exit => player::kill_sync(),
+            tauri::RunEvent::Exit => {
+                player::kill_sync();
+                restream::kill_sync();
+            }
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => {
                 if !*ENABLE_TRAY_ICON {
@@ -228,12 +230,13 @@ fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
             }
             _ => {}
         })
-        .on_tray_icon_event(|tray, event| match event {
-            TrayIconEvent::Click {
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
                 ..
-            } => {
+            } = event
+            {
                 let app = tray.app_handle();
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.unminimize();
@@ -242,7 +245,6 @@ fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
                     player::set_visible_sync(true);
                 }
             }
-            _ => {}
         })
         .icon(app.default_window_icon().unwrap().clone())
         .build(app)?;
@@ -250,7 +252,7 @@ fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
 }
 
 fn map_err_frontend(e: Error) -> String {
-    return format!("{:?}", e);
+    redact::redact(&format!("{:?}", e))
 }
 
 #[tauri::command(async)]
@@ -278,10 +280,7 @@ async fn play(
 }
 
 #[tauri::command]
-async fn player_init(
-    app: AppHandle,
-    state: State<'_, Mutex<AppState>>,
-) -> Result<(), String> {
+async fn player_init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(), String> {
     player::init(app, state).await.map_err(map_err_frontend)
 }
 
@@ -302,10 +301,7 @@ async fn player_stop(state: State<'_, Mutex<AppState>>) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn player_osd(
-    state: State<'_, Mutex<AppState>>,
-    message: String,
-) -> Result<(), String> {
+async fn player_osd(state: State<'_, Mutex<AppState>>, message: String) -> Result<(), String> {
     player::show_message(state, message)
         .await
         .map_err(map_err_frontend)
@@ -337,10 +333,7 @@ async fn player_set_visible(
 }
 
 #[tauri::command]
-async fn player_destroy(
-    app: AppHandle,
-    state: State<'_, Mutex<AppState>>,
-) -> Result<(), String> {
+async fn player_destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(), String> {
     player::destroy(app, state).await.map_err(map_err_frontend)
 }
 
@@ -480,7 +473,7 @@ fn get_custom_channel_extra_data(
 
 #[tauri::command(async)]
 fn add_custom_source(name: String) -> Result<(), String> {
-    sql::do_tx(|tx| sql::create_or_find_source_by_name(tx, &mut sql::get_custom_source(name)))
+    sql::do_tx(|tx| sql::create_or_find_source_by_name(tx, &sql::get_custom_source(name)))
         .map_err(map_err_frontend)?;
     Ok(())
 }
@@ -564,12 +557,12 @@ async fn get_epg(channel: Channel) -> Result<Vec<EPG>, String> {
         .map_err(map_err_frontend)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 fn get_xmltv_sources() -> Result<Vec<String>, String> {
     settings::get_xmltv_sources().map_err(map_err_frontend)
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 fn set_xmltv_sources(urls: Vec<String>) -> Result<(), String> {
     settings::set_xmltv_sources(urls).map_err(map_err_frontend)
 }

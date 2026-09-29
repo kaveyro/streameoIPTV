@@ -10,13 +10,17 @@ use std::io::Read;
 use anyhow::{Context, Result};
 use chrono::{FixedOffset, TimeZone, Utc};
 use flate2::read::GzDecoder;
-use quick_xml::events::Event;
 use quick_xml::Reader;
+use quick_xml::events::Event;
 
 use crate::{log::log, settings, sql, utils};
 
 /// Guard against a malformed/huge feed exhausting memory.
 const MAX_PROGRAMMES: usize = 2_000_000;
+/// Largest guide download accepted, compressed or not.
+const MAX_DOWNLOAD_BYTES: usize = 512 * 1024 * 1024;
+/// Largest decompressed guide accepted (a gzip bomb stops here).
+const MAX_XML_BYTES: u64 = 1024 * 1024 * 1024;
 /// Drop programmes that ended more than this long ago.
 const STALE_SECS: i64 = 24 * 60 * 60;
 
@@ -37,10 +41,18 @@ pub async fn refresh() -> Result<()> {
     // Xtream providers whose epg_channel_id values are opaque hashes).
     let mut channels: Vec<(String, String)> = Vec::new();
 
+    let mut failures = 0usize;
     for url in &urls {
-        match fetch_and_parse(&client, url, cutoff, &mut programmes, &mut channels).await {
-            Ok(count) => log(format!("XMLTV: loaded {count} programmes from {url}")),
-            Err(e) => log(format!("{:?}", e.context(format!("XMLTV source failed: {url}")))),
+        match fetch_and_parse(&client, url, cutoff).await {
+            Ok((new_programmes, new_channels)) => {
+                log(format!("XMLTV: loaded {} programmes", new_programmes.len()));
+                programmes.extend(new_programmes);
+                channels.extend(new_channels);
+            }
+            Err(e) => {
+                failures += 1;
+                log(format!("{:?}", e.context("XMLTV source failed")));
+            }
         }
         if programmes.len() >= MAX_PROGRAMMES {
             log(format!(
@@ -50,39 +62,74 @@ pub async fn refresh() -> Result<()> {
         }
     }
 
-    sql::replace_xmltv_programmes(&programmes)?;
-    sql::replace_xmltv_channels(&channels)?;
+    if failures == urls.len() {
+        // Nothing loaded (offline, provider down): keep the guide we have.
+        anyhow::bail!("All XMLTV sources failed, keeping the cached guide");
+    }
+    let partial = failures > 0;
+    let (programme_count, channel_count) = (programmes.len(), channels.len());
+    tokio::task::spawn_blocking(move || -> Result<()> {
+        if partial {
+            // Keep what the failed sources provided last time; only the
+            // channels that were just loaded are replaced.
+            sql::merge_xmltv_programmes(&programmes, cutoff)?;
+            sql::merge_xmltv_channels(&channels)?;
+        } else {
+            sql::replace_xmltv_programmes(&programmes)?;
+            sql::replace_xmltv_channels(&channels)?;
+        }
+        Ok(())
+    })
+    .await??;
     log(format!(
         "XMLTV: stored {} programmes and {} channel name mappings",
-        programmes.len(),
-        channels.len()
+        programme_count, channel_count
     ));
     Ok(())
 }
+
+type Programme = (String, i64, i64, String, Option<String>);
 
 async fn fetch_and_parse(
     client: &reqwest::Client,
     url: &str,
     cutoff: i64,
-    out: &mut Vec<(String, i64, i64, String, Option<String>)>,
-    channels: &mut Vec<(String, String)>,
-) -> Result<usize> {
-    let resp = client.get(url).send().await?.error_for_status()?;
-    let bytes = resp.bytes().await?;
+) -> Result<(Vec<Programme>, Vec<(String, String)>)> {
+    let mut resp = client.get(url).send().await?.error_for_status()?;
+    let mut bytes: Vec<u8> = Vec::new();
+    while let Some(chunk) = resp.chunk().await? {
+        if bytes.len() + chunk.len() > MAX_DOWNLOAD_BYTES {
+            anyhow::bail!(
+                "XMLTV guide is larger than {} MB",
+                MAX_DOWNLOAD_BYTES / 1024 / 1024
+            );
+        }
+        bytes.extend_from_slice(&chunk);
+    }
     // gzip if the magic bytes match or the URL clearly points at a .gz file.
     let is_gzip = bytes.len() >= 2 && bytes[0] == 0x1f && bytes[1] == 0x8b
-        || url.trim_end_matches(|c| c == '?' || c == '#').ends_with(".gz");
-    let xml = if is_gzip {
-        let mut decoder = GzDecoder::new(&bytes[..]);
-        let mut s = String::new();
-        decoder
-            .read_to_string(&mut s)
-            .context("Failed to gunzip XMLTV")?;
-        s
-    } else {
-        String::from_utf8_lossy(&bytes).into_owned()
-    };
-    parse_xmltv(&xml, cutoff, out, channels)
+        || url.trim_end_matches(['?', '#']).ends_with(".gz");
+    // Decompressing and parsing a guide takes seconds: blocking thread.
+    tokio::task::spawn_blocking(move || {
+        let xml = if is_gzip {
+            let mut decoded = Vec::new();
+            GzDecoder::new(&bytes[..])
+                .take(MAX_XML_BYTES + 1)
+                .read_to_end(&mut decoded)
+                .context("Failed to gunzip XMLTV")?;
+            if decoded.len() as u64 > MAX_XML_BYTES {
+                anyhow::bail!("Decompressed XMLTV guide is too large");
+            }
+            String::from_utf8_lossy(&decoded).into_owned()
+        } else {
+            String::from_utf8_lossy(&bytes).into_owned()
+        };
+        let mut programmes = Vec::new();
+        let mut channels = Vec::new();
+        parse_xmltv(&xml, cutoff, &mut programmes, &mut channels)?;
+        Ok((programmes, channels))
+    })
+    .await?
 }
 
 /// Parses XMLTV content, appending programmes that end after `cutoff` to `out`.
@@ -174,19 +221,19 @@ fn parse_xmltv(
             Ok(Event::End(e)) if e.name().as_ref() == b"programme" => {
                 if let (Some(channel), Some(start), Some(stop)) =
                     (cur_channel.take(), cur_start, cur_stop)
+                    && stop > cutoff
+                    && !channel.is_empty()
                 {
-                    if stop > cutoff && !channel.is_empty() {
-                        out.push((
-                            channel,
-                            start,
-                            stop,
-                            cur_title.take().unwrap_or_default(),
-                            cur_desc.take().filter(|d| !d.is_empty()),
-                        ));
-                        added += 1;
-                        if out.len() >= MAX_PROGRAMMES {
-                            break;
-                        }
+                    out.push((
+                        channel,
+                        start,
+                        stop,
+                        cur_title.take().unwrap_or_default(),
+                        cur_desc.take().filter(|d| !d.is_empty()),
+                    ));
+                    added += 1;
+                    if out.len() >= MAX_PROGRAMMES {
+                        break;
                     }
                 }
             }
@@ -206,18 +253,155 @@ fn parse_xmltv(
 /// leading prefixes in IPTV playlists) and quality/backup markers.
 const NAME_STOPWORDS: &[&str] = &[
     // quality / format
-    "sd", "hd", "fhd", "uhd", "shd", "hq", "lq", "4k", "8k", "2k", "vip", "raw", "backup", "bk",
-    "h264", "h265", "hevc", "avc", "fullhd", "ultrahd", "hdtv", "fps", "50fps", "60fps", "multi",
-    "tvchannel", "channel", "tv",
+    "sd",
+    "hd",
+    "fhd",
+    "uhd",
+    "shd",
+    "hq",
+    "lq",
+    "4k",
+    "8k",
+    "2k",
+    "vip",
+    "raw",
+    "backup",
+    "bk",
+    "h264",
+    "h265",
+    "hevc",
+    "avc",
+    "fullhd",
+    "ultrahd",
+    "hdtv",
+    "fps",
+    "50fps",
+    "60fps",
+    "multi",
+    "tvchannel",
+    "channel",
+    "tv",
     // ISO 3166-1 alpha-2 country codes
-    "af", "al", "dz", "ad", "ao", "ar", "am", "au", "at", "az", "bh", "bd", "by", "be", "bj", "bo",
-    "ba", "br", "bg", "kh", "cm", "ca", "cl", "cn", "co", "cr", "hr", "cu", "cy", "cz", "dk", "do",
-    "ec", "eg", "sv", "ee", "et", "fi", "fr", "ge", "de", "gh", "gr", "gt", "hn", "hk", "hu", "is",
-    "in", "id", "ir", "iq", "ie", "il", "it", "jp", "jo", "kz", "ke", "kw", "kg", "lv", "lb", "ly",
-    "lt", "lu", "mk", "my", "mt", "mx", "md", "mc", "me", "ma", "nl", "nz", "ng", "no", "om", "pk",
-    "ps", "pa", "py", "pe", "ph", "pl", "pt", "qa", "ro", "ru", "sa", "rs", "sg", "sk", "si", "so",
-    "za", "kr", "es", "lk", "sd", "se", "ch", "sy", "tw", "tj", "th", "tn", "tr", "tm", "ua", "ae",
-    "uk", "gb", "us", "uy", "uz", "ve", "vn", "ye",
+    "af",
+    "al",
+    "dz",
+    "ad",
+    "ao",
+    "ar",
+    "am",
+    "au",
+    "at",
+    "az",
+    "bh",
+    "bd",
+    "by",
+    "be",
+    "bj",
+    "bo",
+    "ba",
+    "br",
+    "bg",
+    "kh",
+    "cm",
+    "ca",
+    "cl",
+    "cn",
+    "co",
+    "cr",
+    "hr",
+    "cu",
+    "cy",
+    "cz",
+    "dk",
+    "do",
+    "ec",
+    "eg",
+    "sv",
+    "ee",
+    "et",
+    "fi",
+    "fr",
+    "ge",
+    "de",
+    "gh",
+    "gr",
+    "gt",
+    "hn",
+    "hk",
+    "hu",
+    "is",
+    "in",
+    "id",
+    "ir",
+    "iq",
+    "ie",
+    "il",
+    "it",
+    "jp",
+    "jo",
+    "kz",
+    "ke",
+    "kw",
+    "kg",
+    "lv",
+    "lb",
+    "ly",
+    "lt",
+    "lu",
+    "mk",
+    "my",
+    "mt",
+    "mx",
+    "md",
+    "mc",
+    "me",
+    "ma",
+    "nl",
+    "nz",
+    "ng",
+    "no",
+    "om",
+    "pk",
+    "ps",
+    "pa",
+    "py",
+    "pe",
+    "ph",
+    "pl",
+    "pt",
+    "qa",
+    "ro",
+    "ru",
+    "sa",
+    "rs",
+    "sg",
+    "sk",
+    "si",
+    "so",
+    "za",
+    "kr",
+    "es",
+    "lk",
+    "sd",
+    "se",
+    "ch",
+    "sy",
+    "tw",
+    "tj",
+    "th",
+    "tn",
+    "tr",
+    "tm",
+    "ua",
+    "ae",
+    "uk",
+    "gb",
+    "us",
+    "uy",
+    "uz",
+    "ve",
+    "vn",
+    "ye",
 ];
 
 static RESOLUTION_RE: std::sync::LazyLock<regex::Regex> =
@@ -230,10 +414,7 @@ pub fn normalize_name(s: &str) -> String {
     let lower = s.to_lowercase();
     let mut result = String::new();
     for token in lower.split(|c: char| !c.is_alphanumeric()) {
-        if token.is_empty()
-            || NAME_STOPWORDS.contains(&token)
-            || RESOLUTION_RE.is_match(token)
-        {
+        if token.is_empty() || NAME_STOPWORDS.contains(&token) || RESOLUTION_RE.is_match(token) {
             continue;
         }
         result.push_str(token);
@@ -322,7 +503,12 @@ mod test_xmltv {
     fn test_parse_time_with_offset() {
         // 2024-01-15 14:30:00 +0100 == 13:30:00 UTC
         let ts = parse_xmltv_time("20240115143000 +0100").unwrap();
-        assert_eq!(ts, Utc.with_ymd_and_hms(2024, 1, 15, 13, 30, 0).unwrap().timestamp());
+        assert_eq!(
+            ts,
+            Utc.with_ymd_and_hms(2024, 1, 15, 13, 30, 0)
+                .unwrap()
+                .timestamp()
+        );
     }
 
     #[test]
@@ -330,14 +516,24 @@ mod test_xmltv {
         let with = parse_xmltv_time("20240115143000 +0000").unwrap();
         let without = parse_xmltv_time("20240115143000").unwrap();
         assert_eq!(with, without);
-        assert_eq!(with, Utc.with_ymd_and_hms(2024, 1, 15, 14, 30, 0).unwrap().timestamp());
+        assert_eq!(
+            with,
+            Utc.with_ymd_and_hms(2024, 1, 15, 14, 30, 0)
+                .unwrap()
+                .timestamp()
+        );
     }
 
     #[test]
     fn test_parse_minutes_only() {
         // 12-digit form (no seconds) should pad to :00
         let ts = parse_xmltv_time("202401151430 +0000").unwrap();
-        assert_eq!(ts, Utc.with_ymd_and_hms(2024, 1, 15, 14, 30, 0).unwrap().timestamp());
+        assert_eq!(
+            ts,
+            Utc.with_ymd_and_hms(2024, 1, 15, 14, 30, 0)
+                .unwrap()
+                .timestamp()
+        );
     }
 
     #[test]
@@ -354,7 +550,10 @@ mod test_xmltv {
         let mut out = Vec::new();
         let mut channels = Vec::new();
         // cutoff in 2023 drops the 2020 programme.
-        let cutoff = Utc.with_ymd_and_hms(2023, 1, 1, 0, 0, 0).unwrap().timestamp();
+        let cutoff = Utc
+            .with_ymd_and_hms(2023, 1, 1, 0, 0, 0)
+            .unwrap()
+            .timestamp();
         let added = parse_xmltv(xml, cutoff, &mut out, &mut channels).unwrap();
         assert_eq!(added, 1);
         assert_eq!(out[0].0, "beINSPORTS1.tr");

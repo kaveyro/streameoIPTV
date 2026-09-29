@@ -109,6 +109,7 @@ pub struct Settings {
     pub language: Option<String>,
     pub show_channel_source: Option<bool>,
     pub auto_update: Option<bool>,
+    pub mpv_debug_log: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -117,7 +118,7 @@ pub struct Filters {
     pub source_ids: Vec<i64>,
     pub media_types: Option<Vec<u8>>,
     pub view_type: u8,
-    pub page: u8,
+    pub page: u32,
     pub series_id: Option<i64>,
     pub group_id: Option<i64>,
     pub use_keywords: bool,

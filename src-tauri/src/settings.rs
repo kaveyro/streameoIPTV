@@ -31,6 +31,7 @@ pub const AUTO_REFRESH_HOURS: &str = "autoRefreshHours";
 pub const LANGUAGE: &str = "language";
 pub const SHOW_CHANNEL_SOURCE: &str = "showChannelSource";
 pub const AUTO_UPDATE: &str = "autoUpdate";
+pub const MPV_DEBUG_LOG: &str = "mpvDebugLog";
 pub const XMLTV_SOURCES: &str = "xmltvSources";
 
 /// XMLTV EPG source URLs, stored as a JSON array string in the settings table.
@@ -75,9 +76,7 @@ pub fn get_settings() -> Result<Settings> {
         enable_hwdec: map.get(ENABLE_HWDEC).and_then(|s| s.parse().ok()),
         always_ask_save: map.get(ALWAYS_ASK_SAVE).and_then(|s| s.parse().ok()),
         enable_gpu: map.get(ENABLE_GPU).and_then(|s| s.parse().ok()),
-        preferred_subtitle_language: map
-            .get(PREFERRED_SUBTITLE_LANGUAGE)
-            .map(|s| s.to_string()),
+        preferred_subtitle_language: map.get(PREFERRED_SUBTITLE_LANGUAGE).map(|s| s.to_string()),
         preferred_audio_language: map.get(PREFERRED_AUDIO_LANGUAGE).map(|s| s.to_string()),
         theme: map.get(THEME).map(|s| s.to_string()),
         accent_color: map.get(ACCENT_COLOR).map(|s| s.to_string()),
@@ -90,6 +89,7 @@ pub fn get_settings() -> Result<Settings> {
         language: map.get(LANGUAGE).map(|s| s.to_string()),
         show_channel_source: map.get(SHOW_CHANNEL_SOURCE).and_then(|s| s.parse().ok()),
         auto_update: map.get(AUTO_UPDATE).and_then(|s| s.parse().ok()),
+        mpv_debug_log: map.get(MPV_DEBUG_LOG).and_then(|s| s.parse().ok()),
     };
     Ok(settings)
 }
@@ -194,6 +194,9 @@ pub fn update_settings(settings: Settings) -> Result<()> {
     }
     if let Some(auto_update) = settings.auto_update {
         map.insert(AUTO_UPDATE.to_string(), Some(auto_update.to_string()));
+    }
+    if let Some(mpv_debug_log) = settings.mpv_debug_log {
+        map.insert(MPV_DEBUG_LOG.to_string(), Some(mpv_debug_log.to_string()));
     }
     sql::update_settings(map)?;
     Ok(())

@@ -188,8 +188,8 @@ fn reap_finished(current: i64) -> Result<()> {
     }
     for (id, status) in finished {
         // The row may have been deleted by a concurrent cancel; ignore errors.
-        let _ = sql::set_scheduled_recording_status(id, status)
-            .map_err(|e| log(format!("{:?}", e)));
+        let _ =
+            sql::set_scheduled_recording_status(id, status).map_err(|e| log(format!("{:?}", e)));
     }
     Ok(())
 }
@@ -198,30 +198,20 @@ fn reap_finished(current: i64) -> Result<()> {
 /// `ffmpeg -y [header args] -i <url> -t <remaining secs> -c copy <output>.ts`
 fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<Child> {
     let channel = sql::get_channel_by_id(recording.channel_id)?;
-    let url = channel.url.clone().context("channel has no url")?;
+    let url = crate::mpv::checked_stream_url(channel.url.as_deref())?;
     let remaining_secs = recording.end_timestamp - current;
     let output = get_output_path(recording, &channel)?;
     let mut command = Command::new(get_bin(FFMPEG_BIN_NAME));
     command.arg("-y");
-    // Same header handling as restream.rs: input options must come before -i.
-    if let Some(headers) = sql::get_channel_headers_by_id(recording.channel_id)? {
-        if let Some(referrer) = headers.referrer {
-            command.arg("-headers");
-            command.arg(format!("Referer: {referrer}"));
-        }
-        if let Some(user_agent) = headers.user_agent {
-            command.arg("-user_agent");
-            command.arg(user_agent);
-        }
-        if let Some(origin) = headers.http_origin {
-            command.arg("-headers");
-            command.arg(format!("Origin: {origin}"));
-        }
-        if headers.ignore_ssl == Some(true) {
-            command.arg("-tls_verify");
-            command.arg("0");
-        }
-    }
+    let source = channel
+        .source_id
+        .and_then(|id| sql::get_source_from_id(id).ok());
+    let headers = sql::get_channel_headers_by_id(recording.channel_id)?;
+    command.args(crate::utils::ffmpeg_input_args(
+        headers,
+        source.as_ref(),
+        &url,
+    ));
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
     let child = command

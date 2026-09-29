@@ -1,11 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use anyhow::{Context, Result};
-use streameo_iptv_lib::log;
 #[cfg(target_os = "linux")]
 use std::env;
 #[cfg(target_os = "linux")]
 use std::path::Path;
+use streameo_iptv_lib::log;
 
 fn main() -> Result<()> {
     apply_gpu_fixes();

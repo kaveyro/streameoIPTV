@@ -14,8 +14,8 @@ use tauri_plugin_notification::NotificationExt;
 use tokio::sync::Mutex;
 
 use crate::{
-    log, sql, source_type,
-    types::{AppState, Channel, EPGNotify, EPG},
+    log, source_type, sql,
+    types::{AppState, Channel, EPG, EPGNotify},
     utils, xmltv, xtream,
 };
 
@@ -36,7 +36,7 @@ pub fn poll(mut to_watch: Vec<EPGNotify>, stop: Arc<AtomicBool>, app: AppHandle)
                 }
                 return false;
             }
-            return true;
+            true
         });
         sleep(Duration::from_secs(1));
     }
@@ -63,24 +63,9 @@ pub async fn add_epg(
     app: AppHandle,
     epg: EPGNotify,
 ) -> Result<()> {
-    let mut state = state.lock().await;
-    if state.thread_handle.is_some() {
-        state.notify_stop.store(true, Relaxed);
-        let _ = state
-            .thread_handle
-            .take()
-            .context("no thread in option")?
-            .join();
-    }
-    state.notify_stop.store(false, Relaxed);
-    let stop = state.notify_stop.clone();
     sql::clean_epgs()?;
     sql::add_epg(epg)?;
-    let list = sql::get_epgs()?;
-    state
-        .thread_handle
-        .replace(thread::spawn(|| poll(list, stop, app)));
-    Ok(())
+    restart_poller(&state, app).await
 }
 
 pub async fn remove_epg(
@@ -88,26 +73,29 @@ pub async fn remove_epg(
     app: AppHandle,
     epg_id: String,
 ) -> Result<()> {
-    let mut state = state.lock().await;
-    if state.thread_handle.is_some() {
-        state.notify_stop.store(true, Relaxed);
-        let _ = state
-            .thread_handle
-            .take()
-            .context("no thread in option")?
-            .join();
-    }
-    state.notify_stop.store(false, Relaxed);
-    let stop = state.notify_stop.clone();
     sql::clean_epgs()?;
     sql::remove_epg(epg_id)?;
+    restart_poller(&state, app).await
+}
+
+/// Replaces the reminder poller with one for the current reminder list.
+///
+/// Every poller gets its own stop flag, so the old one can be signalled and
+/// left to exit on its own (it sleeps up to a second) instead of joining it
+/// while holding the app state lock, which stalled every player command.
+/// Replacing instead of adding also means a second start (e.g. after a
+/// WebView reload) cannot leave two pollers firing every notification twice.
+async fn restart_poller(state: &State<'_, Mutex<AppState>>, app: AppHandle) -> Result<()> {
     let list = sql::get_epgs()?;
-    if list.len() == 0 {
+    let mut state = state.lock().await;
+    state.notify_stop.store(true, Relaxed);
+    state.thread_handle = None;
+    if list.is_empty() {
         return Ok(());
     }
-    state
-        .thread_handle
-        .replace(thread::spawn(|| poll(list, stop, app)));
+    let stop = Arc::new(AtomicBool::new(false));
+    state.notify_stop = stop.clone();
+    state.thread_handle = Some(thread::spawn(|| poll(list, stop, app)));
     Ok(())
 }
 
@@ -140,10 +128,10 @@ pub async fn get_epg_combined(channel: Channel) -> Result<Vec<EPG>> {
     }
     if programmes.is_empty() {
         let norm = xmltv::normalize_name(&channel.name);
-        if !norm.is_empty() {
-            if let Some(id) = sql::get_xmltv_channel_id_by_name(&norm)? {
-                programmes = xmltv::programmes_for_channel(&id, now)?;
-            }
+        if !norm.is_empty()
+            && let Some(id) = sql::get_xmltv_channel_id_by_name(&norm)?
+        {
+            programmes = xmltv::programmes_for_channel(&id, now)?;
         }
     }
     let epg_id = channel.epg_channel_id.clone().unwrap_or_default();
@@ -172,15 +160,5 @@ pub async fn get_epg_combined(channel: Channel) -> Result<Vec<EPG>> {
 
 pub async fn on_start_check_epg(state: State<'_, Mutex<AppState>>, app: AppHandle) -> Result<()> {
     sql::clean_epgs()?;
-    let list = sql::get_epgs()?;
-    if list.len() == 0 {
-        return Ok(());
-    }
-    let mut state = state.lock().await;
-    state.notify_stop.store(false, Relaxed);
-    let stop = state.notify_stop.clone();
-    state
-        .thread_handle
-        .replace(thread::spawn(|| poll(list, stop, app)));
-    Ok(())
+    restart_poller(&state, app).await
 }

@@ -82,10 +82,6 @@ pub async fn play(
     record_path: Option<String>,
     state: State<'_, Mutex<AppState>>,
 ) -> Result<()> {
-    eprintln!(
-        "{} playing",
-        channel.url.as_ref().context("no channel url")?
-    );
     let source = channel
         .source_id
         .and_then(|id| {
@@ -104,22 +100,21 @@ pub async fn play(
             .map(str::trim)
             .filter(|p| !p.is_empty())
             .map(str::to_string);
-        if settings.use_external_player == Some(true) {
-            if let Some(player_path) = external_player_path {
-                return play_external(
-                    &channel,
-                    &player_path,
-                    settings.external_player_args.as_deref(),
-                    &source,
-                    &state,
-                )
-                .await;
-            }
+        if settings.use_external_player == Some(true)
+            && let Some(player_path) = external_player_path
+        {
+            return play_external(
+                &channel,
+                &player_path,
+                settings.external_player_args.as_deref(),
+                &source,
+                &state,
+            )
+            .await;
         }
     }
 
     let args = get_play_args(&channel, record, record_path, &source)?;
-    eprintln!("with args: {:?}", args);
 
     if let Some(source) = source.as_ref() {
         _ = crate::utils::handle_max_streams(source, &state)
@@ -167,7 +162,7 @@ pub async fn play(
                             first = false;
                         }
                     }
-                    if error != "" {
+                    if !error.is_empty() {
                         Err(anyhow::anyhow!(error))
                     } else {
                         Err(anyhow::anyhow!("Mpv encountered an unknown error"))
@@ -203,9 +198,8 @@ async fn play_external(
     source: &Option<Source>,
     state: &State<'_, Mutex<AppState>>,
 ) -> Result<()> {
-    let url = channel.url.clone().context("no url")?;
+    let url = checked_stream_url(channel.url.as_deref())?;
     let args = get_external_play_args(args_template, &url)?;
-    eprintln!("with external player {player_path} and args: {:?}", args);
 
     if let Some(source) = source.as_ref() {
         _ = crate::utils::handle_max_streams(source, state)
@@ -285,8 +279,14 @@ pub fn get_global_mpv_args(wid: isize, ipc_pipe: &str) -> Result<Vec<String>> {
     args.push("--force-window=yes".to_string());
     args.push(format!("--input-ipc-server={ipc_pipe}"));
     args.push("--no-terminal".to_string());
+    // mpv writes every stream URL into its log, and Xtream URLs carry the
+    // credentials in the path, so the log is opt-in for troubleshooting only.
     if let Some(path) = mpv_log_path() {
-        args.push(format!("--log-file={path}"));
+        if settings.mpv_debug_log.unwrap_or(false) {
+            args.push(format!("--log-file={path}"));
+        } else {
+            let _ = std::fs::remove_file(&path);
+        }
     }
     args.push("--keep-open=no".to_string());
     args.push(ARG_MSG_LEVEL.to_string());
@@ -364,11 +364,11 @@ fn get_play_args(
     let mut args = Vec::new();
     let settings = get_settings()?;
     let headers = sql::get_channel_headers_by_id(channel.id.context("no channel id?")?)?;
-    args.push(channel.url.clone().context("no url")?);
+    // URLs go after `--` at the very end, so a playlist entry can never be
+    // parsed as an mpv option (a `--script=<remote path>` entry would run code).
+    let mut urls = vec![checked_stream_url(channel.url.as_deref())?];
     if channel.episode_num.is_some() {
-        for url in sql::find_all_episodes_after(channel)? {
-            args.push(url);
-        }
+        urls.extend(sql::find_all_episodes_after(channel)?);
         args.push(ARG_NO_RESUME_PLAYBACK.to_string());
     }
     if channel.media_type != media_type::LIVESTREAM {
@@ -449,7 +449,22 @@ fn get_play_args(
         let mut params = winsplit::split(&mpv_params);
         args.append(&mut params);
     }
+    args.push("--".to_string());
+    args.extend(urls);
     Ok(args)
+}
+
+/// Returns the channel URL, refusing one that the player it is handed to would
+/// read as a command-line option.
+pub fn checked_stream_url(url: Option<&str>) -> Result<String> {
+    let url = url
+        .map(str::trim)
+        .filter(|u| !u.is_empty())
+        .context("no url")?;
+    if url.starts_with('-') {
+        anyhow::bail!("refusing to play an invalid stream URL");
+    }
+    Ok(url.to_string())
 }
 
 /// Writes the embedded Tethys OSC script into the app data dir (refreshing it
@@ -515,12 +530,12 @@ fn set_headers(
     {
         args.push(format!("{ARG_USER_AGENT}{user_agent}"));
     }
-    if let Some(ignore_ssl) = headers.ignore_ssl {
-        if ignore_ssl == true {
-            args.push(ARG_IGNORE_SSL.to_string());
-        }
+    if let Some(ignore_ssl) = headers.ignore_ssl
+        && ignore_ssl
+    {
+        args.push(ARG_IGNORE_SSL.to_string());
     }
-    if headers_vec.len() > 0 {
+    if !headers_vec.is_empty() {
         let headers = headers_vec.join(",");
         args.push(format!("{ARG_HTTP_HEADERS}{headers}"));
     }
@@ -529,7 +544,7 @@ fn set_headers(
 fn get_path(path_str: String) -> String {
     let path = Path::new(&path_str);
     let path = path.join(get_file_name());
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 fn get_file_name() -> String {
@@ -578,9 +593,8 @@ mod test_mpv {
 
     #[test]
     fn test_external_args_url_token_replacement() {
-        let args =
-            get_external_play_args(Some("--fullscreen {url}"), "http://example.com/1.m3u8")
-                .unwrap();
+        let args = get_external_play_args(Some("--fullscreen {url}"), "http://example.com/1.m3u8")
+            .unwrap();
         assert_eq!(
             args,
             vec![
@@ -592,8 +606,8 @@ mod test_mpv {
 
     #[test]
     fn test_external_args_url_appended_when_no_token() {
-        let args = get_external_play_args(Some("--fullscreen"), "http://example.com/1.m3u8")
-            .unwrap();
+        let args =
+            get_external_play_args(Some("--fullscreen"), "http://example.com/1.m3u8").unwrap();
         assert_eq!(
             args,
             vec![

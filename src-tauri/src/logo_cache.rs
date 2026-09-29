@@ -79,10 +79,10 @@ async fn download_logo(url: &str) -> Result<Vec<u8>> {
     if !response.status().is_success() {
         bail!("failed to fetch logo {url}: HTTP {}", response.status());
     }
-    if let Some(len) = response.content_length() {
-        if len as usize > MAX_LOGO_SIZE_BYTES {
-            bail!("logo {url} exceeds size cap ({len} bytes)");
-        }
+    if let Some(len) = response.content_length()
+        && len as usize > MAX_LOGO_SIZE_BYTES
+    {
+        bail!("logo {url} exceeds size cap ({len} bytes)");
     }
     let mut bytes: Vec<u8> = Vec::new();
     while let Some(chunk) = response.chunk().await? {
@@ -202,6 +202,9 @@ mod test_logo_cache {
             "image/jpeg"
         );
         // Unknown bytes and extension fall back to png.
-        assert_eq!(detect_mime(b"\x01\x02\x03\x04", "http://a/logo"), "image/png");
+        assert_eq!(
+            detect_mime(b"\x01\x02\x03\x04", "http://a/logo"),
+            "image/png"
+        );
     }
 }

@@ -105,13 +105,20 @@ struct XtreamEPG {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct XtreamEPGItem {
     id: serde_json::Value,
+    #[serde(default)]
     title: String,
+    #[serde(default)]
     description: String,
     start_timestamp: serde_json::Value,
     stop_timestamp: serde_json::Value,
-    now_playing: u8,
-    has_archive: u8,
+    // Numbers on most panels, strings ("1") on others.
+    #[serde(default)]
+    now_playing: serde_json::Value,
+    #[serde(default)]
+    has_archive: serde_json::Value,
+    #[serde(default)]
     start: String,
+    #[serde(default)]
     end: String,
 }
 
@@ -153,28 +160,65 @@ pub async fn get_xtream(mut source: Source, wipe: bool) -> Result<()> {
             &user_agent
         ),
     );
+    // The inserts run for seconds on large providers; keep them off the
+    // async runtime's worker threads.
+    tokio::task::spawn_blocking(move || {
+        store_xtream(
+            source,
+            wipe,
+            live,
+            live_cats,
+            vods,
+            vods_cats,
+            series,
+            series_cats,
+        )
+    })
+    .await?
+}
+
+type Fetched<T> = Result<Vec<T>>;
+
+#[allow(clippy::too_many_arguments)]
+fn store_xtream(
+    mut source: Source,
+    wipe: bool,
+    live: Fetched<XtreamStream>,
+    live_cats: Fetched<XtreamCategory>,
+    vods: Fetched<XtreamStream>,
+    vods_cats: Fetched<XtreamCategory>,
+    series: Fetched<XtreamStream>,
+    series_cats: Fetched<XtreamCategory>,
+) -> Result<()> {
     let mut sql = sql::get_conn()?;
     let tx = sql.transaction()?;
     let mut channel_preserve: Vec<ChannelPreserve> = Vec::new();
+    // Media types that already have channels: on a refresh, losing one of
+    // these to a failed request would delete them together with their
+    // favorites and history, so any such failure aborts the whole refresh.
+    let mut existing_types: Vec<u8> = Vec::new();
+    let mut recording_preserve: Vec<(i64, String)> = Vec::new();
     if wipe {
+        recording_preserve = sql::get_recording_preserve(&tx, source.id.context("no source id")?)?;
+        existing_types = sql::get_media_types_of_source(&tx, source.id.context("no source id")?)?;
         channel_preserve =
             sql::get_preserve(&tx, source.id.context("no source id")?).unwrap_or_default();
         sql::wipe(&tx, source.id.context("Source should have id")?)?;
     } else {
         source.id = Some(sql::create_or_find_source_by_name(&tx, &source)?);
     }
-    let mut fail_count = 0;
+    let mut failed: Vec<u8> = Vec::new();
     live.and_then(|live| process_xtream(&tx, live, live_cats?, &source, media_type::LIVESTREAM))
         .unwrap_or_else(|e| {
             log::log(format!("{:?}", e.context("Failed to process live")));
-            fail_count += 1;
+            failed.push(media_type::LIVESTREAM);
         });
     vods.and_then(|vods: Vec<XtreamStream>| {
         process_xtream(&tx, vods, vods_cats?, &source, media_type::MOVIE)
     })
     .unwrap_or_else(|e| {
         log::log(format!("{:?}", e.context("Failed to process vods")));
-        fail_count += 1;
+        failed.push(media_type::MOVIE);
     });
     series
         .and_then(|series: Vec<XtreamStream>| {
@@ -182,21 +226,39 @@ pub async fn get_xtream(mut source: Source, wipe: bool) -> Result<()> {
         })
         .unwrap_or_else(|e| {
             log::log(format!("{:?}", e.context("Failed to process series")));
-            fail_count += 1;
+            failed.push(media_type::SERIE);
         });
-    if fail_count > 2 {
+    if let Some(reason) = xtream_failure(&failed, &existing_types) {
         match tx.rollback() {
             Ok(_) => {}
             Err(e) => log::log(format!("Failed to rollback tx: {:?}", e)),
         }
-        return Err(anyhow::anyhow!("Too many Xtream requests failed"));
+        return Err(anyhow::anyhow!(reason));
     }
     if wipe {
         sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
+        sql::restore_recording_preserve(
+            &tx,
+            source.id.context("no source id")?,
+            recording_preserve,
+        )?;
     }
     sql::analyze(&tx)?;
     tx.commit()?;
     Ok(())
+}
+
+/// Decides whether a refresh with the given failed media types must be rolled
+/// back. A provider that simply offers no series is fine; a timeout on a
+/// category the source already has would wipe it, so that aborts.
+fn xtream_failure(failed: &[u8], existing: &[u8]) -> Option<&'static str> {
+    if failed.len() >= 3 {
+        return Some("All Xtream requests failed");
+    }
+    if failed.iter().any(|t| existing.contains(t)) {
+        return Some("Some Xtream requests failed, keeping the previous channel list");
+    }
+    None
 }
 
 async fn get_xtream_http_data<T>(mut url: Url, action: &str, user_agent: &String) -> Result<T>
@@ -228,16 +290,16 @@ fn process_xtream(
     let mut groups: HashMap<String, i64> = HashMap::new();
     for live in streams {
         let category_name = get_cat_name(&cats, get_serde_json_string(&live.category_id));
-        convert_xtream_live_to_channel(live, &source, stream_type.clone(), category_name)
+        convert_xtream_live_to_channel(live, source, stream_type, category_name)
             .and_then(|mut channel| {
                 sql::set_channel_group_id(
                     &mut groups,
                     &mut channel,
-                    &tx,
+                    tx,
                     source.id.as_ref().unwrap(),
                 )
                 .unwrap_or_else(|e| log::log(format!("{:?}", e)));
-                sql::insert_channel(&tx, channel)?;
+                sql::insert_channel(tx, channel)?;
                 Ok(())
             })
             .unwrap_or_else(|e| log::log(format!("{:?}", e)));
@@ -246,10 +308,8 @@ fn process_xtream(
 }
 
 fn get_cat_name(cats: &HashMap<String, String>, category_id: Option<String>) -> Option<String> {
-    if category_id.is_none() {
-        return None;
-    }
-    return cats.get(&category_id.unwrap()).map(|t| t.to_string());
+    category_id.as_ref()?;
+    cats.get(&category_id.unwrap()).map(|t| t.to_string())
 }
 
 fn convert_xtream_live_to_channel(
@@ -266,7 +326,7 @@ fn convert_xtream_live_to_channel(
             .stream_icon
             .or(stream.cover)
             .map(|x| x.trim().to_string()),
-        media_type: stream_type.clone(),
+        media_type: stream_type,
         name: stream.name.context("No name")?.trim().to_string(),
         source_id: source.id,
         url: if stream_type == media_type::SERIE {
@@ -300,15 +360,21 @@ fn get_url(
     stream_type: u8,
     extension: Option<String>,
 ) -> Result<String> {
-    Ok(format!(
-        "{}/{}/{}/{}/{}.{}",
-        source.url_origin.clone().unwrap(),
-        get_media_type_string(stream_type)?,
-        source.username.clone().unwrap(),
-        source.password.clone().unwrap(),
-        stream_id,
-        extension.unwrap_or(LIVE_STREAM_EXTENSION.to_string())
-    ))
+    // Built segment by segment so a password containing `/`, `#` or `?` is
+    // percent-encoded instead of producing a broken stream URL.
+    let mut url = Url::parse(source.url_origin.as_deref().context("no origin")?)?;
+    url.path_segments_mut()
+        .map_err(|_| anyhow!("Can't mutate url"))?
+        .pop_if_empty()
+        .push(&get_media_type_string(stream_type)?)
+        .push(source.username.as_deref().context("no username")?)
+        .push(source.password.as_deref().context("no password")?)
+        .push(&format!(
+            "{}.{}",
+            stream_id,
+            extension.unwrap_or(LIVE_STREAM_EXTENSION.to_string())
+        ));
+    Ok(url.to_string())
 }
 
 fn get_media_type_string(stream_type: u8) -> Result<String> {
@@ -325,7 +391,7 @@ pub async fn get_episodes(channel: Channel) -> Result<()> {
     if sql::series_has_episodes(series_id, channel.source_id.context("no source id")?)
         .unwrap_or_else(|e| {
             log::log(format!("{:?}", e));
-            return false;
+            false
         })
     {
         return Ok(());
@@ -337,11 +403,7 @@ pub async fn get_episodes(channel: Channel) -> Result<()> {
         .append_pair("series_id", &series_id.to_string());
     let mut series =
         get_xtream_http_data::<XtreamSeries>(url, GET_SERIES_INFO, &user_agent).await?;
-    let mut episodes: Vec<XtreamEpisode> = series
-        .episodes
-        .into_values()
-        .flat_map(|episode| episode)
-        .collect();
+    let mut episodes: Vec<XtreamEpisode> = series.episodes.into_values().flatten().collect();
     series
         .seasons
         .sort_by_key(|f| get_serde_json_i64(&f.season_number));
@@ -405,7 +467,7 @@ fn insert_episode(
     let season_number = get_serde_json_i64(&episode.season).unwrap_or(NO_SEASON_NUMBER);
     let season_id = seasons_db.get(&season_number);
     let season_id: i64 = match season_id {
-        Some(s) => s.clone(),
+        Some(s) => *s,
         None => {
             let season = seasons
                 .get(&season_number)
@@ -428,8 +490,8 @@ fn insert_episode(
             id
         }
     };
-    let episode = episode_to_channel(episode, &source, series_id, season_id)?;
-    sql::insert_channel(&tx, episode)?;
+    let episode = episode_to_channel(episode, source, series_id, season_id)?;
+    sql::insert_channel(tx, episode)?;
     Ok(())
 }
 
@@ -458,6 +520,15 @@ fn get_serde_json_string(value: &serde_json::Value) -> Option<String> {
         .map(|cid| cid.to_string())
         .or_else(|| value.as_u64().map(|cid| cid.to_string()))
         .map(|cid| cid.trim().to_string())
+}
+
+/// Xtream sends EPG texts base64-encoded. Invalid UTF-8 is decoded lossily and
+/// text that is not base64 at all is shown as it is.
+fn decode_epg_text(text: &str) -> String {
+    match BASE64_STANDARD.decode(text.trim()) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        Err(_) => text.to_string(),
+    }
 }
 
 fn get_serde_json_u64(value: &serde_json::Value) -> Option<u64> {
@@ -503,7 +574,7 @@ fn episode_to_channel(
         source_id: source.id,
         url: Some(get_url(
             get_serde_json_string(&episode.id).context("no id")?,
-            &source,
+            source,
             media_type::SERIE,
             Some(episode.container_extension),
         )?),
@@ -529,11 +600,20 @@ pub async fn get_epg(channel: Channel) -> Result<Vec<EPG>> {
     let url = get_timeshift_url_base(&source)?;
     let current_time = Local::now();
     let mut otv_epgs = Vec::new();
+    let mut skipped = 0;
     for item in epg.epg_listings {
-        let item = xtream_epg_to_epg(item, &url, &stream_id)?;
-        if is_valid_epg(&item, &current_time)? {
-            otv_epgs.push(item);
+        // One malformed listing used to discard the whole guide.
+        match xtream_epg_to_epg(item, &url, &stream_id) {
+            Ok(item) => {
+                if is_valid_epg(&item, &current_time)? {
+                    otv_epgs.push(item);
+                }
+            }
+            Err(_) => skipped += 1,
         }
+    }
+    if skipped > 0 {
+        log::log(format!("Xtream EPG: skipped {skipped} malformed listings"));
     }
     Ok(otv_epgs)
 }
@@ -553,8 +633,8 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
         get_serde_json_i64(&epg.stop_timestamp).context("no valid end timestamp")?;
     Ok(EPG {
         epg_id: get_serde_json_string(&epg.id).context("no epg id")?,
-        title: String::from_utf8(BASE64_STANDARD.decode(&epg.title)?)?,
-        description: String::from_utf8(BASE64_STANDARD.decode(&epg.description)?)?,
+        title: decode_epg_text(&epg.title),
+        description: decode_epg_text(&epg.description),
         start_time: get_local_time(start_timestamp)?
             .format("%B %d, %H:%M")
             .to_string(),
@@ -563,7 +643,7 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
             .to_string(),
         start_timestamp,
         end_timestamp,
-        timeshift_url: if epg.has_archive == 1 {
+        timeshift_url: if get_serde_json_u64(&epg.has_archive) == Some(1) {
             Some(get_timeshift_url(
                 url.clone(),
                 epg.start,
@@ -573,8 +653,8 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
         } else {
             None
         },
-        has_archive: epg.has_archive == 1,
-        now_playing: epg.now_playing == 1,
+        has_archive: get_serde_json_u64(&epg.has_archive) == Some(1),
+        now_playing: get_serde_json_u64(&epg.now_playing) == Some(1),
     })
 }
 
@@ -605,7 +685,7 @@ fn get_timeshift_url(mut url: Url, start: String, end: String, stream_id: &str) 
 
 async fn get_status(source: &mut Source) -> Result<(i64, XtreamStatus)> {
     let url = build_xtream_url(source)?;
-    let user_agent = get_user_agent_from_source(&source)?;
+    let user_agent = get_user_agent_from_source(source)?;
     let client = api_client_builder().user_agent(user_agent).build()?;
     let data = client.get(url).send().await?.json::<XtreamStatus>().await?;
     Ok((source.id.context("no id")?, data))
@@ -613,7 +693,7 @@ async fn get_status(source: &mut Source) -> Result<(i64, XtreamStatus)> {
 
 pub async fn get_all_expiries() -> Result<HashMap<i64, i64>> {
     let mut sources = sql::get_sources_by_type(source_type::XTREAM)?;
-    let to_await = sources.iter_mut().map(|source| get_status(source));
+    let to_await = sources.iter_mut().map(get_status);
     let results: Vec<std::result::Result<(i64, XtreamStatus), anyhow::Error>> =
         join_all(to_await).await;
     let statuses: HashMap<i64, i64> = results
@@ -625,4 +705,30 @@ pub async fn get_all_expiries() -> Result<HashMap<i64, i64>> {
         })
         .collect();
     Ok(statuses)
+}
+
+#[cfg(test)]
+mod test_xtream_failure {
+    use super::xtream_failure;
+    use crate::media_type::{LIVESTREAM, MOVIE, SERIE};
+
+    #[test]
+    fn test_missing_series_on_a_source_without_series_is_fine() {
+        assert!(xtream_failure(&[SERIE], &[LIVESTREAM, MOVIE]).is_none());
+    }
+
+    #[test]
+    fn test_failed_live_on_a_source_with_live_aborts() {
+        assert!(xtream_failure(&[LIVESTREAM], &[LIVESTREAM, MOVIE]).is_some());
+    }
+
+    #[test]
+    fn test_everything_failed_aborts_even_on_first_import() {
+        assert!(xtream_failure(&[LIVESTREAM, MOVIE, SERIE], &[]).is_some());
+    }
+
+    #[test]
+    fn test_first_import_tolerates_partial_failure() {
+        assert!(xtream_failure(&[MOVIE], &[]).is_none());
+    }
 }

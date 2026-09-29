@@ -21,15 +21,28 @@ use rusqlite::{OptionalExtension, Row, Transaction, params, params_from_iter};
 use rusqlite_migration::{M, Migrations};
 
 const PAGE_SIZE: u8 = 36;
+
+/// start, end, title, description
+pub type XmltvProgramme = (i64, i64, String, Option<String>);
+
+/// Row offset of a 1-based page. Page 0 is treated as the first page instead
+/// of underflowing.
+fn page_offset(page: u32) -> u64 {
+    u64::from(page.saturating_sub(1)) * u64::from(PAGE_SIZE)
+}
 pub const DB_NAME: &str = "db.sqlite";
-static CONN: LazyLock<Pool<SqliteConnectionManager>> = LazyLock::new(|| create_connection_pool());
+static CONN: LazyLock<Pool<SqliteConnectionManager>> = LazyLock::new(create_connection_pool);
 
 pub fn get_conn() -> Result<PooledConnection<SqliteConnectionManager>> {
     CONN.try_get().context("No sqlite conns available")
 }
 
 fn create_connection_pool() -> Pool<SqliteConnectionManager> {
-    let manager = SqliteConnectionManager::file(get_and_create_sqlite_db_path());
+    // WAL lets reads and small writes (favorite, last watched, settings) go
+    // through while a refresh holds its long insert transaction; the busy
+    // timeout covers the remaining writer-writer overlap.
+    let manager = SqliteConnectionManager::file(get_and_create_sqlite_db_path())
+        .with_init(|c| c.execute_batch("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 30000;"));
     r2d2::Pool::builder().max_size(20).build(manager).unwrap()
 }
 
@@ -42,7 +55,7 @@ fn get_and_create_sqlite_db_path() -> String {
         std::fs::create_dir_all(&path).unwrap();
     }
     path.push(DB_NAME);
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 fn create_structure() -> Result<()> {
@@ -272,6 +285,12 @@ fn apply_migrations() -> Result<()> {
               CREATE INDEX IF NOT EXISTS index_xmltv_channels_norm ON xmltv_channels(norm_name);
             "#,
         ),
+        M::up(
+            r#"
+              DELETE FROM channel_http_headers WHERE channel_id NOT IN (SELECT id FROM channels);
+              DELETE FROM scheduled_recordings WHERE channel_id NOT IN (SELECT id FROM channels);
+            "#,
+        ),
     ]);
     migrations.to_latest(&mut sql)?;
     Ok(())
@@ -294,8 +313,8 @@ pub fn backup_database(path: String) -> Result<()> {
 /// user-chosen backup file. A missing keychain entry becomes an empty
 /// password and is logged.
 fn export_keychain_passwords_to_backup(path: &str) -> Result<()> {
-    let backup =
-        rusqlite::Connection::open(path).context("Failed to open backup file for password export")?;
+    let backup = rusqlite::Connection::open(path)
+        .context("Failed to open backup file for password export")?;
     let ids: Vec<i64> = backup
         .prepare("SELECT id FROM sources WHERE password = ?")?
         .query_map(params![credentials::KEYCHAIN_PLACEHOLDER], |row| row.get(0))?
@@ -328,11 +347,9 @@ const BACKUP_TABLES: [&str; 8] = [
 ];
 
 fn validate_backup(path: &str) -> Result<()> {
-    let backup = rusqlite::Connection::open_with_flags(
-        path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .context("Failed to open backup file")?;
+    let backup =
+        rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .context("Failed to open backup file")?;
     for table in BACKUP_TABLES {
         let exists: bool = backup
             .query_row(
@@ -415,7 +432,7 @@ pub fn create_or_find_source_by_name(tx: &Transaction, source: &Source) -> Resul
     }
     tx.execute(
     "INSERT INTO sources (name, source_type, url, username, password, use_tvg_id, user_agent, max_streams, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    params![source.name, source.source_type.clone() as u8, source.url, source.username, source.password, source.use_tvg_id, source.user_agent, source.max_streams, chrono::Utc::now().timestamp()],
+    params![source.name, { source.source_type }, source.url, source.username, source.password, source.use_tvg_id, source.user_agent, source.max_streams, chrono::Utc::now().timestamp()],
     )?;
     let id = tx.last_insert_rowid();
     // Best-effort: move the password into the OS keychain now that the row id
@@ -483,7 +500,7 @@ DO UPDATE SET
             channel.image,
             channel.url,
             channel.source_id,
-            channel.media_type as u8,
+            { channel.media_type },
             channel.series_id,
             channel.favorite,
             channel.stream_id,
@@ -632,7 +649,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         return search_series(filters);
     }
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
     let media_types = match filters.series_id.is_some() {
         true => vec![1],
         false => filters.media_types.clone().unwrap(),
@@ -663,14 +680,14 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     }
 
     if filters.series_id.is_some() {
-        sql_query += &format!("\nAND series_id = ?");
+        sql_query += "\nAND series_id = ?";
         baked_params += 1;
     } else if filters.group_id.is_some() {
-        sql_query += &format!("\nAND group_id = ?");
+        sql_query += "\nAND group_id = ?";
         baked_params += 1;
     }
     if filters.season.is_some() {
-        sql_query += &format!("\nAND season_id = ?");
+        sql_query += "\nAND season_id = ?";
         baked_params += 1;
     }
     let order = match filters.sort {
@@ -712,7 +729,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
 
 fn search_series(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
     let query = filters.query.unwrap_or("".to_string());
     let keywords: Vec<String> = match filters.use_keywords {
         true => query
@@ -985,7 +1002,7 @@ fn apply_bulk_channels(
 
 fn search_hidden(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
 
     let media_types = match filters.series_id.is_some() {
         true => vec![1],
@@ -1060,17 +1077,13 @@ fn to_to_sql<T: rusqlite::ToSql>(values: &[T]) -> Vec<&dyn rusqlite::ToSql> {
 }
 
 fn get_keywords_sql(size: usize) -> String {
-    std::iter::repeat("name LIKE ?")
-        .take(size)
+    std::iter::repeat_n("name LIKE ?", size)
         .collect::<Vec<_>>()
         .join(" AND ")
 }
 
 fn generate_placeholders(size: usize) -> String {
-    std::iter::repeat("?")
-        .take(size)
-        .collect::<Vec<_>>()
-        .join(",")
+    std::iter::repeat_n("?", size).collect::<Vec<_>>().join(",")
 }
 
 pub fn series_has_episodes(series_id: u64, source_id: i64) -> Result<bool> {
@@ -1097,7 +1110,7 @@ fn to_sql_like(query: Option<String>) -> String {
 
 pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
     let query = filters.query.unwrap_or("".to_string());
     let media_types = filters.media_types.context("no media types")?;
     let keywords: Vec<String> = match filters.use_keywords {
@@ -1188,6 +1201,13 @@ fn row_to_channel(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
 }
 
 pub fn delete_channels_by_source(tx: &Transaction, source_id: i64) -> Result<()> {
+    // Foreign keys are not enforced in this database, so ON DELETE CASCADE
+    // never fires. Without this, the headers of deleted channels would stay
+    // behind and attach themselves to the next channel that reuses the id.
+    tx.execute(
+        "DELETE FROM channel_http_headers WHERE channel_id IN (SELECT id FROM channels WHERE source_id = ?)",
+        params![source_id],
+    )?;
     tx.execute(
         r#"
         DELETE FROM channels
@@ -1221,40 +1241,23 @@ pub fn delete_groups_by_source(tx: &Transaction, source_id: i64) -> Result<()> {
 }
 
 pub fn delete_source(id: i64) -> Result<()> {
-    let sql = get_conn()?;
-    sql.execute(
-        r#"
-        DELETE FROM channels
-        WHERE source_id = ?;
-    "#,
-        params![id],
-    )?;
-    sql.execute(
-        r#"
-        DELETE FROM groups
-        WHERE source_id = ?;
-    "#,
-        params![id],
-    )?;
-    sql.execute(
-        r#"
-        DELETE FROM seasons
-        WHERE source_id = ?;
-    "#,
-        params![id],
-    )?;
-    let count = sql.execute(
-        r#"
-        DELETE FROM sources
-        WHERE id = ?;
-    "#,
-        params![id],
-    )?;
-    if count != 1 {
-        return Err(anyhow!("No sources were deleted"));
-    }
+    // One transaction, so a crash midway cannot leave a half-deleted source.
+    do_tx(|tx| {
+        tx.execute(
+            "DELETE FROM scheduled_recordings WHERE channel_id IN (SELECT id FROM channels WHERE source_id = ?)",
+            params![id],
+        )?;
+        delete_channels_by_source(tx, id)?;
+        delete_groups_by_source(tx, id)?;
+        delete_seasons_by_source(tx, id)?;
+        let count = tx.execute("DELETE FROM sources WHERE id = ?", params![id])?;
+        if count != 1 {
+            return Err(anyhow!("No sources were deleted"));
+        }
+        Ok(())
+    })?;
     credentials::delete_source_password(id);
-    sql.execute("ANALYZE;", params![])?;
+    get_conn()?.execute("ANALYZE;", params![])?;
     Ok(())
 }
 
@@ -1483,10 +1486,10 @@ pub fn add_custom_channel(tx: &Transaction, channel: CustomChannel) -> Result<()
 }
 
 fn channel_headers_empty(headers: &ChannelHttpHeaders) -> bool {
-    return headers.ignore_ssl.is_none()
+    headers.ignore_ssl.is_none()
         && headers.http_origin.is_none()
         && headers.referrer.is_none()
-        && headers.user_agent.is_none();
+        && headers.user_agent.is_none()
 }
 
 pub fn get_custom_source(name: String) -> Source {
@@ -1517,7 +1520,7 @@ pub fn edit_custom_channel(channel: CustomChannel) -> Result<()> {
         }
         Err(e) => {
             tx.rollback().unwrap_or_else(|e| log(format!("{:?}", e)));
-            return Err(e);
+            Err(e)
         }
     }
 }
@@ -1568,9 +1571,19 @@ fn edit_custom_channel_tx(channel: CustomChannel, tx: &Transaction) -> Result<()
 }
 
 pub fn delete_custom_channel(id: i64) -> Result<()> {
-    let sql = get_conn()?;
-    sql.execute("DELETE FROM channels WHERE id = ?", params![id])?;
-    Ok(())
+    // Dependent rows by hand: foreign keys (and their cascades) are off.
+    do_tx(|tx| {
+        tx.execute(
+            "DELETE FROM channel_http_headers WHERE channel_id = ?",
+            params![id],
+        )?;
+        tx.execute(
+            "DELETE FROM scheduled_recordings WHERE channel_id = ?",
+            params![id],
+        )?;
+        tx.execute("DELETE FROM channels WHERE id = ?", params![id])?;
+        Ok(())
+    })
 }
 
 pub fn group_exists(name: &str, source_id: i64) -> Result<bool> {
@@ -1849,6 +1862,15 @@ pub fn update_source(source: Source) -> Result<()> {
     Ok(())
 }
 
+/// Distinct media types the source currently has channels for.
+pub fn get_media_types_of_source(tx: &Transaction, source_id: i64) -> Result<Vec<u8>> {
+    let types = tx
+        .prepare("SELECT DISTINCT media_type FROM channels WHERE source_id = ?")?
+        .query_map(params![source_id], |row| row.get::<_, u8>(0))?
+        .collect::<rusqlite::Result<Vec<u8>>>()?;
+    Ok(types)
+}
+
 pub fn wipe(tx: &Transaction, id: i64) -> Result<()> {
     delete_seasons_by_source(tx, id)?;
     delete_channels_by_source(tx, id)?;
@@ -1961,6 +1983,55 @@ fn row_to_group_preserve(row: &Row) -> Result<ChannelPreserve, rusqlite::Error> 
         last_watched: None,
         is_group: true,
     })
+}
+
+/// Scheduled recordings of a source with the name of their channel, captured
+/// before a refresh deletes the channels. Kept apart from [`get_preserve`],
+/// whose output is also exported to favorites backup files.
+pub fn get_recording_preserve(tx: &Transaction, source_id: i64) -> Result<Vec<(i64, String)>> {
+    let rows = tx
+        .prepare(
+            r#"
+              SELECT r.id, c.name
+              FROM scheduled_recordings r
+              JOIN channels c ON c.id = r.channel_id
+              WHERE c.source_id = ?
+            "#,
+        )?
+        .query_map(params![source_id], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<rusqlite::Result<Vec<(i64, String)>>>()?;
+    Ok(rows)
+}
+
+/// Points recordings captured by [`get_recording_preserve`] at the refreshed
+/// channel of the same name; recordings whose channel is gone are removed
+/// instead of silently recording whatever channel now has the old id.
+pub fn restore_recording_preserve(
+    tx: &Transaction,
+    source_id: i64,
+    recordings: Vec<(i64, String)>,
+) -> Result<()> {
+    for (id, name) in recordings {
+        let channel_id: Option<i64> = tx
+            .query_row(
+                r#"
+                  SELECT id FROM channels
+                  WHERE source_id = ? AND name = ? AND media_type = ?
+                  LIMIT 1
+                "#,
+                params![source_id, name, media_type::LIVESTREAM],
+                |row| row.get(0),
+            )
+            .optional()?;
+        match channel_id {
+            Some(channel_id) => tx.execute(
+                "UPDATE scheduled_recordings SET channel_id = ? WHERE id = ?",
+                params![channel_id, id],
+            )?,
+            None => tx.execute("DELETE FROM scheduled_recordings WHERE id = ?", params![id])?,
+        };
+    }
+    Ok(())
 }
 
 pub fn restore_preserve(
@@ -2143,8 +2214,9 @@ pub fn set_scheduled_recording_status(id: i64, status: u8) -> Result<()> {
 /// Startup recovery for scheduled recordings:
 /// - rows stuck in 'recording' (1) belong to a previous app run whose ffmpeg is
 ///   long gone, so they are marked failed (3);
-/// - pending rows (0) whose whole window already passed can never produce a file,
-///   so they are marked failed too.
+/// - pending rows (0) whose whole window already passed can never produce a
+///   file, so they are marked failed too.
+///
 /// Pending rows that already started but still have remaining time are left
 /// untouched: the scheduler's first tick picks them up as due and records the rest.
 pub fn recover_scheduled_recordings(now: i64) -> Result<()> {
@@ -2200,6 +2272,55 @@ pub fn replace_xmltv_programmes(
     Ok(())
 }
 
+/// Replaces the programmes of the channels present in `programmes` and drops
+/// ended ones, keeping everything else — used when some XMLTV sources failed,
+/// so their previous data survives.
+pub fn merge_xmltv_programmes(
+    programmes: &[(String, i64, i64, String, Option<String>)],
+    cutoff: i64,
+) -> Result<()> {
+    let mut sql = get_conn()?;
+    let tx = sql.transaction()?;
+    tx.execute(
+        "DELETE FROM xmltv_programmes WHERE end_timestamp < ?",
+        params![cutoff],
+    )?;
+    {
+        let mut seen = std::collections::HashSet::new();
+        let mut delete = tx.prepare("DELETE FROM xmltv_programmes WHERE channel_id = ?")?;
+        for (channel_id, ..) in programmes {
+            if seen.insert(channel_id.as_str()) {
+                delete.execute(params![channel_id])?;
+            }
+        }
+        let mut stmt = tx.prepare(
+            "INSERT INTO xmltv_programmes (channel_id, start_timestamp, end_timestamp, title, description) VALUES (?, ?, ?, ?, ?)",
+        )?;
+        for (channel_id, start, end, title, desc) in programmes {
+            stmt.execute(params![channel_id, start, end, title, desc])?;
+        }
+    }
+    tx.commit()?;
+    Ok(())
+}
+
+/// Adds or updates channel-name mappings without dropping the others.
+pub fn merge_xmltv_channels(channels: &[(String, String)]) -> Result<()> {
+    let mut sql = get_conn()?;
+    let tx = sql.transaction()?;
+    {
+        let mut delete = tx.prepare("DELETE FROM xmltv_channels WHERE norm_name = ?")?;
+        let mut stmt =
+            tx.prepare("INSERT INTO xmltv_channels (norm_name, channel_id) VALUES (?, ?)")?;
+        for (norm, id) in channels {
+            delete.execute(params![norm])?;
+            stmt.execute(params![norm, id])?;
+        }
+    }
+    tx.commit()?;
+    Ok(())
+}
+
 /// Replaces the XMLTV channel-name index (normalized name -> channel id).
 pub fn replace_xmltv_channels(channels: &[(String, String)]) -> Result<()> {
     let mut sql = get_conn()?;
@@ -2231,10 +2352,7 @@ pub fn get_xmltv_channel_id_by_name(norm_name: &str) -> Result<Option<String>> {
 
 /// Programmes for an XMLTV channel id whose end is still in the future
 /// relative to `from`, ordered by start time.
-pub fn get_xmltv_programmes(
-    channel_id: &str,
-    from: i64,
-) -> Result<Vec<(i64, i64, String, Option<String>)>> {
+pub fn get_xmltv_programmes(channel_id: &str, from: i64) -> Result<Vec<XmltvProgramme>> {
     let sql = get_conn()?;
     let rows = sql
         .prepare(

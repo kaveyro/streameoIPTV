@@ -67,10 +67,10 @@ async fn tick(app: &AppHandle) -> Result<()> {
             .context("failed to emit sources-auto-refreshed")?;
     }
     // Refresh external XMLTV EPG on the same schedule (best-effort).
-    if !settings::get_xmltv_sources().unwrap_or_default().is_empty() {
-        if let Err(e) = crate::xmltv::refresh().await {
-            log(format!("{:?}", e.context("auto refresh xmltv")));
-        }
+    if !settings::get_xmltv_sources().unwrap_or_default().is_empty()
+        && let Err(e) = crate::xmltv::refresh().await
+    {
+        log(format!("{:?}", e.context("auto refresh xmltv")));
     }
     Ok(())
 }

@@ -50,6 +50,7 @@ const NAV_ITEM_COUNT = 7;
 
 @Component({
   selector: "app-home",
+  standalone: false,
   templateUrl: "./home.component.html",
   styleUrl: "./home.component.css",
   animations: [

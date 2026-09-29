@@ -47,6 +47,7 @@ function setBackgroundInert(inert: boolean) {
  */
 @Component({
   selector: "app-player",
+  standalone: false,
   templateUrl: "./player.component.html",
   styleUrl: "./player.component.css",
 })
@@ -451,7 +452,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   formatTime(timestamp: number): string {
-    const lang = this.translate.currentLang || "en";
+    const lang = this.translate.getCurrentLang() || "en";
     try {
       return new Date(timestamp * 1000).toLocaleTimeString(lang, {
         hour: "2-digit",

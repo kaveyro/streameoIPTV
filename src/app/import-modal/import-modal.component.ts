@@ -8,6 +8,7 @@ import { CHANNEL_EXTENSIONS, GROUP_EXTENSIONS } from "../models/extensions";
 
 @Component({
   selector: "app-import-modal",
+  standalone: false,
   templateUrl: "./import-modal.component.html",
   styleUrl: "./import-modal.component.css",
 })

@@ -8,6 +8,7 @@ import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
  */
 @Component({
   selector: "app-update-modal",
+  standalone: false,
   templateUrl: "./update-modal.component.html",
   styleUrl: "./update-modal.component.css",
 })

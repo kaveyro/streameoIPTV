@@ -1,5 +1,5 @@
 import { TestBed } from "@angular/core/testing";
-import { TranslateModule } from "@ngx-translate/core";
+import { provideTranslateService } from "@ngx-translate/core";
 import { ToastrModule } from "ngx-toastr";
 
 import { DownloadService } from "./download.service";
@@ -13,7 +13,8 @@ describe("DownloadService", () => {
     // download; outside the Tauri webview the IPC bridge has to be mocked.
     mockTauri();
     TestBed.configureTestingModule({
-      imports: [TranslateModule.forRoot(), ToastrModule.forRoot()],
+      imports: [ToastrModule.forRoot()],
+      providers: [provideTranslateService()],
     });
     service = TestBed.inject(DownloadService);
   });

@@ -3,7 +3,7 @@
  * from AppModule, and a mock of the Tauri IPC bridge (there is no Rust
  * backend in Karma).
  */
-import { Component } from "@angular/core";
+import { Component, NgModule } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { FormsModule } from "@angular/forms";
 import { MatMenuModule } from "@angular/material/menu";
@@ -15,7 +15,7 @@ import {
   NgbTooltipModule,
   NgbTypeaheadModule,
 } from "@ng-bootstrap/ng-bootstrap";
-import { TranslateModule } from "@ngx-translate/core";
+import { TranslatePipe, provideTranslateService } from "@ngx-translate/core";
 import { ToastrModule } from "ngx-toastr";
 import { KeyboardShortcutsModule } from "ng-keyboard-shortcuts";
 import { clearMocks, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
@@ -28,12 +28,21 @@ import { GroupNameExistsValidator } from "../app/edit-group-modal/validators/gro
 @Component({ standalone: true, template: "" })
 export class BlankTestComponent {}
 
+/// ngx-translate 18 has no TranslateModule any more; this bundles the pipe
+/// with the service so specs get both from TEST_IMPORTS alone.
+@NgModule({
+  imports: [TranslatePipe],
+  exports: [TranslatePipe],
+  providers: [provideTranslateService()],
+})
+export class TestTranslateModule {}
+
 /// Modules AppModule imports (without the HTTP translation loader: the
 /// TranslatePipe then renders the keys themselves).
 export const TEST_IMPORTS = [
   FormsModule,
   NoopAnimationsModule,
-  TranslateModule.forRoot(),
+  TestTranslateModule,
   ToastrModule.forRoot(),
   MatMenuModule,
   NgbTooltipModule,

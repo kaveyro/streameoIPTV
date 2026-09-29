@@ -19,6 +19,7 @@ import { canCheckSource, sourceForCheck } from "../source-check";
 
 @Component({
   selector: "app-setup",
+  standalone: false,
   templateUrl: "./setup.component.html",
   styleUrl: "./setup.component.css",
 })

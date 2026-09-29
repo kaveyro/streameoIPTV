@@ -3,6 +3,7 @@ import { AbstractControl, NG_VALIDATORS, ValidationErrors, Validator } from '@an
 
 @Directive({
   selector: '[empty]',
+  standalone: false,
   providers: [
     {
       provide: NG_VALIDATORS,

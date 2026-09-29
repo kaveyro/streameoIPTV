@@ -1,9 +1,9 @@
 import { NgModule } from "@angular/core";
 import { BrowserModule } from "@angular/platform-browser";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
-import { HttpClient, provideHttpClient } from "@angular/common/http";
-import { TranslateModule, TranslateLoader } from "@ngx-translate/core";
-import { TranslateHttpLoader } from "@ngx-translate/http-loader";
+import { provideHttpClient } from "@angular/common/http";
+import { TranslatePipe, provideTranslateService } from "@ngx-translate/core";
+import { provideTranslateHttpLoader } from "@ngx-translate/http-loader";
 import { AppRoutingModule } from "./app-routing.module";
 import { AppComponent } from "./app.component";
 import { NgbModalModule, NgbTooltipModule, NgbTypeaheadModule } from "@ng-bootstrap/ng-bootstrap";
@@ -41,10 +41,6 @@ import { TvGuideComponent } from "./tv-guide/tv-guide.component";
 import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
-
-export function createTranslateLoader(http: HttpClient) {
-  return new TranslateHttpLoader(http, "./assets/i18n/", ".json");
-}
 
 @NgModule({
   declarations: [
@@ -100,16 +96,16 @@ export function createTranslateLoader(http: HttpClient) {
     MatMenuModule,
     NgbModalModule,
     NgbTypeaheadModule,
-    TranslateModule.forRoot({
-      defaultLanguage: "en",
-      loader: {
-        provide: TranslateLoader,
-        useFactory: createTranslateLoader,
-        deps: [HttpClient],
-      },
+    TranslatePipe,
+  ],
+  providers: [
+    provideAnimationsAsync(),
+    provideHttpClient(),
+    provideTranslateService({
+      fallbackLang: "en",
+      loader: provideTranslateHttpLoader({ prefix: "./assets/i18n/", suffix: ".json" }),
     }),
   ],
-  providers: [provideAnimationsAsync(), provideHttpClient()],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

@@ -28,9 +28,9 @@ export const getExtension = (url: string): string => {
 
 /// Locale for Intl formatting: the active UI language, else the default one.
 export const uiLocale = (translate: {
-  currentLang?: string;
-  defaultLang?: string;
-}): string | undefined => translate.currentLang || translate.defaultLang || undefined;
+  getCurrentLang(): string | null | undefined;
+  getFallbackLang(): string | null | undefined;
+}): string | undefined => translate.getCurrentLang() || translate.getFallbackLang() || undefined;
 
 /// Human readable file size (1024-based units), formatted for the locale.
 export const formatFileSize = (bytes: number, locale?: string): string => {

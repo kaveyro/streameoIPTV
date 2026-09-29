@@ -26,6 +26,7 @@ import { TranslateService } from "@ngx-translate/core";
 
 @Component({
   selector: "app-edit-channel-modal",
+  standalone: false,
   templateUrl: "./edit-channel-modal.component.html",
   styleUrl: "./edit-channel-modal.component.css",
 })

@@ -66,6 +66,7 @@ export interface GuideSlot {
  * for the session.
  */
 @Component({
+  standalone: false,
   selector: "app-tv-guide",
   templateUrl: "./tv-guide.component.html",
   styleUrl: "./tv-guide.component.css",

@@ -4,6 +4,7 @@ import { MemoryService } from "../../../memory.service";
 
 @Component({
   selector: "app-sort-item",
+  standalone: false,
   templateUrl: "./sort-item.component.html",
   styleUrl: "./sort-item.component.css",
 })

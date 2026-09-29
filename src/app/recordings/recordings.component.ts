@@ -20,6 +20,7 @@ import { formatFileSize, uiLocale } from "../utils";
  * only opens web links, and the command can only open the recording folder.
  */
 @Component({
+  standalone: false,
   selector: "app-recordings",
   templateUrl: "./recordings.component.html",
   styleUrl: "./recordings.component.css",

@@ -11,6 +11,7 @@ import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-delete-group-modal',
+  standalone: false,
   templateUrl: './delete-group-modal.component.html',
   styleUrl: './delete-group-modal.component.css'
 })

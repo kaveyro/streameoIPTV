@@ -44,8 +44,12 @@
         "@angular-eslint/no-empty-lifecycle-method": "warn",
         "@typescript-eslint/no-non-null-assertion": "warn",
         "@typescript-eslint/no-non-null-asserted-optional-chain": "warn",
-        "@typescript-eslint/ban-types": "warn",
+        "@typescript-eslint/no-empty-object-type": "warn",
+        "@typescript-eslint/no-unsafe-function-type": "warn",
+        "@typescript-eslint/no-wrapper-object-types": "warn",
         "@angular-eslint/no-input-rename": "warn",
+        "@angular-eslint/prefer-standalone": "off",
+        "@angular-eslint/prefer-inject": "off",
         "@typescript-eslint/no-inferrable-types": "warn",
         "no-empty": "warn",
         "no-console": "off",
@@ -64,7 +68,8 @@
           {
             "allowNullOrUndefined": true
           }
-        ]
+        ],
+        "@angular-eslint/template/prefer-control-flow": "off"
       }
     }
   ]

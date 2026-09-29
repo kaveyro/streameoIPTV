@@ -6,6 +6,7 @@ import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
  * with null when cancelled. Open it through {@link ParentalService.askPin}.
  */
 @Component({
+  standalone: false,
   selector: "app-pin-dialog",
   templateUrl: "./pin-dialog.component.html",
   styleUrl: "./pin-dialog.component.css",

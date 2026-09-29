@@ -5,6 +5,7 @@ import { ConfirmService } from "../confirm.service";
 
 @Component({
   selector: "app-download-manager",
+  standalone: false,
   templateUrl: "./download-manager.component.html",
   styleUrl: "./download-manager.component.css",
 })

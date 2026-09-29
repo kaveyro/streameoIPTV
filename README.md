@@ -12,20 +12,24 @@ restreaming on top.
 ## Features
 
 - 📺 **Sources**: M3U/M3U8 files, M3U links, Xtream Codes accounts, and custom sources
-  you assemble yourself
+  you assemble yourself; M3U links of Xtream servers are recognized and can be imported
+  (or converted) as Xtream
 - 🎬 **Live TV, movies and series**, including season/episode browsing
-- ▶️ **Playback through mpv**: embedded in the app window on Windows, or in a separate
-  mpv window; any external player can be configured instead
-- 📅 **EPG**: from Xtream, plus your own XMLTV sources, with catch-up/timeshift where the
-  provider supports it
+- ▶️ **Playback through mpv**: embedded in the app window on Windows, with a mini player
+  that keeps playing in a corner while you browse, or in a separate mpv window; any
+  external player can be configured instead
+- 📅 **EPG**: from Xtream, plus your own XMLTV sources (matched by tvg-id, by channel
+  name, or assigned by hand), with catch-up/timeshift where the provider supports it; a
+  TV guide grid with a programme search, and now/next on every channel tile
 - ⏺️ **Recording**: record while watching, or schedule a recording from the EPG
 - ⬇️ **Downloads**: a managed queue for movies and catch-up — pause it, reorder it,
   cancel single entries, retry what failed
 - 🔔 **Reminders**: a desktop notification when a programme you flagged in the EPG
   starts, and when a scheduled recording begins
 - 📡 **Restreaming**: share a channel to another device on your network
-- ⭐ **Organize**: favorites, watch history, hidden channels and groups, search across all
-  sources, and bulk actions
+- ⭐ **Organize**: favorites, watch history, continue watching, hidden channels and
+  groups, a country filter, search across all sources, and bulk actions
+- 🔒 **Parental lock**: a PIN hides chosen groups and their channels everywhere
 - 🎨 **Appearance**: light/dark themes with accent colors, adjustable zoom, tray icon
 - 🌍 **18 languages**, following your system language by default
 - 🔄 **Updates**: checked at startup and offered in a dialog — nothing installs without
@@ -162,13 +166,15 @@ cd src-tauri && cargo test
 
 Both the app and mpv write to
 `%LOCALAPPDATA%\kaveyro\streameoIPTV\cache\logs\` on Windows (the equivalent cache
-directory elsewhere). `mpv.log` is the place to look when a channel will not play.
+directory elsewhere). `mpv.log` is the place to look when a channel will not play; it
+records stream addresses including login data, so it is only written after you turn on
+Settings → Playback → "Write a player log".
 
 ### Technologies Used
 
 **Frontend:**
 
-- [Angular 17](https://angular.io/) – Web framework
+- [Angular 21](https://angular.dev/) – Web framework
 - [Angular Material](https://material.angular.io/) – UI components
 - [Bootstrap](https://getbootstrap.com/) – CSS framework
 - [ngx-translate](https://github.com/ngx-translate/core) – Internationalization

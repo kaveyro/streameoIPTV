@@ -439,7 +439,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   formatTime(timestamp: number): string {
-    const lang = this.translate.currentLang || "en";
+    const lang = this.translate.getCurrentLang() || "en";
     try {
       return new Date(timestamp * 1000).toLocaleTimeString(lang, {
         hour: "2-digit",

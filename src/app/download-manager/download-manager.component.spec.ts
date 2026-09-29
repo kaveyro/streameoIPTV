@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { TranslateModule } from "@ngx-translate/core";
+import { TranslatePipe, provideTranslateService } from "@ngx-translate/core";
 import { ToastrModule } from "ngx-toastr";
 
 import { DownloadManagerComponent } from "./download-manager.component";
@@ -11,7 +11,8 @@ describe("DownloadManagerComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [DownloadManagerComponent],
-      imports: [TranslateModule.forRoot(), ToastrModule.forRoot()],
+      imports: [TranslatePipe, ToastrModule.forRoot()],
+      providers: [provideTranslateService()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DownloadManagerComponent);

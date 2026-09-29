@@ -60,7 +60,7 @@ export class EpgModalComponent implements OnInit {
 
   /** Date of the shown day, formatted in the active UI language. */
   getFormattedDate() {
-    const lang = this.translate.currentLang || this.translate.defaultLang || undefined;
+    const lang = this.translate.getCurrentLang() || this.translate.getFallbackLang() || undefined;
     try {
       return this.currentDate.toLocaleDateString(lang, {
         weekday: "short",

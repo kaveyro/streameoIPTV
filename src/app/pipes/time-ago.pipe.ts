@@ -34,7 +34,7 @@ export class TimeAgoPipe implements PipeTransform {
 
   transform(value: any): string {
     if (!value) return "";
-    const lang = this.translate.currentLang || this.translate.defaultLang || "en";
+    const lang = this.translate.getCurrentLang() || this.translate.getFallbackLang() || "en";
     const now = Date.now();
     if (
       value === this.lastValue &&

@@ -50,7 +50,7 @@ export class LanguageService {
     private translate: TranslateService,
     private appRef: ApplicationRef,
   ) {
-    this.translate.setDefaultLang("en");
+    this.translate.setFallbackLang("en");
   }
 
   /** Resolve a stored setting (may be undefined / "system") to a supported code. */
@@ -81,7 +81,7 @@ export class LanguageService {
         if (lang !== latest) {
           // An older request finished after a newer one (its file loaded
           // slower) and switched the language back: re-assert the latest.
-          if (this.translate.currentLang !== latest) this.translate.use(latest);
+          if (this.translate.getCurrentLang() !== latest) this.translate.use(latest);
           return;
         }
         document.documentElement.dir = this.isRtl(lang) ? "rtl" : "ltr";

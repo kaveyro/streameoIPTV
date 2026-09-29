@@ -1,5 +1,5 @@
 import { TestBed } from "@angular/core/testing";
-import { TranslateModule } from "@ngx-translate/core";
+import { provideTranslateService } from "@ngx-translate/core";
 import { ToastrModule } from "ngx-toastr";
 
 import { DownloadService } from "./download.service";
@@ -18,7 +18,8 @@ describe("DownloadService", () => {
       invoke: () => Promise.resolve(1),
     };
     TestBed.configureTestingModule({
-      imports: [TranslateModule.forRoot(), ToastrModule.forRoot()],
+      imports: [ToastrModule.forRoot()],
+      providers: [provideTranslateService()],
     });
     service = TestBed.inject(DownloadService);
   });

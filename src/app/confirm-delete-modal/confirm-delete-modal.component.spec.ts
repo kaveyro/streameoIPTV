@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
-import { TranslateModule } from "@ngx-translate/core";
+import { TranslatePipe, provideTranslateService } from "@ngx-translate/core";
 
 import { ConfirmDeleteModalComponent } from "./confirm-delete-modal.component";
 
@@ -13,8 +13,8 @@ describe("ConfirmDeleteModalComponent", () => {
     activeModal = jasmine.createSpyObj<NgbActiveModal>("NgbActiveModal", ["close", "dismiss"]);
     await TestBed.configureTestingModule({
       declarations: [ConfirmDeleteModalComponent],
-      imports: [TranslateModule.forRoot()],
-      providers: [{ provide: NgbActiveModal, useValue: activeModal }],
+      imports: [TranslatePipe],
+      providers: [provideTranslateService(), { provide: NgbActiveModal, useValue: activeModal }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ConfirmDeleteModalComponent);

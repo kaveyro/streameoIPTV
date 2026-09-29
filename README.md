@@ -119,6 +119,8 @@ download URL, all attached to the GitHub release the updater endpoint resolves t
 npm run buildMac
 ```
 
+To sign it, set `APPLE_SIGNING_IDENTITY` to your own signing identity first.
+
 ## Development
 
 ### Project Structure

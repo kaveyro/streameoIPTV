@@ -230,7 +230,9 @@ impl EpgResolver {
 pub fn coverage() -> Result<EpgCoverage> {
     let now = chrono::Utc::now().timestamp();
     let resolver = EpgResolver::load(now)?;
-    let channels = sql::get_live_channels_for_epg(true)?;
+    // Channels in locked groups are not counted: the numbers are shown
+    // without the PIN.
+    let channels = sql::get_live_channels_for_epg(false)?;
     let matched = channels
         .iter()
         .filter(|c| resolver.resolve(c).is_some())
@@ -265,7 +267,14 @@ pub fn search_programmes(query: &str, show_locked: bool) -> Result<Vec<Programme
     if by_id.is_empty() {
         return Ok(Vec::new());
     }
-    let rows = sql::search_xmltv_programmes(query, now, now + SEARCH_DAYS * 86_400, 5_000)?;
+    let ids: Vec<&str> = by_id.keys().map(String::as_str).collect();
+    let rows = sql::search_xmltv_programmes(
+        query,
+        &ids,
+        now,
+        now + SEARCH_DAYS * 86_400,
+        SEARCH_LIMIT as u32,
+    )?;
     Ok(rows
         .into_iter()
         .filter_map(|(id, start, end, title, description)| {

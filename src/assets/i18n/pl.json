@@ -722,6 +722,7 @@
     "UPCOMING": "Nadchodzące programy: {{count}}",
     "NO_CURRENT": "brak bieżących programów",
     "NO_RESULTS": "Nie znaleziono kanału przewodnika.",
-    "AUTO": "Przypisz automatycznie"
+    "AUTO": "Przypisz automatycznie",
+    "XTREAM_NOTE": "Przypisany tu przewodnik zastępuje dla tego kanału przewodnik dostawcy, a wraz z nim oglądanie minionych programów (catch-up)."
   }
 }

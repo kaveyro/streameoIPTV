@@ -789,6 +789,17 @@ body.player-mini .download-box {
   inset-inline-end: calc(var(--mini-player-width) + 2rem);
 }
 
+/* The native mini window hides whatever lies under it: leave room at the end
+   of the page, so the last tiles and list rows can be scrolled out of it. */
+body.player-mini main {
+  padding-bottom: calc(var(--mini-player-height) + 2rem);
+}
+
+/* Closing the mini player hands the focus to <main> (tabindex -1). */
+main:focus {
+  outline: none;
+}
+
 @media (max-width: 849.98px) {
   body.player-mini .download-box {
     inset-inline-end: 1rem;

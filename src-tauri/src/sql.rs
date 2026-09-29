@@ -2082,23 +2082,34 @@ pub fn restore_recording_preserve(
     Ok(())
 }
 
+/// Puts favorites, history and hidden/locked state back on the channels and
+/// groups of the same name. `restore_locks` is false while no parental PIN
+/// exists: a lock nobody can open would make the group vanish for good.
 pub fn restore_preserve(
     tx: &Transaction,
     source_id: i64,
     preserve: Vec<ChannelPreserve>,
+    restore_locks: bool,
 ) -> Result<()> {
     for item in preserve {
         if item.is_group {
-            // A lock is only ever added here: a favorites backup file must
-            // not be a way around the parental PIN.
+            // Groups are only ever hidden or locked here, never shown or
+            // unlocked: a locked group is preserved even when visible, and a
+            // favorites backup file must not be a way around the PIN.
             tx.execute(
                 r#"
                   UPDATE groups
-                  SET hidden = ?, locked = CASE WHEN ? THEN 1 ELSE locked END
+                  SET hidden = CASE WHEN ? THEN 1 ELSE hidden END,
+                      locked = CASE WHEN ? THEN 1 ELSE locked END
                   WHERE name = ?
                   AND source_id = ?
                 "#,
-                params![item.hidden, item.locked, item.name, source_id],
+                params![
+                    item.hidden.unwrap_or(false),
+                    item.locked && restore_locks,
+                    item.name,
+                    source_id
+                ],
             )?;
         } else {
             tx.execute(
@@ -2470,6 +2481,7 @@ pub fn get_xmltv_programmes(channel_id: &str, from: i64) -> Result<Vec<XmltvProg
             SELECT start_timestamp, end_timestamp, title, description
             FROM xmltv_programmes
             WHERE channel_id = ?1 AND end_timestamp > ?2
+            GROUP BY start_timestamp
             ORDER BY start_timestamp ASC
             LIMIT 200
             "#,
@@ -2517,7 +2529,8 @@ fn country_like_patterns(country: Option<&str>) -> Vec<String> {
         return Vec::new();
     };
     let code = code.to_ascii_uppercase();
-    ["{}:%", "{} :%", "{}|%", "{} |%", "{} -%", "{}-%", "[{}]%"]
+    // No bare "XX-%": "Al-Jazeera" is not Albania.
+    ["{}:%", "{} :%", "{}|%", "{} |%", "{} -%", "{}- %", "[{}]%"]
         .iter()
         .map(|p| p.replace("{}", &code))
         .collect()
@@ -2655,6 +2668,15 @@ pub fn find_xmltv_channel_ids(raw: &str, norm: &str, limit: u32) -> Result<Vec<S
     Ok(rows)
 }
 
+/// Programmes of one XMLTV channel that end after `from`.
+pub fn count_xmltv_programmes(channel_id: &str, from: i64) -> Result<i64> {
+    Ok(get_conn()?.query_row(
+        "SELECT COUNT(*) FROM xmltv_programmes WHERE channel_id = ? AND end_timestamp > ?",
+        params![channel_id, from],
+        |row| row.get(0),
+    )?)
+}
+
 /// Title of the programme on air at `now` on an XMLTV channel.
 pub fn get_xmltv_now_title(channel_id: &str, now: i64) -> Result<Option<String>> {
     Ok(get_conn()?
@@ -2670,35 +2692,67 @@ pub fn get_xmltv_now_title(channel_id: &str, now: i64) -> Result<Option<String>>
         .optional()?)
 }
 
-/// Upcoming XMLTV programmes (not ended, starting before `until`) whose title
-/// contains the query: (channel id, start, end, title, description).
+/// Upcoming XMLTV programmes (not ended, starting before `until`) of the
+/// given XMLTV channels whose title contains the query: (channel id, start,
+/// end, title, description). SQLite's LIKE ignores case for ASCII only, so
+/// the lower-case, upper-case and capitalized spellings are tried too
+/// ("çocuk" finds "Çocuk").
 pub fn search_xmltv_programmes(
     query: &str,
+    channel_ids: &[&str],
     now: i64,
     until: i64,
     limit: u32,
 ) -> Result<Vec<XmltvProgrammeRow>> {
     let conn = get_conn()?;
-    let pattern = format!("%{}%", query.trim());
+    let query = query.trim();
+    let lower = query.to_lowercase();
+    let mut capitalized: String = lower.chars().take(1).flat_map(char::to_uppercase).collect();
+    capitalized.extend(lower.chars().skip(1));
+    let patterns: Vec<String> = [
+        query.to_string(),
+        lower.clone(),
+        query.to_uppercase(),
+        capitalized,
+    ]
+    .iter()
+    .map(|p| format!("%{p}%"))
+    .collect();
+    let ids = serde_json::to_string(channel_ids)?;
     let rows = conn
         .prepare(
             r#"
             SELECT channel_id, start_timestamp, end_timestamp, title, description
             FROM xmltv_programmes
-            WHERE title LIKE ?1 AND end_timestamp > ?2 AND start_timestamp < ?3
+            WHERE (title LIKE ?1 OR title LIKE ?2 OR title LIKE ?3 OR title LIKE ?4)
+            AND end_timestamp > ?5 AND start_timestamp < ?6
+            AND channel_id IN (SELECT value FROM json_each(?7))
+            GROUP BY channel_id, start_timestamp
             ORDER BY start_timestamp
-            LIMIT ?4
+            LIMIT ?8
             "#,
         )?
-        .query_map(params![pattern, now, until, limit], |row| {
-            Ok((
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                row.get(3)?,
-                row.get(4)?,
-            ))
-        })?
+        .query_map(
+            params![
+                patterns[0],
+                patterns[1],
+                patterns[2],
+                patterns[3],
+                now,
+                until,
+                ids,
+                limit
+            ],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                ))
+            },
+        )?
         .filter_map(Result::ok)
         .collect();
     Ok(rows)
@@ -2731,20 +2785,26 @@ pub fn get_live_channels_for_epg(show_locked: bool) -> Result<Vec<Channel>> {
 }
 
 /// Names of the visible channels and groups of the given sources, to find
-/// the country prefixes in use.
-pub fn get_names_for_countries(source_ids: &[i64]) -> Result<Vec<String>> {
+/// the country prefixes in use. Without `show_locked` nothing inside a
+/// locked group counts, so the list gives nothing away without the PIN.
+pub fn get_names_for_countries(source_ids: &[i64], show_locked: bool) -> Result<Vec<String>> {
     if source_ids.is_empty() {
         return Ok(Vec::new());
     }
     let conn = get_conn()?;
     let placeholders = generate_placeholders(source_ids.len());
+    let (channel_lock, group_lock) = if show_locked {
+        ("", "")
+    } else {
+        (NOT_IN_LOCKED_GROUP, GROUP_NOT_LOCKED)
+    };
     let query = format!(
         r#"
         SELECT name FROM channels
-        WHERE source_id IN ({placeholders}) AND hidden = 0 AND series_id IS NULL
+        WHERE source_id IN ({placeholders}) AND hidden = 0 AND series_id IS NULL{channel_lock}
         UNION ALL
         SELECT name FROM groups
-        WHERE source_id IN ({placeholders}) AND hidden = 0
+        WHERE source_id IN ({placeholders}) AND hidden = 0{group_lock}
         "#
     );
     let mut params: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(source_ids.len() * 2);
@@ -2795,11 +2855,32 @@ mod test_sql {
         // A refresh recreates the groups unlocked.
         tx.execute("UPDATE groups SET locked = 0, hidden = 0", [])
             .unwrap();
-        restore_preserve(&tx, 1, preserve).unwrap();
+        restore_preserve(&tx, 1, preserve, true).unwrap();
         tx.commit().unwrap();
         assert!(locked(&conn, "Kids"));
         assert!(locked(&conn, "Adult"));
         assert!(!locked(&conn, "News"));
+    }
+
+    #[test]
+    fn test_no_locks_without_a_pin_and_no_unhiding() {
+        let mut conn = groups_db();
+        let tx = conn.transaction().unwrap();
+        let preserve = get_preserve(&tx, 1).unwrap();
+        // The PIN was removed (all unlocked) and "Kids" hidden since the backup.
+        tx.execute("UPDATE groups SET locked = 0", []).unwrap();
+        tx.execute("UPDATE groups SET hidden = 1 WHERE name = 'Kids'", [])
+            .unwrap();
+        restore_preserve(&tx, 1, preserve, false).unwrap();
+        tx.commit().unwrap();
+        assert!(!locked(&conn, "Kids"));
+        assert!(!locked(&conn, "Adult"));
+        let hidden: bool = conn
+            .query_row("SELECT hidden FROM groups WHERE name = 'Kids'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert!(hidden);
     }
 
     #[test]
@@ -2809,7 +2890,7 @@ mod test_sql {
         let mut preserve = get_preserve(&tx, 1).unwrap();
         // A crafted favorites backup that says "not locked".
         preserve.iter_mut().for_each(|p| p.locked = false);
-        restore_preserve(&tx, 1, preserve).unwrap();
+        restore_preserve(&tx, 1, preserve, true).unwrap();
         tx.commit().unwrap();
         assert!(locked(&conn, "Kids"));
         assert!(locked(&conn, "Adult"));

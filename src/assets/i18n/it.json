@@ -722,6 +722,7 @@
     "UPCOMING": "Programmi in arrivo: {{count}}",
     "NO_CURRENT": "nessun programma attuale",
     "NO_RESULTS": "Nessun canale della guida trovato.",
-    "AUTO": "Assegna automaticamente"
+    "AUTO": "Assegna automaticamente",
+    "XTREAM_NOTE": "Una guida assegnata qui sostituisce per questo canale la guida del tuo provider e con essa la visione dei programmi passati (catch-up)."
   }
 }

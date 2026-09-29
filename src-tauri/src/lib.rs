@@ -653,8 +653,11 @@ fn search_programmes(query: String, show_locked: bool) -> Result<Vec<types::Prog
 }
 
 #[tauri::command(async)]
-fn get_countries(source_ids: Vec<i64>) -> Result<Vec<types::CountryCount>, String> {
-    sql::get_names_for_countries(&source_ids)
+fn get_countries(
+    source_ids: Vec<i64>,
+    show_locked: bool,
+) -> Result<Vec<types::CountryCount>, String> {
+    sql::get_names_for_countries(&source_ids, show_locked)
         .map(|names| xmltv::count_countries(&names))
         .map_err(map_err_frontend)
 }

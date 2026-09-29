@@ -13,6 +13,7 @@ import { UnlistenFn, listen } from "@tauri-apps/api/event";
 import { Subscription } from "rxjs";
 import { TranslateService } from "@ngx-translate/core";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { OverlayContainer } from "@angular/cdk/overlay";
 import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
 import { ErrorService } from "../error.service";
@@ -96,6 +97,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private countryCodes = new Map<string, string | undefined>();
   /// Whether any ng-bootstrap modal is open.
   private modalsOpen = false;
+  /// Whether a CDK overlay (context menu, select panel) overlaps the mini
+  /// player: it would be painted under the native window.
+  private overlayOverMini = false;
+  private overlayObserver?: MutationObserver;
   /// The native window was hidden because a modal opened over the mini
   /// player; it is shown again when the last modal closes.
   private hiddenForModal = false;
@@ -110,6 +115,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     private nowPlayingService: NowPlayingService,
     private modal: NgbModal,
     private host: ElementRef<HTMLElement>,
+    private overlayContainer: OverlayContainer,
   ) {}
 
   ngAfterViewInit(): void {
@@ -127,8 +133,21 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     // which only acts while PlayerVisible. Beside the mini player the page is
     // usable, so any dialog may open: hide the native window while one is.
     this.subscriptions.push(
-      this.modal.activeInstances.subscribe((modals) => this.onModalsChanged(modals.length > 0)),
+      this.modal.activeInstances.subscribe((modals) => {
+        this.modalsOpen = modals.length > 0;
+        this.updateCoverHiding();
+      }),
     );
+    // Context menus of the tiles beside the mini player open in CDK overlays.
+    this.ngZone.runOutsideAngular(() => {
+      this.overlayObserver = new MutationObserver(() =>
+        requestAnimationFrame(() => this.checkOverlays()),
+      );
+      this.overlayObserver.observe(this.overlayContainer.getContainerElement(), {
+        childList: true,
+        subtree: true,
+      });
+    });
     // mpv reports a double-click / `f` key (rebound to a script-message) here;
     // toggle app-level fullscreen since mpv can't fullscreen an embedded child.
     // The mini player grows back to the full player instead.
@@ -200,6 +219,12 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   async open(channel: Channel) {
+    // The channel already playing in the mini player: just grow back, a new
+    // player_play would restart the stream.
+    if (this.active && this.mini && channel.id === this.current?.id && !this.currentFailed) {
+      this.expand();
+      return;
+    }
     const generation = ++this.openGeneration;
     if (this.embeddedUnavailable) {
       await this.fallback(channel);
@@ -294,8 +319,39 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     await invoke("player_set_visible", { visible: true });
   }
 
+  /// Whether a visible CDK overlay pane intersects the mini video.
+  private checkOverlays() {
+    let over = false;
+    const video = this.videoHost?.nativeElement.getBoundingClientRect();
+    if (this.active && this.mini && video) {
+      const panes = this.overlayContainer
+        .getContainerElement()
+        .querySelectorAll<HTMLElement>(".cdk-overlay-pane");
+      over = Array.from(panes).some((pane) => {
+        if (pane.childElementCount === 0) return false;
+        const r = pane.getBoundingClientRect();
+        return (
+          r.width > 0 &&
+          r.left < video.right &&
+          r.right > video.left &&
+          r.top < video.bottom &&
+          r.bottom > video.top
+        );
+      });
+    }
+    if (over === this.overlayOverMini) return;
+    this.ngZone.run(() => {
+      this.overlayOverMini = over;
+      this.updateCoverHiding();
+    });
+  }
+
+  private updateCoverHiding() {
+    this.onModalsChanged(this.modalsOpen || this.overlayOverMini);
+  }
+
+  /// `open`: a modal, or an overlay over the mini video, is shown.
   private onModalsChanged(open: boolean) {
-    this.modalsOpen = open;
     if (!this.active) {
       this.hiddenForModal = false;
       return;
@@ -321,7 +377,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.applyMode();
     // The modal backdrop covers the player bar, so none should be open here;
     // if one is, hide the window like for a modal opened later.
-    if (this.modalsOpen) this.onModalsChanged(true);
+    if (this.modalsOpen) this.updateCoverHiding();
     // Wait for the mini layout to render, then align the native window and
     // keep the focus in the player (Escape there closes it).
     setTimeout(() => {
@@ -637,10 +693,21 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.closedGeneration = ++this.openGeneration;
     this.switchSeq++;
     if (this.fullscreen) await this.setFullscreen(false);
+    // Closing the mini player removes the focused button with it: hand the
+    // focus to the page instead of dropping it on <body>.
+    const focusToPage = this.mini && this.host.nativeElement.contains(document.activeElement);
     this.active = false;
     this.mini = false;
     this.hiddenForModal = false;
+    this.overlayOverMini = false;
     this.applyMode();
+    if (focusToPage) {
+      const main = document.querySelector<HTMLElement>("main");
+      if (main) {
+        if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+        main.focus({ preventScroll: true });
+      }
+    }
     this.filterText = "";
     this.nowPlaying = undefined;
     this.stopBoundsSync();
@@ -717,6 +784,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.overlayObserver?.disconnect();
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.stopBoundsSync();
     this.stopEpgTimer();

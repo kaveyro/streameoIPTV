@@ -52,7 +52,7 @@ pub async fn refresh() -> Result<()> {
     let mut channels: Vec<(String, String)> = Vec::new();
 
     let mut failures = 0usize;
-    for url in &urls {
+    for (index, url) in urls.iter().enumerate() {
         let entry = status.entry(url.clone()).or_default();
         entry.url = url.clone();
         match fetch_and_parse(&client, url, cutoff).await {
@@ -77,6 +77,16 @@ pub async fn refresh() -> Result<()> {
             warn(format!(
                 "XMLTV: reached the {MAX_PROGRAMMES} programme cap, skipping remaining sources"
             ));
+            // Skipped sources count as failed, so the merge below keeps what
+            // they provided last time instead of dropping it.
+            for skipped in &urls[index + 1..] {
+                failures += 1;
+                let entry = status.entry(skipped.clone()).or_default();
+                entry.url = skipped.clone();
+                entry.error = Some(format!(
+                    "skipped: the guides reached the limit of {MAX_PROGRAMMES} programmes"
+                ));
+            }
             break;
         }
     }
@@ -92,6 +102,11 @@ pub async fn refresh() -> Result<()> {
         anyhow::bail!("All XMLTV sources failed, keeping the cached guide");
     }
     let partial = failures > 0;
+    // Two guides often carry the same channel id (IPTV-EPG and EPGShare for
+    // one country): keep one programme per channel and start time.
+    let mut seen: HashSet<(String, i64)> = HashSet::with_capacity(programmes.len());
+    programmes.retain(|p| seen.insert((p.0.clone(), p.1)));
+    drop(seen);
     let (programme_count, channel_count) = (programmes.len(), channels.len());
     tokio::task::spawn_blocking(move || -> Result<()> {
         if partial {
@@ -117,12 +132,22 @@ pub async fn refresh() -> Result<()> {
 
 /// Refreshes the XMLTV cache when sources are configured and the last refresh
 /// is older than `max_age_secs` (or never happened). Returns whether it ran.
+///
+/// A source that was added since (no status yet) makes it due at once, and
+/// once every source was removed the cached guide is cleared.
 pub async fn refresh_if_due(max_age_secs: i64) -> Result<bool> {
-    if settings::get_xmltv_sources()?.is_empty() {
-        return Ok(false);
+    let urls = settings::get_xmltv_sources()?;
+    if urls.is_empty() {
+        if !sql::has_xmltv_programmes()? {
+            return Ok(false);
+        }
+        refresh().await?;
+        return Ok(true);
     }
     let now = Utc::now().timestamp();
-    if settings::get_xmltv_last_updated()?.is_some_and(|t| now - t < max_age_secs) {
+    let status = settings::get_xmltv_status().unwrap_or_default();
+    let new_source = urls.iter().any(|url| !status.contains_key(url));
+    if !new_source && settings::get_xmltv_last_updated()?.is_some_and(|t| now - t < max_age_secs) {
         return Ok(false);
     }
     refresh().await?;
@@ -506,9 +531,10 @@ pub fn normalize_name(s: &str) -> String {
 }
 
 /// "[UK] x" needs no separator; "TR: x", "DE| x" and "TR - x" do, so a
-/// two-letter word such as "TV Asia" is no prefix.
+/// two-letter word such as "TV Asia" is no prefix. A hyphen needs a space
+/// next to it: "Al-Jazeera" and "TV-1000" are names, not countries.
 static COUNTRY_PREFIX_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
-    regex::Regex::new(r"^\s*(?:\[([A-Za-z]{2})\]|([A-Za-z]{2})\s*[:|\-])").unwrap()
+    regex::Regex::new(r"^\s*(?:\[([A-Za-z]{2})\]|([A-Za-z]{2})(?:\s*[:|]|\s+-|-\s))").unwrap()
 });
 
 /// The country code a playlist name is prefixed with ("TR: Kanal D",
@@ -521,7 +547,7 @@ pub fn country_prefix(name: &str) -> Option<String> {
         .or_else(|| captures.get(2))?
         .as_str()
         .to_ascii_lowercase();
-    if code == "sd" || code == "hd" {
+    if matches!(code.as_str(), "sd" | "hd" | "tv") {
         return None;
     }
     Some(code)
@@ -573,10 +599,10 @@ pub fn search_channels(query: &str) -> anyhow::Result<Vec<XmltvChannelHit>> {
     let now = Utc::now().timestamp();
     let norm = normalize_name(query);
     let ids = sql::find_xmltv_channel_ids(query, &norm, 60)?;
-    let counts = sql::get_xmltv_programme_counts(now)?;
     let mut hits = Vec::with_capacity(ids.len());
     for id in ids {
-        let programmes = counts.get(&id).copied().unwrap_or(0);
+        // Counted per id (indexed), not for the whole guide per keystroke.
+        let programmes = sql::count_xmltv_programmes(&id, now)?;
         let now_title = if programmes > 0 {
             sql::get_xmltv_now_title(&id, now)?
         } else {
@@ -771,6 +797,10 @@ mod test_xmltv {
         assert_eq!(country_prefix("[UK] - BBC One").as_deref(), Some("uk"));
         assert_eq!(country_prefix("[UK] BBC One").as_deref(), Some("uk"));
         assert_eq!(country_prefix("TV Asia"), None);
+        assert_eq!(country_prefix("Al-Jazeera"), None);
+        assert_eq!(country_prefix("TV - 1000"), None);
+        assert_eq!(country_prefix("TR - ATV").as_deref(), Some("tr"));
+        assert_eq!(country_prefix("TR- ATV").as_deref(), Some("tr"));
         assert_eq!(country_prefix("DE| ARD").as_deref(), Some("de"));
         assert_eq!(country_prefix("SD: beIN Sports 1"), None);
         assert_eq!(country_prefix("HD: beIN Sports 1"), None);

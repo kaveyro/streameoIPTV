@@ -722,6 +722,7 @@
     "UPCOMING": "Upcoming programmes: {{count}}",
     "NO_CURRENT": "no current programmes",
     "NO_RESULTS": "No guide channel found.",
-    "AUTO": "Assign automatically"
+    "AUTO": "Assign automatically",
+    "XTREAM_NOTE": "A guide assigned here replaces your provider's own guide for this channel, and with it catch-up of past programmes."
   }
 }

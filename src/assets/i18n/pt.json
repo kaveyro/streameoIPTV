@@ -722,6 +722,7 @@
     "UPCOMING": "Próximos programas: {{count}}",
     "NO_CURRENT": "sem programas atuais",
     "NO_RESULTS": "Nenhum canal do guia encontrado.",
-    "AUTO": "Atribuir automaticamente"
+    "AUTO": "Atribuir automaticamente",
+    "XTREAM_NOTE": "Um guia atribuído aqui substitui, para este canal, o guia do teu fornecedor e, com ele, a visualização de programas passados (catch-up)."
   }
 }

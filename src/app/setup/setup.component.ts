@@ -248,11 +248,14 @@ export class SetupComponent implements OnInit {
       const choice = await this.askImportAsXtream();
       if (choice == "abort") return;
       if (choice == "xtream") {
+        // Kept so a failed Xtream import (API disabled at the provider)
+        // leaves the pasted link in the form for the M3U import.
+        const link = { ...this.source };
         this.source.source_type = SourceType.Xtream;
         this.source.url = login.url;
         this.source.username = login.username;
         this.source.password = login.password;
-        await this.getXtream();
+        if (!(await this.getXtream())) this.source = link;
         return;
       }
     }
@@ -299,7 +302,8 @@ export class SetupComponent implements OnInit {
     return choice;
   }
 
-  async getXtream() {
+  /// Imports the form as an Xtream source; resolves to whether it worked.
+  async getXtream(): Promise<boolean> {
     this.urlError = undefined;
     this.source.use_tvg_id = undefined;
     this.source.url = this.source.url?.trim();
@@ -317,7 +321,7 @@ export class SetupComponent implements OnInit {
       // loading screen.
       this.urlError = this.translate.instant("SETUP.INVALID_URL", { url: this.source.url });
       this.toastr.error(this.urlError);
-      return;
+      return false;
     }
     this.loading = true;
     try {
@@ -335,8 +339,10 @@ export class SetupComponent implements OnInit {
       }
       await invoke("get_xtream", { source: this.source });
       this.success();
+      return true;
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.INVALID_CREDENTIALS"));
+      return false;
     } finally {
       this.loading = false;
     }

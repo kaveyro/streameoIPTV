@@ -722,6 +722,7 @@
     "UPCOMING": "Kommende Sendungen: {{count}}",
     "NO_CURRENT": "keine aktuellen Sendungen",
     "NO_RESULTS": "Kein EPG-Sender gefunden.",
-    "AUTO": "Automatisch zuordnen"
+    "AUTO": "Automatisch zuordnen",
+    "XTREAM_NOTE": "Eine hier zugeordnete Quelle ersetzt für diesen Sender das EPG deines Anbieters und damit auch das Nachschauen vergangener Sendungen (Catch-up)."
   }
 }

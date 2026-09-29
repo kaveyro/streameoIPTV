@@ -111,7 +111,12 @@ fn read_m3u8_file(path: &str, mut source: Source, wipe: bool) -> Result<()> {
     }
     try_commit_channel(&mut processing, &tx);
     if wipe {
-        sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
+        sql::restore_preserve(
+            &tx,
+            source.id.context("no source id")?,
+            channel_preserve,
+            crate::parental::has_pin()?,
+        )?;
         sql::restore_recording_preserve(
             &tx,
             source.id.context("no source id")?,

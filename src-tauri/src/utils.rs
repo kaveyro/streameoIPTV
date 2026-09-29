@@ -386,7 +386,7 @@ pub fn restore_favs(source_id: i64, path: String) -> Result<()> {
     let data = std::fs::read_to_string(path)?;
     let preserve: Vec<ChannelPreserve> = serde_json::from_str(&data)?;
     sql::do_tx(|tx| {
-        sql::restore_preserve(tx, source_id, preserve)?;
+        sql::restore_preserve(tx, source_id, preserve, crate::parental::has_pin()?)?;
         Ok(())
     })?;
     Ok(())

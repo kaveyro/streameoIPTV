@@ -120,6 +120,9 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       this.logoCache.getLogo(image).then((src) => (this.logoSrc = src));
     }
     this.loadNowPlaying();
+    this.subscriptions.push(
+      this.nowPlayingService.changed.subscribe(() => this.reloadNowPlaying()),
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {

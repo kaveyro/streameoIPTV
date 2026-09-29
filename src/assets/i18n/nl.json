@@ -722,6 +722,7 @@
     "UPCOMING": "Komende programma's: {{count}}",
     "NO_CURRENT": "geen actuele programma's",
     "NO_RESULTS": "Geen gidszender gevonden.",
-    "AUTO": "Automatisch toewijzen"
+    "AUTO": "Automatisch toewijzen",
+    "XTREAM_NOTE": "Een hier toegewezen gids vervangt voor deze zender de gids van je aanbieder, en daarmee ook het terugkijken van eerdere programma's (catch-up)."
   }
 }

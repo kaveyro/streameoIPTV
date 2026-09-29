@@ -17,6 +17,9 @@
     </ng-container>
     <ng-container *ngIf="current === null">{{ "EPG_MAPPING.AUTOMATIC" | translate }}</ng-container>
   </p>
+  <p class="mapping-note" *ngIf="replacesProviderEpg">
+    {{ "EPG_MAPPING.XTREAM_NOTE" | translate }}
+  </p>
 
   <label class="form-label" for="epg-mapping-search">{{ "EPG_MAPPING.SEARCH" | translate }}</label>
   <input

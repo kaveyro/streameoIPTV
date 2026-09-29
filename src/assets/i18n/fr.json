@@ -722,6 +722,7 @@
     "UPCOMING": "Programmes à venir : {{count}}",
     "NO_CURRENT": "aucun programme actuel",
     "NO_RESULTS": "Aucune chaîne du guide trouvée.",
-    "AUTO": "Associer automatiquement"
+    "AUTO": "Associer automatiquement",
+    "XTREAM_NOTE": "Un guide attribué ici remplace, pour cette chaîne, le guide de ton fournisseur et donc le replay des programmes passés (catch-up)."
   }
 }

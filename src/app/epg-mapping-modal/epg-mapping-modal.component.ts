@@ -8,6 +8,7 @@ import { XmltvChannelHit } from "../models/epgExtras";
 import { displayName } from "../country-prefix";
 import { ErrorService } from "../error.service";
 import { NowPlayingService } from "../now-playing.service";
+import { MemoryService } from "../memory.service";
 
 /**
  * Assigns an XMLTV guide channel to a channel by hand, or hands it back to the
@@ -45,7 +46,15 @@ export class EpgMappingModalComponent implements OnInit, OnDestroy {
     private error: ErrorService,
     private nowPlaying: NowPlayingService,
     private host: ElementRef<HTMLElement>,
+    private memory: MemoryService,
   ) {}
+
+  /// An assignment replaces the Xtream provider's own guide, and with it the
+  /// catch-up of past programmes (XMLTV has no archive links).
+  get replacesProviderEpg(): boolean {
+    const sourceId = this.channel?.source_id;
+    return sourceId !== undefined && this.memory.XtreamSourceIds.has(sourceId);
+  }
 
   ngOnInit(): void {
     // The guides name channels without the playlist's "TR: " prefix.

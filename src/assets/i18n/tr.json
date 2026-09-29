@@ -722,6 +722,7 @@
     "UPCOMING": "Yaklaşan programlar: {{count}}",
     "NO_CURRENT": "güncel program yok",
     "NO_RESULTS": "Rehber kanalı bulunamadı.",
-    "AUTO": "Otomatik ata"
+    "AUTO": "Otomatik ata",
+    "XTREAM_NOTE": "Burada atanan rehber, bu kanal için sağlayıcının kendi rehberinin ve dolayısıyla geçmiş programları izleme (catch-up) özelliğinin yerini alır."
   }
 }

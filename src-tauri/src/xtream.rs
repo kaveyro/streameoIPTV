@@ -294,7 +294,12 @@ fn store_xtream(
         return Err(anyhow::anyhow!(reason));
     }
     if wipe {
-        sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
+        sql::restore_preserve(
+            &tx,
+            source.id.context("no source id")?,
+            channel_preserve,
+            crate::parental::has_pin()?,
+        )?;
         sql::restore_recording_preserve(
             &tx,
             source.id.context("no source id")?,

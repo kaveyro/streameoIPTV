@@ -153,7 +153,9 @@ describe("HomeComponent", () => {
 
     it("loads the countries of the shown sources", async () => {
       await create({ get_countries: countries });
-      expect(callsOf(calls, "get_countries").map((c) => c.args)).toEqual([{ sourceIds: [1] }]);
+      expect(callsOf(calls, "get_countries").map((c) => c.args)).toEqual([
+        { sourceIds: [1], showLocked: false },
+      ]);
       const options = Array.from(select()!.options).map((o) => o.textContent?.trim());
       expect(options).toEqual(["HOME.ALL_COUNTRIES", "TR · 299", "DE · 120"]);
       expect(select()!.getAttribute("aria-label")).toBe("HOME.COUNTRY_FILTER");

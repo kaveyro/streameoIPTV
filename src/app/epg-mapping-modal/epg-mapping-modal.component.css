@@ -15,6 +15,16 @@
   min-height: 1.5em;
 }
 
+.mapping-note {
+  margin: -0.5rem 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-inline-start: 3px solid var(--accent);
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
 .xmltv-id {
   font-family: var(--bs-font-monospace);
   font-size: var(--fs-sm);

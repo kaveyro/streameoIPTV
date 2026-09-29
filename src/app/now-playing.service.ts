@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { Subject } from "rxjs";
 import { MemoryService } from "./memory.service";
 import { GuideEpgCache } from "./tv-guide/tv-guide.component";
 import { Channel } from "./models/channel";
@@ -35,6 +36,9 @@ export class NowPlayingService {
   private queue: (() => void)[] = [];
 
   private xmltvListening = false;
+  /** Emits when the EPG data behind the tiles changed (a guide appeared or
+   *  was refreshed): tiles that are already shown load their line again. */
+  readonly changed = new Subject<void>();
 
   constructor(
     private memory: MemoryService,
@@ -58,7 +62,7 @@ export class NowPlayingService {
   xmltvChanged() {
     this.cache.clear();
     this.guideCache.entries.clear();
-    this.loadXmltvState();
+    this.loadXmltvState(true);
   }
 
   /** Drops the cached EPG of one channel, e.g. after its guide was assigned
@@ -68,9 +72,14 @@ export class NowPlayingService {
     this.guideCache.entries.delete(channelId);
   }
 
-  private loadXmltvState() {
+  private loadXmltvState(dataChanged = false) {
     invoke<boolean>("has_xmltv_data")
-      .then((has) => (this.memory.HasXmltv = has))
+      .then((has) => {
+        const flipped = has !== this.memory.HasXmltv;
+        this.memory.HasXmltv = has;
+        // Tiles created before the answer skipped their now-playing line.
+        if (flipped || dataChanged) this.changed.next();
+      })
       .catch((e) => console.error(e));
   }
 

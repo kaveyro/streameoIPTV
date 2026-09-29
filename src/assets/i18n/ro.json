@@ -722,6 +722,7 @@
     "UPCOMING": "Emisiuni viitoare: {{count}}",
     "NO_CURRENT": "nicio emisiune actuală",
     "NO_RESULTS": "Niciun canal din ghid găsit.",
-    "AUTO": "Atribuie automat"
+    "AUTO": "Atribuie automat",
+    "XTREAM_NOTE": "Un ghid atribuit aici înlocuiește pentru acest canal ghidul furnizorului tău și, odată cu el, vizionarea emisiunilor trecute (catch-up)."
   }
 }

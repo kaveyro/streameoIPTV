@@ -649,7 +649,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     const sourceIds = Array.from(this.memory.Sources.keys());
     let countries: CountryCount[] = [];
     try {
-      countries = (await invoke<CountryCount[]>("get_countries", { sourceIds })) ?? [];
+      countries =
+        (await invoke<CountryCount[]>("get_countries", {
+          sourceIds,
+          // Codes that only occur in locked groups stay secret without the PIN.
+          showLocked: this.memory.ShowLocked,
+        })) ?? [];
     } catch (e) {
       // Best effort: without it the country filter stays hidden.
       console.error(e);
@@ -815,7 +820,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Home toolbar lock: show the locked groups (after the PIN) or hide them. */
   async toggleLocked() {
-    if (await this.parental.toggleShowLocked()) await this.load();
+    if (await this.parental.toggleShowLocked()) {
+      await this.load();
+      this.loadCountries();
+    }
   }
 
   openSettings() {

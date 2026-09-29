@@ -35,6 +35,8 @@ export interface XmltvChannelHit {
 /** A programme found by the guide search. */
 export interface ProgrammeHit {
   channel: Channel;
+  /// Same id as the programme has in `get_epg`, for reminders.
+  epg_id: string;
   title: string;
   description: string;
   start_timestamp: number;

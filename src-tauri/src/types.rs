@@ -304,6 +304,8 @@ pub struct XmltvChannelHit {
 #[derive(Clone, PartialEq, Debug, Serialize)]
 pub struct ProgrammeHit {
     pub channel: Channel,
+    /// Same id as the programme has in `get_epg`, for reminders.
+    pub epg_id: String,
     pub title: String,
     pub description: String,
     pub start_timestamp: i64,

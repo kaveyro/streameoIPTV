@@ -271,6 +271,7 @@ pub fn search_programmes(query: &str, show_locked: bool) -> Result<Vec<Programme
         .filter_map(|(id, start, end, title, description)| {
             by_id.get(&id).map(|channel| ProgrammeHit {
                 channel: channel.clone(),
+                epg_id: format!("xmltv:{id}:{start}"),
                 title,
                 description: description.unwrap_or_default(),
                 start_timestamp: start,

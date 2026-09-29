@@ -1,40 +1,95 @@
 .epg-item {
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
   background-color: var(--bg-surface);
   width: 100%;
   padding: 1rem;
   position: relative;
 }
 
+/* Currently airing programme: accent edge on the inline-start side */
+.epg-item--now {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+:host-context([dir="rtl"]) .epg-item--now {
+  box-shadow: inset -3px 0 0 var(--accent);
+}
+
+.epg-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.epg-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.epg-title {
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.epg-time {
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.epg-desc {
+  font-size: var(--fs-md);
+  line-height: 1.45;
+}
+
 .thin-line {
   height: 1px;
-  background-color: var(--text-primary);
+  background-color: var(--border-subtle);
   width: 100%;
   margin: 0;
 }
 
-.bell {
-  height: 2rem;
-  width: 2rem;
-  cursor: pointer;
-  transition: transform var(--transition-fast);
-  color: var(--text-primary);
+.epg-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
-.timeshift {
-  height: 2rem;
-  width: 2rem;
-  cursor: pointer;
-  transition: transform var(--transition-fast);
-  color: var(--text-primary);
+.epg-action > svg {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
-.loading {
-  opacity: 20%;
-  cursor: default;
+.epg-action--danger {
+  color: var(--color-danger);
+}
+
+.epg-action.loading {
+  opacity: 0.2;
+}
+
+/* Download progress gradient stops (see gradientId in the component) */
+.dl-stop-done {
+  stop-color: var(--color-success);
+}
+
+.dl-stop-rest {
+  stop-color: var(--text-primary);
 }
 
 .live {
+  display: inline-block;
+  flex-shrink: 0;
   height: 0.75rem;
   width: 0.75rem;
   border-radius: 50%;
@@ -54,5 +109,11 @@
   100% {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live {
+    animation: none;
   }
 }

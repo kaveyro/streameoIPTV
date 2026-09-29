@@ -19,13 +19,16 @@ import { TranslateService } from "@ngx-translate/core";
   styleUrl: "./epg-modal-item.component.css",
 })
 export class EpgModalItemComponent implements OnDestroy {
+  private static nextUid = 0;
+  /** Unique per instance: SVG ids are document-global. */
+  readonly gradientId = `epg-dl-progress-${EpgModalItemComponent.nextUid++}`;
   constructor(
     public memory: MemoryService,
     private error: ErrorService,
     private download: DownloadService,
     private ngZone: NgZone,
     private translate: TranslateService,
-  ) { }
+  ) {}
   @Input()
   epg?: EPG;
   @Input()
@@ -57,23 +60,29 @@ export class EpgModalItemComponent implements OnDestroy {
   async toggleNotification() {
     if (this.memory.LoadingNotification || !this.memory.trayEnabled) return;
     this.memory.LoadingNotification = true;
-    if (!this.notificationOn()) {
-      try {
-        await invoke("add_epg", { epg: this.epg_to_epgNotify(this.epg!) });
-        this.error.success(this.translate.instant("TOAST.NOTIFICATION_ADDED"));
-      } catch (e) {
-        this.error.handleError(e);
+    try {
+      if (!this.notificationOn()) {
+        try {
+          await invoke("add_epg", { epg: this.epg_to_epgNotify(this.epg!) });
+          this.error.success(this.translate.instant("TOAST.NOTIFICATION_ADDED"));
+        } catch (e) {
+          this.error.handleError(e);
+        }
+      } else {
+        try {
+          await invoke("remove_epg", { epgId: this.epg?.epg_id });
+          this.error.success(this.translate.instant("TOAST.NOTIFICATION_REMOVED"));
+        } catch (e) {
+          this.error.handleError(e);
+        }
       }
-    } else {
-      try {
-        await invoke("remove_epg", { epgId: this.epg?.epg_id });
-        this.error.success(this.translate.instant("TOAST.NOTIFICATION_REMOVED"));
-      } catch (e) {
-        this.error.handleError(e);
-      }
+      await this.memory.get_epg_ids();
+    } catch (e) {
+      // A failed get_epg_ids must not leave every bell locked.
+      this.error.handleError(e);
+    } finally {
+      this.memory.LoadingNotification = false;
     }
-    await this.memory.get_epg_ids();
-    this.memory.LoadingNotification = false;
   }
 
   epg_to_epgNotify(epg: EPG): EPGNotify {
@@ -176,11 +185,7 @@ export class EpgModalItemComponent implements OnDestroy {
       favorite: false,
       source_id: this.sourceId,
     };
-    let download = await this.download.enqueue(
-      this.getDownloadId(),
-      channel,
-      file ?? undefined,
-    );
+    let download = await this.download.enqueue(this.getDownloadId(), channel, file ?? undefined);
     this.downloadSubscribe(download);
   }
 

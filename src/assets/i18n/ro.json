@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "Răsfoiește",
     "CHANGE": "Schimbă",
-    "GO_BACK": "Înapoi"
+    "GO_BACK": "Înapoi",
+    "SHOW_PASSWORD": "Afișează parola",
+    "HIDE_PASSWORD": "Ascunde parola"
   },
   "MODAL": {
     "CLOSE": "Închide",
@@ -109,7 +111,10 @@
     "GO_LEFT": "La stânga",
     "GO_RIGHT": "La dreapta",
     "GO_UP": "În sus",
-    "GO_DOWN": "În jos"
+    "GO_DOWN": "În jos",
+    "TILE_ACTIONS": "Acțiuni canal",
+    "TOGGLE_FAVORITE": "Adăugați/eliminați canalul selectat la/din favorite",
+    "OPEN_CONTEXT_MENU": "Deschideți meniul canalului selectat (și cu tasta Meniu)"
   },
   "SETTINGS": {
     "TITLE": "Setări",
@@ -164,7 +169,12 @@
       "ACCENT": "Culoare de accent",
       "ACCENT_DESC": "Culoarea de evidențiere folosită pentru butoane și controale interactive.",
       "SHOW_SOURCE": "Afișează numele listei pe canale",
-      "SHOW_SOURCE_DESC": "Afișează numele sursei/listei sub fiecare titlu de canal și program."
+      "SHOW_SOURCE_DESC": "Afișează numele sursei/listei sub fiecare titlu de canal și program.",
+      "ACCENT_BLUE": "Albastru",
+      "ACCENT_PURPLE": "Violet",
+      "ACCENT_TEAL": "Verde-albăstrui",
+      "ACCENT_CORAL": "Coral",
+      "ACCENT_GREEN": "Verde"
     },
     "PLAYBACK": {
       "CACHING": "Folosește caching pentru flux",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "Limba audio preferată",
       "LANG_DESC": "Coduri ISO 639 pe care mpv ar trebui să le aleagă implicit. Separă alternativele prin virgule, cea mai prioritară prima.",
       "MPV_PARAMS": "Parametri mpv globali",
-      "MPV_PARAMS_DESC": "Parametri de lansare aplicați fiecărui canal. Lasă gol dacă nu știi ce faci."
+      "MPV_PARAMS_DESC": "Parametri de lansare aplicați fiecărui canal. Lasă gol dacă nu știi ce faci.",
+      "LANG_PLACEHOLDER": "ex. ro,en",
+      "MPV_PARAMS_PLACEHOLDER": "ex. --hwdec=auto",
+      "DEBUG_LOG": "Scrie un jurnal al playerului",
+      "DEBUG_LOG_DESC": "Doar pentru depanare: mpv.log din folderul de jurnale înregistrează fiecare adresă de stream, inclusiv datele de autentificare din ea. Se aplică la următoarea deschidere a playerului."
     },
     "RECORDING": {
       "PATH": "Cale înregistrări",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "Adaugă sursă personalizată",
     "IMPORT_CUSTOM": "Importă sursă personalizată",
     "DELETE_ALL_DATA": "Șterge toate datele aplicației",
-    "SELECT_EXPORT_FILE": "Selectează fișierul de export streameoIPTV (.otvp)"
+    "SELECT_EXPORT_FILE": "Selectează fișierul de export streameoIPTV (.otvp)",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "Adresa serverului în formatul http://host:port",
+    "INVALID_URL": "„{{url}}” nu este un URL valid. Verificați dacă are spații sau greșeli de scriere.",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "Acum se redă",
     "SCHEDULE_RECORDING": "Programează înregistrare",
-    "CANCEL_SCHEDULED": "Anulează înregistrarea programată"
+    "CANCEL_SCHEDULED": "Anulează înregistrarea programată",
+    "PREV_DAY": "Ziua anterioară",
+    "NEXT_DAY": "Ziua următoare",
+    "NO_PROGRAMMES": "Nu există emisiuni în această zi",
+    "WATCH_CATCHUP": "Vizionează din arhivă",
+    "DOWNLOAD_CATCHUP": "Descarcă din arhivă",
+    "NOTIFY_ON": "Anunță-mă când începe",
+    "NOTIFY_OFF": "Dezactivează notificarea"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -290,7 +315,8 @@
     "START": "Start",
     "WATCH": "Vizionează",
     "SHARE": "Partajează",
-    "STOP": "Oprește"
+    "STOP": "Oprește",
+    "NETWORK_UNAVAILABLE": "Informațiile de rețea nu sunt disponibile, așa că retransmisia nu poate porni."
   },
   "DOWNLOAD": {
     "TITLE": "Descărcări",
@@ -409,7 +435,11 @@
     "SHARE": "Partajează",
     "IMPORT_CHANNEL_GROUP": "Importă canal/grup",
     "EXPIRES": "Expiră {{date}}",
-    "EXPIRED": "A expirat {{date}}"
+    "EXPIRED": "A expirat {{date}}",
+    "ENABLED": "Activată",
+    "MORE_ACTIONS": "Mai multe acțiuni",
+    "SHOW_USERNAME": "Afișează numele de utilizator",
+    "HIDE_USERNAME": "Ascunde numele de utilizator"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selectează unde se salvează înregistrarea",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "Selectează unde se salvează catchback-ul",
     "SAVE_FAVORITES": "Selectează unde se salvează favoritele",
     "SELECT_FAVS_BACKUP": "Selectează un backup al favoritelor",
-    "SELECT_M3U": "Selectează un fișier m3u nou pentru sursă"
+    "SELECT_M3U": "Selectează un fișier m3u nou pentru sursă",
+    "FILTER_FAVS_BACKUP": "Copie de rezervă a favoritelor",
+    "FILTER_STREAMEO_EXPORT": "Export streameoIPTV"
   },
   "TOAST": {
     "SOURCES_UPDATED": "Toate sursele au fost actualizate cu succes",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "Ești la zi",
     "UPDATE_DOWNLOADING": "Se descarcă versiunea {{version}}...",
     "UPDATE_INSTALLED": "Actualizare instalată, se repornește",
-    "UPDATE_FAILED": "Verificarea actualizărilor a eșuat"
+    "UPDATE_FAILED": "Verificarea actualizărilor a eșuat",
+    "ERROR_MORE_INFO": "{{message}}. Faceți clic aici pentru mai multe informații",
+    "ERROR_GENERIC_MORE_INFO": "A apărut o eroare. Faceți clic aici pentru mai multe informații",
+    "UPDATE_INSTALL_FAILED": "Actualizarea nu a putut fi instalată",
+    "UPDATE_RELAUNCH_FAILED": "Actualizarea a fost instalată, dar aplicația nu a putut reporni. Reporniți-o manual",
+    "NETWORK_INFO_FAILED": "Informațiile de rețea nu au putut fi citite",
+    "SETTINGS_SAVED": "Salvat",
+    "SETTINGS_SAVE_FAILED": "Setările nu au putut fi salvate"
   },
   "UPDATE": {
     "TITLE": "Actualizare disponibilă",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "Aplicația repornește după instalare.",
     "INSTALL": "Instalează acum",
     "LATER": "Mai târziu"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "Catch-up disponibil",
+    "IS_FAVORITE": "La favorite"
+  },
+  "LOADING": {
+    "CHANNELS": "Se încarcă canalele..."
+  },
+  "TIME": {
+    "JUST_NOW": "Chiar acum"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "Anulați toate descărcările?",
+    "CANCEL_DOWNLOADS_BODY": "Vor fi anulate {{count}} descărcări în așteptare sau în curs.",
+    "DELETE_SOURCE_TITLE": "Ștergeți sursa?",
+    "DELETE_SOURCE_BODY": "Sursa „{{name}}” va fi eliminată împreună cu toate canalele, categoriile, favoritele și istoricul. Acțiunea nu poate fi anulată.",
+    "CLEAR_HISTORY_TITLE": "Ștergeți istoricul?",
+    "CLEAR_HISTORY_BODY": "Toate canalele vor fi eliminate din lista celor vizionate recent. Acțiunea nu poate fi anulată.",
+    "DELETE_CHANNEL_TITLE": "Ștergeți canalul?",
+    "DELETE_CHANNEL_BODY": "Canalul „{{name}}” va fi șters definitiv.",
+    "DELETE_CATEGORY_TITLE": "Ștergeți categoria?",
+    "DELETE_CATEGORY_BODY": "Categoria „{{name}}” va fi ștearsă definitiv."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "Înapoi la canale",
+    "CHANNELS": "Canale",
+    "FULLSCREEN": "Ecran complet",
+    "EXIT_FULLSCREEN": "Ieșire din ecran complet",
+    "NEXT": "Urmează",
+    "PROGRAMME_PROGRESS": "Progresul emisiunii",
+    "FILTER_PLACEHOLDER": "Filtrați canalele...",
+    "FILTER_CHANNELS": "Filtrați lista de canale"
   }
 }

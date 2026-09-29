@@ -7,6 +7,6 @@
   border-radius: var(--radius-md);
   background-color: var(--bg-surface-alt);
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   margin-bottom: 0.75rem;
 }

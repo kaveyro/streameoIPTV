@@ -5,18 +5,14 @@ import {
   HostListener,
   NgZone,
   OnDestroy,
+  OnInit,
+  QueryList,
   ViewChild,
+  ViewChildren,
 } from "@angular/core";
 import { Router } from "@angular/router";
 import { AllowIn, ShortcutInput } from "ng-keyboard-shortcuts";
-import {
-  Subscription,
-  debounceTime,
-  filter,
-  fromEvent,
-  map,
-  skip,
-} from "rxjs";
+import { Subscription, debounceTime, filter, fromEvent, map, skip } from "rxjs";
 import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
 import { ViewMode } from "../models/viewMode";
@@ -41,6 +37,7 @@ import { NodeType } from "../models/nodeType";
 import { Stack } from "../models/stack";
 import { VIEW_FORMAT, ViewFormat } from "../models/viewFormat";
 import { TranslateService } from "@ngx-translate/core";
+import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
 
 @Component({
   selector: "app-home",
@@ -75,22 +72,26 @@ import { TranslateService } from "@ngx-translate/core";
     ]),
   ],
 })
-export class HomeComponent implements AfterViewInit, OnDestroy {
+export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   channels: Channel[] = [];
   readonly viewModeEnum = ViewMode;
   readonly mediaTypeEnum = MediaType;
   @ViewChild("search") search!: ElementRef;
+  @ViewChild("tileGrid") tileGrid?: ElementRef<HTMLElement>;
+  @ViewChildren(ChannelTileComponent) tiles?: QueryList<ChannelTileComponent>;
   shortcuts: ShortcutInput[] = [];
   focus: number = 0;
   focusArea = FocusArea.Tiles;
   viewType = ViewMode.All;
-  currentWindowSize: number = window.innerWidth;
   subscriptions: Subscription[] = [];
   filters?: Filters;
   chkLiveStream = true;
   chkMovie = true;
   chkSerie = true;
   reachedMax = false;
+  /// Loading the next page failed: no more automatic loads (scrolling,
+  /// keyboard) until the query changes or the user presses "Load more".
+  loadMoreFailed = false;
   readonly PAGE_SIZE = 36;
   channelsVisible = true;
   prevSearchValue: String = "";
@@ -100,7 +101,16 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   nodeStack: Stack = new Stack();
   showScrollTop = false;
   viewFormat: ViewFormat = this.loadViewFormat();
+  /// Whether any enabled source is an Xtream one; cached when the sources load
+  /// instead of being recomputed on every change detection.
+  hasXtream = false;
   private autoRefreshUnlisten?: UnlistenFn;
+  private destroyed = false;
+  /// Sequence number of the latest load(); older responses are dropped.
+  private loadSeq = 0;
+  /// A goBack() is still loading its level; ignore further back presses.
+  private navigatingBack = false;
+  private scrollListener?: () => void;
   sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED) === "true";
 
   scrollToTop() {
@@ -123,12 +133,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     localStorage.setItem(VIEW_FORMAT, format);
   }
 
-  get tileColumnClass(): string {
-    return this.viewFormat === "list" ? "col-12" : "col-lg-4 col-md-4";
-  }
-
   isMode(viewMode: ViewMode): boolean {
     return this.filters?.view_type === viewMode;
+  }
+
+  trackByChannel(index: number, channel: Channel) {
+    return channel.id === undefined ? `i${index}` : `${channel.media_type}:${channel.id}`;
   }
 
   constructor(
@@ -144,13 +154,34 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.listenForAutoRefresh();
   }
 
+  ngOnInit(): void {
+    // Scroll events fire at a high rate: handle them outside Angular and only
+    // re-enter the zone when something bound actually changes.
+    this.ngZone.runOutsideAngular(() => {
+      this.scrollListener = () => this.onScroll();
+      window.addEventListener("scroll", this.scrollListener, { passive: true });
+    });
+    this.buildShortcuts();
+    // The help labels are translated: rebuild them once the language file is
+    // loaded (it may still be loading when the home page opens) or switched.
+    this.subscriptions.push(this.translate.onLangChange.subscribe(() => this.buildShortcuts()));
+  }
+
   private listenForAutoRefresh() {
     listen<string[]>("sources-auto-refreshed", (event) => {
       this.ngZone.run(() => {
-        this.error.info(this.translate.instant("TOAST.SOURCES_REFRESHED", { sources: event.payload.join(", ") }));
+        this.error.info(
+          this.translate.instant("TOAST.SOURCES_REFRESHED", { sources: event.payload.join(", ") }),
+        );
         this.memory.Refresh.next(false);
       });
-    }).then((unlisten) => (this.autoRefreshUnlisten = unlisten));
+    })
+      .then((unlisten) => {
+        // Destroyed before the listener was registered: drop it right away.
+        if (this.destroyed) unlisten();
+        else this.autoRefreshUnlisten = unlisten;
+      })
+      .catch((e) => console.error(e));
   }
 
   getSources() {
@@ -160,12 +191,16 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       .then((data) => {
         let settings = data[0] as Settings;
         let sources = data[1] as Source[];
-        if (settings.zoom) getCurrentWebview().setZoom(Math.trunc(settings.zoom! * 100) / 10000);
+        if (settings.zoom)
+          getCurrentWebview()
+            .setZoom(Math.trunc(settings.zoom! * 100) / 10000)
+            .catch((e) => console.error(e));
         this.memory.trayEnabled = settings.enable_tray_icon ?? true;
         this.memory.AlwaysAskSave = settings.always_ask_save ?? false;
         this.memory.ShowChannelSource = settings.show_channel_source ?? true;
         this.memory.UseExternalPlayer = settings.use_external_player ?? false;
-        this.memory.Sources = new Map(sources.filter((x) => x.enabled).map(s => [s.id!, s]));
+        this.memory.Sources = new Map(sources.filter((x) => x.enabled).map((s) => [s.id!, s]));
+        this.hasXtream = this.anyXtream();
         if (sources.length == 0) this.reset();
         else {
           sources
@@ -181,21 +216,22 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             !sessionStorage.getItem("epgCheckedOnStart")
           ) {
             sessionStorage.setItem("epgCheckedOnStart", "true");
-            invoke("on_start_check_epg");
+            // Best-effort background check; nothing the user started.
+            invoke("on_start_check_epg").catch((e) => console.error(e));
           }
+          // Always publish the sort, also the provider default, so the sort
+          // menu's check mark matches the list.
+          const sort: SortType = settings.default_sort ?? SortType.provider;
           this.filters = {
             source_ids: Array.from(this.memory.Sources.keys()),
             view_type: settings.default_view ?? ViewMode.All,
             media_types: [MediaType.livestream, MediaType.movie, MediaType.serie],
             page: 1,
             use_keywords: false,
-            sort: SortType.provider,
+            sort: sort,
           };
-          if (settings.default_sort != undefined && settings.default_sort != SortType.provider) {
-            this.memory.Sort.next([settings.default_sort, false]);
-            this.filters.sort = settings.default_sort;
-          }
-          this.chkSerie = this.anyXtream();
+          this.memory.Sort.next([sort, false]);
+          this.chkSerie = this.hasXtream;
           if (settings.refresh_on_start === true && !sessionStorage.getItem("refreshedOnStart")) {
             sessionStorage.setItem("refreshedOnStart", "true");
             this.refreshOnStart().then((_) => _);
@@ -241,14 +277,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     );
     this.subscriptions.push(
       this.memory.SetNode.subscribe(async (dto) => {
+        // A double click on a category/series must not push the same level
+        // twice.
+        const top = this.nodeStack.get();
+        if (top && top.id === dto.id && top.type === dto.type) return;
         this.nodeStack.add(
-          new Node(
-            dto.id,
-            dto.name,
-            dto.type,
-            this.filters?.query,
-            this.filters?.view_type,
-          ),
+          new Node(dto.id, dto.name, dto.type, this.filters?.query, this.filters?.view_type),
         );
         if (dto.type == NodeType.Category) this.filters!.group_id = dto.id;
         else if (dto.type == NodeType.Series) {
@@ -264,8 +298,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.subscriptions.push(
       this.memory.Refresh.subscribe((scroll) => {
         this.load();
-        if(scroll)
-          window.scrollTo({ top: 0, behavior: "instant" });
+        if (scroll) window.scrollTo({ top: 0, behavior: "instant" });
       }),
     );
     this.subscriptions.push(
@@ -283,25 +316,40 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.filters!.query = "";
   }
 
-  async loadMore() {
-    this.load(true);
+  /**
+   * Loads the next page. Automatic triggers (scrolling, keyboard navigation)
+   * stop after a failure; `explicit` (the "Load more" button) retries.
+   */
+  async loadMore(explicit = false) {
+    if (!this.filters || this.loading || this.reachedMax) return;
+    if (this.loadMoreFailed && !explicit) return;
+    await this.load(true);
   }
 
   async load(more = false) {
+    if (!this.filters) return;
+    // Every load gets a sequence number; a response that arrives after a newer
+    // load started (e.g. the query changed) is dropped, so an old page 2 is
+    // never appended to a new page 1.
+    const seq = ++this.loadSeq;
+    const page = more ? this.filters.page + 1 : 1;
+    // The page is only committed once it loaded: a failed request must not
+    // skip a page (or grow it forever) on the next attempt.
+    const filters: Filters = { ...this.filters, page };
     this.loading = true;
-    if (more) {
-      this.filters!.page++;
-    } else {
-      this.filters!.page = 1;
+    if (!more) {
       this.gridLoading = true;
+      this.loadMoreFailed = false;
     }
     try {
-      let channels: Channel[] = await invoke("search", { filters: this.filters });
+      let channels: Channel[] = await invoke("search", { filters });
+      if (seq !== this.loadSeq) return;
+      this.filters.page = page;
       if (!more) {
         this.channels = channels;
         this.channelsVisible = true;
         // prevent flicker of hiding opacity
-        this.viewType = this.filters!.view_type;
+        this.viewType = this.filters.view_type;
       } else {
         this.channels = this.channels.concat(channels);
       }
@@ -311,33 +359,39 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         (c) => c.media_type === MediaType.livestream || c.media_type === MediaType.movie,
       );
       this.reachedMax = channels.length < this.PAGE_SIZE;
+      this.loadMoreFailed = false;
     } catch (e) {
+      if (seq !== this.loadSeq) return;
       this.error.handleError(e);
+      if (more) this.loadMoreFailed = true;
+    } finally {
+      if (seq === this.loadSeq) {
+        this.loading = false;
+        this.gridLoading = false;
+      }
     }
-    this.loading = false;
-    this.gridLoading = false;
   }
 
-  checkScrollTop() {
+  /** Runs outside the Angular zone (see ngOnInit). */
+  private onScroll() {
     const scrollPosition =
       window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    this.showScrollTop = scrollPosition > 300;
+    const showScrollTop = scrollPosition > 300;
+    if (showScrollTop !== this.showScrollTop) {
+      this.ngZone.run(() => (this.showScrollTop = showScrollTop));
+    }
+    if (this.isNearScrollEnd()) {
+      this.ngZone.run(() => this.loadMore());
+    }
   }
 
-  async checkScrollEnd() {
-    if (this.reachedMax === true || this.loading === true) return;
+  private isNearScrollEnd(): boolean {
+    if (this.reachedMax || this.loading || this.loadMoreFailed || !this.filters) return false;
+    if (this.memory.PlayerVisible) return false;
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const clientHeight = window.innerHeight || document.documentElement.clientHeight;
-    if (scrollTop + clientHeight >= scrollHeight * 0.75) {
-      await this.loadMore();
-    }
-  }
-
-  @HostListener("window:scroll", ["$event"])
-  async scroll(event: any) {
-    this.checkScrollTop();
-    await this.checkScrollEnd();
+    return scrollTop + clientHeight >= scrollHeight * 0.75;
   }
 
   ngAfterViewInit(): void {
@@ -361,105 +415,145 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
           await this.load();
         }),
     );
+  }
 
-    this.shortcuts.push(
+  /// True while keyboard input belongs to something above the home page: the
+  /// embedded player or any modal (tracked in memory.ModalRef or not).
+  keyboardBlocked(): boolean {
+    return this.memory.PlayerVisible || this.modal.hasOpenModals();
+  }
+
+  private buildShortcuts() {
+    const t = (key: string) => this.translate.instant(key);
+    const guarded =
+      (action: () => unknown) =>
+      (_: unknown): void => {
+        if (this.keyboardBlocked()) return;
+        action();
+      };
+    this.shortcuts = [
       {
         key: ["ctrl + f", "ctrl + space", "cmd + f"],
-        label: this.translate.instant("SHORTCUT.SEARCH"),
-        description: this.translate.instant("SHORTCUT.GO_TO_SEARCH"),
+        label: t("SHORTCUT.SEARCH"),
+        description: t("SHORTCUT.GO_TO_SEARCH"),
         preventDefault: true,
         allowIn: [AllowIn.Input],
-        command: (_) => this.focusSearch(),
+        command: guarded(() => this.focusSearch()),
       },
+      // View switching on Alt+1..4 (the former Ctrl+A/S/D/R collided with
+      // select all, save, bookmark and reload).
       {
-        key: ["ctrl + a", "cmd + a"],
-        label: this.translate.instant("SHORTCUT.SWITCHING_MODES"),
-        description: this.translate.instant("SHORTCUT.SELECT_ALL"),
-        preventDefault: true,
-        command: async (_) => await this.switchMode(this.viewModeEnum.All),
-      },
-      {
-        key: ["ctrl + s", "cmd + s"],
-        label: this.translate.instant("SHORTCUT.SWITCHING_MODES"),
-        description: this.translate.instant("SHORTCUT.SELECT_CATEGORIES"),
-        command: async (_) => await this.switchMode(this.viewModeEnum.Categories),
-      },
-      {
-        key: ["ctrl + d", "cmd + d"],
-        label: this.translate.instant("SHORTCUT.SWITCHING_MODES"),
-        description: this.translate.instant("SHORTCUT.SELECT_HISTORY"),
-        command: async (_) => await this.switchMode(this.viewModeEnum.History),
-      },
-      {
-        key: ["ctrl + r", "cmd + r"],
-        label: this.translate.instant("SHORTCUT.SWITCHING_MODES"),
-        description: this.translate.instant("SHORTCUT.SELECT_FAVORITES"),
-        command: async (_) => await this.switchMode(this.viewModeEnum.Favorites),
-      },
-      {
-        key: "ctrl + q",
-        label: this.translate.instant("SHORTCUT.MEDIA_FILTERS"),
-        description: this.translate.instant("SHORTCUT.TOGGLE_LIVESTREAMS"),
+        key: "alt + 1",
+        label: t("SHORTCUT.SWITCHING_MODES"),
+        description: t("SHORTCUT.SELECT_ALL"),
         preventDefault: true,
         allowIn: [AllowIn.Input],
-        command: async (_) => {
+        command: guarded(() => this.switchMode(ViewMode.All)),
+      },
+      {
+        key: "alt + 2",
+        label: t("SHORTCUT.SWITCHING_MODES"),
+        description: t("SHORTCUT.SELECT_CATEGORIES"),
+        preventDefault: true,
+        allowIn: [AllowIn.Input],
+        command: guarded(() => this.switchMode(ViewMode.Categories)),
+      },
+      {
+        key: "alt + 3",
+        label: t("SHORTCUT.SWITCHING_MODES"),
+        description: t("SHORTCUT.SELECT_FAVORITES"),
+        preventDefault: true,
+        allowIn: [AllowIn.Input],
+        command: guarded(() => this.switchMode(ViewMode.Favorites)),
+      },
+      {
+        key: "alt + 4",
+        label: t("SHORTCUT.SWITCHING_MODES"),
+        description: t("SHORTCUT.SELECT_HISTORY"),
+        preventDefault: true,
+        allowIn: [AllowIn.Input],
+        command: guarded(() => this.switchMode(ViewMode.History)),
+      },
+      // Media filters on Alt+Q/W/E (Ctrl+W closes windows); the
+      // non-colliding Ctrl+Q / Ctrl+E keep working.
+      {
+        key: ["alt + q", "ctrl + q"],
+        label: t("SHORTCUT.MEDIA_FILTERS"),
+        description: t("SHORTCUT.TOGGLE_LIVESTREAMS"),
+        preventDefault: true,
+        allowIn: [AllowIn.Input],
+        command: guarded(() => {
           this.chkLiveStream = !this.chkLiveStream;
           this.updateMediaTypes(MediaType.livestream);
-        },
+        }),
       },
       {
-        key: "ctrl + w",
-        label: this.translate.instant("SHORTCUT.MEDIA_FILTERS"),
-        description: this.translate.instant("SHORTCUT.TOGGLE_MOVIES"),
+        key: "alt + w",
+        label: t("SHORTCUT.MEDIA_FILTERS"),
+        description: t("SHORTCUT.TOGGLE_MOVIES"),
         preventDefault: true,
         allowIn: [AllowIn.Input],
-        command: async (_) => {
+        command: guarded(() => {
           this.chkMovie = !this.chkMovie;
           this.updateMediaTypes(MediaType.movie);
-        },
+        }),
       },
       {
-        key: "ctrl + e",
-        label: this.translate.instant("SHORTCUT.MEDIA_FILTERS"),
-        description: this.translate.instant("SHORTCUT.TOGGLE_SERIES"),
+        key: ["alt + e", "ctrl + e"],
+        label: t("SHORTCUT.MEDIA_FILTERS"),
+        description: t("SHORTCUT.TOGGLE_SERIES"),
         preventDefault: true,
         allowIn: [AllowIn.Input],
-        command: async (_) => {
+        command: guarded(() => {
           this.chkSerie = !this.chkSerie;
           this.updateMediaTypes(MediaType.serie);
-        },
+        }),
+      },
+      {
+        key: "f",
+        label: t("SHORTCUT.TILE_ACTIONS"),
+        description: t("SHORTCUT.TOGGLE_FAVORITE"),
+        command: guarded(() => this.toggleFocusedFavorite()),
+      },
+      {
+        // Listed for the help overlay only: the ContextMenu key and Shift+F10
+        // are handled in onKeyDown (the library can't bind the ContextMenu key).
+        key: "shift + f10",
+        label: t("SHORTCUT.TILE_ACTIONS"),
+        description: t("SHORTCUT.OPEN_CONTEXT_MENU"),
+        command: () => {},
       },
       {
         key: "left",
-        label: this.translate.instant("SHORTCUT.NAVIGATION"),
-        description: this.translate.instant("SHORTCUT.GO_LEFT"),
+        label: t("SHORTCUT.NAVIGATION"),
+        description: t("SHORTCUT.GO_LEFT"),
         allowIn: [AllowIn.Input],
-        command: async (_) => await this.nav("ArrowLeft"),
+        command: guarded(() => this.nav("ArrowLeft")),
       },
       {
         key: "right",
-        label: this.translate.instant("SHORTCUT.NAVIGATION"),
-        description: this.translate.instant("SHORTCUT.GO_RIGHT"),
+        label: t("SHORTCUT.NAVIGATION"),
+        description: t("SHORTCUT.GO_RIGHT"),
         allowIn: [AllowIn.Input],
-        command: async (_) => await this.nav("ArrowRight"),
+        command: guarded(() => this.nav("ArrowRight")),
       },
       {
         key: "up",
-        label: this.translate.instant("SHORTCUT.NAVIGATION"),
-        description: this.translate.instant("SHORTCUT.GO_UP"),
+        label: t("SHORTCUT.NAVIGATION"),
+        description: t("SHORTCUT.GO_UP"),
         allowIn: [AllowIn.Input],
         preventDefault: true,
-        command: async (_) => await this.nav("ArrowUp"),
+        command: guarded(() => this.nav("ArrowUp")),
       },
       {
         key: "down",
-        label: this.translate.instant("SHORTCUT.NAVIGATION"),
-        description: this.translate.instant("SHORTCUT.GO_DOWN"),
+        label: t("SHORTCUT.NAVIGATION"),
+        description: t("SHORTCUT.GO_DOWN"),
         allowIn: [AllowIn.Input],
         preventDefault: true,
-        command: async (_) => await this.nav("ArrowDown"),
+        command: guarded(() => this.nav("ArrowDown")),
       },
-    );
+    ];
   }
 
   updateMediaTypes(mediaType: MediaType) {
@@ -474,11 +568,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   async switchMode(viewMode: ViewMode) {
-    if (viewMode == this.filters?.view_type) return;
-    this.filters!.series_id = undefined;
-    this.filters!.group_id = undefined;
-    this.filters!.view_type = viewMode;
-    this.filters!.season = undefined;
+    if (!this.filters || viewMode == this.filters.view_type) return;
+    this.filters.series_id = undefined;
+    this.filters.group_id = undefined;
+    this.filters.view_type = viewMode;
+    this.filters.season = undefined;
+    this.filters.source_ids = Array.from(this.memory.Sources.keys());
     this.clearSearch();
     this.nodeStack.clear();
     await this.load();
@@ -502,25 +597,26 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  /// Escape in a modal: close the tracked one, unless it is a running
+  /// re-stream (closing that would orphan the stream).
+  private closeTrackedModal() {
+    const ref = this.memory.ModalRef;
+    if (!ref) return;
+    if (ref.componentInstance.name != "RestreamModalComponent" || !ref.componentInstance.started)
+      ref.close("close");
+  }
+
   async goBackHotkey() {
-    if (this.memory.ModalRef) {
-      if (
-        this.memory.ModalRef.componentInstance.name != "RestreamModalComponent" ||
-        !this.memory.ModalRef.componentInstance.started
-      )
-        this.memory.ModalRef.close("close");
-      return;
-    } else if (this.memory.currentContextMenu?.menuOpen) {
+    if (this.memory.currentContextMenu?.menuOpen) {
       this.closeContextMenu();
     } else if (this.searchFocused()) {
       this.selectFirstChannel();
     } else if (this.filters?.query) {
-      if (this.filters?.query) {
-        this.clearSearch();
-        await this.load();
-      }
+      this.clearSearch();
+      await this.load();
       this.selectFirstChannelDelayed(100);
     } else if (this.nodeStack.hasNodes()) {
+      if (this.navigatingBack) return;
       await this.goBack();
       this.selectFirstChannelDelayed(100);
     } else {
@@ -533,22 +629,30 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   async goBack() {
-    var node = this.nodeStack.pop();
-    if (node.type == NodeType.Category) this.filters!.group_id = undefined;
-    else if (node.type == NodeType.Series) {
-      this.filters!.series_id = undefined;
-      this.filters!.source_ids = Array.from(this.memory.Sources.keys());
-    } else if (node.type == NodeType.Season) {
-      this.filters!.season = undefined;
+    // Holding Backspace (or clicking the arrow repeatedly) must not pop two
+    // levels at once or pop an empty stack.
+    if (this.navigatingBack || !this.nodeStack.hasNodes() || !this.filters) return;
+    this.navigatingBack = true;
+    try {
+      const node = this.nodeStack.pop();
+      if (node.type == NodeType.Category) this.filters.group_id = undefined;
+      else if (node.type == NodeType.Series) {
+        this.filters.series_id = undefined;
+        this.filters.source_ids = Array.from(this.memory.Sources.keys());
+      } else if (node.type == NodeType.Season) {
+        this.filters.season = undefined;
+      }
+      if (node.query) {
+        this.search.nativeElement.value = node.query;
+        this.filters.query = node.query;
+      }
+      if (node.fromViewType && this.filters.view_type !== node.fromViewType) {
+        this.filters.view_type = node.fromViewType;
+      }
+      await this.load();
+    } finally {
+      this.navigatingBack = false;
     }
-    if (node.query) {
-      this.search.nativeElement.value = node.query;
-      this.filters!.query = node.query;
-    }
-    if (node.fromViewType && this.filters!.view_type !== node.fromViewType) {
-      this.filters!.view_type = node.fromViewType;
-    }
-    await this.load();
   }
 
   openSettings() {
@@ -556,11 +660,10 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   async nav(key: string) {
-    if (this.searchFocused()) return;
-    let lowSize = this.currentWindowSize < 768;
-    if (this.memory.currentContextMenu?.menuOpen || this.memory.ModalRef) {
-      return;
-    }
+    if (this.keyboardBlocked() || this.searchFocused()) return;
+    if (this.memory.currentContextMenu?.menuOpen) return;
+    // Focus may have moved by Tab or mouse since the last arrow key.
+    this.syncFocusFromDom();
     let tmpFocus = 0;
     switch (key) {
       case "ArrowUp":
@@ -569,17 +672,14 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       case "ArrowDown":
         tmpFocus += this.focusArea == FocusArea.Tiles ? this.gridColumns() : 1;
         break;
-      case "ShiftTab":
       case "ArrowLeft":
         tmpFocus -= 1;
         break;
-      case "Tab":
       case "ArrowRight":
         tmpFocus += 1;
         break;
     }
     let goOverSize = this.shortFiltersMode() ? 1 : 2;
-    if (lowSize && tmpFocus % 3 == 0 && this.focusArea == FocusArea.Tiles) tmpFocus / 3;
     tmpFocus += this.focus;
     if (tmpFocus < 0) {
       this.changeFocusArea(false);
@@ -589,8 +689,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       this.changeFocusArea(true);
     } else if (
       this.focusArea == FocusArea.Tiles &&
-      tmpFocus >= this.filters!.page * 36 &&
-      !this.reachedMax
+      tmpFocus >= this.filters!.page * this.PAGE_SIZE &&
+      !this.reachedMax &&
+      !this.loadMoreFailed
     )
       await this.loadMore();
     else {
@@ -603,8 +704,34 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  /// Picks up the focus area/index from the focused element's id.
+  private syncFocusFromDom() {
+    const id = (document.activeElement as HTMLElement | null)?.id ?? "";
+    for (const area of [FocusArea.ViewMode, FocusArea.Filters, FocusArea.Tiles]) {
+      const prefix = FocusAreaPrefix[area];
+      if (!id.startsWith(prefix)) continue;
+      const index = Number(id.slice(prefix.length));
+      if (Number.isInteger(index)) {
+        this.focusArea = area;
+        this.focus = index;
+      }
+      return;
+    }
+  }
+
+  /// Columns of the tile grid, measured from the DOM so it always matches the
+  /// responsive CSS grid: the number of tiles sharing the first tile's row.
   gridColumns(): number {
-    return this.viewFormat === "list" ? 1 : 3;
+    if (this.viewFormat === "list") return 1;
+    const children = this.tileGrid?.nativeElement.children;
+    if (!children || children.length === 0) return 1;
+    const firstTop = (children[0] as HTMLElement).offsetTop;
+    let count = 0;
+    for (let i = 0; i < children.length; i++) {
+      if ((children[i] as HTMLElement).offsetTop !== firstTop) break;
+      count++;
+    }
+    return Math.max(1, count);
   }
 
   shortFiltersMode() {
@@ -612,7 +739,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   anyXtream() {
-    return Array.from(this.memory.Sources.values()).findIndex((x) => x.source_type == SourceType.Xtream) != -1;
+    return (
+      Array.from(this.memory.Sources.values()).findIndex(
+        (x) => x.source_type == SourceType.Xtream,
+      ) != -1
+    );
   }
 
   changeFocusArea(down: boolean) {
@@ -635,20 +766,49 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     document.getElementById(id)?.focus();
   }
 
+  /// The tile component whose element currently has keyboard focus.
+  private focusedTile(): ChannelTileComponent | undefined {
+    const id = (document.activeElement as HTMLElement | null)?.id ?? "";
+    const prefix = FocusAreaPrefix[FocusArea.Tiles];
+    if (!id.startsWith(prefix)) return undefined;
+    const index = Number(id.slice(prefix.length));
+    return this.tiles?.find((tile) => tile.id === index);
+  }
+
+  private toggleFocusedFavorite() {
+    const tile = this.focusedTile();
+    if (tile?.canFavorite()) tile.favorite();
+  }
+
   //Temporary solution because the ng-keyboard-shortcuts library doesn't seem to support ESC
   @HostListener("document:keydown", ["$event"])
   onKeyDown(event: KeyboardEvent) {
-    if (
+    // Already handled (mat-menu closing itself, the player, ...).
+    if (event.defaultPrevented) return;
+    // The player overlay owns the keyboard while it is shown.
+    if (this.memory.PlayerVisible) return;
+    const isBackKey =
       event.key == "Escape" ||
       event.key == "BrowserBack" ||
-      (event.key == "Backspace" && !isInputFocused())
-    ) {
-      this.goBackHotkey();
-      event.preventDefault();
+      (event.key == "Backspace" && !isInputFocused());
+    if (this.modal.hasOpenModals()) {
+      // Escape belongs to the modal; it must not also navigate back here.
+      if (isBackKey && event.key != "Backspace") this.closeTrackedModal();
+      return;
     }
-    if (event.key == "Tab" && !this.memory.ModalRef) {
+    if (isBackKey) {
       event.preventDefault();
-      this.nav(event.shiftKey ? "ShiftTab" : "Tab");
+      // Holding the key must not fire one navigation per key repeat.
+      if (!event.repeat) this.goBackHotkey();
+      return;
+    }
+    if (event.key == "ContextMenu" || (event.shiftKey && event.key == "F10")) {
+      const tile = this.focusedTile();
+      if (tile) {
+        event.preventDefault();
+        tile.openContextMenuFromKeyboard();
+      }
+      return;
     }
     if (event.key == "Enter" && this.focusArea == FocusArea.Filters)
       (document.activeElement as any).click();
@@ -667,8 +827,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
+    if (this.scrollListener) window.removeEventListener("scroll", this.scrollListener);
     this.subscriptions.forEach((x) => x.unsubscribe());
     this.autoRefreshUnlisten?.();
   }
-
 }

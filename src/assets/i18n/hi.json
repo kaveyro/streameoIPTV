@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "ब्राउज़ करें",
     "CHANGE": "बदलें",
-    "GO_BACK": "वापस जाएँ"
+    "GO_BACK": "वापस जाएँ",
+    "SHOW_PASSWORD": "पासवर्ड दिखाएँ",
+    "HIDE_PASSWORD": "पासवर्ड छिपाएँ"
   },
   "MODAL": {
     "CLOSE": "बंद करें",
@@ -109,7 +111,10 @@
     "GO_LEFT": "बाएँ जाएँ",
     "GO_RIGHT": "दाएँ जाएँ",
     "GO_UP": "ऊपर जाएँ",
-    "GO_DOWN": "नीचे जाएँ"
+    "GO_DOWN": "नीचे जाएँ",
+    "TILE_ACTIONS": "चैनल क्रियाएँ",
+    "TOGGLE_FAVORITE": "चयनित चैनल को पसंदीदा में जोड़ें/हटाएँ",
+    "OPEN_CONTEXT_MENU": "चयनित चैनल का मेनू खोलें (मेनू कुंजी से भी)"
   },
   "SETTINGS": {
     "TITLE": "सेटिंग्स",
@@ -164,7 +169,12 @@
       "ACCENT": "एक्सेंट रंग",
       "ACCENT_DESC": "बटन और इंटरैक्टिव नियंत्रणों के लिए उपयोग किया जाने वाला हाइलाइट रंग।",
       "SHOW_SOURCE": "चैनलों पर प्लेलिस्ट नाम दिखाएं",
-      "SHOW_SOURCE_DESC": "प्रत्येक चैनल और कार्यक्रम शीर्षक के नीचे स्रोत/प्लेलिस्ट का नाम दिखाता है।"
+      "SHOW_SOURCE_DESC": "प्रत्येक चैनल और कार्यक्रम शीर्षक के नीचे स्रोत/प्लेलिस्ट का नाम दिखाता है।",
+      "ACCENT_BLUE": "नीला",
+      "ACCENT_PURPLE": "बैंगनी",
+      "ACCENT_TEAL": "हरा-नीला",
+      "ACCENT_CORAL": "मूंगा",
+      "ACCENT_GREEN": "हरा"
     },
     "PLAYBACK": {
       "CACHING": "स्ट्रीम कैशिंग उपयोग करें",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "पसंदीदा ऑडियो भाषा",
       "LANG_DESC": "ISO 639 कोड जो mpv को डिफ़ॉल्ट रूप से चुनने चाहिए। विकल्पों को अल्पविराम से अलग करें, सर्वोच्च प्राथमिकता पहले।",
       "MPV_PARAMS": "वैश्विक mpv पैरामीटर",
-      "MPV_PARAMS_DESC": "हर चैनल पर लागू होने वाले लॉन्च पैरामीटर। जब तक आप नहीं जानते कि आप क्या कर रहे हैं, इसे खाली छोड़ दें।"
+      "MPV_PARAMS_DESC": "हर चैनल पर लागू होने वाले लॉन्च पैरामीटर। जब तक आप नहीं जानते कि आप क्या कर रहे हैं, इसे खाली छोड़ दें।",
+      "LANG_PLACEHOLDER": "उदा. hi,en",
+      "MPV_PARAMS_PLACEHOLDER": "उदा. --hwdec=auto",
+      "DEBUG_LOG": "प्लेयर लॉग लिखें",
+      "DEBUG_LOG_DESC": "केवल समस्या निवारण के लिए: लॉग फ़ोल्डर में mpv.log हर स्ट्रीम पता दर्ज करता है, उसमें मौजूद लॉगिन जानकारी सहित। अगली बार प्लेयर खुलने पर लागू होता है।"
     },
     "RECORDING": {
       "PATH": "रिकॉर्डिंग पथ",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "कस्टम स्रोत जोड़ें",
     "IMPORT_CUSTOM": "कस्टम स्रोत आयात करें",
     "DELETE_ALL_DATA": "सभी ऐप डेटा हटाएँ",
-    "SELECT_EXPORT_FILE": "streameoIPTV निर्यात फ़ाइल (.otvp) चुनें"
+    "SELECT_EXPORT_FILE": "streameoIPTV निर्यात फ़ाइल (.otvp) चुनें",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "सर्वर पता http://host:port के रूप में",
+    "INVALID_URL": "\"{{url}}\" मान्य URL नहीं है। रिक्त स्थान या टाइपिंग की गलतियाँ जाँचें।",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "अभी चल रहा है",
     "SCHEDULE_RECORDING": "रिकॉर्डिंग निर्धारित करें",
-    "CANCEL_SCHEDULED": "निर्धारित रिकॉर्डिंग रद्द करें"
+    "CANCEL_SCHEDULED": "निर्धारित रिकॉर्डिंग रद्द करें",
+    "PREV_DAY": "पिछला दिन",
+    "NEXT_DAY": "अगला दिन",
+    "NO_PROGRAMMES": "इस दिन के लिए कोई कार्यक्रम नहीं",
+    "WATCH_CATCHUP": "आर्काइव से देखें",
+    "DOWNLOAD_CATCHUP": "आर्काइव से डाउनलोड करें",
+    "NOTIFY_ON": "शुरू होने पर मुझे सूचित करें",
+    "NOTIFY_OFF": "सूचना बंद करें"
   },
   "RESTREAM": {
     "TITLE": "री-स्ट्रीमिंग: {{name}}",
@@ -290,7 +315,8 @@
     "START": "स्टार्ट",
     "WATCH": "देखें",
     "SHARE": "साझा करें",
-    "STOP": "रोकें"
+    "STOP": "रोकें",
+    "NETWORK_UNAVAILABLE": "नेटवर्क जानकारी उपलब्ध नहीं है, इसलिए री-स्ट्रीमिंग शुरू नहीं की जा सकती।"
   },
   "DOWNLOAD": {
     "TITLE": "डाउनलोड",
@@ -409,7 +435,11 @@
     "SHARE": "साझा करें",
     "IMPORT_CHANNEL_GROUP": "चैनल/समूह आयात करें",
     "EXPIRES": "{{date}} को समाप्त होगा",
-    "EXPIRED": "{{date}} को समाप्त हो गया"
+    "EXPIRED": "{{date}} को समाप्त हो गया",
+    "ENABLED": "सक्षम",
+    "MORE_ACTIONS": "और कार्रवाइयाँ",
+    "SHOW_USERNAME": "उपयोगकर्ता नाम दिखाएँ",
+    "HIDE_USERNAME": "उपयोगकर्ता नाम छिपाएँ"
   },
   "DIALOG": {
     "SAVE_RECORDING": "रिकॉर्डिंग कहाँ सहेजें, चुनें",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "कैचबैक कहाँ सहेजें, चुनें",
     "SAVE_FAVORITES": "पसंदीदा कहाँ सहेजें, चुनें",
     "SELECT_FAVS_BACKUP": "एक पसंदीदा बैकअप चुनें",
-    "SELECT_M3U": "स्रोत के लिए एक नई m3u फ़ाइल चुनें"
+    "SELECT_M3U": "स्रोत के लिए एक नई m3u फ़ाइल चुनें",
+    "FILTER_FAVS_BACKUP": "पसंदीदा बैकअप",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV निर्यात"
   },
   "TOAST": {
     "SOURCES_UPDATED": "सभी स्रोत सफलतापूर्वक अपडेट किए गए",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "आप नवीनतम संस्करण पर हैं",
     "UPDATE_DOWNLOADING": "संस्करण {{version}} डाउनलोड हो रहा है...",
     "UPDATE_INSTALLED": "अपडेट इंस्टॉल हुआ, पुनः शुरू हो रहा है",
-    "UPDATE_FAILED": "अपडेट जाँच विफल"
+    "UPDATE_FAILED": "अपडेट जाँच विफल",
+    "ERROR_MORE_INFO": "{{message}}. अधिक जानकारी के लिए यहाँ क्लिक करें",
+    "ERROR_GENERIC_MORE_INFO": "एक त्रुटि हुई। अधिक जानकारी के लिए यहाँ क्लिक करें",
+    "UPDATE_INSTALL_FAILED": "अपडेट इंस्टॉल नहीं हो सका",
+    "UPDATE_RELAUNCH_FAILED": "अपडेट इंस्टॉल हो गया, लेकिन ऐप पुनः आरंभ नहीं हो सका। कृपया इसे मैन्युअल रूप से पुनः आरंभ करें",
+    "NETWORK_INFO_FAILED": "नेटवर्क जानकारी नहीं पढ़ी जा सकी",
+    "SETTINGS_SAVED": "सहेजा गया",
+    "SETTINGS_SAVE_FAILED": "सेटिंग्स सहेजी नहीं जा सकीं"
   },
   "UPDATE": {
     "TITLE": "अपडेट उपलब्ध",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "इंस्टॉल के बाद ऐप फिर से शुरू होगा।",
     "INSTALL": "अभी इंस्टॉल करें",
     "LATER": "बाद में"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "कैच-अप उपलब्ध",
+    "IS_FAVORITE": "पसंदीदा में"
+  },
+  "LOADING": {
+    "CHANNELS": "आपके चैनल लोड हो रहे हैं..."
+  },
+  "TIME": {
+    "JUST_NOW": "अभी-अभी"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "सभी डाउनलोड रद्द करें?",
+    "CANCEL_DOWNLOADS_BODY": "कतार में या चल रहे {{count}} डाउनलोड रद्द कर दिए जाएँगे।",
+    "DELETE_SOURCE_TITLE": "स्रोत हटाएँ?",
+    "DELETE_SOURCE_BODY": "स्रोत \"{{name}}\" को इसके सभी चैनलों, श्रेणियों, पसंदीदा और इतिहास के साथ हटा दिया जाएगा। इसे पूर्ववत नहीं किया जा सकता।",
+    "CLEAR_HISTORY_TITLE": "इतिहास साफ़ करें?",
+    "CLEAR_HISTORY_BODY": "हाल ही में देखे गए की सूची से सभी चैनल हटा दिए जाएँगे। इसे पूर्ववत नहीं किया जा सकता।",
+    "DELETE_CHANNEL_TITLE": "चैनल हटाएँ?",
+    "DELETE_CHANNEL_BODY": "चैनल \"{{name}}\" स्थायी रूप से हटा दिया जाएगा।",
+    "DELETE_CATEGORY_TITLE": "श्रेणी हटाएँ?",
+    "DELETE_CATEGORY_BODY": "श्रेणी \"{{name}}\" स्थायी रूप से हटा दी जाएगी।"
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "चैनलों पर वापस जाएँ",
+    "CHANNELS": "चैनल",
+    "FULLSCREEN": "फ़ुलस्क्रीन",
+    "EXIT_FULLSCREEN": "फ़ुलस्क्रीन से बाहर निकलें",
+    "NEXT": "अगला",
+    "PROGRAMME_PROGRESS": "कार्यक्रम की प्रगति",
+    "FILTER_PLACEHOLDER": "चैनल फ़िल्टर करें...",
+    "FILTER_CHANNELS": "चैनल सूची फ़िल्टर करें"
   }
 }

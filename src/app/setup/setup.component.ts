@@ -1,4 +1,4 @@
-import { Component, HostListener } from "@angular/core";
+import { Component, HostListener, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { ToastrService } from "ngx-toastr";
@@ -9,25 +9,42 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { ConfirmModalComponent } from "./confirm-modal/confirm-modal.component";
 import { MemoryService } from "../memory.service";
 import { ErrorService } from "../error.service";
-import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
 import { TranslateService } from "@ngx-translate/core";
+import { ConfirmService } from "../confirm.service";
+import { LanguageService } from "../language.service";
+import { ThemeService } from "../theme.service";
+import { Settings } from "../models/settings";
 
 @Component({
   selector: "app-setup",
   templateUrl: "./setup.component.html",
   styleUrl: "./setup.component.css",
 })
-export class SetupComponent {
+export class SetupComponent implements OnInit {
   constructor(
     private nav: Router,
     private toastr: ToastrService,
     private modalService: NgbModal,
     public memory: MemoryService,
     private error: ErrorService,
-    private modal: NgbModal,
     private translate: TranslateService,
-  ) { }
+    private confirmService: ConfirmService,
+    private languageService: LanguageService,
+    private themeService: ThemeService,
+  ) {}
   loading = false;
+  /// Inline error for the URL field (e.g. an URL that cannot be parsed).
+  urlError?: string;
+  /// Stored settings, so the first-run language/theme pickers can persist
+  /// their choice the same way the settings page does.
+  settings: Settings = {};
+  readonly languageOptions = LanguageService.OPTIONS;
+  readonly themeOptions = [
+    { id: "system", label: "SETTINGS.APPEARANCE.THEME_SYSTEM" },
+    { id: "dark", label: "SETTINGS.APPEARANCE.THEME_DARK" },
+    { id: "light", label: "SETTINGS.APPEARANCE.THEME_LIGHT" },
+    { id: "oled", label: "SETTINGS.APPEARANCE.THEME_OLED" },
+  ];
   sourceTypeEnum = SourceType;
   source: Source = {
     source_type: SourceType.M3U,
@@ -37,6 +54,8 @@ export class SetupComponent {
 
   @HostListener("document:keydown", ["$event"])
   onKeyDown(event: KeyboardEvent) {
+    // A modal (URL confirmation, delete confirmation, error) owns the key.
+    if (this.modalService.hasOpenModals()) return;
     if (
       (event.key == "Escape" || event.key == "Backspace") &&
       this.memory.AddingAdditionalSource &&
@@ -56,7 +75,38 @@ export class SetupComponent {
     );
   }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    invoke<Settings>("get_settings")
+      .then((settings) => {
+        this.settings = settings ?? {};
+        this.settings.language = this.settings.language ?? "system";
+        this.settings.theme = this.settings.theme ?? "dark";
+      })
+      .catch(() => {
+        // First launch: nothing stored yet, keep the defaults.
+        this.settings = { language: "system", theme: "dark" };
+      });
+  }
+
+  async updateLanguage(language: string) {
+    this.settings.language = language;
+    this.languageService.apply(language === "system" ? undefined : language);
+    await this.saveSettings();
+  }
+
+  async updateTheme(theme: string) {
+    this.settings.theme = theme;
+    this.themeService.apply(theme, this.settings.accent_color);
+    await this.saveSettings();
+  }
+
+  private async saveSettings() {
+    try {
+      await invoke("update_settings", { settings: this.settings });
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.SETTINGS_SAVE_FAILED"));
+    }
+  }
 
   switchMode(sourceType: SourceType) {
     this.source.source_type = sourceType;
@@ -71,7 +121,12 @@ export class SetupComponent {
     const file = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "extension", extensions: ["m3u", "m3u8"] }],
+      filters: [
+        {
+          name: this.translate.instant("SETTINGS.DIALOG.M3U_PLAYLIST"),
+          extensions: ["m3u", "m3u8"],
+        },
+      ],
     });
     if (file == null) {
       return;
@@ -83,8 +138,9 @@ export class SetupComponent {
       this.success();
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.PARSE_FILE_FAILED"));
+    } finally {
+      this.loading = false;
     }
-    this.loading = false;
   }
 
   success() {
@@ -124,7 +180,9 @@ export class SetupComponent {
       directory: false,
       canCreateDirectories: false,
       title: this.translate.instant("SETUP.SELECT_EXPORT_FILE"),
-      filters: [{ name: "extension", extensions: ["otvp"] }],
+      filters: [
+        { name: this.translate.instant("DIALOG.FILTER_STREAMEO_EXPORT"), extensions: ["otvp"] },
+      ],
     });
     if (file == null) {
       return;
@@ -164,7 +222,7 @@ export class SetupComponent {
   }
 
   async getXtream() {
-    this.loading = true;
+    this.urlError = undefined;
     this.source.use_tvg_id = undefined;
     this.source.url = this.source.url?.trim();
     this.source.username = this.source.username?.trim();
@@ -173,31 +231,51 @@ export class SetupComponent {
       this.source.url = `http://${this.source.url}`;
       this.toastr.info(this.translate.instant("TOAST.HTTP_ASSUMED"));
     }
-    let url = new URL(this.source.url);
-    if (url.pathname == "/") {
-      let result = await this.modalService.open(ConfirmModalComponent, {
-        keyboard: false,
-        backdrop: "static",
-      }).result;
-      if (result == "correct") {
-        url.pathname = "/player_api.php";
-        this.source.url = url.toString();
-      }
-    }
+    let url: URL;
     try {
+      url = new URL(this.source.url);
+    } catch {
+      // e.g. "http://my host:8080": report it instead of hanging on the
+      // loading screen.
+      this.urlError = this.translate.instant("SETUP.INVALID_URL", { url: this.source.url });
+      this.toastr.error(this.urlError);
+      return;
+    }
+    this.loading = true;
+    try {
+      if (url.pathname == "/") {
+        const result = await this.modalService
+          .open(ConfirmModalComponent, {
+            keyboard: false,
+            backdrop: "static",
+          })
+          .result.catch(() => "ignore");
+        if (result == "correct") {
+          url.pathname = "/player_api.php";
+          this.source.url = url.toString();
+        }
+      }
       await invoke("get_xtream", { source: this.source });
       this.success();
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.INVALID_CREDENTIALS"));
+    } finally {
+      this.loading = false;
     }
-    this.loading = false;
   }
 
   async nuke() {
-    const modalRef = this.modal.open(ConfirmDeleteModalComponent, {
-      backdrop: "static",
-      size: "xl",
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM_DELETE.TITLE",
+      messages: ["CONFIRM_DELETE.BODY1", "CONFIRM_DELETE.BODY2"],
+      confirmLabel: "MODAL.CONFIRM_DELETE",
     });
-    modalRef.componentInstance.name = "ConfirmDeleteModal";
+    if (!confirmed) return;
+    try {
+      // The backend schedules the wipe and exits the app.
+      await invoke("delete_database");
+    } catch (e) {
+      this.error.handleError(e);
+    }
   }
 }

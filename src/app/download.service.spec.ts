@@ -41,6 +41,17 @@ describe("DownloadService", () => {
     expect(service.activeCount()).toBe(0);
   });
 
+  it("concurrent enqueues of the same id share one download", async () => {
+    service.Paused = true;
+    const channel = { id: 1, name: "a", favorite: false } as any;
+    const [first, second] = await Promise.all([
+      service.enqueue("1", channel),
+      service.enqueue("1", channel),
+    ]);
+    expect(first).toBe(second);
+    expect(service.Downloads.size).toBe(1);
+  });
+
   it("reorders queued downloads", async () => {
     service.Paused = true;
     await service.enqueue("1", { id: 1, name: "a", favorite: false } as any);

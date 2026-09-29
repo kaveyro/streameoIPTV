@@ -1,8 +1,14 @@
+/* Below the Bootstrap modal backdrop (1050) so modals/confirmations opened
+   while the player is visible are not hidden; the CDK overlay (mat-menu) and
+   ngx-toastr stack above it (see --z-* tokens in styles.css).
+   The channel list stays on the right in every writing direction: toasts are
+   top-right and must land on the list, never on the native video window. */
 .player-overlay {
   position: fixed;
   inset: 0;
-  z-index: 2000;
-  background: #000;
+  z-index: var(--z-player);
+  direction: ltr;
+  background: var(--bg-video);
   display: grid;
   grid-template-columns: 1fr 300px;
   grid-template-rows: 1fr auto;
@@ -24,7 +30,7 @@
 .video-host {
   grid-column: 1;
   grid-row: 1;
-  background: #000;
+  background: var(--bg-video);
   min-width: 0;
   min-height: 0;
 }
@@ -57,7 +63,7 @@
   border: 1px solid var(--border-subtle);
   background: transparent;
   color: var(--text-secondary);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   padding: 0.35rem 0.6rem;
   cursor: pointer;
 }
@@ -65,6 +71,55 @@
 .pbtn:hover {
   color: var(--text-primary);
   background: var(--bg-surface);
+}
+
+.pbtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+}
+
+/* Now playing (EPG) in the bar */
+.pnow {
+  flex: 0 1 38%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pnow-title,
+.pnow-next {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pnow-title {
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+
+.pnow-time {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-inline-end: 0.35rem;
+}
+
+.pnow-next {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+}
+
+.pnow-track {
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--border-strong);
+  overflow: hidden;
+}
+
+.pnow-fill {
+  height: 100%;
+  background-color: var(--accent);
 }
 
 .pbtn svg {
@@ -77,17 +132,43 @@
   grid-row: 1 / span 2;
   overflow-y: auto;
   background: var(--bg-surface-alt);
-  border-left: 1px solid var(--border-subtle);
+  border-inline-start: 1px solid var(--border-subtle);
+}
+
+.player-list-search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: calc(100% - 1rem);
+  margin: 0.5rem;
 }
 
 .player-list-item {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  width: 100%;
   padding: 0.5rem 0.75rem;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  text-align: start;
+  font: inherit;
   cursor: pointer;
   color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
+}
+
+.player-list-item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 0.15rem var(--focus-ring);
+}
+
+.player-list-empty {
+  padding: 1rem 0.75rem;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  text-align: center;
 }
 
 .player-list-item:hover {
@@ -97,7 +178,8 @@
 
 .player-list-item.active {
   background: var(--bg-surface);
-  color: var(--accent);
+  color: var(--accent-text);
+  box-shadow: inset 3px 0 0 var(--accent);
   font-weight: 600;
 }
 
@@ -113,4 +195,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pli-name {
+  font-size: var(--fs-md);
+}
+
+/* Restore the UI direction inside the bar and the list (the overlay itself
+   is forced to ltr above to keep the grid layout fixed). */
+:host-context([dir="rtl"]) .player-bar,
+:host-context([dir="rtl"]) .player-list {
+  direction: rtl;
 }

@@ -11,6 +11,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { CHANNEL_EXTENSION, FAVS_BACKUP, PLAYLIST_EXTENSION } from "../../models/extensions";
 import { sanitizeFileName } from "../../utils";
 import { TranslateService } from "@ngx-translate/core";
+import { ConfirmService } from "../../confirm.service";
 
 @Component({
   selector: "app-source-tile",
@@ -34,7 +35,8 @@ export class SourceTileComponent {
     public memory: MemoryService,
     private modal: NgbModal,
     private translate: TranslateService,
-  ) { }
+    private confirmService: ConfirmService,
+  ) {}
 
   get_source_type_name() {
     if (!this.source) return null;
@@ -44,7 +46,9 @@ export class SourceTileComponent {
   get expiryLabel(): string | undefined {
     if (this.source?.source_type != SourceType.Xtream || !this.expiry) return undefined;
     const date = new Date(this.expiry * 1000).toLocaleDateString();
-    return this.translate.instant(this.expiryExpired ? "SOURCE.EXPIRED" : "SOURCE.EXPIRES", { date });
+    return this.translate.instant(this.expiryExpired ? "SOURCE.EXPIRED" : "SOURCE.EXPIRES", {
+      date,
+    });
   }
 
   get expiryExpired(): boolean {
@@ -67,6 +71,13 @@ export class SourceTileComponent {
   }
 
   async delete() {
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.DELETE_SOURCE_TITLE",
+      messages: ["CONFIRM.DELETE_SOURCE_BODY"],
+      confirmLabel: "MODAL.DELETE",
+      params: { name: this.source?.name ?? "" },
+    });
+    if (!confirmed) return;
     await this.memory.tryIPC(
       this.translate.instant("TOAST.SOURCE_DELETED"),
       this.translate.instant("TOAST.SOURCE_DELETE_FAILED"),
@@ -142,16 +153,17 @@ export class SourceTileComponent {
       this.translate.instant("TOAST.CHANGES_SAVED"),
       this.translate.instant("TOAST.CHANGES_SAVE_FAILED"),
       async () => {
-      this.editableSource.user_agent = this.editableSource.user_agent?.trim();
-      this.editableSource.stream_user_agent = this.editableSource.stream_user_agent?.trim();
-      if (this.editableSource.user_agent == "") this.editableSource.user_agent = undefined;
-      if (this.editableSource.stream_user_agent == "")
-        this.editableSource.stream_user_agent = undefined;
-      await invoke("update_source", { source: this.editableSource });
-      this.source = this.editableSource;
-      this.editing = false;
-      this.editableSource = {};
-    });
+        this.editableSource.user_agent = this.editableSource.user_agent?.trim();
+        this.editableSource.stream_user_agent = this.editableSource.stream_user_agent?.trim();
+        if (this.editableSource.user_agent == "") this.editableSource.user_agent = undefined;
+        if (this.editableSource.stream_user_agent == "")
+          this.editableSource.stream_user_agent = undefined;
+        await invoke("update_source", { source: this.editableSource });
+        this.source = this.editableSource;
+        this.editing = false;
+        this.editableSource = {};
+      },
+    );
   }
 
   async browse() {
@@ -159,7 +171,12 @@ export class SourceTileComponent {
       multiple: false,
       directory: false,
       title: this.translate.instant("DIALOG.SELECT_M3U"),
-      filters: [{ name: "extension", extensions: ["m3u", "m3u8"] }],
+      filters: [
+        {
+          name: this.translate.instant("SETTINGS.DIALOG.M3U_PLAYLIST"),
+          extensions: ["m3u", "m3u8"],
+        },
+      ],
     });
     if (file) {
       this.editableSource.url = file;
@@ -194,7 +211,9 @@ export class SourceTileComponent {
       title: this.translate.instant("DIALOG.SELECT_FAVS_BACKUP"),
       directory: false,
       multiple: false,
-      filters: [{ name: "extension", extensions: ["otvf"] }],
+      filters: [
+        { name: this.translate.instant("DIALOG.FILTER_FAVS_BACKUP"), extensions: ["otvf"] },
+      ],
     });
     if (file) {
       await this.memory.tryIPC(

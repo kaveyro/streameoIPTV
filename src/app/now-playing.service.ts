@@ -5,10 +5,15 @@ import { Channel } from "./models/channel";
 import { MediaType } from "./models/mediaType";
 import { EPG } from "./models/epg";
 
-export interface NowPlaying {
+export interface Programme {
   title: string;
   start_timestamp: number;
   end_timestamp: number;
+}
+
+export interface NowPlaying extends Programme {
+  /// The programme after the current one, when the guide has it.
+  next?: Programme;
 }
 
 interface CacheEntry {
@@ -48,12 +53,12 @@ export class NowPlayingService {
       return undefined;
     }
     const cached = this.cache.get(channel.id);
-    if (cached && cached.expires > Date.now()) return cached.value;
+    if (this.isFresh(cached)) return cached!.value;
     await this.acquireSlot();
     try {
       // Another queued request may have filled the cache while we waited
       const fresh = this.cache.get(channel.id);
-      if (fresh && fresh.expires > Date.now()) return fresh.value;
+      if (this.isFresh(fresh)) return fresh!.value;
       let epg: EPG[] = [];
       try {
         epg = await invoke<EPG[]>("get_epg", { channel: channel });
@@ -62,11 +67,23 @@ export class NowPlayingService {
       }
       const now = Date.now() / 1000;
       const current = epg.find((x) => x.start_timestamp <= now && now < x.end_timestamp);
+      const next = current
+        ? epg
+            .filter((x) => x.start_timestamp >= current.end_timestamp)
+            .sort((a, b) => a.start_timestamp - b.start_timestamp)[0]
+        : undefined;
       const value: NowPlaying | undefined = current
         ? {
             title: current.title,
             start_timestamp: current.start_timestamp,
             end_timestamp: current.end_timestamp,
+            next: next
+              ? {
+                  title: next.title,
+                  start_timestamp: next.start_timestamp,
+                  end_timestamp: next.end_timestamp,
+                }
+              : undefined,
           }
         : undefined;
       // Cache empty results too, so channels without EPG are not re-fetched
@@ -75,6 +92,12 @@ export class NowPlayingService {
     } finally {
       this.releaseSlot();
     }
+  }
+
+  /// A cached entry is stale once its TTL passed or the cached programme ended.
+  private isFresh(entry?: CacheEntry): boolean {
+    if (!entry || entry.expires <= Date.now()) return false;
+    return !entry.value || entry.value.end_timestamp > Date.now() / 1000;
   }
 
   private acquireSlot(): Promise<void> {

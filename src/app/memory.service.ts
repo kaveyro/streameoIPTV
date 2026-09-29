@@ -18,7 +18,12 @@ export class MemoryService {
     private toastr: ToastrService,
     private error: ErrorService,
   ) {
-    invoke("is_container").then((val) => (this.IsContainer = val as boolean));
+    invoke("is_container")
+      .then((val) => (this.IsContainer = val as boolean))
+      .catch((e) => {
+        console.error(e);
+        this.IsContainer = false;
+      });
   }
   public SetNode: Subject<SetNodeDTO> = new Subject();
   public SetFocus: Subject<number> = new Subject();
@@ -28,7 +33,13 @@ export class MemoryService {
   ]);
   public Sources: Map<number, Source> = new Map();
   public currentContextMenu?: MatMenuTrigger;
-  public Loading = false;
+  /// Number of tryIPC operations still running. A counter instead of a flag,
+  /// so one of two concurrent operations finishing does not re-enable buttons
+  /// while the other is still busy.
+  private loadingCount = 0;
+  public get Loading(): boolean {
+    return this.loadingCount > 0;
+  }
   public Refresh: Subject<boolean> = new Subject();
   public RefreshSources: Subject<boolean> = new Subject();
   public AddingAdditionalSource = false;
@@ -55,13 +66,16 @@ export class MemoryService {
   public UseExternalPlayer: boolean = false;
   /// Whether the embedded player view is currently shown.
   public PlayerVisible: boolean = false;
+  /// Emits after settings that only apply when mpv spawns were changed and the
+  /// embedded player was torn down; the PlayerComponent re-inits on next open.
+  public PlayerReset: Subject<void> = new Subject();
 
   async tryIPC<T>(
     successMessage: string,
     errorMessage: string,
     action: () => Promise<T>,
   ): Promise<boolean> {
-    this.Loading = true;
+    this.loadingCount++;
     let error = false;
     try {
       await action();
@@ -69,9 +83,28 @@ export class MemoryService {
     } catch (e) {
       this.error.handleError(e, errorMessage);
       error = true;
+    } finally {
+      this.loadingCount = Math.max(0, this.loadingCount - 1);
     }
-    this.Loading = false;
     return error;
+  }
+
+  /**
+   * The embedded player's native window composites above the WebView, so a
+   * modal opened while it is visible would be hidden underneath the video.
+   * Hides the native window until `closed` settles, then shows it again if the
+   * player is still open.
+   */
+  async hidePlayerWhile(closed: Promise<unknown>): Promise<void> {
+    if (!this.PlayerVisible) {
+      await closed.catch(() => {});
+      return;
+    }
+    await invoke("player_set_visible", { visible: false }).catch(() => {});
+    await closed.catch(() => {});
+    if (this.PlayerVisible) {
+      await invoke("player_set_visible", { visible: true }).catch(() => {});
+    }
   }
 
   async get_epg_ids() {

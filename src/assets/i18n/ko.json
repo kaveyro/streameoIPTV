@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "찾아보기",
     "CHANGE": "변경",
-    "GO_BACK": "뒤로"
+    "GO_BACK": "뒤로",
+    "SHOW_PASSWORD": "비밀번호 표시",
+    "HIDE_PASSWORD": "비밀번호 숨기기"
   },
   "MODAL": {
     "CLOSE": "닫기",
@@ -109,7 +111,10 @@
     "GO_LEFT": "왼쪽으로",
     "GO_RIGHT": "오른쪽으로",
     "GO_UP": "위로",
-    "GO_DOWN": "아래로"
+    "GO_DOWN": "아래로",
+    "TILE_ACTIONS": "채널 작업",
+    "TOGGLE_FAVORITE": "선택한 채널을 즐겨찾기에 추가/제거",
+    "OPEN_CONTEXT_MENU": "선택한 채널의 메뉴 열기 (메뉴 키도 가능)"
   },
   "SETTINGS": {
     "TITLE": "설정",
@@ -164,7 +169,12 @@
       "ACCENT": "강조 색상",
       "ACCENT_DESC": "버튼 및 대화형 컨트롤에 사용되는 강조 색상입니다.",
       "SHOW_SOURCE": "채널에 재생목록 이름 표시",
-      "SHOW_SOURCE_DESC": "각 채널 및 프로그램 제목 아래에 소스/재생목록 이름을 표시합니다."
+      "SHOW_SOURCE_DESC": "각 채널 및 프로그램 제목 아래에 소스/재생목록 이름을 표시합니다.",
+      "ACCENT_BLUE": "파랑",
+      "ACCENT_PURPLE": "보라",
+      "ACCENT_TEAL": "청록",
+      "ACCENT_CORAL": "코랄",
+      "ACCENT_GREEN": "초록"
     },
     "PLAYBACK": {
       "CACHING": "스트림 캐싱 사용",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "선호하는 오디오 언어",
       "LANG_DESC": "mpv가 기본으로 선택해야 할 ISO 639 코드입니다. 대체 언어는 쉼표로 구분하고 우선순위가 높은 순으로 나열합니다.",
       "MPV_PARAMS": "전역 mpv 매개변수",
-      "MPV_PARAMS_DESC": "모든 채널에 적용되는 실행 매개변수입니다. 내용을 잘 아는 경우가 아니면 비워 두세요."
+      "MPV_PARAMS_DESC": "모든 채널에 적용되는 실행 매개변수입니다. 내용을 잘 아는 경우가 아니면 비워 두세요.",
+      "LANG_PLACEHOLDER": "예: ko,en",
+      "MPV_PARAMS_PLACEHOLDER": "예: --hwdec=auto",
+      "DEBUG_LOG": "플레이어 로그 기록",
+      "DEBUG_LOG_DESC": "문제 해결 전용: 로그 폴더의 mpv.log에 포함된 로그인 정보를 비롯해 모든 스트림 주소가 기록됩니다. 다음에 플레이어를 열 때 적용됩니다."
     },
     "RECORDING": {
       "PATH": "녹화 경로",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "사용자 지정 소스 추가",
     "IMPORT_CUSTOM": "사용자 지정 소스 가져오기",
     "DELETE_ALL_DATA": "모든 앱 데이터 삭제",
-    "SELECT_EXPORT_FILE": "streameoIPTV 내보내기 파일(.otvp) 선택"
+    "SELECT_EXPORT_FILE": "streameoIPTV 내보내기 파일(.otvp) 선택",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "서버 주소 (형식: http://host:port)",
+    "INVALID_URL": "\"{{url}}\"은(는) 올바른 URL이 아닙니다. 공백이나 오타가 있는지 확인하세요.",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "지금 재생 중",
     "SCHEDULE_RECORDING": "녹화 예약",
-    "CANCEL_SCHEDULED": "예약 녹화 취소"
+    "CANCEL_SCHEDULED": "예약 녹화 취소",
+    "PREV_DAY": "이전 날",
+    "NEXT_DAY": "다음 날",
+    "NO_PROGRAMMES": "이 날에는 프로그램이 없습니다",
+    "WATCH_CATCHUP": "보관본에서 시청",
+    "DOWNLOAD_CATCHUP": "보관본에서 다운로드",
+    "NOTIFY_ON": "시작하면 알림",
+    "NOTIFY_OFF": "알림 끄기"
   },
   "RESTREAM": {
     "TITLE": "재스트리밍: {{name}}",
@@ -290,7 +315,8 @@
     "START": "시작",
     "WATCH": "시청",
     "SHARE": "공유",
-    "STOP": "중지"
+    "STOP": "중지",
+    "NETWORK_UNAVAILABLE": "네트워크 정보를 사용할 수 없어 재스트리밍을 시작할 수 없습니다."
   },
   "DOWNLOAD": {
     "TITLE": "다운로드",
@@ -409,7 +435,11 @@
     "SHARE": "공유",
     "IMPORT_CHANNEL_GROUP": "채널/그룹 가져오기",
     "EXPIRES": "{{date}}에 만료",
-    "EXPIRED": "{{date}}에 만료됨"
+    "EXPIRED": "{{date}}에 만료됨",
+    "ENABLED": "사용",
+    "MORE_ACTIONS": "추가 작업",
+    "SHOW_USERNAME": "사용자 이름 표시",
+    "HIDE_USERNAME": "사용자 이름 숨기기"
   },
   "DIALOG": {
     "SAVE_RECORDING": "녹화를 저장할 위치 선택",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "다시보기를 저장할 위치 선택",
     "SAVE_FAVORITES": "즐겨찾기를 저장할 위치 선택",
     "SELECT_FAVS_BACKUP": "즐겨찾기 백업 선택",
-    "SELECT_M3U": "소스용 새 m3u 파일 선택"
+    "SELECT_M3U": "소스용 새 m3u 파일 선택",
+    "FILTER_FAVS_BACKUP": "즐겨찾기 백업",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV 내보내기"
   },
   "TOAST": {
     "SOURCES_UPDATED": "모든 소스를 성공적으로 업데이트했습니다",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "최신 상태입니다",
     "UPDATE_DOWNLOADING": "버전 {{version}} 다운로드 중...",
     "UPDATE_INSTALLED": "업데이트 설치됨, 다시 시작하는 중",
-    "UPDATE_FAILED": "업데이트 확인 실패"
+    "UPDATE_FAILED": "업데이트 확인 실패",
+    "ERROR_MORE_INFO": "{{message}}. 자세한 내용을 보려면 여기를 클릭하세요",
+    "ERROR_GENERIC_MORE_INFO": "오류가 발생했습니다. 자세한 내용을 보려면 여기를 클릭하세요",
+    "UPDATE_INSTALL_FAILED": "업데이트를 설치하지 못했습니다",
+    "UPDATE_RELAUNCH_FAILED": "업데이트가 설치되었지만 앱을 다시 시작하지 못했습니다. 직접 다시 시작해 주세요",
+    "NETWORK_INFO_FAILED": "네트워크 정보를 읽을 수 없습니다",
+    "SETTINGS_SAVED": "저장됨",
+    "SETTINGS_SAVE_FAILED": "설정을 저장하지 못했습니다"
   },
   "UPDATE": {
     "TITLE": "업데이트 있음",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "설치 후 앱이 다시 시작됩니다.",
     "INSTALL": "지금 설치",
     "LATER": "나중에"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "다시보기 가능",
+    "IS_FAVORITE": "즐겨찾기에 있음"
+  },
+  "LOADING": {
+    "CHANNELS": "채널을 불러오는 중..."
+  },
+  "TIME": {
+    "JUST_NOW": "방금"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "모든 다운로드를 취소할까요?",
+    "CANCEL_DOWNLOADS_BODY": "대기 중이거나 진행 중인 다운로드 {{count}}개가 취소됩니다.",
+    "DELETE_SOURCE_TITLE": "소스를 삭제할까요?",
+    "DELETE_SOURCE_BODY": "소스 \"{{name}}\"와(과) 해당 채널, 카테고리, 즐겨찾기, 기록이 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+    "CLEAR_HISTORY_TITLE": "기록을 지울까요?",
+    "CLEAR_HISTORY_BODY": "최근 시청 목록에서 모든 채널이 제거됩니다. 이 작업은 되돌릴 수 없습니다.",
+    "DELETE_CHANNEL_TITLE": "채널을 삭제할까요?",
+    "DELETE_CHANNEL_BODY": "채널 \"{{name}}\"이(가) 영구적으로 삭제됩니다.",
+    "DELETE_CATEGORY_TITLE": "카테고리를 삭제할까요?",
+    "DELETE_CATEGORY_BODY": "카테고리 \"{{name}}\"이(가) 영구적으로 삭제됩니다."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "채널로 돌아가기",
+    "CHANNELS": "채널",
+    "FULLSCREEN": "전체 화면",
+    "EXIT_FULLSCREEN": "전체 화면 종료",
+    "NEXT": "다음",
+    "PROGRAMME_PROGRESS": "프로그램 진행률",
+    "FILTER_PLACEHOLDER": "채널 필터...",
+    "FILTER_CHANNELS": "채널 목록 필터링"
   }
 }

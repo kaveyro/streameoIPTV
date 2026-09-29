@@ -75,8 +75,19 @@ export class UpdateService {
     this.error.info(
       this.translate.instant("TOAST.UPDATE_DOWNLOADING", { version: update.version }),
     );
-    await update.downloadAndInstall();
+    // The user explicitly asked for the install, so a failure is reported even
+    // for the quiet startup check (whose own catch only reports manual checks).
+    try {
+      await update.downloadAndInstall();
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.UPDATE_INSTALL_FAILED"));
+      return;
+    }
     this.error.success(this.translate.instant("TOAST.UPDATE_INSTALLED"));
-    await relaunch();
+    try {
+      await relaunch();
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.UPDATE_RELAUNCH_FAILED"));
+    }
   }
 }

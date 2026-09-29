@@ -5,38 +5,80 @@
 
 /* ---------------------------------------------------------------------------
    Design tokens
+   ThemeService puts data-theme / data-accent on both <html> and <body>, so the
+   theme blocks below match the root element too (scrollbars, color-scheme).
    --------------------------------------------------------------------------- */
 :root {
+  color-scheme: dark;
+
   /* Backgrounds */
   --bg-app: #202124;
   --bg-surface: #343a40;
   --bg-surface-alt: #292b2c;
-  --bg-modal: var(--bg-surface-alt);
   --bg-surface-hover: #444;
   --bg-inset: #000;
+  --bg-input: #1c1d20;
+  --bg-input-disabled: #2b2e32;
+  --bg-video: #000;
 
   /* Borders */
   --border-subtle: #444;
+  /* Form control / component boundaries, >= 3:1 against --bg-input */
+  --border-strong: #6c757d;
 
-  /* Accent (blue) */
+  /* Accent (blue). --accent is the fill; --on-accent is the text/icon color
+     used on top of any accent fill (>= 4.5:1 for --accent, --accent-hover and
+     --accent-pressed). --accent-text-d/-l are accent-colored text for dark and
+     light surfaces; use the derived --accent-text. */
   --accent: #0d6efd;
-  --accent-hover: #007bff;
-  --accent-strong: #0048ff;
-  --accent-pressed: #0b5ed7;
+  --accent-rgb: 13, 110, 253;
+  --accent-hover: #0b5ed7;
+  --accent-strong: #0a58ca;
+  --accent-pressed: #0a53be;
+  --on-accent: #ffffff;
+  --accent-text-d: #6ea8fe;
+  --accent-text-l: #0a58ca;
   --focus-ring: rgba(13, 110, 253, 0.7);
+  --switch-thumb-on: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+  --check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
 
   /* Status */
   --color-favorite: #ffc107;
-  --color-danger: #dc3545;
+  --color-danger: #ff8080;
+  --color-success: #4ade80;
 
   /* Text */
   --text-primary: #ffffff;
   --text-secondary: #ced4da;
+  --text-placeholder: #9aa1a9;
 
-  /* Radii */
+  /* Theme-dependent control art */
+  --select-caret: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ced4da' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --switch-thumb: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23adb5bd'/%3e%3c/svg%3e");
+  --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.38);
+
+  /* Radii: base scale ... */
   --radius-sm: 0.25rem;
   --radius-md: 10px;
   --radius-lg: 22px;
+  /* ... and per component type */
+  --radius-control: 0.375rem; /* buttons, inputs, selects, small icon buttons */
+  --radius-tile: var(--radius-sm); /* channel tiles, list rows */
+  --radius-card: var(--radius-md); /* settings groups, source tiles, EPG items */
+  --radius-nav: 0.5rem; /* sidebar / settings navigation items */
+  --radius-toast: var(--radius-md);
+  --radius-modal: var(--radius-lg);
+  --radius-pill: 999px;
+
+  /* Type scale */
+  --fs-2xs: 0.7rem;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
 
   /* Icon sizes */
   --icon-size-sm: 1.25rem;
@@ -44,6 +86,13 @@
   --icon-size-md: 1.75rem;
   --icon-size-lg: 2.5rem;
   --icon-size-xl: 3rem;
+
+  /* Stacking order (Bootstrap: modal backdrop 1050, modal 1055, tooltip 1080) */
+  --z-sidebar: 100;
+  --z-floating: 1000; /* scroll-to-top */
+  --z-download: 1030;
+  --z-player: 1040;
+  --z-overlay: 1060; /* CDK overlay: mat-menu context menus */
 
   /* Motion */
   --transition-fast: 0.3s ease;
@@ -53,75 +102,410 @@
 /* ---------------------------------------------------------------------------
    Themes (default :root = dark)
    --------------------------------------------------------------------------- */
-body[data-theme="light"] {
+[data-theme="light"] {
+  color-scheme: light;
   --bg-app: #f5f6f8;
   --bg-surface: #ffffff;
   --bg-surface-alt: #eceef2;
   --bg-surface-hover: #e2e5ea;
   --bg-inset: #d8dbe0;
+  --bg-input: #ffffff;
+  --bg-input-disabled: #e9ecef;
   --border-subtle: rgba(20, 24, 40, 0.15);
+  --border-strong: #8a93a0;
   --text-primary: #1a1c20;
   --text-secondary: #5c6470;
+  --text-placeholder: #6b7280;
+  --color-favorite: #b45309;
+  --color-danger: #b02a37;
+  --color-success: #166534;
+  --select-caret: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%235c6470' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  --switch-thumb: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%236b7280'/%3e%3c/svg%3e");
+  --scrollbar-thumb: rgba(20, 24, 40, 0.25);
+  --scrollbar-thumb-hover: rgba(20, 24, 40, 0.4);
 }
 
-body[data-theme="oled"] {
+[data-theme="oled"] {
   --bg-app: #000;
   --bg-surface: #0e0e12;
   --bg-surface-alt: #16161a;
   --bg-surface-hover: #1f1f24;
+  --bg-input: #0a0a0d;
+  --bg-input-disabled: #16161a;
+  --border-strong: #5f6670;
 }
 
 /* ---------------------------------------------------------------------------
    Accent variants (default :root = blue)
+   Accents too light for white text use a near-black --on-accent instead.
    --------------------------------------------------------------------------- */
-body[data-accent="purple"] {
+[data-accent="purple"] {
   --accent: #8b5cf6;
+  --accent-rgb: 139, 92, 246;
   --accent-hover: #a78bfa;
-  --accent-strong: #7c3aed;
-  --accent-pressed: #6d28d9;
+  --accent-strong: #9b72f7;
+  --accent-pressed: #9f7aea;
+  --on-accent: #0b0b10;
+  --accent-text-d: #b69cfb;
+  --accent-text-l: #6d28d9;
   --focus-ring: rgba(139, 92, 246, 0.7);
 }
 
-body[data-accent="teal"] {
+[data-accent="teal"] {
   --accent: #14b8a6;
+  --accent-rgb: 20, 184, 166;
   --accent-hover: #2dd4bf;
   --accent-strong: #0d9488;
-  --accent-pressed: #0f766e;
+  --accent-pressed: #0d9488;
+  --on-accent: #0b0d10;
+  --accent-text-d: #2dd4bf;
+  --accent-text-l: #0f766e;
   --focus-ring: rgba(20, 184, 166, 0.7);
 }
 
-body[data-accent="coral"] {
+[data-accent="coral"] {
   --accent: #f4713b;
+  --accent-rgb: 244, 113, 59;
   --accent-hover: #f68a5c;
   --accent-strong: #ea580c;
-  --accent-pressed: #c2410c;
+  --accent-pressed: #ea580c;
+  --on-accent: #0b0d10;
+  --accent-text-d: #fb9a6f;
+  --accent-text-l: #9a3412;
   --focus-ring: rgba(244, 113, 59, 0.7);
 }
 
-body[data-accent="green"] {
+[data-accent="green"] {
   --accent: #22c55e;
+  --accent-rgb: 34, 197, 94;
   --accent-hover: #4ade80;
   --accent-strong: #16a34a;
-  --accent-pressed: #15803d;
+  --accent-pressed: #16a34a;
+  --on-accent: #0b0d10;
+  --accent-text-d: #4ade80;
+  --accent-text-l: #166534;
   --focus-ring: rgba(34, 197, 94, 0.7);
 }
 
+/* Accents with a dark --on-accent also need dark switch thumbs / check marks. */
+[data-accent="purple"],
+[data-accent="teal"],
+[data-accent="coral"],
+[data-accent="green"] {
+  --switch-thumb-on: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%230b0d10'/%3e%3c/svg%3e");
+  --check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%230b0d10' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+
+/* ---------------------------------------------------------------------------
+   Derived tokens. Declared on both html and body (zero specificity) so every
+   var() reference is resolved against the active theme/accent on that
+   element instead of being frozen to the :root (dark) values.
+   --------------------------------------------------------------------------- */
+:where(html, body) {
+  --bg-modal: var(--bg-surface-alt);
+  --accent-text: var(--accent-text-d);
+
+  /* Bootstrap 5.2 globals */
+  --bs-body-bg: var(--bg-app);
+  --bs-body-color: var(--text-primary);
+  --bs-border-color: var(--border-subtle);
+  --bs-primary: var(--accent);
+  --bs-primary-rgb: var(--accent-rgb);
+  --bs-link-color: var(--accent-text);
+  --bs-link-hover-color: var(--accent-text);
+}
+
+:where([data-theme="light"]) {
+  --accent-text: var(--accent-text-l);
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons
+   --------------------------------------------------------------------------- */
 /* Map Bootstrap primary buttons onto the accent tokens so the selected
    accent color applies to .btn-primary as well. */
 .btn-primary {
+  --bs-btn-color: var(--on-accent);
   --bs-btn-bg: var(--accent);
   --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-color: var(--on-accent);
   --bs-btn-hover-bg: var(--accent-hover);
   --bs-btn-hover-border-color: var(--accent-hover);
+  --bs-btn-active-color: var(--on-accent);
   --bs-btn-active-bg: var(--accent-pressed);
   --bs-btn-active-border-color: var(--accent-pressed);
+  --bs-btn-disabled-color: var(--on-accent);
   --bs-btn-disabled-bg: var(--accent);
   --bs-btn-disabled-border-color: var(--accent);
   --bs-btn-focus-shadow-rgb: none;
 }
 
-.btn-primary:focus-visible {
+.btn-outline-primary {
+  --bs-btn-color: var(--accent-text);
+  --bs-btn-border-color: var(--accent);
+  --bs-btn-hover-color: var(--on-accent);
+  --bs-btn-hover-bg: var(--accent);
+  --bs-btn-hover-border-color: var(--accent);
+  --bs-btn-active-color: var(--on-accent);
+  --bs-btn-active-bg: var(--accent-pressed);
+  --bs-btn-active-border-color: var(--accent-pressed);
+  --bs-btn-disabled-color: var(--accent-text);
+  --bs-btn-disabled-border-color: var(--accent);
+  --bs-btn-focus-shadow-rgb: none;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-border-color: var(--border-strong);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-hover-bg: var(--bg-surface-hover);
+  --bs-btn-hover-border-color: var(--border-strong);
+  --bs-btn-active-color: var(--text-primary);
+  --bs-btn-active-bg: var(--bg-surface-hover);
+  --bs-btn-active-border-color: var(--border-strong);
+  --bs-btn-disabled-color: var(--text-secondary);
+  --bs-btn-disabled-border-color: var(--border-subtle);
+  --bs-btn-focus-shadow-rgb: none;
+}
+
+.btn-link {
+  --bs-btn-color: var(--accent-text);
+  --bs-btn-hover-color: var(--accent-text);
+  --bs-btn-active-color: var(--accent-text);
+  --bs-btn-disabled-color: var(--text-secondary);
+  --bs-btn-focus-shadow-rgb: none;
+}
+
+.btn-primary:focus-visible,
+.btn-outline-primary:focus-visible,
+.btn-outline-secondary:focus-visible,
+.btn-link:focus-visible {
   box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+/* Borderless, focusable icon button (EPG actions, eye toggles, ...). */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem;
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-primary);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+}
+
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+}
+
+.icon-btn:disabled,
+.icon-btn[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.icon-btn > svg {
+  width: var(--icon-size-base);
+  height: var(--icon-size-base);
+  fill: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+   Form controls (Bootstrap 5.2 hard-codes light colors; re-skin with tokens)
+   --------------------------------------------------------------------------- */
+.form-control,
+.form-select {
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+  border-color: var(--border-strong);
+  border-radius: var(--radius-control);
+}
+
+.form-select {
+  background-image: var(--select-caret);
+  background-position: right 0.75rem center;
+}
+
+[dir="rtl"] .form-select {
+  padding-right: 0.75rem;
+  padding-left: 2.25rem;
+  background-position: left 0.75rem center;
+}
+
+.form-select option {
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+}
+
+.form-control:focus,
+.form-select:focus {
+  color: var(--text-primary);
+  background-color: var(--bg-input);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+.form-control::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  color: var(--text-secondary);
+  background-color: var(--bg-input-disabled);
+  border-color: var(--border-subtle);
+  opacity: 1;
+}
+
+.form-control::-webkit-file-upload-button {
+  color: var(--text-primary);
+  background-color: var(--bg-surface-hover);
+}
+
+.input-group-text {
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-alt);
+  border-color: var(--border-strong);
+}
+
+.form-label,
+.form-check-label {
+  color: var(--text-primary);
+}
+
+.form-text {
+  color: var(--text-secondary);
+}
+
+/* Checkboxes, radios and switches */
+.form-check {
+  padding-left: 0;
+  padding-inline-start: 1.5em;
+}
+
+.form-check .form-check-input {
+  float: inline-start;
+  margin-left: 0;
+  margin-inline-start: -1.5em;
+}
+
+.form-check-input {
+  background-color: var(--bg-input);
+  border-color: var(--border-strong);
+  cursor: pointer;
+}
+
+.form-check-input:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.form-check-input:checked[type="checkbox"] {
+  background-image: var(--check-mark);
+}
+
+.form-check-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+.form-check-input:disabled {
+  opacity: 0.45;
+}
+
+.form-switch {
+  padding-inline-start: 2.75em;
+}
+
+.form-switch .form-check-input,
+.form-switch .form-check-input:focus {
+  width: 2.25em;
+  height: 1.25em;
+  margin-top: 0.125em;
+  margin-inline-start: -2.75em;
+  background-image: var(--switch-thumb);
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-strong);
+  transition:
+    background-position 0.15s ease-in-out,
+    background-color 0.15s ease-in-out;
+}
+
+.form-switch .form-check-input:checked {
+  background-image: var(--switch-thumb-on);
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+[dir="rtl"] .form-switch .form-check-input {
+  background-position: right center;
+}
+
+[dir="rtl"] .form-switch .form-check-input:checked {
+  background-position: left center;
+}
+
+/* A bare switch without an inline label (the label lives elsewhere and is
+   linked via for/id), e.g. the settings rows. */
+.form-switch.form-switch-standalone {
+  display: inline-flex;
+  align-items: center;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.form-switch.form-switch-standalone .form-check-input {
+  float: none;
+  margin: 0;
+}
+
+/* Range */
+.form-range::-webkit-slider-runnable-track {
+  background-color: var(--bg-surface-hover);
+}
+
+.form-range::-moz-range-track {
+  background-color: var(--bg-surface-hover);
+}
+
+.form-range::-webkit-slider-thumb {
+  background-color: var(--accent);
+}
+
+.form-range::-moz-range-thumb {
+  background-color: var(--accent);
+}
+
+.form-range::-webkit-slider-thumb:active {
+  background-color: var(--accent-hover);
+}
+
+.form-range:focus::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 1px var(--bg-app),
+    0 0 0 0.25rem var(--focus-ring);
+}
+
+.form-range:focus::-moz-range-thumb {
+  box-shadow:
+    0 0 0 1px var(--bg-app),
+    0 0 0 0.25rem var(--focus-ring);
+}
+
+/* Bootstrap's grey .text-secondary is ~2.5:1 on the dark surfaces. */
+.text-secondary {
+  color: var(--text-secondary) !important;
 }
 
 body {
@@ -135,19 +519,44 @@ body[data-theme="light"] .btn-close-white {
   filter: none;
 }
 
+/* ---------------------------------------------------------------------------
+   Overlays: CDK (mat-menu) above the player and modals
+   --------------------------------------------------------------------------- */
+.cdk-overlay-container {
+  z-index: var(--z-overlay);
+}
+
 /* Angular Material menus (context menus) ship with the prebuilt dark theme;
    re-skin them with the design tokens so they follow the active theme. */
 .mat-mdc-menu-panel {
   background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control) !important;
 }
 
 .mat-mdc-menu-item .mat-mdc-menu-item-text,
 .mat-mdc-menu-item {
   color: var(--text-primary) !important;
+  font-size: var(--fs-md) !important;
 }
 
-.mat-mdc-menu-item:hover:not([disabled]) {
+.mat-mdc-menu-item:hover:not([disabled]),
+.mat-mdc-menu-item.cdk-keyboard-focused,
+.mat-mdc-menu-item.cdk-program-focused {
   background-color: var(--bg-surface-hover) !important;
+}
+
+.mat-mdc-menu-item.menu-item-danger,
+.mat-mdc-menu-item.menu-item-danger .mat-mdc-menu-item-text {
+  color: var(--color-danger) !important;
+}
+
+.mat-mdc-menu-item > svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  margin-inline-end: 0.75rem;
+  fill: currentColor;
+  flex-shrink: 0;
 }
 
 .help-modal__container {
@@ -168,9 +577,23 @@ body[data-theme="light"] .btn-close-white {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Modals
+   --------------------------------------------------------------------------- */
+.modal {
+  --bs-modal-bg: var(--bg-modal);
+  --bs-modal-color: var(--text-primary);
+  --bs-modal-border-color: var(--border-subtle);
+  --bs-modal-header-border-color: var(--border-subtle);
+  --bs-modal-footer-border-color: var(--border-subtle);
+  --bs-modal-border-radius: var(--radius-modal);
+  --bs-modal-inner-border-radius: calc(var(--radius-modal) - 1px);
+}
+
 .modal-content {
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-modal) !important;
   background-color: var(--bg-modal);
+  color: var(--text-primary);
 }
 
 .selectable {
@@ -183,11 +606,14 @@ p {
 }
 
 .bs-col-padding {
-  padding-left: 1rem !important;
+  padding-inline-start: 1rem !important;
 }
 
+/* Reserve the scrollbar gutter (no layout shift) without forcing an empty
+   track on short pages. */
 html {
-  overflow-y: scroll;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 html,
@@ -199,6 +625,37 @@ body {
 body {
   margin: 0;
   font-family: "Roboto", sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Scrollbars (thin, themed)
+   --------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -244,7 +701,7 @@ body {
   position: relative;
   overflow: hidden;
   background-color: var(--bg-surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-tile);
 }
 
 .skeleton::after {
@@ -252,23 +709,13 @@ body {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.07),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
 /* White shimmer is invisible on light surfaces — use a dark one instead. */
 body[data-theme="light"] .skeleton::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(20, 24, 40, 0.06),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(20, 24, 40, 0.06), transparent);
 }
 
 @keyframes skeleton-shimmer {
@@ -281,7 +728,7 @@ body[data-theme="light"] .skeleton::after {
 .skeleton-tile {
   height: 4.5em;
   width: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-tile);
 }
 
 /* ---------------------------------------------------------------------------
@@ -298,6 +745,140 @@ body[data-theme="light"] .skeleton::after {
 }
 
 /* ---------------------------------------------------------------------------
+   Floating elements bottom-inline-end: the scroll-to-top button moves beside
+   the download manager while it is shown, so the two never overlap.
+   --------------------------------------------------------------------------- */
+:root {
+  --download-box-width: min(340px, calc(100vw - 2rem));
+  --scroll-top-inline-end: 2rem;
+}
+
+body:has(app-download-manager) {
+  --scroll-top-inline-end: calc(var(--download-box-width) + 2rem);
+}
+
+/* Too narrow to sit side by side: move scroll-to-top to the other edge. */
+@media (max-width: 575.98px) {
+  body:has(app-download-manager) {
+    --scroll-top-inline-end: calc(100% - var(--icon-size-xl) - 1rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Navigation items, shared by the home sidebar (.nav-item.active) and the
+   settings navigation (.nav-item--active). Layout tweaks stay in the
+   component stylesheets.
+   --------------------------------------------------------------------------- */
+.sidebar .nav-item,
+.settings-nav .nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-nav);
+  font-size: var(--fs-md);
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.sidebar .nav-item svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.sidebar .nav-item:hover,
+.sidebar .nav-item.active,
+.settings-nav .nav-item:hover,
+.settings-nav .nav-item--active {
+  background-color: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.sidebar .nav-item.active,
+.settings-nav .nav-item--active {
+  font-weight: 600;
+}
+
+/* Accent indicator bar on the inline-start edge (mirrors in RTL). */
+.sidebar .nav-item.active::before,
+.settings-nav .nav-item--active::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.4rem;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 3px;
+  background-color: var(--accent);
+}
+
+.sidebar .nav-item:focus-visible,
+.settings-nav .nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+}
+
+/* Home "scroll to top" button, bottom inline-end corner. It moves beside the
+   download manager while that is shown (--scroll-top-inline-end above). */
+.scroll-to-top {
+  position: fixed;
+  bottom: 2rem;
+  inset-inline-end: var(--scroll-top-inline-end, 2rem);
+  width: var(--icon-size-xl);
+  height: var(--icon-size-xl);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: var(--z-floating);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s,
+    inset-inline-end 0.2s ease;
+  animation: scroll-top-pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.scroll-to-top:hover {
+  transform: scale(1.1);
+  background-color: var(--accent-hover);
+}
+
+.scroll-to-top:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.25rem var(--focus-ring);
+}
+
+.scroll-to-top svg {
+  width: 2rem;
+  height: 2rem;
+  color: var(--on-accent);
+}
+
+@keyframes scroll-top-pop-in {
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Toasts (ngx-toastr) — modern, top-right, accent-colored
    --------------------------------------------------------------------------- */
 .toast-container {
@@ -306,10 +887,11 @@ body[data-theme="light"] .skeleton::after {
 
 .toast-container .ngx-toastr {
   width: 340px;
+  max-width: calc(100vw - 24px);
   padding: 13px 40px 13px 16px;
-  border-radius: 12px;
+  border-radius: var(--radius-toast);
   border: 1px solid var(--border-subtle);
-  border-left: 3px solid var(--accent);
+  border-inline-start: 3px solid var(--accent);
   background: var(--bg-surface-alt);
   background-image: none !important;
   color: var(--text-primary);
@@ -326,14 +908,16 @@ body[data-theme="light"] .skeleton::after {
 }
 
 .toast-container .ngx-toastr .toast-title {
+  font-size: var(--fs-md);
   font-weight: 500;
   margin-bottom: 2px;
 }
 
 .toast-container .ngx-toastr .toast-message {
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .toast-container .ngx-toastr .toast-close-button {
@@ -349,23 +933,36 @@ body[data-theme="light"] .skeleton::after {
   opacity: 1;
 }
 
+/* While the embedded player is open the native video window covers
+   everything left of the 300px channel list (player.component.css). The
+   toasts must fit inside that list: 12px inset + 276px toast = 288px. */
+body.player-open .toast-top-right {
+  top: 12px;
+  right: 12px;
+}
+
+body.player-open .toast-container .ngx-toastr {
+  width: 276px;
+  max-width: 276px;
+}
+
 /* Semantic accents: success/info use the current accent, error/warning their tokens */
 .toast-container .toast-success,
 .toast-container .toast-info {
-  border-left-color: var(--accent);
+  border-inline-start-color: var(--accent);
 }
 .toast-container .toast-error {
-  border-left-color: var(--color-danger);
+  border-inline-start-color: var(--color-danger);
 }
 .toast-container .toast-warning {
-  border-left-color: var(--color-favorite);
+  border-inline-start-color: var(--color-favorite);
 }
 
 .toast-container .toast-progress {
   height: 3px;
   opacity: 0.9;
   background: var(--accent);
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 var(--radius-toast) var(--radius-toast);
 }
 .toast-container .toast-error .toast-progress {
   background: var(--color-danger);

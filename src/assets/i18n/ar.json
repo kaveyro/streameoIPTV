@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "استعراض",
     "CHANGE": "تغيير",
-    "GO_BACK": "رجوع"
+    "GO_BACK": "رجوع",
+    "SHOW_PASSWORD": "إظهار كلمة المرور",
+    "HIDE_PASSWORD": "إخفاء كلمة المرور"
   },
   "MODAL": {
     "CLOSE": "إغلاق",
@@ -109,7 +111,10 @@
     "GO_LEFT": "لليسار",
     "GO_RIGHT": "لليمين",
     "GO_UP": "للأعلى",
-    "GO_DOWN": "للأسفل"
+    "GO_DOWN": "للأسفل",
+    "TILE_ACTIONS": "إجراءات القناة",
+    "TOGGLE_FAVORITE": "إضافة القناة المحددة إلى المفضلة أو إزالتها منها",
+    "OPEN_CONTEXT_MENU": "فتح قائمة القناة المحددة (أو باستخدام مفتاح القائمة)"
   },
   "SETTINGS": {
     "TITLE": "الإعدادات",
@@ -164,7 +169,12 @@
       "ACCENT": "لون التمييز",
       "ACCENT_DESC": "لون التمييز المستخدم للأزرار وعناصر التحكم التفاعلية.",
       "SHOW_SOURCE": "إظهار اسم قائمة التشغيل على القنوات",
-      "SHOW_SOURCE_DESC": "يعرض اسم المصدر/قائمة التشغيل أسفل كل عنوان قناة وبرنامج."
+      "SHOW_SOURCE_DESC": "يعرض اسم المصدر/قائمة التشغيل أسفل كل عنوان قناة وبرنامج.",
+      "ACCENT_BLUE": "أزرق",
+      "ACCENT_PURPLE": "بنفسجي",
+      "ACCENT_TEAL": "أزرق مخضر",
+      "ACCENT_CORAL": "مرجاني",
+      "ACCENT_GREEN": "أخضر"
     },
     "PLAYBACK": {
       "CACHING": "استخدام التخزين المؤقت للبث",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "لغة الصوت المفضّلة",
       "LANG_DESC": "رموز ISO 639 التي يجب أن يختارها mpv افتراضيًا. افصل البدائل بفواصل، مع البدء بالأعلى أولوية.",
       "MPV_PARAMS": "معطيات mpv العامة",
-      "MPV_PARAMS_DESC": "معطيات التشغيل المطبَّقة على كل قناة. اتركها فارغة ما لم تكن تعرف ما تفعله."
+      "MPV_PARAMS_DESC": "معطيات التشغيل المطبَّقة على كل قناة. اتركها فارغة ما لم تكن تعرف ما تفعله.",
+      "LANG_PLACEHOLDER": "مثال: ar,en",
+      "MPV_PARAMS_PLACEHOLDER": "مثال: --hwdec=auto",
+      "DEBUG_LOG": "كتابة سجل المشغّل",
+      "DEBUG_LOG_DESC": "لاستكشاف الأخطاء فقط: يسجّل mpv.log في مجلد السجلات كل عنوان بث، بما في ذلك بيانات الدخول الموجودة فيه. يسري عند فتح المشغّل في المرة التالية."
     },
     "RECORDING": {
       "PATH": "مسار التسجيل",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "إضافة مصدر مخصّص",
     "IMPORT_CUSTOM": "استيراد مصدر مخصّص",
     "DELETE_ALL_DATA": "حذف كل بيانات التطبيق",
-    "SELECT_EXPORT_FILE": "حدد ملف تصدير streameoIPTV ‏(.otvp)"
+    "SELECT_EXPORT_FILE": "حدد ملف تصدير streameoIPTV ‏(.otvp)",
+    "URL": "الرابط",
+    "XTREAM_URL_HINT": "عنوان الخادم بالصيغة http://host:port",
+    "INVALID_URL": "\"{{url}}\" ليس عنوان URL صالحًا. تحقّق من عدم وجود مسافات أو أخطاء كتابية.",
+    "URL_PLACEHOLDER": "عنوان URL"
   },
   "EPG": {
     "PLAYING_NOW": "يُعرض الآن",
     "SCHEDULE_RECORDING": "جدولة تسجيل",
-    "CANCEL_SCHEDULED": "إلغاء التسجيل المجدول"
+    "CANCEL_SCHEDULED": "إلغاء التسجيل المجدول",
+    "PREV_DAY": "اليوم السابق",
+    "NEXT_DAY": "اليوم التالي",
+    "NO_PROGRAMMES": "لا توجد برامج في هذا اليوم",
+    "WATCH_CATCHUP": "مشاهدة من الأرشيف",
+    "DOWNLOAD_CATCHUP": "تنزيل من الأرشيف",
+    "NOTIFY_ON": "نبّهني عند البدء",
+    "NOTIFY_OFF": "إيقاف التنبيه"
   },
   "RESTREAM": {
     "TITLE": "إعادة البث: {{name}}",
@@ -290,7 +315,8 @@
     "START": "بدء",
     "WATCH": "مشاهدة",
     "SHARE": "مشاركة",
-    "STOP": "إيقاف"
+    "STOP": "إيقاف",
+    "NETWORK_UNAVAILABLE": "معلومات الشبكة غير متاحة، لذا لا يمكن بدء إعادة البث."
   },
   "DOWNLOAD": {
     "TITLE": "التنزيلات",
@@ -409,7 +435,11 @@
     "SHARE": "مشاركة",
     "IMPORT_CHANNEL_GROUP": "استيراد قناة/مجموعة",
     "EXPIRES": "ينتهي في {{date}}",
-    "EXPIRED": "انتهى في {{date}}"
+    "EXPIRED": "انتهى في {{date}}",
+    "ENABLED": "مُفعّل",
+    "MORE_ACTIONS": "إجراءات أخرى",
+    "SHOW_USERNAME": "إظهار اسم المستخدم",
+    "HIDE_USERNAME": "إخفاء اسم المستخدم"
   },
   "DIALOG": {
     "SAVE_RECORDING": "حدد مكان حفظ التسجيل",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "حدد مكان حفظ catchback",
     "SAVE_FAVORITES": "حدد مكان حفظ المفضلة",
     "SELECT_FAVS_BACKUP": "حدد نسخة احتياطية للمفضلة",
-    "SELECT_M3U": "حدد ملف m3u جديدًا للمصدر"
+    "SELECT_M3U": "حدد ملف m3u جديدًا للمصدر",
+    "FILTER_FAVS_BACKUP": "نسخة احتياطية للمفضلة",
+    "FILTER_STREAMEO_EXPORT": "ملف تصدير streameoIPTV"
   },
   "TOAST": {
     "SOURCES_UPDATED": "تم تحديث كل المصادر بنجاح",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "لديك أحدث إصدار",
     "UPDATE_DOWNLOADING": "جارٍ تنزيل الإصدار {{version}}...",
     "UPDATE_INSTALLED": "تم تثبيت التحديث، جارٍ إعادة التشغيل",
-    "UPDATE_FAILED": "فشل البحث عن التحديثات"
+    "UPDATE_FAILED": "فشل البحث عن التحديثات",
+    "ERROR_MORE_INFO": "{{message}}. انقر هنا لمزيد من المعلومات",
+    "ERROR_GENERIC_MORE_INFO": "حدث خطأ. انقر هنا لمزيد من المعلومات",
+    "UPDATE_INSTALL_FAILED": "تعذّر تثبيت التحديث",
+    "UPDATE_RELAUNCH_FAILED": "تم تثبيت التحديث، لكن تعذّر إعادة تشغيل التطبيق. يُرجى إعادة تشغيله يدويًا",
+    "NETWORK_INFO_FAILED": "تعذّرت قراءة معلومات الشبكة",
+    "SETTINGS_SAVED": "تم الحفظ",
+    "SETTINGS_SAVE_FAILED": "تعذّر حفظ الإعدادات"
   },
   "UPDATE": {
     "TITLE": "يتوفر تحديث",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "يُعاد تشغيل التطبيق بعد تثبيت التحديث.",
     "INSTALL": "ثبّت الآن",
     "LATER": "لاحقًا"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "المشاهدة اللاحقة متاحة",
+    "IS_FAVORITE": "في المفضلة"
+  },
+  "LOADING": {
+    "CHANNELS": "جارٍ تحميل قنواتك..."
+  },
+  "TIME": {
+    "JUST_NOW": "الآن"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "إلغاء جميع التنزيلات؟",
+    "CANCEL_DOWNLOADS_BODY": "سيتم إلغاء {{count}} من التنزيلات المنتظرة أو الجارية.",
+    "DELETE_SOURCE_TITLE": "حذف المصدر؟",
+    "DELETE_SOURCE_BODY": "ستتم إزالة المصدر \"{{name}}\" مع جميع قنواته وفئاته ومفضلاته وسجله. لا يمكن التراجع عن ذلك.",
+    "CLEAR_HISTORY_TITLE": "مسح السجل؟",
+    "CLEAR_HISTORY_BODY": "ستتم إزالة جميع القنوات من قائمة المشاهدة مؤخرًا. لا يمكن التراجع عن ذلك.",
+    "DELETE_CHANNEL_TITLE": "حذف القناة؟",
+    "DELETE_CHANNEL_BODY": "سيتم حذف القناة \"{{name}}\" نهائيًا.",
+    "DELETE_CATEGORY_TITLE": "حذف الفئة؟",
+    "DELETE_CATEGORY_BODY": "سيتم حذف الفئة \"{{name}}\" نهائيًا."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "العودة إلى القنوات",
+    "CHANNELS": "القنوات",
+    "FULLSCREEN": "ملء الشاشة",
+    "EXIT_FULLSCREEN": "الخروج من ملء الشاشة",
+    "NEXT": "التالي",
+    "PROGRAMME_PROGRESS": "تقدّم البرنامج",
+    "FILTER_PLACEHOLDER": "تصفية القنوات...",
+    "FILTER_CHANNELS": "تصفية قائمة القنوات"
   }
 }

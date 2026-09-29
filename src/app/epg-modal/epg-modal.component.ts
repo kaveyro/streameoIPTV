@@ -1,5 +1,6 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, ElementRef, OnInit } from "@angular/core";
 import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
+import { TranslateService } from "@ngx-translate/core";
 import { EPG } from "../models/epg";
 import { ScheduledRecording } from "../models/scheduledRecording";
 import { invoke } from "@tauri-apps/api/core";
@@ -22,15 +23,20 @@ export class EpgModalComponent implements OnInit {
   constructor(
     public activeModal: NgbActiveModal,
     private memory: MemoryService,
-  ) { }
+    private translate: TranslateService,
+    private host: ElementRef<HTMLElement>,
+  ) {}
 
   ngOnInit() {
-    invoke("get_epg_ids").then((x) => {
-      let set = new Set(x as Array<string>);
-      this.memory.Watched_epgs = set;
-    });
+    invoke("get_epg_ids")
+      .then((x) => {
+        let set = new Set(x as Array<string>);
+        this.memory.Watched_epgs = set;
+      })
+      .catch((e) => console.error(e));
     this.loadScheduledRecordings();
     this.filterEPGs();
+    this.scrollToNowPlaying();
   }
 
   async loadScheduledRecordings() {
@@ -51,13 +57,22 @@ export class EpgModalComponent implements OnInit {
     return this.scheduledRecordings.get(epg.start_timestamp);
   }
 
+  /** Date of the shown day, formatted in the active UI language. */
   getFormattedDate() {
-    return this.currentDate
-      .toLocaleDateString("en-US", {
+    const lang = this.translate.currentLang || this.translate.defaultLang || undefined;
+    try {
+      return this.currentDate.toLocaleDateString(lang, {
+        weekday: "short",
         month: "long",
         day: "numeric",
-      })
-      .replace(",", "");
+      });
+    } catch {
+      return this.currentDate.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "long",
+        day: "numeric",
+      });
+    }
   }
 
   prev() {
@@ -82,5 +97,15 @@ export class EpgModalComponent implements OnInit {
       d1.getMonth() === d2.getMonth() &&
       d1.getDate() === d2.getDate()
     );
+  }
+
+  /** Brings the currently airing programme into view once the list rendered. */
+  private scrollToNowPlaying() {
+    if (!this.filteredEPGs.some((x) => x.now_playing)) return;
+    // Wait for the list to render and the modal open animation to settle.
+    setTimeout(() => {
+      const current = this.host.nativeElement.querySelector<HTMLElement>(".epg-entry--now");
+      current?.scrollIntoView({ block: "center", behavior: "auto" });
+    }, 150);
   }
 }

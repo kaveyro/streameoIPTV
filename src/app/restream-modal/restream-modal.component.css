@@ -1,12 +1,12 @@
 .notice {
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   color: var(--text-secondary);
 }
 
 .box {
-  background-color: var(--bg-inset); /* Dark background similar to a code editor */
-  padding: 10px; /* Add padding for readability */
-  border-radius: var(--radius-sm); /* Rounded corners (optional) */
+  background-color: var(--bg-inset);
+  padding: 10px;
+  border-radius: var(--radius-sm);
 }
 
 button .icon {

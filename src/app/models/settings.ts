@@ -25,4 +25,5 @@ export class Settings {
   language?: string;
   show_channel_source?: boolean;
   auto_update?: boolean;
+  mpv_debug_log?: boolean;
 }

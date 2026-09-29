@@ -4,31 +4,103 @@
   <div #videoHost class="video-host"></div>
 
   <div class="player-bar" *ngIf="!fullscreen">
-    <button type="button" class="pbtn" (click)="back()" title="Back to channels">
+    <button
+      type="button"
+      class="pbtn"
+      (click)="back()"
+      [title]="'PLAYER.BACK_TO_CHANNELS' | translate"
+      [attr.aria-label]="'PLAYER.BACK_TO_CHANNELS' | translate"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="currentColor"
-          d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
+        <path
+          fill="currentColor"
+          d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"
+        />
       </svg>
-      <span>Channels</span>
+      <span>{{ "PLAYER.CHANNELS" | translate }}</span>
     </button>
     <span class="ptitle" [title]="current?.name">{{ current?.name }}</span>
-    <button type="button" class="pbtn" (click)="toggleFullscreen()"
-      [title]="fullscreen ? 'Exit fullscreen' : 'Fullscreen'">
+    <div class="pnow" *ngIf="nowPlaying">
+      <span class="pnow-title" [title]="nowPlaying.title">
+        <span class="pnow-time"
+          >{{ formatTime(nowPlaying.start_timestamp) }}–{{
+            formatTime(nowPlaying.end_timestamp)
+          }}</span
+        >
+        {{ nowPlaying.title }}
+      </span>
+      <div
+        class="pnow-track"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        [attr.aria-valuenow]="nowProgress | number: '1.0-0'"
+        [attr.aria-label]="'PLAYER.PROGRAMME_PROGRESS' | translate"
+      >
+        <div class="pnow-fill" [style.width.%]="nowProgress"></div>
+      </div>
+      <span class="pnow-next" *ngIf="nowPlaying.next" [title]="nowPlaying.next.title">
+        {{ "PLAYER.NEXT" | translate }}: {{ formatTime(nowPlaying.next.start_timestamp) }}
+        {{ nowPlaying.next.title }}
+      </span>
+    </div>
+    <button
+      type="button"
+      class="pbtn"
+      (click)="toggleFullscreen()"
+      [title]="(fullscreen ? 'PLAYER.EXIT_FULLSCREEN' : 'PLAYER.FULLSCREEN') | translate"
+      [attr.aria-label]="(fullscreen ? 'PLAYER.EXIT_FULLSCREEN' : 'PLAYER.FULLSCREEN') | translate"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path *ngIf="!fullscreen" fill="currentColor"
-          d="M5,5H10V7H7V10H5V5M14,5H19V10H17V7H14V5M17,14H19V19H14V17H17V14M10,17V19H5V14H7V17H10Z" />
-        <path *ngIf="fullscreen" fill="currentColor"
-          d="M14,14H19V16H16V19H14V14M5,14H10V19H8V16H5V14M8,5H10V10H5V8H8V5M19,8V10H14V5H16V8H19Z" />
+        <path
+          *ngIf="!fullscreen"
+          fill="currentColor"
+          d="M5,5H10V7H7V10H5V5M14,5H19V10H17V7H14V5M17,14H19V19H14V17H17V14M10,17V19H5V14H7V17H10Z"
+        />
+        <path
+          *ngIf="fullscreen"
+          fill="currentColor"
+          d="M14,14H19V16H16V19H14V14M5,14H10V19H8V16H5V14M8,5H10V10H5V8H8V5M19,8V10H14V5H16V8H19Z"
+        />
       </svg>
     </button>
   </div>
 
-  <aside class="player-list" *ngIf="!fullscreen">
-    <div class="player-list-item" *ngFor="let ch of channels"
-      [class.active]="ch.id === current?.id" (click)="switch(ch)" [title]="ch.name">
-      <img *ngIf="ch.image" [src]="ch.image" class="pli-logo" alt=""
-        onerror="this.style.visibility='hidden'" />
+  <aside
+    class="player-list"
+    *ngIf="!fullscreen"
+    #playerList
+    [attr.aria-label]="'PLAYER.CHANNELS' | translate"
+  >
+    <input
+      type="search"
+      class="player-list-search form-control form-control-sm"
+      autocomplete="off"
+      [(ngModel)]="filterText"
+      [placeholder]="'PLAYER.FILTER_PLACEHOLDER' | translate"
+      [attr.aria-label]="'PLAYER.FILTER_CHANNELS' | translate"
+    />
+    <button
+      type="button"
+      class="player-list-item"
+      *ngFor="let ch of visibleChannels; trackBy: trackById"
+      [class.active]="ch.id === current?.id"
+      [attr.aria-current]="ch.id === current?.id ? 'true' : null"
+      [attr.aria-label]="ch.name"
+      (click)="switch(ch)"
+      [title]="ch.name"
+    >
+      <img
+        *ngIf="ch.image"
+        [src]="ch.image"
+        class="pli-logo"
+        alt=""
+        onerror="this.style.visibility = 'hidden'"
+      />
       <span class="pli-name">{{ ch.name }}</span>
+    </button>
+    <div class="player-list-empty" *ngIf="visibleChannels.length === 0">
+      {{ "EMPTY.NO_CHANNELS_FOUND" | translate }}
     </div>
   </aside>
 </div>

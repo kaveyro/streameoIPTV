@@ -1,30 +1,33 @@
 <div class="modal-header">
-  <h4 class="modal-title lbl">{{ 'RESTREAM.TITLE' | translate:{ name: channel?.name } }}</h4>
+  <h4 class="modal-title lbl">{{ "RESTREAM.TITLE" | translate: { name: channel?.name } }}</h4>
 </div>
 <div class="modal-body">
   <div *ngIf="!started">
-    <p>{{ 'RESTREAM.INTRO1' | translate }}</p>
+    <p *ngIf="networkError" class="text-danger" role="alert">
+      {{ "RESTREAM.NETWORK_UNAVAILABLE" | translate }}
+    </p>
+    <p>{{ "RESTREAM.INTRO1" | translate }}</p>
     <br />
-    <p>{{ 'RESTREAM.INTRO2' | translate }}</p>
+    <p>{{ "RESTREAM.INTRO2" | translate }}</p>
   </div>
   <div *ngIf="started" class="selectable box mt-3">
-    <p>{{ 'RESTREAM.RUNNING' | translate }}</p>
+    <p>{{ "RESTREAM.RUNNING" | translate }}</p>
     <br />
-    <p>{{ 'RESTREAM.LOCAL_IPS' | translate }}</p>
+    <p>{{ "RESTREAM.LOCAL_IPS" | translate }}</p>
     <p *ngFor="let local of networkInfo?.local_ips">
       {{ local }}
     </p>
     <br />
-    <p>{{ 'RESTREAM.WAN_ADDRESS' | translate }}</p>
+    <p>{{ "RESTREAM.WAN_ADDRESS" | translate }}</p>
     <p>{{ networkInfo?.wan_ip }}</p>
   </div>
   <div *ngIf="started">
     <br />
-    <p>{{ 'RESTREAM.SHARE_INFO1' | translate }}</p>
+    <p>{{ "RESTREAM.SHARE_INFO1" | translate }}</p>
     <br />
-    <p>{{ 'RESTREAM.SHARE_INFO2' | translate }}</p>
+    <p>{{ "RESTREAM.SHARE_INFO2" | translate }}</p>
     <br />
-    <label for="ip-select">{{ 'RESTREAM.SELECT_IP' | translate }}</label>
+    <label for="ip-select">{{ "RESTREAM.SELECT_IP" | translate }}</label>
     <select [(ngModel)]="selectedIP" id="ip-select" class="form-control">
       <option *ngFor="let local of networkInfo?.local_ips">{{ local }}</option>
       <option>{{ networkInfo?.wan_ip }}</option>
@@ -32,8 +35,13 @@
   </div>
 </div>
 <div class="modal-footer">
-  <button *ngIf="!started" [disabled]="loading" (click)="start()" class="btn btn-primary">
-    <span>{{ 'RESTREAM.START' | translate }}</span>
+  <button
+    *ngIf="!started"
+    [disabled]="loading || !networkInfo"
+    (click)="start()"
+    class="btn btn-primary"
+  >
+    <span>{{ "RESTREAM.START" | translate }}</span>
     <svg
       class="icon ms-1"
       aria-hidden="true"
@@ -52,7 +60,7 @@
     [disabled]="loading || watching"
     *ngIf="started"
   >
-    <span>{{ 'RESTREAM.WATCH' | translate }}</span>
+    <span>{{ "RESTREAM.WATCH" | translate }}</span>
     <svg
       class="icon ms-1"
       aria-hidden="true"
@@ -71,7 +79,7 @@
     [disabled]="loading"
     *ngIf="started"
   >
-    <span>{{ 'RESTREAM.SHARE' | translate }}</span>
+    <span>{{ "RESTREAM.SHARE" | translate }}</span>
     <svg
       class="icon ms-1"
       aria-hidden="true"
@@ -90,7 +98,7 @@
     [disabled]="loading"
     (click)="stop()"
   >
-    <span>{{ 'RESTREAM.STOP' | translate }}</span>
+    <span>{{ "RESTREAM.STOP" | translate }}</span>
     <svg
       class="icon ms-1"
       aria-hidden="true"
@@ -108,7 +116,7 @@
     class="btn btn-secondary d-inline-flex align-items-center"
     *ngIf="!started"
   >
-    <span>{{ 'MODAL.CLOSE' | translate }}</span>
+    <span>{{ "MODAL.CLOSE" | translate }}</span>
     <svg
       class="icon ms-1"
       aria-hidden="true"

@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "Bladeren",
     "CHANGE": "Wijzigen",
-    "GO_BACK": "Terug"
+    "GO_BACK": "Terug",
+    "SHOW_PASSWORD": "Wachtwoord tonen",
+    "HIDE_PASSWORD": "Wachtwoord verbergen"
   },
   "MODAL": {
     "CLOSE": "Sluiten",
@@ -109,7 +111,10 @@
     "GO_LEFT": "Naar links",
     "GO_RIGHT": "Naar rechts",
     "GO_UP": "Omhoog",
-    "GO_DOWN": "Omlaag"
+    "GO_DOWN": "Omlaag",
+    "TILE_ACTIONS": "Kanaalacties",
+    "TOGGLE_FAVORITE": "Geselecteerd kanaal toevoegen aan/verwijderen uit favorieten",
+    "OPEN_CONTEXT_MENU": "Menu van het geselecteerde kanaal openen (ook met de Menutoets)"
   },
   "SETTINGS": {
     "TITLE": "Instellingen",
@@ -164,7 +169,12 @@
       "ACCENT": "Accentkleur",
       "ACCENT_DESC": "Markeringskleur voor knoppen en interactieve besturingselementen.",
       "SHOW_SOURCE": "Playlistnaam op kanalen tonen",
-      "SHOW_SOURCE_DESC": "Toont de bron-/playlistnaam onder elke kanaal- en programmatitel."
+      "SHOW_SOURCE_DESC": "Toont de bron-/playlistnaam onder elke kanaal- en programmatitel.",
+      "ACCENT_BLUE": "Blauw",
+      "ACCENT_PURPLE": "Paars",
+      "ACCENT_TEAL": "Blauwgroen",
+      "ACCENT_CORAL": "Koraal",
+      "ACCENT_GREEN": "Groen"
     },
     "PLAYBACK": {
       "CACHING": "Streamcaching gebruiken",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "Voorkeurstaal audio",
       "LANG_DESC": "ISO 639-codes die mpv standaard moet kiezen. Scheid alternatieven met komma's, hoogste prioriteit eerst.",
       "MPV_PARAMS": "Globale mpv-parameters",
-      "MPV_PARAMS_DESC": "Opstartparameters die op elk kanaal worden toegepast. Laat leeg tenzij je weet wat je doet."
+      "MPV_PARAMS_DESC": "Opstartparameters die op elk kanaal worden toegepast. Laat leeg tenzij je weet wat je doet.",
+      "LANG_PLACEHOLDER": "bijv. nl,en",
+      "MPV_PARAMS_PLACEHOLDER": "bijv. --hwdec=auto",
+      "DEBUG_LOG": "Spelerlogboek schrijven",
+      "DEBUG_LOG_DESC": "Alleen voor probleemoplossing: mpv.log in de logmap legt elk streamadres vast, inclusief de inloggegevens erin. Werkt vanaf de volgende keer dat de speler opent."
     },
     "RECORDING": {
       "PATH": "Opnamepad",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "Aangepaste bron toevoegen",
     "IMPORT_CUSTOM": "Aangepaste bron importeren",
     "DELETE_ALL_DATA": "Alle app-gegevens verwijderen",
-    "SELECT_EXPORT_FILE": "Selecteer het streameoIPTV-exportbestand (.otvp)"
+    "SELECT_EXPORT_FILE": "Selecteer het streameoIPTV-exportbestand (.otvp)",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "Serveradres in de vorm http://host:port",
+    "INVALID_URL": "\"{{url}}\" is geen geldige URL. Controleer op spaties of typfouten.",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "Nu bezig",
     "SCHEDULE_RECORDING": "Opname plannen",
-    "CANCEL_SCHEDULED": "Geplande opname annuleren"
+    "CANCEL_SCHEDULED": "Geplande opname annuleren",
+    "PREV_DAY": "Vorige dag",
+    "NEXT_DAY": "Volgende dag",
+    "NO_PROGRAMMES": "Geen programma's op deze dag",
+    "WATCH_CATCHUP": "Bekijken uit archief",
+    "DOWNLOAD_CATCHUP": "Downloaden uit archief",
+    "NOTIFY_ON": "Waarschuw me als het begint",
+    "NOTIFY_OFF": "Melding uitschakelen"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -290,7 +315,8 @@
     "START": "Starten",
     "WATCH": "Bekijken",
     "SHARE": "Delen",
-    "STOP": "Stoppen"
+    "STOP": "Stoppen",
+    "NETWORK_UNAVAILABLE": "Netwerkinformatie is niet beschikbaar, daarom kan het herstreamen niet starten."
   },
   "DOWNLOAD": {
     "TITLE": "Downloads",
@@ -409,7 +435,11 @@
     "SHARE": "Delen",
     "IMPORT_CHANNEL_GROUP": "Kanaal/groep importeren",
     "EXPIRES": "Verloopt op {{date}}",
-    "EXPIRED": "Verlopen op {{date}}"
+    "EXPIRED": "Verlopen op {{date}}",
+    "ENABLED": "Ingeschakeld",
+    "MORE_ACTIONS": "Meer acties",
+    "SHOW_USERNAME": "Gebruikersnaam tonen",
+    "HIDE_USERNAME": "Gebruikersnaam verbergen"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecteer waar de opname wordt opgeslagen",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "Selecteer waar de catchback wordt opgeslagen",
     "SAVE_FAVORITES": "Selecteer waar de favorieten worden opgeslagen",
     "SELECT_FAVS_BACKUP": "Selecteer een favorietenback-up",
-    "SELECT_M3U": "Selecteer een nieuw m3u-bestand voor de bron"
+    "SELECT_M3U": "Selecteer een nieuw m3u-bestand voor de bron",
+    "FILTER_FAVS_BACKUP": "Back-up van favorieten",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV-export"
   },
   "TOAST": {
     "SOURCES_UPDATED": "Alle bronnen succesvol bijgewerkt",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "Je bent up-to-date",
     "UPDATE_DOWNLOADING": "Versie {{version}} wordt gedownload...",
     "UPDATE_INSTALLED": "Update geïnstalleerd, opnieuw opstarten",
-    "UPDATE_FAILED": "Controleren op updates mislukt"
+    "UPDATE_FAILED": "Controleren op updates mislukt",
+    "ERROR_MORE_INFO": "{{message}}. Klik hier voor meer informatie",
+    "ERROR_GENERIC_MORE_INFO": "Er is een fout opgetreden. Klik hier voor meer informatie",
+    "UPDATE_INSTALL_FAILED": "Installeren van de update mislukt",
+    "UPDATE_RELAUNCH_FAILED": "De update is geïnstalleerd, maar de app kon niet opnieuw starten. Start hem handmatig opnieuw",
+    "NETWORK_INFO_FAILED": "Netwerkinformatie kon niet worden gelezen",
+    "SETTINGS_SAVED": "Opgeslagen",
+    "SETTINGS_SAVE_FAILED": "Instellingen opslaan mislukt"
   },
   "UPDATE": {
     "TITLE": "Update beschikbaar",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "De app start opnieuw op na de installatie.",
     "INSTALL": "Nu installeren",
     "LATER": "Later"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "Terugkijken beschikbaar",
+    "IS_FAVORITE": "In favorieten"
+  },
+  "LOADING": {
+    "CHANNELS": "Je kanalen worden geladen..."
+  },
+  "TIME": {
+    "JUST_NOW": "Zojuist"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "Alle downloads annuleren?",
+    "CANCEL_DOWNLOADS_BODY": "{{count}} wachtende of lopende downloads worden geannuleerd.",
+    "DELETE_SOURCE_TITLE": "Bron verwijderen?",
+    "DELETE_SOURCE_BODY": "De bron \"{{name}}\" wordt verwijderd, samen met alle kanalen, categorieën, favorieten en geschiedenis. Dit kan niet ongedaan worden gemaakt.",
+    "CLEAR_HISTORY_TITLE": "Geschiedenis wissen?",
+    "CLEAR_HISTORY_BODY": "Alle kanalen worden uit de lijst met recent bekeken verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "DELETE_CHANNEL_TITLE": "Kanaal verwijderen?",
+    "DELETE_CHANNEL_BODY": "Het kanaal \"{{name}}\" wordt definitief verwijderd.",
+    "DELETE_CATEGORY_TITLE": "Categorie verwijderen?",
+    "DELETE_CATEGORY_BODY": "De categorie \"{{name}}\" wordt definitief verwijderd."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "Terug naar kanalen",
+    "CHANNELS": "Kanalen",
+    "FULLSCREEN": "Volledig scherm",
+    "EXIT_FULLSCREEN": "Volledig scherm afsluiten",
+    "NEXT": "Hierna",
+    "PROGRAMME_PROGRESS": "Voortgang van het programma",
+    "FILTER_PLACEHOLDER": "Kanalen filteren...",
+    "FILTER_CHANNELS": "Kanaallijst filteren"
   }
 }

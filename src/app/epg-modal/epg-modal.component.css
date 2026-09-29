@@ -1,17 +1,35 @@
-.epg-item {
-  border-radius: var(--radius-sm);
-  background-color: var(--bg-surface);
-  width: 100%;
-  padding: 1rem;
-  position: relative;
+.day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 
-.arrow {
-  width: var(--icon-size-xl);
-  height: var(--icon-size-xl);
-  cursor: pointer;
+.day-arrow {
+  color: var(--accent-text);
+}
+
+.day-arrow > svg {
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
+}
+
+:host-context([dir="rtl"]) .day-arrow > svg {
+  transform: scaleX(-1);
 }
 
 .date-text {
-  font-size: 1.1rem;
+  min-width: 12rem;
+  text-align: center;
+  font-size: var(--fs-lg);
+  font-weight: 500;
+}
+
+.epg-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.epg-empty {
+  padding: 2rem 1rem;
 }

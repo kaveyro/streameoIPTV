@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "Browse",
     "CHANGE": "Change",
-    "GO_BACK": "Go back"
+    "GO_BACK": "Go back",
+    "SHOW_PASSWORD": "Show password",
+    "HIDE_PASSWORD": "Hide password"
   },
   "MODAL": {
     "CLOSE": "Close",
@@ -109,7 +111,10 @@
     "GO_LEFT": "Go left",
     "GO_RIGHT": "Go right",
     "GO_UP": "Go up",
-    "GO_DOWN": "Go down"
+    "GO_DOWN": "Go down",
+    "TILE_ACTIONS": "Channel actions",
+    "TOGGLE_FAVORITE": "Add/remove the focused channel to/from favorites",
+    "OPEN_CONTEXT_MENU": "Open the focused channel's menu (also the Menu key)"
   },
   "SETTINGS": {
     "TITLE": "Settings",
@@ -164,7 +169,12 @@
       "ACCENT": "Accent color",
       "ACCENT_DESC": "Highlight color used for buttons and interactive controls.",
       "SHOW_SOURCE": "Show playlist name on channels",
-      "SHOW_SOURCE_DESC": "Display the source/playlist name under each channel and programme title."
+      "SHOW_SOURCE_DESC": "Display the source/playlist name under each channel and programme title.",
+      "ACCENT_BLUE": "Blue",
+      "ACCENT_PURPLE": "Purple",
+      "ACCENT_TEAL": "Teal",
+      "ACCENT_CORAL": "Coral",
+      "ACCENT_GREEN": "Green"
     },
     "PLAYBACK": {
       "CACHING": "Use stream caching",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "Preferred audio language",
       "LANG_DESC": "ISO 639 codes mpv should pick by default. Separate fallbacks with commas, highest priority first.",
       "MPV_PARAMS": "Global mpv parameters",
-      "MPV_PARAMS_DESC": "Launch parameters applied to every channel. Leave empty unless you know what you are doing."
+      "MPV_PARAMS_DESC": "Launch parameters applied to every channel. Leave empty unless you know what you are doing.",
+      "LANG_PLACEHOLDER": "e.g. de,en",
+      "MPV_PARAMS_PLACEHOLDER": "e.g. --hwdec=auto",
+      "DEBUG_LOG": "Write a player log",
+      "DEBUG_LOG_DESC": "For troubleshooting only: mpv.log in the log folder records every stream address, including the login data in it. Takes effect the next time the player opens."
     },
     "RECORDING": {
       "PATH": "Recording path",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "Add custom source",
     "IMPORT_CUSTOM": "Import custom source",
     "DELETE_ALL_DATA": "Delete all app data",
-    "SELECT_EXPORT_FILE": "Select streameoIPTV export file (.otvp)"
+    "SELECT_EXPORT_FILE": "Select streameoIPTV export file (.otvp)",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "Server address in the form http://host:port",
+    "INVALID_URL": "\"{{url}}\" is not a valid URL. Check it for spaces or typos.",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "Playing now",
     "SCHEDULE_RECORDING": "Schedule recording",
-    "CANCEL_SCHEDULED": "Cancel scheduled recording"
+    "CANCEL_SCHEDULED": "Cancel scheduled recording",
+    "PREV_DAY": "Previous day",
+    "NEXT_DAY": "Next day",
+    "NO_PROGRAMMES": "No programmes for this day",
+    "WATCH_CATCHUP": "Watch from archive",
+    "DOWNLOAD_CATCHUP": "Download from archive",
+    "NOTIFY_ON": "Notify me when it starts",
+    "NOTIFY_OFF": "Turn off notification"
   },
   "RESTREAM": {
     "TITLE": "Re-streaming: {{name}}",
@@ -290,7 +315,8 @@
     "START": "Start",
     "WATCH": "Watch",
     "SHARE": "Share",
-    "STOP": "Stop"
+    "STOP": "Stop",
+    "NETWORK_UNAVAILABLE": "Network information is unavailable, so re-streaming cannot be started."
   },
   "DOWNLOAD": {
     "TITLE": "Downloads",
@@ -409,7 +435,11 @@
     "SHARE": "Share",
     "IMPORT_CHANNEL_GROUP": "Import channel/group",
     "EXPIRES": "Expires {{date}}",
-    "EXPIRED": "Expired {{date}}"
+    "EXPIRED": "Expired {{date}}",
+    "ENABLED": "Enabled",
+    "MORE_ACTIONS": "More actions",
+    "SHOW_USERNAME": "Show username",
+    "HIDE_USERNAME": "Hide username"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Select where to save recording",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "Select where to save catchback",
     "SAVE_FAVORITES": "Select where to save favorites",
     "SELECT_FAVS_BACKUP": "Select a favorites backup",
-    "SELECT_M3U": "Select a new m3u file for source"
+    "SELECT_M3U": "Select a new m3u file for source",
+    "FILTER_FAVS_BACKUP": "Favorites backup",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV export"
   },
   "TOAST": {
     "SOURCES_UPDATED": "Successfully updated all sources",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "You are up to date",
     "UPDATE_DOWNLOADING": "Downloading version {{version}}...",
     "UPDATE_INSTALLED": "Update installed, restarting",
-    "UPDATE_FAILED": "Update check failed"
+    "UPDATE_FAILED": "Update check failed",
+    "ERROR_MORE_INFO": "{{message}}. Click here for more info",
+    "ERROR_GENERIC_MORE_INFO": "An error occurred. Click here for more info",
+    "UPDATE_INSTALL_FAILED": "Failed to install the update",
+    "UPDATE_RELAUNCH_FAILED": "The update was installed, but the app could not restart. Please restart it manually",
+    "NETWORK_INFO_FAILED": "Could not read the network information",
+    "SETTINGS_SAVED": "Saved",
+    "SETTINGS_SAVE_FAILED": "Failed to save settings"
   },
   "UPDATE": {
     "TITLE": "Update available",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "The app restarts once the update is installed.",
     "INSTALL": "Install now",
     "LATER": "Later"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "Catch-up available",
+    "IS_FAVORITE": "In favorites"
+  },
+  "LOADING": {
+    "CHANNELS": "Loading your channels..."
+  },
+  "TIME": {
+    "JUST_NOW": "Just now"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "Cancel all downloads?",
+    "CANCEL_DOWNLOADS_BODY": "{{count}} queued or running downloads will be cancelled.",
+    "DELETE_SOURCE_TITLE": "Delete source?",
+    "DELETE_SOURCE_BODY": "The source \"{{name}}\" will be removed together with all of its channels, categories, favorites and history. This cannot be undone.",
+    "CLEAR_HISTORY_TITLE": "Clear history?",
+    "CLEAR_HISTORY_BODY": "All channels will be removed from the recently watched list. This cannot be undone.",
+    "DELETE_CHANNEL_TITLE": "Delete channel?",
+    "DELETE_CHANNEL_BODY": "The channel \"{{name}}\" will be deleted permanently.",
+    "DELETE_CATEGORY_TITLE": "Delete category?",
+    "DELETE_CATEGORY_BODY": "The category \"{{name}}\" will be deleted permanently."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "Back to channels",
+    "CHANNELS": "Channels",
+    "FULLSCREEN": "Fullscreen",
+    "EXIT_FULLSCREEN": "Exit fullscreen",
+    "NEXT": "Next",
+    "PROGRAMME_PROGRESS": "Programme progress",
+    "FILTER_PLACEHOLDER": "Filter channels...",
+    "FILTER_CHANNELS": "Filter the channel list"
   }
 }

@@ -27,6 +27,8 @@ export class DownloadService {
 
   static readonly MAX_CONCURRENT_LIMIT = 5;
   private maxConcurrent = 1;
+  /// Downloads whose progress listener is still being registered, by id.
+  private pendingEnqueues: Map<string, Promise<Download>> = new Map();
 
   constructor(
     private error: ErrorService,
@@ -54,11 +56,26 @@ export class DownloadService {
   /// Puts a download at the end of the queue. It starts as soon as a slot is
   /// free; the returned object is the same instance the manager displays, so
   /// callers can subscribe to its progress right away.
-  async enqueue(id: string, channel: Channel, path?: string): Promise<Download> {
+  enqueue(id: string, channel: Channel, path?: string): Promise<Download> {
     const existing = this.Downloads.get(id);
     if (existing) {
-      return existing;
+      return Promise.resolve(existing);
     }
+    // Reserve the id before the first await: a second call (double Retry,
+    // double click) while the listener is still being registered must get the
+    // same download instead of starting a second backend transfer.
+    const pending = this.pendingEnqueues.get(id);
+    if (pending) {
+      return pending;
+    }
+    const promise = this.createDownload(id, channel, path).finally(() =>
+      this.pendingEnqueues.delete(id),
+    );
+    this.pendingEnqueues.set(id, promise);
+    return promise;
+  }
+
+  private async createDownload(id: string, channel: Channel, path?: string): Promise<Download> {
     const download: Download = {
       channel: channel,
       progress: 0,

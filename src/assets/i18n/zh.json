@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "浏览",
     "CHANGE": "更改",
-    "GO_BACK": "返回"
+    "GO_BACK": "返回",
+    "SHOW_PASSWORD": "显示密码",
+    "HIDE_PASSWORD": "隐藏密码"
   },
   "MODAL": {
     "CLOSE": "关闭",
@@ -109,7 +111,10 @@
     "GO_LEFT": "向左",
     "GO_RIGHT": "向右",
     "GO_UP": "向上",
-    "GO_DOWN": "向下"
+    "GO_DOWN": "向下",
+    "TILE_ACTIONS": "频道操作",
+    "TOGGLE_FAVORITE": "将当前频道加入/移出收藏",
+    "OPEN_CONTEXT_MENU": "打开当前频道的菜单（也可按菜单键）"
   },
   "SETTINGS": {
     "TITLE": "设置",
@@ -164,7 +169,12 @@
       "ACCENT": "强调色",
       "ACCENT_DESC": "用于按钮和交互控件的高亮颜色。",
       "SHOW_SOURCE": "在频道上显示播放列表名称",
-      "SHOW_SOURCE_DESC": "在每个频道和节目标题下方显示源/播放列表名称。"
+      "SHOW_SOURCE_DESC": "在每个频道和节目标题下方显示源/播放列表名称。",
+      "ACCENT_BLUE": "蓝色",
+      "ACCENT_PURPLE": "紫色",
+      "ACCENT_TEAL": "青绿色",
+      "ACCENT_CORAL": "珊瑚色",
+      "ACCENT_GREEN": "绿色"
     },
     "PLAYBACK": {
       "CACHING": "使用流缓存",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "首选音频语言",
       "LANG_DESC": "mpv 默认应选择的 ISO 639 代码。用逗号分隔备选项，优先级最高的排在前面。",
       "MPV_PARAMS": "全局 mpv 参数",
-      "MPV_PARAMS_DESC": "应用于每个频道的启动参数。除非您了解其含义，否则请留空。"
+      "MPV_PARAMS_DESC": "应用于每个频道的启动参数。除非您了解其含义，否则请留空。",
+      "LANG_PLACEHOLDER": "例如 zh,en",
+      "MPV_PARAMS_PLACEHOLDER": "例如 --hwdec=auto",
+      "DEBUG_LOG": "写入播放器日志",
+      "DEBUG_LOG_DESC": "仅用于排查问题：日志文件夹中的 mpv.log 会记录每个流地址，包括其中的登录信息。下次打开播放器时生效。"
     },
     "RECORDING": {
       "PATH": "录制路径",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "添加自定义来源",
     "IMPORT_CUSTOM": "导入自定义来源",
     "DELETE_ALL_DATA": "删除所有应用数据",
-    "SELECT_EXPORT_FILE": "选择 streameoIPTV 导出文件（.otvp）"
+    "SELECT_EXPORT_FILE": "选择 streameoIPTV 导出文件（.otvp）",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "服务器地址，格式为 http://host:port",
+    "INVALID_URL": "“{{url}}”不是有效的 URL。请检查是否有空格或拼写错误。",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "正在播放",
     "SCHEDULE_RECORDING": "安排录制",
-    "CANCEL_SCHEDULED": "取消计划录制"
+    "CANCEL_SCHEDULED": "取消计划录制",
+    "PREV_DAY": "前一天",
+    "NEXT_DAY": "后一天",
+    "NO_PROGRAMMES": "这一天没有节目",
+    "WATCH_CATCHUP": "从回看观看",
+    "DOWNLOAD_CATCHUP": "从回看下载",
+    "NOTIFY_ON": "开始时提醒我",
+    "NOTIFY_OFF": "关闭提醒"
   },
   "RESTREAM": {
     "TITLE": "转推流：{{name}}",
@@ -290,7 +315,8 @@
     "START": "开始",
     "WATCH": "观看",
     "SHARE": "分享",
-    "STOP": "停止"
+    "STOP": "停止",
+    "NETWORK_UNAVAILABLE": "网络信息不可用，无法开始转播。"
   },
   "DOWNLOAD": {
     "TITLE": "下载",
@@ -409,7 +435,11 @@
     "SHARE": "分享",
     "IMPORT_CHANNEL_GROUP": "导入频道/分组",
     "EXPIRES": "于 {{date}} 到期",
-    "EXPIRED": "已于 {{date}} 到期"
+    "EXPIRED": "已于 {{date}} 到期",
+    "ENABLED": "已启用",
+    "MORE_ACTIONS": "更多操作",
+    "SHOW_USERNAME": "显示用户名",
+    "HIDE_USERNAME": "隐藏用户名"
   },
   "DIALOG": {
     "SAVE_RECORDING": "选择录制的保存位置",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "选择回看的保存位置",
     "SAVE_FAVORITES": "选择收藏的保存位置",
     "SELECT_FAVS_BACKUP": "选择收藏备份",
-    "SELECT_M3U": "为来源选择新的 m3u 文件"
+    "SELECT_M3U": "为来源选择新的 m3u 文件",
+    "FILTER_FAVS_BACKUP": "收藏备份",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV 导出文件"
   },
   "TOAST": {
     "SOURCES_UPDATED": "已成功更新所有来源",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "已是最新版本",
     "UPDATE_DOWNLOADING": "正在下载版本 {{version}}...",
     "UPDATE_INSTALLED": "更新已安装，正在重启",
-    "UPDATE_FAILED": "检查更新失败"
+    "UPDATE_FAILED": "检查更新失败",
+    "ERROR_MORE_INFO": "{{message}}。点击此处查看详情",
+    "ERROR_GENERIC_MORE_INFO": "发生错误。点击此处查看详情",
+    "UPDATE_INSTALL_FAILED": "安装更新失败",
+    "UPDATE_RELAUNCH_FAILED": "更新已安装，但应用无法重新启动。请手动重新启动",
+    "NETWORK_INFO_FAILED": "无法读取网络信息",
+    "SETTINGS_SAVED": "已保存",
+    "SETTINGS_SAVE_FAILED": "保存设置失败"
   },
   "UPDATE": {
     "TITLE": "有可用更新",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "安装完成后应用会重新启动。",
     "INSTALL": "立即安装",
     "LATER": "以后再说"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "支持回看",
+    "IS_FAVORITE": "已收藏"
+  },
+  "LOADING": {
+    "CHANNELS": "正在加载频道..."
+  },
+  "TIME": {
+    "JUST_NOW": "刚刚"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "取消所有下载？",
+    "CANCEL_DOWNLOADS_BODY": "将取消 {{count}} 个排队中或进行中的下载。",
+    "DELETE_SOURCE_TITLE": "删除来源？",
+    "DELETE_SOURCE_BODY": "来源“{{name}}”及其所有频道、分类、收藏和历史记录都将被删除。此操作无法撤销。",
+    "CLEAR_HISTORY_TITLE": "清除历史记录？",
+    "CLEAR_HISTORY_BODY": "所有频道都将从最近观看列表中移除。此操作无法撤销。",
+    "DELETE_CHANNEL_TITLE": "删除频道？",
+    "DELETE_CHANNEL_BODY": "频道“{{name}}”将被永久删除。",
+    "DELETE_CATEGORY_TITLE": "删除分类？",
+    "DELETE_CATEGORY_BODY": "分类“{{name}}”将被永久删除。"
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "返回频道",
+    "CHANNELS": "频道",
+    "FULLSCREEN": "全屏",
+    "EXIT_FULLSCREEN": "退出全屏",
+    "NEXT": "接下来",
+    "PROGRAMME_PROGRESS": "节目进度",
+    "FILTER_PLACEHOLDER": "筛选频道...",
+    "FILTER_CHANNELS": "筛选频道列表"
   }
 }

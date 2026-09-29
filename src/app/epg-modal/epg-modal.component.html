@@ -5,43 +5,55 @@
   <button
     type="button"
     class="btn-close btn-close-white"
-    [attr.aria-label]="('MODAL.CLOSE' | translate)"
+    [attr.aria-label]="'MODAL.CLOSE' | translate"
     (click)="activeModal.close('Cross click')"
   ></button>
 </div>
 <div class="modal-body">
-  <div class="mb-2 d-flex align-items-center justify-content-center">
-    <svg
+  <div class="day-nav mb-3">
+    <button
+      type="button"
+      class="icon-btn day-arrow"
       (click)="prev()"
-      fill="#316cf4"
-      class="arrow me-3"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
+      [attr.aria-label]="'EPG.PREV_DAY' | translate"
+      [ngbTooltip]="'EPG.PREV_DAY' | translate"
     >
-      <title>arrow-left</title>
-      <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
-    </svg>
-    <span class="date-text">{{ getFormattedDate() }}</span>
-    <svg
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
+      </svg>
+    </button>
+    <span class="date-text" aria-live="polite">{{ getFormattedDate() }}</span>
+    <button
+      type="button"
+      class="icon-btn day-arrow"
       (click)="next()"
-      fill="#316cf4"
-      class="arrow ms-3"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
+      [attr.aria-label]="'EPG.NEXT_DAY' | translate"
+      [ngbTooltip]="'EPG.NEXT_DAY' | translate"
     >
-      <title>arrow-right</title>
-      <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" />
-    </svg>
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" />
+      </svg>
+    </button>
   </div>
-  <div tabindex="0" *ngFor="let item of filteredEPGs; let i = index" [ngClass]="{ 'mt-3': i != 0 }">
-    <app-epg-modal-item
-      class="mt-3"
-      [epg]="item"
-      [name]="name"
-      [sourceId]="sourceId"
-      [channelId]="channelId"
-      [scheduledRecordingId]="getScheduledRecordingId(item)"
-      (scheduleChanged)="loadScheduledRecordings()"
-    ></app-epg-modal-item>
+
+  <div *ngIf="filteredEPGs.length === 0" class="empty-state epg-empty">
+    <p class="mb-0">{{ "EPG.NO_PROGRAMMES" | translate }}</p>
+  </div>
+
+  <div class="epg-list">
+    <div
+      *ngFor="let item of filteredEPGs"
+      class="epg-entry"
+      [class.epg-entry--now]="item.now_playing"
+    >
+      <app-epg-modal-item
+        [epg]="item"
+        [name]="name"
+        [sourceId]="sourceId"
+        [channelId]="channelId"
+        [scheduledRecordingId]="getScheduledRecordingId(item)"
+        (scheduleChanged)="loadScheduledRecordings()"
+      ></app-epg-modal-item>
+    </div>
   </div>
 </div>

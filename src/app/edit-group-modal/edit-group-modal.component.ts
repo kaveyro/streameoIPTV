@@ -1,15 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
-import { Group } from '../models/group';
-import { ErrorService } from '../error.service';
-import { invoke } from '@tauri-apps/api/core';
-import { MemoryService } from '../memory.service';
-import { TranslateService } from '@ngx-translate/core';
+import { Component, OnInit } from "@angular/core";
+import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
+import { Group } from "../models/group";
+import { ErrorService } from "../error.service";
+import { invoke } from "@tauri-apps/api/core";
+import { MemoryService } from "../memory.service";
+import { TranslateService } from "@ngx-translate/core";
 
 @Component({
-  selector: 'app-edit-group-modal',
-  templateUrl: './edit-group-modal.component.html',
-  styleUrl: './edit-group-modal.component.css'
+  selector: "app-edit-group-modal",
+  templateUrl: "./edit-group-modal.component.html",
+  styleUrl: "./edit-group-modal.component.css",
 })
 export class EditGroupModalComponent {
   editing: boolean = false;
@@ -17,17 +17,24 @@ export class EditGroupModalComponent {
   loading = false;
   originalName?: string;
 
-  constructor(public activeModal: NgbActiveModal, private error: ErrorService, private memory: MemoryService, private translate: TranslateService) {
+  constructor(
+    public activeModal: NgbActiveModal,
+    private error: ErrorService,
+    private memory: MemoryService,
+    private translate: TranslateService,
+  ) {}
 
-  }
-
-  save() {
+  async save() {
+    // Stay disabled until the backend answered, so a double submit cannot
+    // create the same category twice.
+    if (this.loading) return;
     this.loading = true;
-    if (this.editing)
-      this.edit_group();
-    else
-      this.add_group();
-    this.loading = false;
+    try {
+      if (this.editing) await this.edit_group();
+      else await this.add_group();
+    } finally {
+      this.loading = false;
+    }
   }
 
   sanitize() {
@@ -42,8 +49,7 @@ export class EditGroupModalComponent {
       this.error.success(this.translate.instant("TOAST.CATEGORY_UPDATED"));
       this.memory.Refresh.next(true);
       this.activeModal.close("close");
-    }
-    catch (e) {
+    } catch (e) {
       this.error.handleError(e);
     }
   }
@@ -51,12 +57,11 @@ export class EditGroupModalComponent {
   async add_group() {
     try {
       this.sanitize();
-      await invoke("add_custom_group", { group: this.group })
+      await invoke("add_custom_group", { group: this.group });
       this.error.success(this.translate.instant("TOAST.CATEGORY_ADDED"));
       this.memory.RefreshSources.next(true);
       this.activeModal.close("close");
-    }
-    catch (e) {
+    } catch (e) {
       this.error.handleError(e);
     }
   }

@@ -1,9 +1,10 @@
-<div
-  class="position-fixed bottom-0 end-0 m-3 shadow-sm rounded download-box"
+<section
+  class="download-box shadow-sm"
   [class.collapsed]="isMinimized"
+  [attr.aria-label]="'DOWNLOAD.TITLE' | translate"
 >
   <div class="d-flex justify-content-between align-items-center px-3 py-2 download-header">
-    <strong class="text-light">
+    <strong class="download-title">
       {{ "DOWNLOAD.TITLE" | translate }}
       <span class="badge rounded-pill count-badge ms-1"
         >{{ downloadService.activeCount() }}/{{ getDownloads().length }}</span
@@ -11,7 +12,8 @@
     </strong>
     <div class="d-flex align-items-center gap-1">
       <button
-        class="btn btn-sm btn-outline-light"
+        type="button"
+        class="btn btn-sm btn-outline-secondary header-btn"
         *ngIf="getDownloads().length > 0"
         (click)="togglePause()"
         [attr.aria-label]="
@@ -32,9 +34,11 @@
         </svg>
       </button>
       <button
-        class="btn btn-sm btn-outline-light"
+        type="button"
+        class="btn btn-sm btn-outline-secondary header-btn"
         (click)="toggleMinimize()"
         [attr.aria-label]="(isMinimized ? 'DOWNLOAD.EXPAND' : 'DOWNLOAD.MINIMIZE') | translate"
+        [attr.aria-expanded]="!isMinimized"
       >
         <svg
           fill="currentColor"
@@ -44,7 +48,6 @@
           width="16"
           height="16"
         >
-          <title>chevron</title>
           <path
             *ngIf="isMinimized"
             d="M5.84,15.41L11.5,9.75L17.16,15.41L16.45,16.11L11.5,11.16L6.55,16.11L5.84,15.41Z"
@@ -64,7 +67,7 @@
     </div>
 
     <div *ngFor="let download of getDownloads(); trackBy: trackById">
-      <div class="d-flex justify-content-between text-light small mb-1">
+      <div class="d-flex justify-content-between download-name small mb-1">
         <span class="text-truncate me-2">{{ download.channel.name }}</span>
         <span class="flex-shrink-0" *ngIf="download.status === statusEnum.Active"
           >{{ download.progress }}%</span
@@ -77,63 +80,55 @@
         <div class="progress flex-grow-1" style="height: 6px">
           <div
             class="progress-bar"
-            [class.bg-success]="download.status === statusEnum.Active"
-            [class.bg-secondary]="download.status === statusEnum.Queued"
+            [class.progress-bar--active]="download.status === statusEnum.Active"
+            [class.progress-bar--queued]="download.status === statusEnum.Queued"
             role="progressbar"
             [style.width.%]="download.progress"
             [attr.aria-valuenow]="download.progress"
+            [attr.aria-label]="download.channel.name"
             aria-valuemin="0"
             aria-valuemax="100"
           ></div>
         </div>
-        <svg
+        <button
+          type="button"
           *ngIf="download.status === statusEnum.Queued"
-          fill="currentColor"
+          class="icon-btn action"
           (click)="moveUp(download.id)"
-          class="action text-light"
-          role="button"
-          tabindex="0"
-          [class.disabled]="!canMoveUp(download.id)"
+          [disabled]="!canMoveUp(download.id)"
           [attr.aria-label]="'DOWNLOAD.MOVE_UP' | translate"
           [attr.title]="'DOWNLOAD.MOVE_UP' | translate"
-          (keyup.enter)="moveUp(download.id)"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
         >
-          <path d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" />
-        </svg>
-        <svg
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" />
+          </svg>
+        </button>
+        <button
+          type="button"
           *ngIf="download.status === statusEnum.Queued"
-          fill="currentColor"
+          class="icon-btn action"
           (click)="moveDown(download.id)"
-          class="action text-light"
-          role="button"
-          tabindex="0"
-          [class.disabled]="!canMoveDown(download.id)"
+          [disabled]="!canMoveDown(download.id)"
           [attr.aria-label]="'DOWNLOAD.MOVE_DOWN' | translate"
           [attr.title]="'DOWNLOAD.MOVE_DOWN' | translate"
-          (keyup.enter)="moveDown(download.id)"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
         >
-          <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
-        </svg>
-        <svg
-          fill="red"
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="icon-btn action stop"
           (click)="cancelDownload(download.id)"
-          class="action stop"
-          role="button"
-          tabindex="0"
           [attr.aria-label]="'DOWNLOAD.CANCEL_ARIA' | translate: { name: download.channel.name }"
           [attr.title]="'DOWNLOAD.CANCEL_ARIA' | translate: { name: download.channel.name }"
-          (keyup.enter)="cancelDownload(download.id)"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
         >
-          <path
-            d="M13.46,12L19,17.54V19H17.54L12,13.46L6.46,19H5V17.54L10.54,12L5,6.46V5H6.46L12,10.54L17.54,5H19V6.46L13.46,12Z"
-          />
-        </svg>
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path
+              d="M13.46,12L19,17.54V19H17.54L12,13.46L6.46,19H5V17.54L10.54,12L5,6.46V5H6.46L12,10.54L17.54,5H19V6.46L13.46,12Z"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -143,16 +138,15 @@
 
     <div *ngIf="getHistory().length > 0" class="history-section pt-2">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <span
-          class="text-secondary small"
-          role="button"
-          tabindex="0"
+        <button
+          type="button"
+          class="btn btn-sm btn-link p-0 history-toggle"
           (click)="toggleHistory()"
-          (keyup.enter)="toggleHistory()"
+          [attr.aria-expanded]="showHistory"
         >
           {{ "DOWNLOAD.FINISHED" | translate }} ({{ getHistory().length }})
-        </span>
-        <button class="btn btn-sm btn-link p-0 clear-link" (click)="clearHistory()">
+        </button>
+        <button type="button" class="btn btn-sm btn-link p-0 clear-link" (click)="clearHistory()">
           {{ "DOWNLOAD.CLEAR_FINISHED" | translate }}
         </button>
       </div>
@@ -163,15 +157,12 @@
         >
           <svg
             class="status-icon flex-shrink-0"
+            [class.status-completed]="download.status === statusEnum.Completed"
+            [class.status-failed]="download.status === statusEnum.Failed"
+            [class.status-cancelled]="download.status === statusEnum.Cancelled"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            [attr.fill]="
-              download.status === statusEnum.Completed
-                ? 'var(--bs-success, green)'
-                : download.status === statusEnum.Failed
-                  ? 'red'
-                  : 'gray'
-            "
+            role="img"
             [attr.aria-label]="statusLabel(download) | translate"
           >
             <path
@@ -188,44 +179,38 @@
             />
           </svg>
           <span
-            class="text-truncate flex-grow-1 text-light"
+            class="text-truncate flex-grow-1 download-name"
             [attr.title]="download.error || download.channel.name"
           >
             {{ download.channel.name }}
           </span>
-          <svg
+          <button
+            type="button"
             *ngIf="download.status !== statusEnum.Completed"
-            fill="currentColor"
+            class="icon-btn action"
             (click)="retry(download)"
-            class="action text-light"
-            role="button"
-            tabindex="0"
-            (keyup.enter)="retry(download)"
             [attr.aria-label]="'DOWNLOAD.RETRY' | translate"
             [attr.title]="'DOWNLOAD.RETRY' | translate"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
           >
-            <path
-              d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
-            />
-          </svg>
-          <svg
-            fill="currentColor"
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path
+                d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="icon-btn action action--muted"
             (click)="remove(download.id)"
-            class="action text-secondary"
-            role="button"
-            tabindex="0"
-            (keyup.enter)="remove(download.id)"
             [attr.aria-label]="'DOWNLOAD.REMOVE' | translate"
             [attr.title]="'DOWNLOAD.REMOVE' | translate"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
           >
-            <path
-              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-            />
-          </svg>
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -248,6 +233,7 @@
         </select>
       </label>
       <button
+        type="button"
         class="btn btn-sm btn-link p-0 clear-link"
         *ngIf="getDownloads().length > 0"
         (click)="cancelAll()"
@@ -256,4 +242,4 @@
       </button>
     </div>
   </div>
-</div>
+</section>

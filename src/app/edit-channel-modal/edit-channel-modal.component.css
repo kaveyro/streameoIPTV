@@ -1,19 +1,19 @@
 .text-small {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
 }
 
 .error {
-    font-size: 0.9rem;
-    padding-left: 0;
+  font-size: var(--fs-md);
+  padding-inline-start: 0;
 }
 
 button .save-floppy {
-    height: var(--icon-size-base);
-    width: var(--icon-size-base);
-    transition: transform var(--transition-fast);
+  height: var(--icon-size-base);
+  width: var(--icon-size-base);
+  transition: transform var(--transition-fast);
 }
 
 button:hover .save-floppy {
-    transform: scale(1.25);
+  transform: scale(1.25);
 }

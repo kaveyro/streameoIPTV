@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "参照",
     "CHANGE": "変更",
-    "GO_BACK": "戻る"
+    "GO_BACK": "戻る",
+    "SHOW_PASSWORD": "パスワードを表示",
+    "HIDE_PASSWORD": "パスワードを隠す"
   },
   "MODAL": {
     "CLOSE": "閉じる",
@@ -109,7 +111,10 @@
     "GO_LEFT": "左へ",
     "GO_RIGHT": "右へ",
     "GO_UP": "上へ",
-    "GO_DOWN": "下へ"
+    "GO_DOWN": "下へ",
+    "TILE_ACTIONS": "チャンネル操作",
+    "TOGGLE_FAVORITE": "選択中のチャンネルをお気に入りに追加/削除",
+    "OPEN_CONTEXT_MENU": "選択中のチャンネルのメニューを開く（メニューキーでも可）"
   },
   "SETTINGS": {
     "TITLE": "設定",
@@ -164,7 +169,12 @@
       "ACCENT": "アクセントカラー",
       "ACCENT_DESC": "ボタンや操作コントロールに使用する強調色。",
       "SHOW_SOURCE": "チャンネルにプレイリスト名を表示",
-      "SHOW_SOURCE_DESC": "各チャンネルと番組タイトルの下にソース/プレイリスト名を表示します。"
+      "SHOW_SOURCE_DESC": "各チャンネルと番組タイトルの下にソース/プレイリスト名を表示します。",
+      "ACCENT_BLUE": "青",
+      "ACCENT_PURPLE": "紫",
+      "ACCENT_TEAL": "ティール",
+      "ACCENT_CORAL": "コーラル",
+      "ACCENT_GREEN": "緑"
     },
     "PLAYBACK": {
       "CACHING": "ストリームキャッシュを使用",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "優先音声言語",
       "LANG_DESC": "mpv がデフォルトで選択すべき ISO 639 コード。フォールバックはカンマで区切り、優先度の高いものを先頭にします。",
       "MPV_PARAMS": "グローバル mpv パラメーター",
-      "MPV_PARAMS_DESC": "すべてのチャンネルに適用される起動パラメーター。内容を理解している場合を除き、空のままにしてください。"
+      "MPV_PARAMS_DESC": "すべてのチャンネルに適用される起動パラメーター。内容を理解している場合を除き、空のままにしてください。",
+      "LANG_PLACEHOLDER": "例: ja,en",
+      "MPV_PARAMS_PLACEHOLDER": "例: --hwdec=auto",
+      "DEBUG_LOG": "プレーヤーのログを書き込む",
+      "DEBUG_LOG_DESC": "トラブルシューティング専用：ログフォルダーの mpv.log に、含まれるログイン情報も含めてすべてのストリームアドレスが記録されます。次にプレーヤーを開いたときに有効になります。"
     },
     "RECORDING": {
       "PATH": "録画パス",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "カスタムソースを追加",
     "IMPORT_CUSTOM": "カスタムソースをインポート",
     "DELETE_ALL_DATA": "すべてのアプリデータを削除",
-    "SELECT_EXPORT_FILE": "streameoIPTV エクスポートファイル（.otvp）を選択"
+    "SELECT_EXPORT_FILE": "streameoIPTV エクスポートファイル（.otvp）を選択",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "サーバーアドレス（形式: http://host:port）",
+    "INVALID_URL": "「{{url}}」は有効な URL ではありません。スペースや入力ミスがないか確認してください。",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "再生中",
     "SCHEDULE_RECORDING": "録画を予約",
-    "CANCEL_SCHEDULED": "予約録画をキャンセル"
+    "CANCEL_SCHEDULED": "予約録画をキャンセル",
+    "PREV_DAY": "前の日",
+    "NEXT_DAY": "次の日",
+    "NO_PROGRAMMES": "この日の番組はありません",
+    "WATCH_CATCHUP": "アーカイブから視聴",
+    "DOWNLOAD_CATCHUP": "アーカイブからダウンロード",
+    "NOTIFY_ON": "開始時に通知",
+    "NOTIFY_OFF": "通知をオフにする"
   },
   "RESTREAM": {
     "TITLE": "再ストリーミング：{{name}}",
@@ -290,7 +315,8 @@
     "START": "開始",
     "WATCH": "視聴",
     "SHARE": "共有",
-    "STOP": "停止"
+    "STOP": "停止",
+    "NETWORK_UNAVAILABLE": "ネットワーク情報を取得できないため、リストリーミングを開始できません。"
   },
   "DOWNLOAD": {
     "TITLE": "ダウンロード",
@@ -409,7 +435,11 @@
     "SHARE": "共有",
     "IMPORT_CHANNEL_GROUP": "チャンネル/グループをインポート",
     "EXPIRES": "{{date}} に期限切れ",
-    "EXPIRED": "{{date}} に期限切れ"
+    "EXPIRED": "{{date}} に期限切れ",
+    "ENABLED": "有効",
+    "MORE_ACTIONS": "その他の操作",
+    "SHOW_USERNAME": "ユーザー名を表示",
+    "HIDE_USERNAME": "ユーザー名を隠す"
   },
   "DIALOG": {
     "SAVE_RECORDING": "録画の保存先を選択",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "キャッチバックの保存先を選択",
     "SAVE_FAVORITES": "お気に入りの保存先を選択",
     "SELECT_FAVS_BACKUP": "お気に入りバックアップを選択",
-    "SELECT_M3U": "ソース用の新しい m3u ファイルを選択"
+    "SELECT_M3U": "ソース用の新しい m3u ファイルを選択",
+    "FILTER_FAVS_BACKUP": "お気に入りのバックアップ",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV エクスポート"
   },
   "TOAST": {
     "SOURCES_UPDATED": "すべてのソースを正常に更新しました",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "最新の状態です",
     "UPDATE_DOWNLOADING": "バージョン {{version}} をダウンロード中...",
     "UPDATE_INSTALLED": "更新をインストールしました。再起動します",
-    "UPDATE_FAILED": "更新の確認に失敗しました"
+    "UPDATE_FAILED": "更新の確認に失敗しました",
+    "ERROR_MORE_INFO": "{{message}}。詳細はここをクリック",
+    "ERROR_GENERIC_MORE_INFO": "エラーが発生しました。詳細はここをクリック",
+    "UPDATE_INSTALL_FAILED": "アップデートをインストールできませんでした",
+    "UPDATE_RELAUNCH_FAILED": "アップデートはインストールされましたが、アプリを再起動できませんでした。手動で再起動してください",
+    "NETWORK_INFO_FAILED": "ネットワーク情報を取得できませんでした",
+    "SETTINGS_SAVED": "保存しました",
+    "SETTINGS_SAVE_FAILED": "設定を保存できませんでした"
   },
   "UPDATE": {
     "TITLE": "更新があります",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "インストール後にアプリを再起動します。",
     "INSTALL": "今すぐインストール",
     "LATER": "後で"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "見逃し配信あり",
+    "IS_FAVORITE": "お気に入り済み"
+  },
+  "LOADING": {
+    "CHANNELS": "チャンネルを読み込んでいます..."
+  },
+  "TIME": {
+    "JUST_NOW": "たった今"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "すべてのダウンロードをキャンセルしますか？",
+    "CANCEL_DOWNLOADS_BODY": "待機中または実行中の {{count}} 件のダウンロードがキャンセルされます。",
+    "DELETE_SOURCE_TITLE": "ソースを削除しますか？",
+    "DELETE_SOURCE_BODY": "ソース「{{name}}」とそのすべてのチャンネル、カテゴリ、お気に入り、履歴が削除されます。この操作は元に戻せません。",
+    "CLEAR_HISTORY_TITLE": "履歴を消去しますか？",
+    "CLEAR_HISTORY_BODY": "最近視聴したリストからすべてのチャンネルが削除されます。この操作は元に戻せません。",
+    "DELETE_CHANNEL_TITLE": "チャンネルを削除しますか？",
+    "DELETE_CHANNEL_BODY": "チャンネル「{{name}}」は完全に削除されます。",
+    "DELETE_CATEGORY_TITLE": "カテゴリを削除しますか？",
+    "DELETE_CATEGORY_BODY": "カテゴリ「{{name}}」は完全に削除されます。"
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "チャンネルに戻る",
+    "CHANNELS": "チャンネル",
+    "FULLSCREEN": "全画面表示",
+    "EXIT_FULLSCREEN": "全画面表示を終了",
+    "NEXT": "次",
+    "PROGRAMME_PROGRESS": "番組の進行状況",
+    "FILTER_PLACEHOLDER": "チャンネルを絞り込む...",
+    "FILTER_CHANNELS": "チャンネルリストを絞り込む"
   }
 }

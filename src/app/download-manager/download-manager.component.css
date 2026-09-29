@@ -1,14 +1,31 @@
+/* Bottom inline-end corner, below the player overlay (--z-player) so it never
+   covers the player's channel list. The scroll-to-top button moves beside it
+   (see --scroll-top-inline-end in styles.css). */
 .download-box {
-  width: 340px;
+  position: fixed;
+  bottom: 1rem;
+  inset-inline-end: 1rem;
+  z-index: var(--z-download);
+  width: var(--download-box-width, 340px);
   background-color: var(--bg-surface);
+  color: var(--text-primary);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-card);
   overflow: hidden;
 }
 
 .download-header {
-  background-color: var(--bg-app);
+  background-color: var(--bg-surface-alt);
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.collapsed .download-header {
+  border-bottom: none;
+}
+
+.download-title,
+.download-name {
+  color: var(--text-primary);
 }
 
 .download-body {
@@ -17,24 +34,33 @@
 }
 
 .count-badge {
-  background-color: var(--bg-surface-alt);
+  background-color: var(--bg-surface-hover);
   color: var(--text-secondary);
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
 }
 
-button.btn-outline-light {
-  border-color: #666;
-  color: var(--text-secondary);
-}
-
-button.btn-outline-light:hover {
-  background-color: var(--bg-surface-hover);
-  border-color: #888;
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.35rem;
 }
 
 .progress {
-  background-color: var(--bg-surface-alt);
+  --bs-progress-bg: var(--bg-surface-hover);
+  background-color: var(--bg-surface-hover);
+}
+
+.progress-bar {
+  background-color: var(--text-secondary);
+}
+
+.progress-bar--active {
+  background-color: var(--color-success);
+}
+
+.progress-bar--queued {
+  background-color: var(--border-strong);
 }
 
 .paused-hint {
@@ -52,48 +78,57 @@ button.btn-outline-light:hover {
 }
 
 .status-icon {
-  width: var(--icon-size-sm, 14px);
-  height: var(--icon-size-sm, 14px);
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  fill: var(--text-secondary);
 }
 
+.status-completed {
+  fill: var(--color-success);
+}
+
+.status-failed {
+  fill: var(--color-danger);
+}
+
+.status-cancelled {
+  fill: var(--text-secondary);
+}
+
+.history-toggle,
 .clear-link {
-  color: var(--text-secondary);
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-hover-color: var(--text-primary);
+  --bs-btn-active-color: var(--text-primary);
+  font-size: var(--fs-sm);
   text-decoration: none;
-  font-size: 0.8rem;
 }
 
-.clear-link:hover {
-  color: var(--text-primary);
+.clear-link:hover,
+.history-toggle:hover {
   text-decoration: underline;
 }
 
 .concurrency-select {
   width: auto;
-  background-color: var(--bg-surface-alt);
-  color: var(--text-primary);
-  border-color: var(--border-subtle);
   padding-top: 0.1rem;
   padding-bottom: 0.1rem;
 }
 
 .action {
-  width: var(--icon-size-base);
-  height: var(--icon-size-base);
   flex-shrink: 0;
-  cursor: pointer;
-  transition: transform var(--transition-fast);
+  color: var(--text-primary);
 }
 
-.action:hover {
-  transform: scale(1.25);
+.action > svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
 }
 
-.action.disabled {
-  opacity: 0.3;
-  pointer-events: none;
+.action--muted {
+  color: var(--text-secondary);
 }
 
 .stop {
-  width: var(--icon-size-base);
-  height: var(--icon-size-base);
+  color: var(--color-danger);
 }

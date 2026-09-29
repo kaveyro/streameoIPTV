@@ -38,6 +38,7 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { LogoCacheService } from "../logo-cache.service";
 import { NowPlaying, NowPlayingService } from "../now-playing.service";
 import { TranslateService } from "@ngx-translate/core";
+import { ConfirmService } from "../confirm.service";
 
 @Component({
   selector: "app-channel-tile",
@@ -56,7 +57,8 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     private logoCache: LogoCacheService,
     private nowPlayingService: NowPlayingService,
     private translate: TranslateService,
-  ) { }
+    private confirmService: ConfirmService,
+  ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
   @Input() viewMode: number = 0;
@@ -75,6 +77,12 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   nowPlaying?: NowPlaying;
   nowPlayingProgress = 0;
   private nowPlayingRequested = false;
+  /// Computed once per `channel` change instead of on every change detection.
+  hasNowPlayingLine = false;
+  sourceName = "";
+  /// A series/category is being opened (get_episodes can take a while); a
+  /// second click meanwhile must not push the same level twice.
+  private opening = false;
 
   ngOnInit(): void {
     const image = this.channel?.image;
@@ -85,6 +93,10 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes["channel"]) {
+      this.hasNowPlayingLine = this.showNowPlayingLine();
+      this.sourceName = this.getSourceName();
+    }
     if (changes["format"] && !changes["format"].firstChange) {
       this.loadNowPlaying();
     }
@@ -114,22 +126,30 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     this.getExistingDownload();
   }
 
+  // Download progress is drawn by channel-tile.component.css (.channel.downloading)
+  // from the --dl-progress custom property, so theming/hover/focus keep working.
   setDownloadGradient(progress: number) {
     let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
-    let background = `linear-gradient(to right, green ${progress}%, #343a40 ${progress}%)`;
-    this.renderer.setStyle(element, "background", background);
+    if (!element) return;
+    const clamped = Math.min(100, Math.max(0, progress || 0));
+    this.renderer.addClass(element, "downloading");
+    (element as HTMLElement).style.setProperty("--dl-progress", `${clamped}%`);
   }
 
   clearDownloadGradient() {
     let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
-    let background = "#343a40";
-    this.renderer.setStyle(element, "background", background);
+    if (!element) return;
+    this.renderer.removeClass(element, "downloading");
+    (element as HTMLElement).style.removeProperty("--dl-progress");
   }
 
   async click(record = false) {
     if (this.starting === true) {
       try {
-        await invoke("cancel_play", { sourceId: this.channel?.source_id, channelId: this.channel?.id });
+        await invoke("cancel_play", {
+          sourceId: this.channel?.source_id,
+          channelId: this.channel?.id,
+        });
       } catch (e) {
         this.error.handleError(e);
       }
@@ -140,27 +160,33 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       this.channel?.media_type == MediaType.group ||
       this.channel?.media_type == MediaType.season
     ) {
-      if (
-        this.channel.media_type == MediaType.serie &&
-        !this.memory.SeriesRefreshed.has(this.channel.id!)
-      ) {
-        this.memory.HideChannels.next(false);
-        try {
-          await invoke("get_episodes", { channel: this.channel });
-          this.memory.SeriesRefreshed.set(this.channel.id!, true);
-        } catch (e) {
-          this.error.handleError(e, this.translate.instant("TOAST.FETCH_SERIES_FAILED"));
+      if (this.opening) return;
+      this.opening = true;
+      try {
+        if (
+          this.channel.media_type == MediaType.serie &&
+          !this.memory.SeriesRefreshed.has(this.channel.id!)
+        ) {
+          this.memory.HideChannels.next(false);
+          try {
+            await invoke("get_episodes", { channel: this.channel });
+            this.memory.SeriesRefreshed.set(this.channel.id!, true);
+          } catch (e) {
+            this.error.handleError(e, this.translate.instant("TOAST.FETCH_SERIES_FAILED"));
+          }
         }
+        this.memory.SetNode.next({
+          id:
+            this.channel?.media_type == MediaType.serie
+              ? parseInt(this.channel.url!)
+              : this.channel.id!,
+          name: this.channel.name!,
+          type: fromMediaType(this.channel.media_type),
+          sourceId: this.channel.source_id,
+        });
+      } finally {
+        this.opening = false;
       }
-      this.memory.SetNode.next({
-        id:
-          this.channel?.media_type == MediaType.serie
-            ? parseInt(this.channel.url!)
-            : this.channel.id!,
-        name: this.channel.name!,
-        type: fromMediaType(this.channel.media_type),
-        sourceId: this.channel.source_id,
-      });
       return;
     }
     let file = undefined;
@@ -195,14 +221,48 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
 
   onRightClick(event: MouseEvent) {
     if (this.channel?.media_type == MediaType.season) return;
+    event.preventDefault();
+    // The ContextMenu key / Shift+F10 also fire a contextmenu event, usually
+    // without pointer coordinates; the keyboard handler already opened the
+    // menu at the tile then.
+    const fromKeyboard = event.button !== 2 || (event.clientX === 0 && event.clientY === 0);
+    if (fromKeyboard) {
+      if (!this.isMenuOpen()) this.openContextMenuFromKeyboard();
+      return;
+    }
+    this.openMenuAt(event.clientX, event.clientY);
+  }
+
+  /** Opens the context menu anchored to the tile (ContextMenu key, Shift+F10). */
+  openContextMenuFromKeyboard() {
+    if (this.channel?.media_type == MediaType.season) return;
+    const element = this.el.nativeElement.querySelector(`#tile-${this.id}`) as HTMLElement | null;
+    const rect = (element ?? (this.el.nativeElement as HTMLElement)).getBoundingClientRect();
+    this.openMenuAt(rect.left + Math.min(rect.width / 2, 48), rect.top + rect.height / 2);
+  }
+
+  private isMenuOpen(): boolean {
+    return this.memory.currentContextMenu === this.matMenuTrigger && this.matMenuTrigger.menuOpen;
+  }
+
+  private openMenuAt(x: number, y: number) {
     this.alreadyExistsInFav = this.channel!.favorite!;
     this.downloading = this.isDownloading();
-    event.preventDefault();
-    this.menuTopLeftPosition.x = event.clientX;
-    this.menuTopLeftPosition.y = event.clientY;
+    this.menuTopLeftPosition.x = x;
+    this.menuTopLeftPosition.y = y;
     if (this.memory.currentContextMenu?.menuOpen) this.memory.currentContextMenu.closeMenu();
     this.memory.currentContextMenu = this.matMenuTrigger;
-    this.matMenuTrigger.openMenu();
+    // Let the trigger move to the new position before the overlay measures it.
+    setTimeout(() => this.matMenuTrigger.openMenu(), 0);
+  }
+
+  /** Whether favorite() makes sense here (same rule as the context menu). */
+  canFavorite(): boolean {
+    return (
+      this.channel?.media_type != MediaType.group &&
+      this.channel?.media_type != MediaType.season &&
+      this.viewMode != ViewMode.History
+    );
   }
 
   onError(event: Event) {
@@ -228,12 +288,10 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       await invoke(call, { channelId: this.channel!.id });
       this.channel!.favorite = !wasFavorite;
       if (wasFavorite) {
-        if (this.viewMode == ViewMode.Favorites)
-          this.fade = true;
+        if (this.viewMode == ViewMode.Favorites) this.fade = true;
         this.toastr.success(this.translate.instant("TOAST.FAVORITE_REMOVED", { name }));
       } else {
-        if (this.viewMode == ViewMode.Favorites)
-          this.fade = false;
+        if (this.viewMode == ViewMode.Favorites) this.fade = false;
         this.toastr.success(this.translate.instant("TOAST.FAVORITE_ADDED", { name }));
       }
     } catch (e) {
@@ -272,8 +330,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     return (
       this.channel?.media_type == MediaType.livestream &&
       !this.isCustom() &&
-      (this.memory.XtreamSourceIds.has(this.channel.source_id!) ||
-        !!this.channel.epg_channel_id)
+      (this.memory.XtreamSourceIds.has(this.channel.source_id!) || !!this.channel.epg_channel_id)
     );
   }
 
@@ -300,10 +357,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       this.memory.ModalRef.componentInstance.channelId = this.channel?.id;
       this.memory.ModalRef.componentInstance.sourceId = this.channel?.source_id;
     } catch (e) {
-      this.error.handleError(
-        e,
-        this.translate.instant("TOAST.EPG_MISSING_STREAM_ID"),
-      );
+      this.error.handleError(e, this.translate.instant("TOAST.EPG_MISSING_STREAM_ID"));
     }
   }
 
@@ -350,8 +404,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       canCreateDirectories: true,
       title: this.translate.instant(isGroup ? "DIALOG.EXPORT_GROUP" : "DIALOG.EXPORT_CHANNEL"),
       defaultPath:
-        sanitizeFileName(this.channel?.name!) +
-        (isGroup ? GROUP_EXTENSION : CHANNEL_EXTENSION),
+        sanitizeFileName(this.channel?.name!) + (isGroup ? GROUP_EXTENSION : CHANNEL_EXTENSION),
     });
     if (!file) {
       return;
@@ -387,6 +440,13 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   async deleteGroupNoReplace() {
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.DELETE_CATEGORY_TITLE",
+      messages: ["CONFIRM.DELETE_CATEGORY_BODY"],
+      confirmLabel: "MODAL.DELETE",
+      params: { name: this.channel?.name ?? "" },
+    });
+    if (!confirmed) return;
     try {
       await invoke("delete_custom_group", {
         id: this.channel?.id,
@@ -422,6 +482,13 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   async deleteChannel() {
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.DELETE_CHANNEL_TITLE",
+      messages: ["CONFIRM.DELETE_CHANNEL_BODY"],
+      confirmLabel: "MODAL.DELETE",
+      params: { name: this.channel?.name ?? "" },
+    });
+    if (!confirmed) return;
     await this.memory.tryIPC(
       this.translate.instant("TOAST.CHANNEL_DELETED"),
       this.translate.instant("TOAST.CHANNEL_DELETE_FAILED"),
@@ -484,8 +551,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     try {
       await writeText(this.channel?.url ?? "");
       this.error.success(this.translate.instant("TOAST.URL_COPIED"));
-    }
-    catch (e) {
+    } catch (e) {
       this.error.handleError(e);
     }
   }

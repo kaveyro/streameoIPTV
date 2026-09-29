@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "Gözat",
     "CHANGE": "Değiştir",
-    "GO_BACK": "Geri dön"
+    "GO_BACK": "Geri dön",
+    "SHOW_PASSWORD": "Şifreyi göster",
+    "HIDE_PASSWORD": "Şifreyi gizle"
   },
   "MODAL": {
     "CLOSE": "Kapat",
@@ -109,7 +111,10 @@
     "GO_LEFT": "Sola git",
     "GO_RIGHT": "Sağa git",
     "GO_UP": "Yukarı git",
-    "GO_DOWN": "Aşağı git"
+    "GO_DOWN": "Aşağı git",
+    "TILE_ACTIONS": "Kanal işlemleri",
+    "TOGGLE_FAVORITE": "Seçili kanalı favorilere ekle/çıkar",
+    "OPEN_CONTEXT_MENU": "Seçili kanalın menüsünü aç (Menü tuşu da çalışır)"
   },
   "SETTINGS": {
     "TITLE": "Ayarlar",
@@ -164,7 +169,12 @@
       "ACCENT": "Vurgu rengi",
       "ACCENT_DESC": "Düğmeler ve etkileşimli denetimler için kullanılan vurgu rengi.",
       "SHOW_SOURCE": "Kanallarda oynatma listesi adını göster",
-      "SHOW_SOURCE_DESC": "Kaynak/oynatma listesi adını her kanal ve program başlığının altında gösterir."
+      "SHOW_SOURCE_DESC": "Kaynak/oynatma listesi adını her kanal ve program başlığının altında gösterir.",
+      "ACCENT_BLUE": "Mavi",
+      "ACCENT_PURPLE": "Mor",
+      "ACCENT_TEAL": "Camgöbeği",
+      "ACCENT_CORAL": "Mercan",
+      "ACCENT_GREEN": "Yeşil"
     },
     "PLAYBACK": {
       "CACHING": "Akış önbelleğini kullan",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "Tercih edilen ses dili",
       "LANG_DESC": "mpv'nin varsayılan olarak seçmesi gereken ISO 639 kodları. Yedekleri virgülle ayırın, en yüksek öncelik önce.",
       "MPV_PARAMS": "Genel mpv parametreleri",
-      "MPV_PARAMS_DESC": "Her kanala uygulanan başlatma parametreleri. Ne yaptığınızı bilmiyorsanız boş bırakın."
+      "MPV_PARAMS_DESC": "Her kanala uygulanan başlatma parametreleri. Ne yaptığınızı bilmiyorsanız boş bırakın.",
+      "LANG_PLACEHOLDER": "ör. tr,en",
+      "MPV_PARAMS_PLACEHOLDER": "ör. --hwdec=auto",
+      "DEBUG_LOG": "Oynatıcı günlüğü yaz",
+      "DEBUG_LOG_DESC": "Yalnızca sorun giderme için: günlük klasöründeki mpv.log, içindeki giriş bilgileri dahil her yayın adresini kaydeder. Oynatıcı bir sonraki açılışta etkinleşir."
     },
     "RECORDING": {
       "PATH": "Kayıt yolu",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "Özel kaynak ekle",
     "IMPORT_CUSTOM": "Özel kaynak içe aktar",
     "DELETE_ALL_DATA": "Tüm uygulama verilerini sil",
-    "SELECT_EXPORT_FILE": "streameoIPTV dışa aktarma dosyasını (.otvp) seçin"
+    "SELECT_EXPORT_FILE": "streameoIPTV dışa aktarma dosyasını (.otvp) seçin",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "Sunucu adresi http://host:port biçiminde",
+    "INVALID_URL": "\"{{url}}\" geçerli bir URL değil. Boşluk veya yazım hatası olup olmadığını kontrol edin.",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "Şu anda oynatılıyor",
     "SCHEDULE_RECORDING": "Kaydı zamanla",
-    "CANCEL_SCHEDULED": "Zamanlanmış kaydı iptal et"
+    "CANCEL_SCHEDULED": "Zamanlanmış kaydı iptal et",
+    "PREV_DAY": "Önceki gün",
+    "NEXT_DAY": "Sonraki gün",
+    "NO_PROGRAMMES": "Bu gün için program yok",
+    "WATCH_CATCHUP": "Arşivden izle",
+    "DOWNLOAD_CATCHUP": "Arşivden indir",
+    "NOTIFY_ON": "Başladığında bana bildir",
+    "NOTIFY_OFF": "Bildirimi kapat"
   },
   "RESTREAM": {
     "TITLE": "Yeniden yayınlanıyor: {{name}}",
@@ -290,7 +315,8 @@
     "START": "Başlat",
     "WATCH": "İzle",
     "SHARE": "Paylaş",
-    "STOP": "Durdur"
+    "STOP": "Durdur",
+    "NETWORK_UNAVAILABLE": "Ağ bilgileri alınamadığı için yeniden yayın başlatılamıyor."
   },
   "DOWNLOAD": {
     "TITLE": "İndirmeler",
@@ -409,7 +435,11 @@
     "SHARE": "Paylaş",
     "IMPORT_CHANNEL_GROUP": "Kanal/grup içe aktar",
     "EXPIRES": "{{date}} tarihinde sona erer",
-    "EXPIRED": "{{date}} tarihinde sona erdi"
+    "EXPIRED": "{{date}} tarihinde sona erdi",
+    "ENABLED": "Etkin",
+    "MORE_ACTIONS": "Diğer işlemler",
+    "SHOW_USERNAME": "Kullanıcı adını göster",
+    "HIDE_USERNAME": "Kullanıcı adını gizle"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Kaydın kaydedileceği yeri seçin",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "Catchback'in kaydedileceği yeri seçin",
     "SAVE_FAVORITES": "Favorilerin kaydedileceği yeri seçin",
     "SELECT_FAVS_BACKUP": "Bir favori yedeği seçin",
-    "SELECT_M3U": "Kaynak için yeni bir m3u dosyası seçin"
+    "SELECT_M3U": "Kaynak için yeni bir m3u dosyası seçin",
+    "FILTER_FAVS_BACKUP": "Favori yedeği",
+    "FILTER_STREAMEO_EXPORT": "streameoIPTV dışa aktarımı"
   },
   "TOAST": {
     "SOURCES_UPDATED": "Tüm kaynaklar başarıyla güncellendi",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "Her şey güncel",
     "UPDATE_DOWNLOADING": "{{version}} sürümü indiriliyor...",
     "UPDATE_INSTALLED": "Güncelleme kuruldu, yeniden başlatılıyor",
-    "UPDATE_FAILED": "Güncelleme denetimi başarısız"
+    "UPDATE_FAILED": "Güncelleme denetimi başarısız",
+    "ERROR_MORE_INFO": "{{message}}. Daha fazla bilgi için buraya tıklayın",
+    "ERROR_GENERIC_MORE_INFO": "Bir hata oluştu. Daha fazla bilgi için buraya tıklayın",
+    "UPDATE_INSTALL_FAILED": "Güncelleme yüklenemedi",
+    "UPDATE_RELAUNCH_FAILED": "Güncelleme yüklendi ancak uygulama yeniden başlatılamadı. Lütfen elle yeniden başlatın",
+    "NETWORK_INFO_FAILED": "Ağ bilgileri okunamadı",
+    "SETTINGS_SAVED": "Kaydedildi",
+    "SETTINGS_SAVE_FAILED": "Ayarlar kaydedilemedi"
   },
   "UPDATE": {
     "TITLE": "Güncelleme mevcut",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "Kurulumdan sonra uygulama yeniden başlar.",
     "INSTALL": "Şimdi kur",
     "LATER": "Daha sonra"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "Geriye dönük izleme mevcut",
+    "IS_FAVORITE": "Favorilerde"
+  },
+  "LOADING": {
+    "CHANNELS": "Kanallarınız yükleniyor..."
+  },
+  "TIME": {
+    "JUST_NOW": "Az önce"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "Tüm indirmeler iptal edilsin mi?",
+    "CANCEL_DOWNLOADS_BODY": "Bekleyen veya devam eden {{count}} indirme iptal edilecek.",
+    "DELETE_SOURCE_TITLE": "Kaynak silinsin mi?",
+    "DELETE_SOURCE_BODY": "\"{{name}}\" kaynağı tüm kanalları, kategorileri, favorileri ve geçmişiyle birlikte kaldırılacak. Bu işlem geri alınamaz.",
+    "CLEAR_HISTORY_TITLE": "Geçmiş temizlensin mi?",
+    "CLEAR_HISTORY_BODY": "Tüm kanallar son izlenenler listesinden kaldırılacak. Bu işlem geri alınamaz.",
+    "DELETE_CHANNEL_TITLE": "Kanal silinsin mi?",
+    "DELETE_CHANNEL_BODY": "\"{{name}}\" kanalı kalıcı olarak silinecek.",
+    "DELETE_CATEGORY_TITLE": "Kategori silinsin mi?",
+    "DELETE_CATEGORY_BODY": "\"{{name}}\" kategorisi kalıcı olarak silinecek."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "Kanallara dön",
+    "CHANNELS": "Kanallar",
+    "FULLSCREEN": "Tam ekran",
+    "EXIT_FULLSCREEN": "Tam ekrandan çık",
+    "NEXT": "Sonraki",
+    "PROGRAMME_PROGRESS": "Program ilerlemesi",
+    "FILTER_PLACEHOLDER": "Kanalları filtrele...",
+    "FILTER_CHANNELS": "Kanal listesini filtrele"
   }
 }

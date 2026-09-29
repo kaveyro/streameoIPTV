@@ -2,7 +2,9 @@
   "COMMON": {
     "BROWSE": "Examinar",
     "CHANGE": "Cambiar",
-    "GO_BACK": "Volver"
+    "GO_BACK": "Volver",
+    "SHOW_PASSWORD": "Mostrar contraseña",
+    "HIDE_PASSWORD": "Ocultar contraseña"
   },
   "MODAL": {
     "CLOSE": "Cerrar",
@@ -109,7 +111,10 @@
     "GO_LEFT": "Ir a la izquierda",
     "GO_RIGHT": "Ir a la derecha",
     "GO_UP": "Ir arriba",
-    "GO_DOWN": "Ir abajo"
+    "GO_DOWN": "Ir abajo",
+    "TILE_ACTIONS": "Acciones del canal",
+    "TOGGLE_FAVORITE": "Añadir/quitar el canal seleccionado de favoritos",
+    "OPEN_CONTEXT_MENU": "Abrir el menú del canal seleccionado (también con la tecla Menú)"
   },
   "SETTINGS": {
     "TITLE": "Ajustes",
@@ -164,7 +169,12 @@
       "ACCENT": "Color de acento",
       "ACCENT_DESC": "Color de resaltado usado para botones y controles interactivos.",
       "SHOW_SOURCE": "Mostrar el nombre de la lista en los canales",
-      "SHOW_SOURCE_DESC": "Muestra el nombre de la fuente/lista bajo cada título de canal y programa."
+      "SHOW_SOURCE_DESC": "Muestra el nombre de la fuente/lista bajo cada título de canal y programa.",
+      "ACCENT_BLUE": "Azul",
+      "ACCENT_PURPLE": "Morado",
+      "ACCENT_TEAL": "Verde azulado",
+      "ACCENT_CORAL": "Coral",
+      "ACCENT_GREEN": "Verde"
     },
     "PLAYBACK": {
       "CACHING": "Usar almacenamiento en caché del stream",
@@ -190,7 +200,11 @@
       "AUDIO_LANG": "Idioma de audio preferido",
       "LANG_DESC": "Códigos ISO 639 que mpv debería elegir por defecto. Separa las alternativas con comas, la de mayor prioridad primero.",
       "MPV_PARAMS": "Parámetros globales de mpv",
-      "MPV_PARAMS_DESC": "Parámetros de inicio aplicados a cada canal. Déjalo vacío a menos que sepas lo que haces."
+      "MPV_PARAMS_DESC": "Parámetros de inicio aplicados a cada canal. Déjalo vacío a menos que sepas lo que haces.",
+      "LANG_PLACEHOLDER": "p. ej. es,en",
+      "MPV_PARAMS_PLACEHOLDER": "p. ej. --hwdec=auto",
+      "DEBUG_LOG": "Guardar un registro del reproductor",
+      "DEBUG_LOG_DESC": "Solo para diagnosticar problemas: mpv.log en la carpeta de registros guarda cada dirección de stream, incluidos los datos de acceso que contiene. Se aplica la próxima vez que se abre el reproductor."
     },
     "RECORDING": {
       "PATH": "Ruta de grabación",
@@ -270,12 +284,23 @@
     "ADD_CUSTOM": "Añadir fuente personalizada",
     "IMPORT_CUSTOM": "Importar fuente personalizada",
     "DELETE_ALL_DATA": "Eliminar todos los datos de la app",
-    "SELECT_EXPORT_FILE": "Selecciona el archivo de exportación de streameoIPTV (.otvp)"
+    "SELECT_EXPORT_FILE": "Selecciona el archivo de exportación de streameoIPTV (.otvp)",
+    "URL": "URL",
+    "XTREAM_URL_HINT": "Dirección del servidor con el formato http://host:port",
+    "INVALID_URL": "\"{{url}}\" no es una URL válida. Comprueba que no tenga espacios ni errores.",
+    "URL_PLACEHOLDER": "URL"
   },
   "EPG": {
     "PLAYING_NOW": "En emisión ahora",
     "SCHEDULE_RECORDING": "Programar grabación",
-    "CANCEL_SCHEDULED": "Cancelar grabación programada"
+    "CANCEL_SCHEDULED": "Cancelar grabación programada",
+    "PREV_DAY": "Día anterior",
+    "NEXT_DAY": "Día siguiente",
+    "NO_PROGRAMMES": "No hay programas para este día",
+    "WATCH_CATCHUP": "Ver desde el archivo",
+    "DOWNLOAD_CATCHUP": "Descargar desde el archivo",
+    "NOTIFY_ON": "Avisarme cuando empiece",
+    "NOTIFY_OFF": "Desactivar aviso"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -290,7 +315,8 @@
     "START": "Iniciar",
     "WATCH": "Ver",
     "SHARE": "Compartir",
-    "STOP": "Detener"
+    "STOP": "Detener",
+    "NETWORK_UNAVAILABLE": "La información de red no está disponible, por lo que no se puede iniciar la retransmisión."
   },
   "DOWNLOAD": {
     "TITLE": "Descargas",
@@ -409,7 +435,11 @@
     "SHARE": "Compartir",
     "IMPORT_CHANNEL_GROUP": "Importar canal/grupo",
     "EXPIRES": "Caduca el {{date}}",
-    "EXPIRED": "Caducó el {{date}}"
+    "EXPIRED": "Caducó el {{date}}",
+    "ENABLED": "Activada",
+    "MORE_ACTIONS": "Más acciones",
+    "SHOW_USERNAME": "Mostrar nombre de usuario",
+    "HIDE_USERNAME": "Ocultar nombre de usuario"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecciona dónde guardar la grabación",
@@ -421,7 +451,9 @@
     "SAVE_CATCHBACK": "Selecciona dónde guardar el catchback",
     "SAVE_FAVORITES": "Selecciona dónde guardar los favoritos",
     "SELECT_FAVS_BACKUP": "Selecciona una copia de seguridad de favoritos",
-    "SELECT_M3U": "Selecciona un nuevo archivo m3u para la fuente"
+    "SELECT_M3U": "Selecciona un nuevo archivo m3u para la fuente",
+    "FILTER_FAVS_BACKUP": "Copia de seguridad de favoritos",
+    "FILTER_STREAMEO_EXPORT": "Exportación de streameoIPTV"
   },
   "TOAST": {
     "SOURCES_UPDATED": "Todas las fuentes se actualizaron correctamente",
@@ -500,7 +532,14 @@
     "UPDATE_UP_TO_DATE": "Todo está actualizado",
     "UPDATE_DOWNLOADING": "Descargando la versión {{version}}...",
     "UPDATE_INSTALLED": "Actualización instalada, reiniciando",
-    "UPDATE_FAILED": "Error al buscar actualizaciones"
+    "UPDATE_FAILED": "Error al buscar actualizaciones",
+    "ERROR_MORE_INFO": "{{message}}. Haz clic aquí para más información",
+    "ERROR_GENERIC_MORE_INFO": "Se produjo un error. Haz clic aquí para más información",
+    "UPDATE_INSTALL_FAILED": "No se pudo instalar la actualización",
+    "UPDATE_RELAUNCH_FAILED": "La actualización se instaló, pero la aplicación no pudo reiniciarse. Reiníciala manualmente",
+    "NETWORK_INFO_FAILED": "No se pudo leer la información de red",
+    "SETTINGS_SAVED": "Guardado",
+    "SETTINGS_SAVE_FAILED": "No se pudieron guardar los ajustes"
   },
   "UPDATE": {
     "TITLE": "Actualización disponible",
@@ -508,5 +547,37 @@
     "RESTART_HINT": "La aplicación se reinicia tras instalar la actualización.",
     "INSTALL": "Instalar ahora",
     "LATER": "Más tarde"
+  },
+  "TILE": {
+    "CATCHUP_AVAILABLE": "Catch-up disponible",
+    "IS_FAVORITE": "En favoritos"
+  },
+  "LOADING": {
+    "CHANNELS": "Cargando tus canales..."
+  },
+  "TIME": {
+    "JUST_NOW": "Justo ahora"
+  },
+  "CONFIRM": {
+    "CANCEL_DOWNLOADS_TITLE": "¿Cancelar todas las descargas?",
+    "CANCEL_DOWNLOADS_BODY": "Se cancelarán {{count}} descargas en cola o en curso.",
+    "DELETE_SOURCE_TITLE": "¿Eliminar la fuente?",
+    "DELETE_SOURCE_BODY": "La fuente \"{{name}}\" se eliminará junto con todos sus canales, categorías, favoritos e historial. Esta acción no se puede deshacer.",
+    "CLEAR_HISTORY_TITLE": "¿Borrar el historial?",
+    "CLEAR_HISTORY_BODY": "Todos los canales se quitarán de la lista de vistos recientemente. Esta acción no se puede deshacer.",
+    "DELETE_CHANNEL_TITLE": "¿Eliminar el canal?",
+    "DELETE_CHANNEL_BODY": "El canal \"{{name}}\" se eliminará de forma permanente.",
+    "DELETE_CATEGORY_TITLE": "¿Eliminar la categoría?",
+    "DELETE_CATEGORY_BODY": "La categoría \"{{name}}\" se eliminará de forma permanente."
+  },
+  "PLAYER": {
+    "BACK_TO_CHANNELS": "Volver a los canales",
+    "CHANNELS": "Canales",
+    "FULLSCREEN": "Pantalla completa",
+    "EXIT_FULLSCREEN": "Salir de pantalla completa",
+    "NEXT": "A continuación",
+    "PROGRAMME_PROGRESS": "Progreso del programa",
+    "FILTER_PLACEHOLDER": "Filtrar canales...",
+    "FILTER_CHANNELS": "Filtrar la lista de canales"
   }
 }

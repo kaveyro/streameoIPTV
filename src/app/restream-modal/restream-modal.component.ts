@@ -21,6 +21,7 @@ export class RestreamModalComponent implements OnInit, OnDestroy {
   watching = false;
   started = false;
   networkInfo?: NetworkInfo;
+  networkError = false;
   selectedIP?: string;
   toUnlisten: UnlistenFn[] = [];
 
@@ -32,10 +33,17 @@ export class RestreamModalComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    invoke("get_network_info").then((network) => {
-      this.networkInfo = network as NetworkInfo;
-      this.selectedIP = this.networkInfo.local_ips[0];
-    });
+    invoke("get_network_info")
+      .then((network) => {
+        this.networkInfo = network as NetworkInfo;
+        this.selectedIP = this.networkInfo.local_ips[0];
+      })
+      .catch((e) => {
+        // Without the network info there is no port to re-stream on; Start
+        // stays disabled instead of throwing on networkInfo!.port.
+        this.networkError = true;
+        this.error.handleError(e, this.translate.instant("TOAST.NETWORK_INFO_FAILED"));
+      });
     listen<boolean>("restream_started", () => {
       this.ngZone.run(() => {
         this.started = true;
@@ -45,9 +53,10 @@ export class RestreamModalComponent implements OnInit, OnDestroy {
   }
 
   async start() {
+    if (!this.networkInfo) return;
     this.loading = true;
     try {
-      await invoke("start_restream", { channel: this.channel, port: this.networkInfo!.port });
+      await invoke("start_restream", { channel: this.channel, port: this.networkInfo.port });
     } catch (e) {
       this.error.handleError(e);
     }

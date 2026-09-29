@@ -1,5 +1,8 @@
-<ng-keyboard-shortcuts [shortcuts]="shortcuts"></ng-keyboard-shortcuts>
-<ng-keyboard-shortcuts-help [key]="'f1'" [closeKey]="'escape'" [title]="('HOME.HELP' | translate)" />
+<ng-keyboard-shortcuts
+  [shortcuts]="shortcuts"
+  [disabled]="keyboardBlocked()"
+></ng-keyboard-shortcuts>
+<ng-keyboard-shortcuts-help [key]="'f1'" [closeKey]="'escape'" [title]="'HOME.HELP' | translate" />
 
 <div class="home-layout">
   <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
@@ -8,118 +11,218 @@
         <path fill="currentColor" d="M8,5.14V19.14L19,12.14L8,5.14Z" />
       </svg>
       <span class="wordmark-text">streameo</span>
-      <button type="button" class="sidebar-toggle" (click)="toggleSidebar()"
-        [attr.aria-label]="((sidebarCollapsed ? 'HOME.EXPAND_SIDEBAR' : 'HOME.COLLAPSE_SIDEBAR') | translate)"
-        [attr.aria-expanded]="!sidebarCollapsed">
+      <button
+        type="button"
+        class="sidebar-toggle"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="
+          (sidebarCollapsed ? 'HOME.EXPAND_SIDEBAR' : 'HOME.COLLAPSE_SIDEBAR') | translate
+        "
+        [attr.aria-expanded]="!sidebarCollapsed"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor"
-            d="M21,15.61L19.59,17L14.58,12L19.59,7L21,8.39L17.44,12L21,15.61M3,6H16V8H3V6M3,13V11H13V13H3M3,18V16H16V18H3Z" />
+          <path
+            fill="currentColor"
+            d="M21,15.61L19.59,17L14.58,12L19.59,7L21,8.39L17.44,12L21,15.61M3,6H16V8H3V6M3,13V11H13V13H3M3,18V16H16V18H3Z"
+          />
         </svg>
       </button>
     </div>
-    <nav class="sidebar-nav" [attr.aria-label]="('HOME.LIBRARY_VIEWS' | translate)">
-      <button id="viewMode-0" type="button" class="nav-item" (click)="switchMode(viewModeEnum.All)"
-        [class.active]="isMode(viewModeEnum.All)" [attr.aria-current]="isMode(viewModeEnum.All) ? 'page' : null">
+    <nav class="sidebar-nav" [attr.aria-label]="'HOME.LIBRARY_VIEWS' | translate">
+      <button
+        id="viewMode-0"
+        type="button"
+        class="nav-item"
+        (click)="switchMode(viewModeEnum.All)"
+        [class.active]="isMode(viewModeEnum.All)"
+        [attr.aria-current]="isMode(viewModeEnum.All) ? 'page' : null"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M3,11H11V3H3M3,21H11V13H3M13,21H21V13H13M13,3V11H21V3" />
         </svg>
-        <span class="nav-label">{{ 'HOME.NAV.ALL_CHANNELS' | translate }}</span>
+        <span class="nav-label">{{ "HOME.NAV.ALL_CHANNELS" | translate }}</span>
       </button>
-      <button id="viewMode-1" type="button" class="nav-item" (click)="switchMode(viewModeEnum.Categories)"
+      <button
+        id="viewMode-1"
+        type="button"
+        class="nav-item"
+        (click)="switchMode(viewModeEnum.Categories)"
         [class.active]="isMode(viewModeEnum.Categories)"
-        [attr.aria-current]="isMode(viewModeEnum.Categories) ? 'page' : null">
+        [attr.aria-current]="isMode(viewModeEnum.Categories) ? 'page' : null"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
-            d="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z" />
+            d="M10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6H12L10,4Z"
+          />
         </svg>
-        <span class="nav-label">{{ 'HOME.NAV.CATEGORIES' | translate }}</span>
+        <span class="nav-label">{{ "HOME.NAV.CATEGORIES" | translate }}</span>
       </button>
-      <button id="viewMode-2" type="button" class="nav-item" (click)="switchMode(viewModeEnum.Favorites)"
+      <button
+        id="viewMode-2"
+        type="button"
+        class="nav-item"
+        (click)="switchMode(viewModeEnum.Favorites)"
         [class.active]="isMode(viewModeEnum.Favorites)"
-        [attr.aria-current]="isMode(viewModeEnum.Favorites) ? 'page' : null">
+        [attr.aria-current]="isMode(viewModeEnum.Favorites) ? 'page' : null"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
-            d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
+            d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"
+          />
         </svg>
-        <span class="nav-label">{{ 'HOME.NAV.FAVORITES' | translate }}</span>
+        <span class="nav-label">{{ "HOME.NAV.FAVORITES" | translate }}</span>
       </button>
-      <button id="viewMode-3" type="button" class="nav-item" (click)="switchMode(viewModeEnum.History)"
+      <button
+        id="viewMode-3"
+        type="button"
+        class="nav-item"
+        (click)="switchMode(viewModeEnum.History)"
         [class.active]="isMode(viewModeEnum.History)"
-        [attr.aria-current]="isMode(viewModeEnum.History) ? 'page' : null">
+        [attr.aria-current]="isMode(viewModeEnum.History) ? 'page' : null"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
-            d="M13.5,8H12V13L16.28,15.54L17,14.33L13.5,10.67V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3" />
+            d="M13.5,8H12V13L16.28,15.54L17,14.33L13.5,10.67V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3"
+          />
         </svg>
-        <span class="nav-label">{{ 'HOME.NAV.HISTORY' | translate }}</span>
+        <span class="nav-label">{{ "HOME.NAV.HISTORY" | translate }}</span>
       </button>
     </nav>
-    <button type="button" class="nav-item settings-item" (click)="openSettings()" [attr.aria-label]="('HOME.OPEN_SETTINGS' | translate)">
+    <button
+      type="button"
+      class="nav-item settings-item"
+      (click)="openSettings()"
+      [attr.aria-label]="'HOME.OPEN_SETTINGS' | translate"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
-          d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+          d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"
+        />
       </svg>
-      <span class="nav-label">{{ 'HOME.NAV.SETTINGS' | translate }}</span>
+      <span class="nav-label">{{ "HOME.NAV.SETTINGS" | translate }}</span>
     </button>
   </aside>
 
   <main class="main-area">
     <div class="toolbar">
       <div class="search-box">
-        <input autocomplete="off" type="text" id="search" #search style="width: 100%" class="form-control"
-          [placeholder]="('HOME.SEARCH_PLACEHOLDER' | translate)" />
+        <input
+          autocomplete="off"
+          type="text"
+          id="search"
+          #search
+          style="width: 100%"
+          class="form-control"
+          [placeholder]="'HOME.SEARCH_PLACEHOLDER' | translate"
+        />
       </div>
 
       <div class="media-pills" *ngIf="filtersVisible()" @fadeInOut>
         <label class="pill-toggle" [class.active]="chkLiveStream">
-          <input class="pill-input" [(ngModel)]="chkLiveStream"
-            (ngModelChange)="updateMediaTypes(mediaTypeEnum.livestream)" id="filter-0" type="checkbox" />
-          {{ 'HOME.PILL.LIVESTREAMS' | translate }}
+          <input
+            class="pill-input"
+            [(ngModel)]="chkLiveStream"
+            (ngModelChange)="updateMediaTypes(mediaTypeEnum.livestream)"
+            id="filter-0"
+            type="checkbox"
+          />
+          {{ "HOME.PILL.LIVESTREAMS" | translate }}
         </label>
         <label class="pill-toggle" [class.active]="chkMovie">
-          <input class="pill-input" [(ngModel)]="chkMovie" (ngModelChange)="updateMediaTypes(mediaTypeEnum.movie)"
-            id="filter-1" type="checkbox" />
-          {{ (anyXtream() ? "HOME.PILL.MOVIES_VODS" : "HOME.PILL.MOVIES_VODS_SERIES") | translate }}
+          <input
+            class="pill-input"
+            [(ngModel)]="chkMovie"
+            (ngModelChange)="updateMediaTypes(mediaTypeEnum.movie)"
+            id="filter-1"
+            type="checkbox"
+          />
+          {{ (hasXtream ? "HOME.PILL.MOVIES_VODS" : "HOME.PILL.MOVIES_VODS_SERIES") | translate }}
         </label>
-        <label *ngIf="anyXtream()" class="pill-toggle" [class.active]="chkSerie">
-          <input class="pill-input" [(ngModel)]="chkSerie" (ngModelChange)="updateMediaTypes(mediaTypeEnum.serie)"
-            id="filter-2" type="checkbox" />
-          {{ 'HOME.PILL.SERIES' | translate }}
+        <label *ngIf="hasXtream" class="pill-toggle" [class.active]="chkSerie">
+          <input
+            class="pill-input"
+            [(ngModel)]="chkSerie"
+            (ngModelChange)="updateMediaTypes(mediaTypeEnum.serie)"
+            id="filter-2"
+            type="checkbox"
+          />
+          {{ "HOME.PILL.SERIES" | translate }}
         </label>
       </div>
 
       <div class="toolbar-actions">
-        <svg (click)="reload()" class="toolbar-icon reload-icon" role="button" tabindex="0" [attr.aria-label]="('HOME.RELOAD_VIEW' | translate)"
-          (keyup.enter)="reload()" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-          <title>{{ 'HOME.RELOAD_VIEW' | translate }}</title>
+        <svg
+          (click)="reload()"
+          class="toolbar-icon reload-icon"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'HOME.RELOAD_VIEW' | translate"
+          (keyup.enter)="reload()"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+        >
+          <title>{{ "HOME.RELOAD_VIEW" | translate }}</title>
           <path
-            d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z" />
+            d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
+          />
         </svg>
         <app-sort-button></app-sort-button>
-        <div class="format-switcher" role="group" [attr.aria-label]="('HOME.VIEW_FORMAT' | translate)">
-          <button type="button" class="format-btn" [class.active]="viewFormat === 'grid'"
-            (click)="setViewFormat('grid')" [attr.aria-label]="('HOME.GRID_VIEW' | translate)" [attr.aria-pressed]="viewFormat === 'grid'">
+        <div
+          class="format-switcher"
+          role="group"
+          [attr.aria-label]="'HOME.VIEW_FORMAT' | translate"
+        >
+          <button
+            type="button"
+            class="format-btn"
+            [class.active]="viewFormat === 'grid'"
+            (click)="setViewFormat('grid')"
+            [attr.aria-label]="'HOME.GRID_VIEW' | translate"
+            [attr.aria-pressed]="viewFormat === 'grid'"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3,11H11V3H3M3,21H11V13H3M13,21H21V13H13M13,3V11H21V3" />
             </svg>
           </button>
-          <button type="button" class="format-btn" [class.active]="viewFormat === 'list'"
-            (click)="setViewFormat('list')" [attr.aria-label]="('HOME.LIST_VIEW' | translate)" [attr.aria-pressed]="viewFormat === 'list'">
+          <button
+            type="button"
+            class="format-btn"
+            [class.active]="viewFormat === 'list'"
+            (click)="setViewFormat('list')"
+            [attr.aria-label]="'HOME.LIST_VIEW' | translate"
+            [attr.aria-pressed]="viewFormat === 'list'"
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
-                d="M21,13H3A1,1 0 0,0 2,14V20A1,1 0 0,0 3,21H21A1,1 0 0,0 22,20V14A1,1 0 0,0 21,13M21,3H3A1,1 0 0,0 2,4V10A1,1 0 0,0 3,11H21A1,1 0 0,0 22,10V4A1,1 0 0,0 21,3Z" />
+                d="M21,13H3A1,1 0 0,0 2,14V20A1,1 0 0,0 3,21H21A1,1 0 0,0 22,20V14A1,1 0 0,0 21,13M21,3H3A1,1 0 0,0 2,4V10A1,1 0 0,0 3,11H21A1,1 0 0,0 22,10V4A1,1 0 0,0 21,3Z"
+              />
             </svg>
           </button>
         </div>
       </div>
     </div>
 
-    <div class="mb-3 d-flex align-items-center" *ngIf="
+    <div
+      class="mb-3 d-flex align-items-center"
+      *ngIf="
         (filters?.view_type == viewModeEnum.Categories && filters?.group_id) || filters?.series_id
-      ">
-      <svg (click)="goBack()" fill="currentColor" class="go-back-arrow clickable" role="button" tabindex="0"
-        [attr.aria-label]="('COMMON.GO_BACK' | translate)" (keyup.enter)="goBack()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+      "
+    >
+      <svg
+        (click)="goBack()"
+        fill="currentColor"
+        class="go-back-arrow clickable"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'COMMON.GO_BACK' | translate"
+        (keyup.enter)="goBack()"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+      >
         <path
-          d="M2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12M18,11H10L13.5,7.5L12.08,6.08L6.16,12L12.08,17.92L13.5,16.5L10,13H18V11Z" />
+          d="M2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12M18,11H10L13.5,7.5L12.08,6.08L6.16,12L12.08,17.92L13.5,16.5L10,13H18V11Z"
+        />
       </svg>
       <h4 *ngIf="this.nodeStack.hasNodes()" class="ms-2 mb-0">
         {{ this.nodeStack.get()?.toString() }}
@@ -127,51 +230,79 @@
     </div>
 
     <span class="visually-hidden" aria-live="polite" role="status">
-      <ng-container *ngIf="!loading && filters">{{ 'HOME.CHANNELS_SHOWN' | translate:{ count: channels.length } }}</ng-container>
+      <ng-container *ngIf="!loading && filters">{{
+        "HOME.CHANNELS_SHOWN" | translate: { count: channels.length }
+      }}</ng-container>
     </span>
 
     <ng-container>
-      <div *ngIf="gridLoading" class="row gy-3" aria-hidden="true">
-        <div *ngFor="let _ of skeletons" [class]="viewFormat === 'list' ? 'col-12' : 'col-lg-4 col-md-4 col-12'">
-          <div class="skeleton skeleton-tile"></div>
-        </div>
+      <div
+        *ngIf="gridLoading"
+        class="tile-grid"
+        [class.list-view]="viewFormat === 'list'"
+        aria-hidden="true"
+      >
+        <div *ngFor="let _ of skeletons" class="skeleton skeleton-tile"></div>
       </div>
       <div *ngIf="!gridLoading && !loading && filters && channels.length === 0" class="empty-state">
         <ng-container *ngIf="filters.query; else noQueryEmpty">
-          <p class="mb-1">{{ 'EMPTY.NO_CHANNELS_FOUND' | translate }}</p>
-          <small>{{ 'EMPTY.TRY_DIFFERENT_SEARCH' | translate }}</small>
+          <p class="mb-1">{{ "EMPTY.NO_CHANNELS_FOUND" | translate }}</p>
+          <small>{{ "EMPTY.TRY_DIFFERENT_SEARCH" | translate }}</small>
         </ng-container>
         <ng-template #noQueryEmpty>
           <ng-container [ngSwitch]="filters.view_type">
             <ng-container *ngSwitchCase="viewModeEnum.Favorites">
-              <p class="mb-1">{{ 'EMPTY.NO_FAVORITES' | translate }}</p>
-              <small>{{ 'EMPTY.NO_FAVORITES_HINT' | translate }}</small>
+              <p class="mb-1">{{ "EMPTY.NO_FAVORITES" | translate }}</p>
+              <small>{{ "EMPTY.NO_FAVORITES_HINT" | translate }}</small>
             </ng-container>
             <ng-container *ngSwitchCase="viewModeEnum.History">
-              <p class="mb-1">{{ 'EMPTY.NOTHING_WATCHED' | translate }}</p>
+              <p class="mb-1">{{ "EMPTY.NOTHING_WATCHED" | translate }}</p>
             </ng-container>
             <ng-container *ngSwitchDefault>
-              <p class="mb-1">{{ 'EMPTY.NO_CHANNELS_FOUND' | translate }}</p>
+              <p class="mb-1">{{ "EMPTY.NO_CHANNELS_FOUND" | translate }}</p>
             </ng-container>
           </ng-container>
         </ng-template>
       </div>
-      <div *ngIf="!gridLoading" class="row gy-3" [@fade]="channelsVisible ? 'visible' : 'hidden'">
-        <app-channel-tile [attr.id]="i == 0 ? 'first' : null" *ngFor="let channel of channels; let i = index"
-          [ngClass]="tileColumnClass" [id]="i" [channel]="channel" [viewMode]="viewType"
-          [format]="viewFormat"></app-channel-tile>
+      <div
+        *ngIf="!gridLoading"
+        #tileGrid
+        class="tile-grid"
+        [class.list-view]="viewFormat === 'list'"
+        [@fade]="channelsVisible ? 'visible' : 'hidden'"
+      >
+        <app-channel-tile
+          [attr.id]="i == 0 ? 'first' : null"
+          *ngFor="let channel of channels; let i = index; trackBy: trackByChannel"
+          [id]="i"
+          [channel]="channel"
+          [viewMode]="viewType"
+          [format]="viewFormat"
+        ></app-channel-tile>
       </div>
 
-      <button [@fade]="channelsVisible ? 'visible' : 'hidden'" *ngIf="reachedMax === false" (click)="loadMore()"
-        class="btn btn-outline-primary mx-auto d-block mt-3">
-        {{ 'HOME.LOAD_MORE' | translate }}
+      <button
+        [@fade]="channelsVisible ? 'visible' : 'hidden'"
+        *ngIf="reachedMax === false"
+        (click)="loadMore(true)"
+        [disabled]="loading"
+        class="btn btn-outline-primary mx-auto d-block mt-3"
+      >
+        {{ "HOME.LOAD_MORE" | translate }}
       </button>
     </ng-container>
   </main>
 </div>
 
-<div *ngIf="showScrollTop" (click)="scrollToTop()" class="scroll-to-top" role="button" tabindex="0"
-  [attr.aria-label]="('HOME.SCROLL_TOP' | translate)" (keyup.enter)="scrollToTop()">
+<div
+  *ngIf="showScrollTop"
+  (click)="scrollToTop()"
+  class="scroll-to-top"
+  role="button"
+  tabindex="0"
+  [attr.aria-label]="'HOME.SCROLL_TOP' | translate"
+  (keyup.enter)="scrollToTop()"
+>
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path fill="currentColor" d="M7.41,15.41L12,10.83L16.59,15.41L18,14L12,8L6,14L7.41,15.41Z" />
   </svg>

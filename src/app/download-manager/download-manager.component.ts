@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
 import { DownloadService } from "../download.service";
 import { Download, DownloadStatus } from "../models/download";
+import { ConfirmService } from "../confirm.service";
 
 @Component({
   selector: "app-download-manager",
@@ -16,7 +17,10 @@ export class DownloadManagerComponent {
     (_, i) => i + 1,
   );
 
-  constructor(public downloadService: DownloadService) {}
+  constructor(
+    public downloadService: DownloadService,
+    private confirmService: ConfirmService,
+  ) {}
 
   /// Queued and active downloads, in queue order.
   getDownloads() {
@@ -52,6 +56,15 @@ export class DownloadManagerComponent {
   }
 
   async cancelAll() {
+    const count = this.downloadService.Downloads.size;
+    if (count === 0) return;
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.CANCEL_DOWNLOADS_TITLE",
+      messages: ["CONFIRM.CANCEL_DOWNLOADS_BODY"],
+      confirmLabel: "DOWNLOAD.CANCEL_ALL",
+      params: { count },
+    });
+    if (!confirmed) return;
     await this.downloadService.abortAll();
   }
 

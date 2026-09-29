@@ -1,130 +1,133 @@
-<div class="epg-item">
-  <div class="row justify-content-between align-items-center">
-    <div class="col-8 d-flex align-items-center gap-2">
-      <span style="font-size: 1.35em">{{ epg?.title }}</span>
-      <svg
-        [ngbTooltip]="('EPG.PLAYING_NOW' | translate)"
+<div class="epg-item" [class.epg-item--now]="epg?.now_playing">
+  <div class="epg-head">
+    <div class="epg-title-wrap">
+      <span class="epg-title">{{ epg?.title }}</span>
+      <span
         *ngIf="epg?.now_playing"
         class="live"
-        fill="red"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-      >
-        <path d="M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
-      </svg>
+        role="img"
+        [attr.aria-label]="'EPG.PLAYING_NOW' | translate"
+        [ngbTooltip]="'EPG.PLAYING_NOW' | translate"
+      ></span>
     </div>
-    <div class="col d-flex align-items-center justify-content-end gap-3">
-      <svg
-        fill="currentColor"
-        class="timeshift"
-        [ngClass]="{ loading: playing }"
-        (click)="timeshift()"
+    <div class="epg-actions">
+      <button
+        type="button"
+        class="icon-btn epg-action"
         *ngIf="epg?.has_archive"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
+        [class.loading]="playing"
+        [disabled]="playing"
+        (click)="timeshift()"
+        [attr.aria-label]="'EPG.WATCH_CATCHUP' | translate"
+        [ngbTooltip]="'EPG.WATCH_CATCHUP' | translate"
       >
-        <path
-          d="M10,16.5V7.5L16,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
-        />
-      </svg>
-      <svg
-        fill="currentColor"
-        (click)="downloadTimeshift()"
-        class="timeshift"
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M10,16.5V7.5L16,12M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="icon-btn epg-action"
         *ngIf="epg?.has_archive && !downloading()"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
+        (click)="downloadTimeshift()"
+        [attr.aria-label]="'EPG.DOWNLOAD_CATCHUP' | translate"
+        [ngbTooltip]="'EPG.DOWNLOAD_CATCHUP' | translate"
       >
-        <path
-          d="M12 2C17.5 2 22 6.5 22 12C22 17.5 17.5 22 12 22C6.5 22 2 17.5 2 12C2 6.5 6.5 2 12 2M8 17H16V15H8V17M16 10H13.5V6H10.5V10H8L12 14L16 10Z"
-        />
-      </svg>
-      <svg
-        (click)="cancelTimeshiftDownload()"
-        class="timeshift"
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M12 2C17.5 2 22 6.5 22 12C22 17.5 17.5 22 12 22C6.5 22 2 17.5 2 12C2 6.5 6.5 2 12 2M8 17H16V15H8V17M16 10H13.5V6H10.5V10H8L12 14L16 10Z"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="icon-btn epg-action"
         *ngIf="downloading()"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
+        (click)="cancelTimeshiftDownload()"
+        [attr.aria-label]="('MENU.CANCEL_DOWNLOAD' | translate) + ' (' + progress + '%)'"
+        [ngbTooltip]="('MENU.CANCEL_DOWNLOAD' | translate) + ' (' + progress + '%)'"
       >
-        <title>close-circle</title>
-        <defs>
-          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop [attr.offset]="progress + '%'" stop-color="green" />
-            <stop [attr.offset]="progress + '%'" stop-color="white" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"
-          fill="url(#gradient)"
-        />
-      </svg>
-      <svg
-        fill="currentColor"
-        class="timeshift icon-hover-scale"
-        [ngbTooltip]="('EPG.SCHEDULE_RECORDING' | translate)"
-        role="button"
-        tabindex="0"
-        [attr.aria-label]="('EPG.SCHEDULE_RECORDING' | translate)"
-        [ngClass]="{ loading: loadingSchedule }"
+        <!-- The icon fills up with the download progress; the gradient id is
+             unique per item so several downloads do not share one gradient. -->
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <defs>
+            <linearGradient [attr.id]="gradientId" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop class="dl-stop-done" [attr.offset]="progress + '%'" />
+              <stop class="dl-stop-rest" [attr.offset]="progress + '%'" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M12,2C17.53,2 22,6.47 22,12C22,17.53 17.53,22 12,22C6.47,22 2,17.53 2,12C2,6.47 6.47,2 12,2M15.59,7L12,10.59L8.41,7L7,8.41L10.59,12L7,15.59L8.41,17L12,13.41L15.59,17L17,15.59L13.41,12L17,8.41L15.59,7Z"
+            [attr.fill]="'url(#' + gradientId + ')'"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="icon-btn epg-action"
         *ngIf="isFuture() && scheduledRecordingId === undefined"
+        [class.loading]="loadingSchedule"
+        [disabled]="loadingSchedule"
         (click)="scheduleRecording()"
-        (keyup.enter)="scheduleRecording()"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
+        [attr.aria-label]="'EPG.SCHEDULE_RECORDING' | translate"
+        [ngbTooltip]="'EPG.SCHEDULE_RECORDING' | translate"
       >
-        <path
-          d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
-        />
-      </svg>
-      <svg
-        style="fill: var(--color-danger)"
-        class="timeshift icon-hover-scale"
-        [ngbTooltip]="('EPG.CANCEL_SCHEDULED' | translate)"
-        role="button"
-        tabindex="0"
-        [attr.aria-label]="('EPG.CANCEL_SCHEDULED' | translate)"
-        [ngClass]="{ loading: loadingSchedule }"
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="icon-btn epg-action epg-action--danger"
         *ngIf="isFuture() && scheduledRecordingId !== undefined"
+        [class.loading]="loadingSchedule"
+        [disabled]="loadingSchedule"
         (click)="cancelScheduledRecording()"
-        (keyup.enter)="cancelScheduledRecording()"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
+        [attr.aria-label]="'EPG.CANCEL_SCHEDULED' | translate"
+        [ngbTooltip]="'EPG.CANCEL_SCHEDULED' | translate"
       >
-        <path
-          d="M19,12A7,7 0 0,1 12,19A7,7 0 0,1 5,12A7,7 0 0,1 12,5A7,7 0 0,1 19,12Z"
-        />
-      </svg>
-      <svg
-        fill="currentColor"
-        class="bell"
-        *ngIf="!notificationOn()"
-        [ngClass]="{ loading: this.memory.LoadingNotification || !this.memory.trayEnabled }"
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M19,12A7,7 0 0,1 12,19A7,7 0 0,1 5,12A7,7 0 0,1 12,5A7,7 0 0,1 19,12Z" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="icon-btn epg-action"
+        [class.loading]="this.memory.LoadingNotification || !this.memory.trayEnabled"
+        [disabled]="this.memory.LoadingNotification || !this.memory.trayEnabled"
         (click)="toggleNotification()"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
+        [attr.aria-pressed]="notificationOn()"
+        [attr.aria-label]="(notificationOn() ? 'EPG.NOTIFY_OFF' : 'EPG.NOTIFY_ON') | translate"
+        [ngbTooltip]="(notificationOn() ? 'EPG.NOTIFY_OFF' : 'EPG.NOTIFY_ON') | translate"
       >
-        <path
-          d="M10 21H14C14 22.1 13.1 23 12 23S10 22.1 10 21M21 19V20H3V19L5 17V11C5 7.9 7 5.2 10 4.3V4C10 2.9 10.9 2 12 2S14 2.9 14 4V4.3C17 5.2 19 7.9 19 11V17L21 19M17 11C17 8.2 14.8 6 12 6S7 8.2 7 11V18H17V11Z"
-        />
-      </svg>
-      <svg
-        fill="currentColor"
-        class="bell"
-        [ngClass]="{ loading: this.memory.LoadingNotification }"
-        *ngIf="notificationOn()"
-        (click)="toggleNotification()"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-      >
-        <path
-          d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
-        />
-      </svg>
+        <svg
+          *ngIf="!notificationOn()"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M10 21H14C14 22.1 13.1 23 12 23S10 22.1 10 21M21 19V20H3V19L5 17V11C5 7.9 7 5.2 10 4.3V4C10 2.9 10.9 2 12 2S14 2.9 14 4V4.3C17 5.2 19 7.9 19 11V17L21 19M17 11C17 8.2 14.8 6 12 6S7 8.2 7 11V18H17V11Z"
+          />
+        </svg>
+        <svg
+          *ngIf="notificationOn()"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+          />
+        </svg>
+      </button>
     </div>
   </div>
-  <p>{{ epg?.start_time }} - {{ epg?.end_time }}</p>
-  <div class="thin-line mt-1"></div>
-  <p class="mt-2">{{ epg?.description }}</p>
+  <p class="epg-time">{{ epg?.start_time }} - {{ epg?.end_time }}</p>
+  <div class="thin-line mt-2"></div>
+  <p class="epg-desc mt-2" *ngIf="epg?.description">{{ epg?.description }}</p>
 </div>

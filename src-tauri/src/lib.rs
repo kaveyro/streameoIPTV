@@ -151,6 +151,9 @@ pub fn run() {
             player_play,
             player_stop,
             player_osd,
+            player_osd_banner,
+            player_restart,
+            clear_watch_progress,
             player_set_bounds,
             player_set_visible,
             player_set_popout,
@@ -338,7 +341,7 @@ async fn player_play(
     app: AppHandle,
     channel: Channel,
     state: State<'_, Mutex<AppState>>,
-) -> Result<(), String> {
+) -> Result<Option<f64>, String> {
     player::play(app, channel, state)
         .await
         .map_err(map_err_frontend)
@@ -347,6 +350,27 @@ async fn player_play(
 #[tauri::command]
 async fn player_stop(state: State<'_, Mutex<AppState>>) -> Result<(), String> {
     player::stop(state).await.map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn player_osd_banner(
+    state: State<'_, Mutex<AppState>>,
+    banner: player::OsdBanner,
+) -> Result<(), String> {
+    player::show_banner(state, banner)
+        .await
+        .map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn player_restart(state: State<'_, Mutex<AppState>>) -> Result<(), String> {
+    player::restart(state).await.map_err(map_err_frontend)
+}
+
+/// "Play from the start" / "mark as unwatched" for a movie or episode.
+#[tauri::command]
+fn clear_watch_progress(source_id: i64, url: String) -> Result<(), String> {
+    sql::clear_watch_progress(source_id, &url).map_err(map_err_frontend)
 }
 
 #[tauri::command]

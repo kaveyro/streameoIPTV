@@ -9,6 +9,7 @@ local tethys = {
     -- Config
     showPictureInPictureButton = true,
     showSpeedButton = true,
+    showFullscreenButton = true,
     showShortcutTooltip = true, -- Show name and shortcut of buttons on hover
     showChapterTooltip = true, -- Show chapter above timestamp in seekbar tooltip
     skipBy = 5, -- skipback/skipfrwd amount in seconds
@@ -4507,6 +4508,7 @@ function osc_init()
 
     --tog_fs
     ne = new_element("tog_fs", "button")
+    ne.visible = tethys.showFullscreenButton
     ne.content = function ()
         if (state.fullscreen) then
             return mpvOsdIcon_fs_exit

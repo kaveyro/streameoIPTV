@@ -73,7 +73,9 @@
     "DELETE": "Удалить",
     "LOCK_GROUP": "Заблокировать группу",
     "UNLOCK_GROUP": "Разблокировать группу",
-    "MAP_EPG": "Назначить EPG…"
+    "MAP_EPG": "Назначить EPG…",
+    "PLAY_FROM_START": "Воспроизвести сначала",
+    "MARK_UNWATCHED": "Отметить как непросмотренное"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Каналы не найдены",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Доступен архив передач",
     "IS_FAVORITE": "В избранном",
     "RESUME": "Продолжить",
-    "LOCKED_GROUP": "Заблокированная группа"
+    "LOCKED_GROUP": "Заблокированная группа",
+    "WATCHED": "Просмотрено",
+    "WATCH_PROGRESS": "Просмотрено {{percent}}%"
   },
   "LOADING": {
     "CHANNELS": "Загрузка каналов..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "Переключение на {{name}} …",
     "STREAM_INFO": "Информация о потоке",
     "BITRATE_MBITS": "{{value}} Мбит/с",
-    "FPS_VALUE": "{{value}} кадр/с"
+    "FPS_VALUE": "{{value}} кадр/с",
+    "MIN_LEFT": "осталось {{minutes}} мин",
+    "RESUMED_AT": "Продолжено с {{time}}",
+    "RESTART_HINT": "Home: сначала",
+    "RESTARTED": "Сначала"
   },
   "GUIDE": {
     "CHANNEL": "Канал",

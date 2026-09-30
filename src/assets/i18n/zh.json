@@ -73,7 +73,9 @@
     "DELETE": "删除",
     "LOCK_GROUP": "锁定分组",
     "UNLOCK_GROUP": "解锁分组",
-    "MAP_EPG": "分配 EPG…"
+    "MAP_EPG": "分配 EPG…",
+    "PLAY_FROM_START": "从头播放",
+    "MARK_UNWATCHED": "标记为未观看"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "未找到频道",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "支持回看",
     "IS_FAVORITE": "已收藏",
     "RESUME": "继续",
-    "LOCKED_GROUP": "已锁定的分组"
+    "LOCKED_GROUP": "已锁定的分组",
+    "WATCHED": "已观看",
+    "WATCH_PROGRESS": "已观看 {{percent}}%"
   },
   "LOADING": {
     "CHANNELS": "正在加载频道..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "正在切换到 {{name}} …",
     "STREAM_INFO": "流信息",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "剩余 {{minutes}} 分钟",
+    "RESUMED_AT": "从 {{time}} 继续播放",
+    "RESTART_HINT": "Home：从头播放",
+    "RESTARTED": "从头播放"
   },
   "GUIDE": {
     "CHANNEL": "频道",

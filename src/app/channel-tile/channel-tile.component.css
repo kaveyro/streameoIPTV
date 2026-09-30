@@ -160,6 +160,21 @@
   color: var(--color-favorite);
 }
 
+.watched-icon {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  color: var(--accent);
+}
+
+.playing .watched-icon {
+  color: var(--on-accent);
+}
+
+/* A movie's progress: the same bar as the programme's, under the title. */
+.watch-track {
+  margin-top: 4px;
+}
+
 .lock-icon {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);

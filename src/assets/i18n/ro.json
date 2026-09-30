@@ -73,7 +73,9 @@
     "DELETE": "Șterge",
     "LOCK_GROUP": "Blochează grupul",
     "UNLOCK_GROUP": "Deblochează grupul",
-    "MAP_EPG": "Atribuie EPG…"
+    "MAP_EPG": "Atribuie EPG…",
+    "PLAY_FROM_START": "Redă de la început",
+    "MARK_UNWATCHED": "Marchează ca nevizionat"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nu s-au găsit canale",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Catch-up disponibil",
     "IS_FAVORITE": "La favorite",
     "RESUME": "Reia",
-    "LOCKED_GROUP": "Grup blocat"
+    "LOCKED_GROUP": "Grup blocat",
+    "WATCHED": "Vizionat",
+    "WATCH_PROGRESS": "Vizionat {{percent}}%"
   },
   "LOADING": {
     "CHANNELS": "Se încarcă canalele..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "Se comută la {{name}} …",
     "STREAM_INFO": "Informații despre flux",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "încă {{minutes}} min",
+    "RESUMED_AT": "Reluat de la {{time}}",
+    "RESTART_HINT": "Home: de la început",
+    "RESTARTED": "De la început"
   },
   "GUIDE": {
     "CHANNEL": "Canal",

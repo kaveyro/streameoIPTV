@@ -73,7 +73,9 @@
     "DELETE": "삭제",
     "LOCK_GROUP": "그룹 잠금",
     "UNLOCK_GROUP": "그룹 잠금 해제",
-    "MAP_EPG": "EPG 지정…"
+    "MAP_EPG": "EPG 지정…",
+    "PLAY_FROM_START": "처음부터 재생",
+    "MARK_UNWATCHED": "안 본 것으로 표시"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "채널을 찾을 수 없습니다",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "다시보기 가능",
     "IS_FAVORITE": "즐겨찾기에 있음",
     "RESUME": "이어보기",
-    "LOCKED_GROUP": "잠긴 그룹"
+    "LOCKED_GROUP": "잠긴 그룹",
+    "WATCHED": "시청함",
+    "WATCH_PROGRESS": "{{percent}}% 시청함"
   },
   "LOADING": {
     "CHANNELS": "채널을 불러오는 중..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "{{name}}(으)로 전환 중 …",
     "STREAM_INFO": "스트림 정보",
     "BITRATE_MBITS": "{{value}} Mbps",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "{{minutes}}분 남음",
+    "RESUMED_AT": "{{time}}부터 이어서 재생",
+    "RESTART_HINT": "Home: 처음부터",
+    "RESTARTED": "처음부터 재생"
   },
   "GUIDE": {
     "CHANNEL": "채널",

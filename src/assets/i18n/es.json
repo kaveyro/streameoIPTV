@@ -73,7 +73,9 @@
     "DELETE": "Eliminar",
     "LOCK_GROUP": "Bloquear grupo",
     "UNLOCK_GROUP": "Desbloquear grupo",
-    "MAP_EPG": "Asignar EPG…"
+    "MAP_EPG": "Asignar EPG…",
+    "PLAY_FROM_START": "Reproducir desde el principio",
+    "MARK_UNWATCHED": "Marcar como no visto"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "No se encontraron canales",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Catch-up disponible",
     "IS_FAVORITE": "En favoritos",
     "RESUME": "Reanudar",
-    "LOCKED_GROUP": "Grupo bloqueado"
+    "LOCKED_GROUP": "Grupo bloqueado",
+    "WATCHED": "Visto",
+    "WATCH_PROGRESS": "{{percent}} % visto"
   },
   "LOADING": {
     "CHANNELS": "Cargando tus canales..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "Cambiando a {{name}} …",
     "STREAM_INFO": "Información del stream",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "quedan {{minutes}} min",
+    "RESUMED_AT": "Reanudado en {{time}}",
+    "RESTART_HINT": "Inicio: desde el principio",
+    "RESTARTED": "Desde el principio"
   },
   "GUIDE": {
     "CHANNEL": "Canal",

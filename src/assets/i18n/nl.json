@@ -73,7 +73,9 @@
     "DELETE": "Verwijderen",
     "LOCK_GROUP": "Groep vergrendelen",
     "UNLOCK_GROUP": "Groep ontgrendelen",
-    "MAP_EPG": "EPG toewijzen…"
+    "MAP_EPG": "EPG toewijzen…",
+    "PLAY_FROM_START": "Vanaf het begin afspelen",
+    "MARK_UNWATCHED": "Markeren als niet bekeken"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Geen kanalen gevonden",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Terugkijken beschikbaar",
     "IS_FAVORITE": "In favorieten",
     "RESUME": "Hervatten",
-    "LOCKED_GROUP": "Vergrendelde groep"
+    "LOCKED_GROUP": "Vergrendelde groep",
+    "WATCHED": "Bekeken",
+    "WATCH_PROGRESS": "{{percent}}% bekeken"
   },
   "LOADING": {
     "CHANNELS": "Je kanalen worden geladen..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "Overschakelen naar {{name}} …",
     "STREAM_INFO": "Streaminfo",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "nog {{minutes}} min",
+    "RESUMED_AT": "Hervat bij {{time}}",
+    "RESTART_HINT": "Home: opnieuw beginnen",
+    "RESTARTED": "Opnieuw vanaf het begin"
   },
   "GUIDE": {
     "CHANNEL": "Kanaal",

@@ -19,9 +19,10 @@
 
 use crate::types::{AppState, Channel, ChannelHttpHeaders, Settings, Source};
 use anyhow::{Context, Result};
+use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::LazyLock;
-use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, AtomicU64, Ordering};
 use tauri::{AppHandle, State};
 use tokio::sync::Mutex;
 
@@ -81,13 +82,42 @@ const POPOUT_DOCK_EVENT: &str = "player-popout-dock";
 /// player process".
 static PLAYER_MPV_PID: AtomicU32 = AtomicU32::new(0);
 
-/// Whether the file currently loaded is a movie or episode. mpv only writes
-/// its resume position when it quits, which the embedded player never does
-/// (switching is `stop` + `loadfile`, closing kills it), so the position is
-/// saved explicitly whenever such a file is left.
-static PLAYING_VOD: AtomicBool = AtomicBool::new(false);
+/// A movie, or an episode with the ones after it, as the embedded player got
+/// them: the stored URLs of its playlist, for saving the watch progress.
+#[derive(Clone)]
+struct VodSession {
+    id: u64,
+    source_id: i64,
+    urls: Vec<String>,
+}
 
-const SAVE_POSITION: &str = "write-watch-later-config";
+/// The latest sessions. Progress replies of one just left may still be on
+/// their way when the next one starts.
+static VOD_SESSIONS: std::sync::Mutex<Vec<VodSession>> = std::sync::Mutex::new(Vec::new());
+/// Id of the session playing now, 0 while no movie or episode is.
+static CURRENT_VOD: AtomicU64 = AtomicU64::new(0);
+static VOD_SEQ: AtomicU64 = AtomicU64::new(0);
+const VOD_SESSIONS_KEPT: usize = 4;
+
+/// Request ids from here on are progress queries: this plus the session id.
+/// The reply names the session, so it is saved for the right movie even when
+/// the player has moved on meanwhile.
+const PROGRESS_REQUEST_BASE: u64 = 1 << 32;
+/// Playlist index, position and length in one reply ("" when unavailable).
+const PROGRESS_QUERY: &str = "${=playlist-pos}|${=time-pos:}|${=duration:}";
+/// How often the progress is saved while a movie plays, so a crash or a
+/// power cut loses at most this much.
+#[cfg(target_os = "windows")]
+const PROGRESS_INTERVAL: std::time::Duration = std::time::Duration::from_secs(15);
+
+/// The channel banner (number, name, now/next) drawn over the video with
+/// mpv's `osd-overlay`, see [`show_banner`].
+const BANNER_OVERLAY_ID: u64 = 1;
+const BANNER_DURATION_MS: u64 = 5000;
+/// A newer banner (or OSD message) replaced the one a hide timer is for.
+static BANNER_SEQ: AtomicU64 = AtomicU64::new(0);
+/// Banner text longer than this is cut: the banner does not wrap.
+const BANNER_MAX_CHARS: usize = 80;
 
 /// Serializes `init`: its liveness check and the state update are separate
 /// lock scopes, so two overlapping calls (a double-click on a channel) would
@@ -98,13 +128,16 @@ static INIT_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 /// mpv keys that control the app while the video has keyboard focus. The
 /// WebView gets no key events then, so they come back as script-messages and
 /// are forwarded to the frontend as a `player-key` event with the action.
-/// The digits (channel number zapping) come back as `digit-N`.
+/// The digits (channel number zapping) come back as `digit-N`. `i` shows the
+/// channel banner again (mpv's stats stay on `I`), Home starts a movie over.
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
-const APP_KEYS: [(&str, &str); 24] = [
+const APP_KEYS: [(&str, &str); 26] = [
     ("PGDWN", "next"),
     ("PGUP", "prev"),
     ("ESC", "back"),
     ("BS", "last"),
+    ("i", "info"),
+    ("HOME", "restart"),
     ("0", "digit-0"),
     ("1", "digit-1"),
     ("2", "digit-2"),
@@ -251,6 +284,18 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         for (id, prop) in STREAM_INFO_PROPS.iter().enumerate() {
             let _ = ipc_tx.send(json!({ "command": ["observe_property", id + 1, prop] }));
         }
+        // Saves the progress of a running movie now and then. Holds only a
+        // weak sender: destroy() dropping the real one ends the IPC task.
+        {
+            let weak = ipc_tx.downgrade();
+            tokio::spawn(async move {
+                loop {
+                    tokio::time::sleep(PROGRESS_INTERVAL).await;
+                    let Some(tx) = weak.upgrade() else { break };
+                    query_progress(&tx);
+                }
+            });
+        }
 
         // mpv creates its video window (a WS_DISABLED child of our host) a moment
         // after spawn. Windows routes a disabled child's mouse/keyboard input to
@@ -287,11 +332,12 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
 }
 
 /// Switches the embedded player to `channel` without restarting mpv.
+/// Returns where a movie or episode was resumed (seconds), if it was.
 pub async fn play(
     app: AppHandle,
     channel: Channel,
     state: State<'_, Mutex<AppState>>,
-) -> Result<()> {
+) -> Result<Option<f64>> {
     // Without this check the commands below would be queued into a channel
     // nobody reads any more and the video area would simply stay black.
     if !player_alive(&state).await {
@@ -309,13 +355,255 @@ pub async fn play(
         .and_then(|id| crate::sql::get_source_from_id(id).ok());
     let headers = crate::sql::get_channel_headers_by_id(channel.id.context("no channel id")?)?;
     let settings = crate::settings::get_settings()?;
-    let commands = build_play_commands(&channel, &source, headers, &settings)?;
-    let is_vod = channel.media_type != crate::media_type::LIVESTREAM;
-    if PLAYING_VOD.swap(is_vod, Ordering::SeqCst) {
-        let _ = tx.send(json!({ "command": [SAVE_POSITION] }));
-    }
+    let start = resume_position(&channel);
+    let commands = build_play_commands(&channel, &source, headers, &settings, start)?;
+    // The progress of what is left, before the session changes.
+    query_progress(&tx);
+    begin_vod_session(&channel);
     for cmd in commands {
         let _ = tx.send(cmd);
+    }
+    Ok(start)
+}
+
+/// Where a movie or episode was left, if it is to be resumed.
+fn resume_position(channel: &Channel) -> Option<f64> {
+    if channel.media_type == crate::media_type::LIVESTREAM {
+        return None;
+    }
+    let (source_id, url) = (channel.source_id?, channel.url.as_deref()?);
+    crate::sql::get_resume_position(source_id, url)
+        .map_err(|e| crate::log::log(format!("{e:?}")))
+        .ok()
+        .flatten()
+}
+
+/// Makes `channel` the session whose progress is saved (none for live TV).
+fn begin_vod_session(channel: &Channel) {
+    let session = match (channel.source_id, channel.url.clone()) {
+        (Some(source_id), Some(url)) if channel.media_type != crate::media_type::LIVESTREAM => {
+            let mut urls = vec![url];
+            // The episodes queued after it, in the order build_play_commands
+            // appends them, so the playlist index finds the right one.
+            if channel.episode_num.is_some() {
+                urls.extend(crate::sql::find_all_episodes_after(channel).unwrap_or_default());
+            }
+            Some(VodSession {
+                id: VOD_SEQ.fetch_add(1, Ordering::SeqCst) + 1,
+                source_id,
+                urls,
+            })
+        }
+        _ => None,
+    };
+    let id = session.as_ref().map_or(0, |s| s.id);
+    if let Some(session) = session
+        && let Ok(mut sessions) = VOD_SESSIONS.lock()
+    {
+        sessions.push(session);
+        let excess = sessions.len().saturating_sub(VOD_SESSIONS_KEPT);
+        sessions.drain(..excess);
+    }
+    CURRENT_VOD.store(id, Ordering::SeqCst);
+}
+
+/// Asks mpv where the current movie is; the reply is saved by the IPC reader
+/// ([`save_progress_reply`]). Nothing while live TV plays.
+fn query_progress(tx: &tokio::sync::mpsc::UnboundedSender<Value>) {
+    let id = CURRENT_VOD.load(Ordering::SeqCst);
+    if id == 0 {
+        return;
+    }
+    let _ = tx.send(json!({
+        "command": ["expand-text", PROGRESS_QUERY],
+        "request_id": PROGRESS_REQUEST_BASE + id,
+    }));
+}
+
+/// Parses a [`PROGRESS_QUERY`] reply: playlist index, position, length.
+fn parse_progress(data: &str) -> Option<(usize, f64, Option<f64>)> {
+    let mut parts = data.split('|');
+    let index = parts.next()?.trim().parse::<i64>().ok()?;
+    let position = parts.next()?.trim().parse::<f64>().ok()?;
+    let duration = parts.next().and_then(|d| d.trim().parse::<f64>().ok());
+    Some((usize::try_from(index).ok()?, position, duration))
+}
+
+/// Saves the reply to a progress query and tells the frontend (the tiles'
+/// progress bars).
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+fn save_progress_reply(app: &AppHandle, request_id: u64, data: &str) {
+    let session_id = request_id - PROGRESS_REQUEST_BASE;
+    let session = VOD_SESSIONS
+        .lock()
+        .ok()
+        .and_then(|s| s.iter().find(|s| s.id == session_id).cloned());
+    let (Some(session), Some((index, position, duration))) = (session, parse_progress(data)) else {
+        return;
+    };
+    let Some(url) = session.urls.get(index).cloned() else {
+        return;
+    };
+    let app = app.clone();
+    tokio::task::spawn_blocking(move || {
+        match crate::sql::save_watch_progress(session.source_id, &url, position, duration) {
+            Ok(Some(progress)) => {
+                #[cfg(target_os = "windows")]
+                let _ = app.emit("watch-progress", progress);
+                #[cfg(not(target_os = "windows"))]
+                let _ = (&app, progress);
+            }
+            Ok(None) => {}
+            Err(e) => crate::log::log(format!("{e:?}")),
+        }
+    });
+}
+
+/// What the channel banner shows. The frontend puts the texts together (it
+/// has the translations and the guide), the backend lays them out.
+#[derive(Deserialize, Debug, Default, Clone)]
+pub struct OsdBanner {
+    pub number: Option<String>,
+    pub title: String,
+    /// Below the title, e.g. "20:00–20:15  Tagesschau".
+    pub line: Option<String>,
+    /// Dimmed after the line, e.g. "7 min left".
+    pub detail: Option<String>,
+    /// Progress bar under the line, 0..=1.
+    pub progress: Option<f64>,
+    /// Last, smaller line, e.g. "Next  20:15  Tatort".
+    pub footer: Option<String>,
+}
+
+/// Text for an ASS event: override blocks and escapes stay literal, lines
+/// become one (the banner does not wrap) and very long text is cut.
+fn ass_text(text: &str) -> String {
+    let flat: String = text
+        .chars()
+        .map(|c| if c == '\n' || c == '\r' { ' ' } else { c })
+        .collect();
+    let cut: String = if flat.chars().count() > BANNER_MAX_CHARS {
+        let mut s: String = flat.chars().take(BANNER_MAX_CHARS - 1).collect();
+        s.push('…');
+        s
+    } else {
+        flat
+    };
+    // Like mpv's own escaping: a word joiner after a backslash keeps it
+    // from starting an escape, braces are escaped.
+    cut.replace('\\', "\\\u{2060}")
+        .replace('{', "\\{")
+        .replace('}', "\\}")
+}
+
+/// The banner as ASS events at 720 lines: a dark, soft band over the top of
+/// the picture with the texts on it.
+fn banner_ass(banner: &OsdBanner) -> String {
+    const X: i32 = 48;
+    const TEXT: &str = "\\bord1.5\\shad0\\3c&H000000&";
+    let mut events = Vec::new();
+    let number = banner
+        .number
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(|n| format!("{{\\1c&HF7AB4D&}}{}   {{\\1c&HFFFFFF&}}", ass_text(n)))
+        .unwrap_or_default();
+    events.push(format!(
+        "{{\\an7\\q2\\pos({X},34)\\fs40\\b1{TEXT}}}{number}{}",
+        ass_text(&banner.title)
+    ));
+    let mut y = 90;
+    if let Some(line) = banner.line.as_deref().filter(|l| !l.trim().is_empty()) {
+        let detail = banner
+            .detail
+            .as_deref()
+            .filter(|d| !d.trim().is_empty())
+            .map(|d| format!("   {{\\1c&HC8C8C8&}}{}", ass_text(d)))
+            .unwrap_or_default();
+        events.push(format!(
+            "{{\\an7\\q2\\pos({X},{y})\\fs27{TEXT}}}{}{detail}",
+            ass_text(line)
+        ));
+        y += 40;
+    }
+    if let Some(progress) = banner.progress.filter(|p| p.is_finite()) {
+        const WIDTH: f64 = 500.0;
+        let done = (progress.clamp(0.0, 1.0) * WIDTH).round() as i32;
+        let rest = WIDTH as i32 - done;
+        if done > 0 {
+            events.push(format!(
+                "{{\\an7\\pos({X},{y})\\bord0\\shad0\\1c&HF7AB4D&\\p1}}m 0 0 l {done} 0 {done} 5 0 5{{\\p0}}"
+            ));
+        }
+        if rest > 0 {
+            events.push(format!(
+                "{{\\an7\\pos({},{y})\\bord0\\shad0\\1c&HFFFFFF&\\1a&HA0&\\p1}}m 0 0 l {rest} 0 {rest} 5 0 5{{\\p0}}",
+                X + done
+            ));
+        }
+        y += 16;
+    }
+    if let Some(footer) = banner.footer.as_deref().filter(|f| !f.trim().is_empty()) {
+        events.push(format!(
+            "{{\\an7\\q2\\pos({X},{y})\\fs24\\bord1.2\\shad0\\3c&H000000&\\1c&HDCDCDC&}}{}",
+            ass_text(footer)
+        ));
+        y += 34;
+    }
+    let band = y + 34;
+    events.insert(
+        0,
+        format!(
+            "{{\\an7\\pos(0,0)\\bord0\\shad0\\1c&H000000&\\1a&H50&\\blur30\\p1}}m 0 0 l 6000 0 6000 {band} 0 {band}{{\\p0}}"
+        ),
+    );
+    events.join("\n")
+}
+
+/// Shows the channel banner over the video for a few seconds. Like the OSD
+/// messages it is drawn by mpv: the native video window covers the WebView.
+pub async fn show_banner(state: State<'_, Mutex<AppState>>, banner: OsdBanner) -> Result<()> {
+    let Some(tx) = state.lock().await.player_ipc_tx.clone() else {
+        return Ok(());
+    };
+    let seq = BANNER_SEQ.fetch_add(1, Ordering::SeqCst) + 1;
+    // A message still up (the typed channel number) would sit on top of it.
+    let _ = tx.send(json!({ "command": ["show-text", "", 1] }));
+    let _ = tx.send(json!({ "command": {
+        "name": "osd-overlay",
+        "id": BANNER_OVERLAY_ID,
+        "format": "ass-events",
+        "data": banner_ass(&banner),
+        "res_x": 0,
+        "res_y": 720,
+        "z": 0,
+    }}));
+    let weak = tx.downgrade();
+    tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(BANNER_DURATION_MS)).await;
+        if BANNER_SEQ.load(Ordering::SeqCst) == seq
+            && let Some(tx) = weak.upgrade()
+        {
+            hide_banner(&tx);
+        }
+    });
+    Ok(())
+}
+
+fn hide_banner(tx: &tokio::sync::mpsc::UnboundedSender<Value>) {
+    let _ = tx.send(json!({ "command": {
+        "name": "osd-overlay",
+        "id": BANNER_OVERLAY_ID,
+        "format": "none",
+        "data": "",
+    }}));
+}
+
+/// Starts the movie or episode over.
+pub async fn restart(state: State<'_, Mutex<AppState>>) -> Result<()> {
+    if let Some(tx) = state.lock().await.player_ipc_tx.clone() {
+        let _ = tx.send(json!({ "command": ["seek", 0, "absolute"] }));
     }
     Ok(())
 }
@@ -339,6 +627,9 @@ async fn player_alive(state: &State<'_, Mutex<AppState>>) -> bool {
 /// that is guaranteed to be seen, fullscreen included.
 pub async fn show_message(state: State<'_, Mutex<AppState>>, message: String) -> Result<()> {
     if let Some(tx) = state.lock().await.player_ipc_tx.clone() {
+        // The message would sit on the banner: it goes.
+        BANNER_SEQ.fetch_add(1, Ordering::SeqCst);
+        hide_banner(&tx);
         let _ = tx.send(json!({ "command": ["show-text", message, 6000] }));
     }
     Ok(())
@@ -347,9 +638,10 @@ pub async fn show_message(state: State<'_, Mutex<AppState>>, message: String) ->
 /// Unloads the current file but keeps mpv alive and idle.
 pub async fn stop(state: State<'_, Mutex<AppState>>) -> Result<()> {
     if let Some(tx) = state.lock().await.player_ipc_tx.clone() {
-        if PLAYING_VOD.swap(false, Ordering::SeqCst) {
-            let _ = tx.send(json!({ "command": [SAVE_POSITION] }));
-        }
+        query_progress(&tx);
+        CURRENT_VOD.store(0, Ordering::SeqCst);
+        BANNER_SEQ.fetch_add(1, Ordering::SeqCst);
+        hide_banner(&tx);
         let _ = tx.send(json!({ "command": ["stop"] }));
     }
     Ok(())
@@ -558,14 +850,15 @@ pub fn kill_sync() {
 
 /// Tears down the player: kills mpv and destroys the native window.
 pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<()> {
-    if PLAYING_VOD.swap(false, Ordering::SeqCst) {
+    if CURRENT_VOD.load(Ordering::SeqCst) != 0 {
         let tx = state.lock().await.player_ipc_tx.clone();
         if let Some(tx) = tx {
-            let _ = tx.send(json!({ "command": [SAVE_POSITION] }));
-            // Give mpv a moment to write the file before it is killed.
+            query_progress(&tx);
+            // Give mpv a moment to answer before it is killed.
             tokio::time::sleep(std::time::Duration::from_millis(300)).await;
         }
     }
+    CURRENT_VOD.store(0, Ordering::SeqCst);
     let (child, mpv) = {
         let mut s = state.lock().await;
         s.player_ipc_tx = None; // dropping the sender ends the IPC task
@@ -595,6 +888,7 @@ fn build_play_commands(
     source: &Option<Source>,
     headers: Option<ChannelHttpHeaders>,
     settings: &Settings,
+    start: Option<f64>,
 ) -> Result<Vec<Value>> {
     let url = crate::mpv::channel_stream_url(channel)?;
     let h = headers.unwrap_or_default();
@@ -643,7 +937,6 @@ fn build_play_commands(
     cmds.push(set_prop("cache", json!(cache)));
 
     let is_live = channel.media_type == crate::media_type::LIVESTREAM;
-    cmds.push(set_prop("save-position-on-quit", json!(!is_live)));
     cmds.push(set_prop(
         "loop-playlist",
         json!(if is_live { "inf" } else { "no" }),
@@ -660,8 +953,14 @@ fn build_play_commands(
         json!(if is_live { "nostreams" } else { "auto" }),
     ));
 
+    // The resume point as an option of this file only: set as a property it
+    // would also apply to the episodes queued after it.
+    let loadfile = match start {
+        Some(start) => json!(["loadfile", url, "replace", -1, format!("start={start}")]),
+        None => json!(["loadfile", url, "replace"]),
+    };
     cmds.push(json!({
-        "command": ["loadfile", url, "replace"],
+        "command": loadfile,
         "request_id": LOADFILE_REQUEST_ID,
     }));
 
@@ -753,6 +1052,18 @@ async fn run_ipc(
                 // No event field: a reply to one of our commands. Only the
                 // loadfile reply is surfaced - a property an mpv build happens
                 // to reject must not spam the user with toasts.
+                None if v
+                    .get("request_id")
+                    .and_then(Value::as_u64)
+                    .is_some_and(|id| id > PROGRESS_REQUEST_BASE) =>
+                {
+                    if let (Some(id), Some(data)) = (
+                        v.get("request_id").and_then(Value::as_u64),
+                        v.get("data").and_then(Value::as_str),
+                    ) {
+                        save_progress_reply(&reader_app, id, data);
+                    }
+                }
                 None => {
                     if v.get("request_id").and_then(Value::as_u64) == Some(LOADFILE_REQUEST_ID)
                         && let Some(error) = v
@@ -1119,7 +1430,6 @@ mod test_player {
 
     fn channel() -> Channel {
         Channel {
-            number: None,
             id: Some(1),
             name: "Test".to_string(),
             url: Some("http://example.com/live".to_string()),
@@ -1128,7 +1438,7 @@ mod test_player {
     }
 
     fn commands(headers: Option<ChannelHttpHeaders>) -> Vec<Value> {
-        build_play_commands(&channel(), &None, headers, &Settings::default()).unwrap()
+        build_play_commands(&channel(), &None, headers, &Settings::default(), None).unwrap()
     }
 
     fn user_agent_of(cmds: &[Value]) -> String {
@@ -1216,7 +1526,7 @@ mod test_player {
     fn test_live_streams_skip_the_duration_probe() {
         let mut channel = channel();
         channel.media_type = crate::media_type::LIVESTREAM;
-        let cmds = build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
+        let cmds = build_play_commands(&channel, &None, None, &Settings::default(), None).unwrap();
         assert_eq!(
             prop_of(&cmds, "demuxer-lavf-probe-info"),
             Some(json!("nostreams"))
@@ -1228,7 +1538,7 @@ mod test_player {
     fn test_vod_keeps_probing() {
         let mut channel = channel();
         channel.media_type = crate::media_type::MOVIE;
-        let cmds = build_play_commands(&channel, &None, None, &Settings::default()).unwrap();
+        let cmds = build_play_commands(&channel, &None, None, &Settings::default(), None).unwrap();
         assert_eq!(
             prop_of(&cmds, "demuxer-lavf-probe-info"),
             Some(json!("auto"))
@@ -1240,6 +1550,67 @@ mod test_player {
     fn test_no_bogus_tls_property() {
         let cmds = commands(None);
         assert_eq!(prop_of(&cmds, "stream-tls-verify"), None);
+    }
+
+    /// The resume point goes with the file, not into a property that the
+    /// queued episodes would inherit.
+    #[test]
+    fn test_resume_point_is_a_file_option() {
+        let mut channel = channel();
+        channel.media_type = crate::media_type::MOVIE;
+        let cmds =
+            build_play_commands(&channel, &None, None, &Settings::default(), Some(2520.5)).unwrap();
+        let loadfile = cmds
+            .iter()
+            .find(|c| c["command"][0] == "loadfile")
+            .expect("no loadfile command");
+        assert_eq!(loadfile["command"][3], json!(-1));
+        assert_eq!(loadfile["command"][4], json!("start=2520.5"));
+        assert_eq!(prop_of(&cmds, "start"), None);
+    }
+
+    #[test]
+    fn test_parse_progress() {
+        assert_eq!(
+            parse_progress("1|43.36|120.0"),
+            Some((1, 43.36, Some(120.0)))
+        );
+        assert_eq!(parse_progress("0|600|"), Some((0, 600.0, None)));
+        // Idle: no file, no position.
+        assert_eq!(parse_progress("-1||"), None);
+        assert_eq!(parse_progress(""), None);
+    }
+
+    #[test]
+    fn test_banner_escapes_and_lays_out() {
+        let banner = OsdBanner {
+            number: Some("12".to_string()),
+            title: "Das Erste {HD} \\o/".to_string(),
+            line: Some("20:00–20:15  Tagesschau".to_string()),
+            detail: Some("7 min left".to_string()),
+            progress: Some(0.6),
+            footer: Some("Next  20:15  Tatort".to_string()),
+        };
+        let ass = banner_ass(&banner);
+        assert!(ass.contains("Das Erste \\{HD\\} \\\u{2060}o/"));
+        assert!(!ass.contains("{HD}"));
+        // Background band plus title, line, two bar parts and the footer.
+        assert_eq!(ass.lines().count(), 6);
+        assert!(ass.contains("m 0 0 l 300 0 300 5 0 5"));
+        let plain = banner_ass(&OsdBanner {
+            title: "Film".to_string(),
+            ..Default::default()
+        });
+        assert_eq!(plain.lines().count(), 2);
+    }
+
+    #[test]
+    fn test_banner_cuts_long_text() {
+        let long = "x".repeat(200);
+        let text = ass_text(&long);
+        assert_eq!(text.chars().count(), BANNER_MAX_CHARS);
+        assert!(text.ends_with('…'));
+        assert_eq!(ass_text("a\nb"), "a b");
     }
 
     /// Only the loadfile reply carries the request id the IPC reader reports on.

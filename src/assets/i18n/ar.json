@@ -73,7 +73,9 @@
     "DELETE": "حذف",
     "LOCK_GROUP": "قفل المجموعة",
     "UNLOCK_GROUP": "إلغاء قفل المجموعة",
-    "MAP_EPG": "تعيين EPG…"
+    "MAP_EPG": "تعيين EPG…",
+    "PLAY_FROM_START": "تشغيل من البداية",
+    "MARK_UNWATCHED": "وضع علامة كغير مُشاهَد"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "لم يُعثر على قنوات",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "المشاهدة اللاحقة متاحة",
     "IS_FAVORITE": "في المفضلة",
     "RESUME": "استئناف",
-    "LOCKED_GROUP": "مجموعة مقفلة"
+    "LOCKED_GROUP": "مجموعة مقفلة",
+    "WATCHED": "تمت المشاهدة",
+    "WATCH_PROGRESS": "تمت مشاهدة {{percent}}%"
   },
   "LOADING": {
     "CHANNELS": "جارٍ تحميل قنواتك..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "جارٍ التبديل إلى {{name}} …",
     "STREAM_INFO": "معلومات البث",
     "BITRATE_MBITS": "{{value}} ميجابت/ث",
-    "FPS_VALUE": "{{value}} إطار/ث"
+    "FPS_VALUE": "{{value}} إطار/ث",
+    "MIN_LEFT": "متبقٍ {{minutes}} د",
+    "RESUMED_AT": "تم الاستئناف عند {{time}}",
+    "RESTART_HINT": "Home: من البداية",
+    "RESTARTED": "من البداية"
   },
   "GUIDE": {
     "CHANNEL": "القناة",

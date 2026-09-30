@@ -392,6 +392,9 @@ fn convert_xtream_live_to_channel(
     };
     Ok(Channel {
         number,
+        watch_position: None,
+        watch_duration: None,
+        watch_finished: None,
         id: None,
         group: category_name.map(|x| x.trim().to_string()),
         image: stream
@@ -735,6 +738,9 @@ fn episode_to_channel(
 ) -> Result<Channel> {
     Ok(Channel {
         number: None,
+        watch_position: None,
+        watch_duration: None,
+        watch_finished: None,
         id: None,
         group: None,
         image: serde_json::from_value::<XtreamEpisodeInfo>(episode.info)

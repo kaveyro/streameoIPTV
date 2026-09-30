@@ -39,6 +39,27 @@ pub struct Channel {
     /// Channel number from the playlist (tvg-chno) or the Xtream provider.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub number: Option<i64>,
+    /// Movies and episodes: where the user stopped watching (seconds).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub watch_position: Option<f64>,
+    /// Length of the movie or episode as the player last saw it (seconds).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub watch_duration: Option<f64>,
+    /// Watched to the end.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub watch_finished: Option<bool>,
+}
+
+/// How far a movie or episode was watched, keyed like `epg_mappings` by
+/// source and stored URL (credential-free and stable across refreshes).
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct WatchProgress {
+    pub source_id: i64,
+    pub url: String,
+    /// None when finished (or reset): the next play starts at the beginning.
+    pub position: Option<f64>,
+    pub duration: Option<f64>,
+    pub finished: bool,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]

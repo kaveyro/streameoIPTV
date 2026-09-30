@@ -73,7 +73,9 @@
     "DELETE": "हटाएँ",
     "LOCK_GROUP": "समूह लॉक करें",
     "UNLOCK_GROUP": "समूह अनलॉक करें",
-    "MAP_EPG": "EPG असाइन करें…"
+    "MAP_EPG": "EPG असाइन करें…",
+    "PLAY_FROM_START": "शुरू से चलाएँ",
+    "MARK_UNWATCHED": "न देखा गया चिह्नित करें"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "कोई चैनल नहीं मिला",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "कैच-अप उपलब्ध",
     "IS_FAVORITE": "पसंदीदा में",
     "RESUME": "फिर से शुरू करें",
-    "LOCKED_GROUP": "लॉक किया गया समूह"
+    "LOCKED_GROUP": "लॉक किया गया समूह",
+    "WATCHED": "देखा गया",
+    "WATCH_PROGRESS": "{{percent}}% देखा गया"
   },
   "LOADING": {
     "CHANNELS": "आपके चैनल लोड हो रहे हैं..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "{{name}} पर स्विच किया जा रहा है …",
     "STREAM_INFO": "स्ट्रीम जानकारी",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "{{minutes}} मिनट बाकी",
+    "RESUMED_AT": "{{time}} से जारी",
+    "RESTART_HINT": "Home: शुरू से",
+    "RESTARTED": "शुरू से"
   },
   "GUIDE": {
     "CHANNEL": "चैनल",

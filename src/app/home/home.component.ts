@@ -15,6 +15,7 @@ import { AllowIn, ShortcutInput, KeyboardShortcutsModule } from "ng-keyboard-sho
 import { Subscription, debounceTime, filter, fromEvent, map, skip } from "rxjs";
 import { MemoryService } from "../memory.service";
 import { NowPlayingService } from "../now-playing.service";
+import { WatchProgressService } from "../watch-progress.service";
 import { Channel } from "../models/channel";
 import { ViewMode } from "../models/viewMode";
 import { MediaType } from "../models/mediaType";
@@ -209,10 +210,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private parental: ParentalService,
     private nowPlaying: NowPlayingService,
     private favoriteLists: FavoriteListsService,
+    private watchProgress: WatchProgressService,
   ) {
     this.getSources();
     this.listenForAutoRefresh();
     this.nowPlaying.init();
+    this.watchProgress.init();
   }
 
   ngOnInit(): void {

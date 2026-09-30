@@ -12,6 +12,7 @@ import { NowPlayingService } from "../now-playing.service";
 import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
 import { Subject } from "rxjs";
 import { FavoriteListsService } from "../favorite-lists/favorite-lists.service";
+import { WatchProgressService } from "../watch-progress.service";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -144,12 +145,100 @@ describe("ChannelTileComponent", () => {
     expect(element.querySelector(".channel-title")?.textContent).toContain("Movie");
   });
 
-  it("shows the resume badge for movies in the history only", async () => {
-    await create(movie, ViewMode.History);
-    expect(element.querySelector(".resume-badge")?.textContent).toContain("TILE.RESUME");
-    component.viewMode = ViewMode.All;
-    fixture.detectChanges();
-    expect(element.querySelector(".resume-badge")).toBeNull();
+  describe("watch progress", () => {
+    const started: Channel = {
+      ...movie,
+      source_id: 1,
+      url: "http://host/movie/1.mkv",
+      watch_position: 1350,
+      watch_duration: 5400,
+    };
+
+    it("shows the resume badge and the progress of a movie left midway", async () => {
+      await create(started);
+      expect(element.querySelector(".resume-badge")?.textContent).toContain("TILE.RESUME");
+      const fill = element.querySelector<HTMLElement>(".watch-track .now-playing-fill");
+      expect(fill?.style.width).toBe("25%");
+      expect(tile().getAttribute("aria-label")).toContain("TILE.WATCH_PROGRESS");
+    });
+
+    it("shows nothing for a movie never started", async () => {
+      await create(movie, ViewMode.History);
+      expect(element.querySelector(".resume-badge")).toBeNull();
+      expect(element.querySelector(".watch-track")).toBeNull();
+      expect(element.querySelector(".watched-icon")).toBeNull();
+    });
+
+    it("marks a movie watched to the end", async () => {
+      await create({ ...started, watch_position: undefined, watch_finished: true });
+      expect(element.querySelector(".watched-icon")).not.toBeNull();
+      expect(element.querySelector(".resume-badge")).toBeNull();
+      expect(element.querySelector(".watch-track")).toBeNull();
+    });
+
+    it("follows the progress the player saves", async () => {
+      await create({ ...started });
+      const service = TestBed.inject(WatchProgressService);
+      // Another movie: no change.
+      service.changed.next({
+        source_id: 1,
+        url: "http://host/movie/2.mkv",
+        position: 60,
+        finished: false,
+      });
+      fixture.detectChanges();
+      expect(
+        element.querySelector<HTMLElement>(".watch-track .now-playing-fill")?.style.width,
+      ).toBe("25%");
+      service.changed.next({
+        source_id: 1,
+        url: started.url!,
+        position: 2700,
+        duration: 5400,
+        finished: false,
+      });
+      fixture.detectChanges();
+      expect(
+        element.querySelector<HTMLElement>(".watch-track .now-playing-fill")?.style.width,
+      ).toBe("50%");
+      service.changed.next({
+        source_id: 1,
+        url: started.url!,
+        position: null,
+        duration: 5400,
+        finished: true,
+      });
+      fixture.detectChanges();
+      expect(element.querySelector(".watch-track")).toBeNull();
+      expect(element.querySelector(".watched-icon")).not.toBeNull();
+    });
+
+    it("plays from the start after forgetting the resume point", async () => {
+      await create({ ...started }, ViewMode.All, { clear_watch_progress: null });
+      const playback = TestBed.inject(PlaybackService);
+      const play = spyOn(playback, "play").and.callFake(async () => {
+        // The resume point is gone before playback starts.
+        expect(callsOf(calls, "clear_watch_progress").length).toBe(1);
+      });
+      await component.playFromStart();
+      expect(callsOf(calls, "clear_watch_progress")[0].args).toEqual({
+        sourceId: 1,
+        url: started.url,
+      });
+      expect(play).toHaveBeenCalledTimes(1);
+      fixture.detectChanges();
+      expect(element.querySelector(".resume-badge")).toBeNull();
+    });
+
+    it("marks a watched movie as unwatched", async () => {
+      await create({ ...started, watch_position: undefined, watch_finished: true }, ViewMode.All, {
+        clear_watch_progress: null,
+      });
+      await component.markUnwatched();
+      fixture.detectChanges();
+      expect(callsOf(calls, "clear_watch_progress").length).toBe(1);
+      expect(element.querySelector(".watched-icon")).toBeNull();
+    });
   });
 
   it("does not show the resume badge for live channels", async () => {

@@ -56,9 +56,16 @@ const ARG_OSC_OFF: &str = "--osc=no";
 /// - Tethys' picture-in-picture button resizes mpv's own window, which does
 ///   nothing for an embedded child; the app has its own mini player. The
 ///   separate mpv window keeps the button, it works there.
-const EMBEDDED_ARGS: [&str; 2] = [
+/// - Tethys' fullscreen button toggles mpv's own fullscreen, which an
+///   embedded child cannot do; the app's fullscreen (double-click, F) stays.
+/// - Movies resume where the app saved them (`watch_progress`), not from
+///   mpv's own watch-later files.
+const EMBEDDED_ARGS: [&str; 5] = [
     "--window-dragging=no",
     "--script-opts-append=tethys-showPictureInPictureButton=no",
+    "--script-opts-append=tethys-showFullscreenButton=no",
+    "--resume-playback=no",
+    "--save-position-on-quit=no",
 ];
 const ARG_SCRIPT: &str = "--script=";
 const ARG_VOLUME: &str = "--volume=";
@@ -528,6 +535,8 @@ fn get_player_ui_args(player_ui: Option<&str>, tethys_script: Option<&str>) -> V
             format!("{ARG_SCRIPT}{script_path}"),
             // No name/shortcut tooltips when hovering the controller buttons.
             format!("{ARG_SCRIPT_OPTS_APPEND}tethys-showShortcutTooltip=no"),
+            // No playback speed toggle: it is of no use for live TV.
+            format!("{ARG_SCRIPT_OPTS_APPEND}tethys-showSpeedButton=no"),
         ],
         None => MODERN_UI_OSC_OPTS
             .iter()
@@ -596,6 +605,7 @@ mod test_mpv {
             assert!(
                 args.contains(&"--script-opts-append=tethys-showShortcutTooltip=no".to_string())
             );
+            assert!(args.contains(&"--script-opts-append=tethys-showSpeedButton=no".to_string()));
             assert!(args.contains(&"--osd-bar-w=45".to_string()));
             assert!(args.contains(&"--osd-border-size=1".to_string()));
         }

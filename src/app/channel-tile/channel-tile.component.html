@@ -40,6 +40,14 @@
       </div>
       <div *ngIf="memory.ShowChannelSource" class="channel-source">{{ sourceName }}</div>
     </div>
+    <!-- Movies and episodes left midway; the aria-label carries the share. -->
+    <div
+      *ngIf="watchProgress !== undefined"
+      class="now-playing-track watch-track"
+      aria-hidden="true"
+    >
+      <div class="now-playing-fill" [style.width.%]="watchProgress"></div>
+    </div>
     <!-- Only once a programme is known: tiles without EPG stay compact. The
          tile's aria-label already carries the programme. -->
     <div *ngIf="nowPlaying" class="now-playing" aria-hidden="true">
@@ -57,6 +65,18 @@
   </div>
   <div class="tile-badges d-flex flex-column justify-content-center align-items-center h-100">
     <span *ngIf="showResumeBadge()" class="resume-badge">{{ "TILE.RESUME" | translate }}</span>
+    <svg
+      *ngIf="watched"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      class="watched-icon"
+    >
+      <title>{{ "TILE.WATCHED" | translate }}</title>
+      <path
+        d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+      />
+    </svg>
     <svg
       *ngIf="isLockedGroup()"
       fill="currentColor"
@@ -135,6 +155,12 @@
     </button>
     <button [hidden]="!reorderable || last" mat-menu-item (click)="moveBy(1)">
       {{ "FAV_LISTS.MOVE_BACK" | translate }}
+    </button>
+    <button [hidden]="!resumable" mat-menu-item (click)="playFromStart()">
+      {{ "MENU.PLAY_FROM_START" | translate }}
+    </button>
+    <button [hidden]="!resumable && !watched" mat-menu-item (click)="markUnwatched()">
+      {{ "MENU.MARK_UNWATCHED" | translate }}
     </button>
     <button [hidden]="!isLivestream()" mat-menu-item (click)="record()">
       {{ "MENU.RECORD" | translate }}

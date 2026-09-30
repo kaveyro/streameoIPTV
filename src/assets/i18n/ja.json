@@ -73,7 +73,9 @@
     "DELETE": "削除",
     "LOCK_GROUP": "グループをロック",
     "UNLOCK_GROUP": "グループのロックを解除",
-    "MAP_EPG": "EPG を割り当て…"
+    "MAP_EPG": "EPG を割り当て…",
+    "PLAY_FROM_START": "最初から再生",
+    "MARK_UNWATCHED": "未視聴にする"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "チャンネルが見つかりません",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "見逃し配信あり",
     "IS_FAVORITE": "お気に入り済み",
     "RESUME": "再開",
-    "LOCKED_GROUP": "ロックされたグループ"
+    "LOCKED_GROUP": "ロックされたグループ",
+    "WATCHED": "視聴済み",
+    "WATCH_PROGRESS": "{{percent}}% 視聴済み"
   },
   "LOADING": {
     "CHANNELS": "チャンネルを読み込んでいます..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "{{name}} に切り替えています …",
     "STREAM_INFO": "ストリーム情報",
     "BITRATE_MBITS": "{{value}} Mbps",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "残り {{minutes}} 分",
+    "RESUMED_AT": "{{time}} から再開",
+    "RESTART_HINT": "Home：最初から",
+    "RESTARTED": "最初から再生"
   },
   "GUIDE": {
     "CHANNEL": "チャンネル",

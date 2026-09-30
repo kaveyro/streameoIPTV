@@ -17,13 +17,39 @@ import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
 import { MediaType } from "../models/mediaType";
 import { ErrorService } from "../error.service";
-import { NowPlaying, NowPlayingService } from "../now-playing.service";
+import { NowPlaying, NowPlayingService, programmeProgress } from "../now-playing.service";
 import { splitCountryPrefix } from "../country-prefix";
+import { WatchProgressService } from "../watch-progress.service";
 
 /// Keys the backend forwards while mpv (not the WebView) has keyboard focus,
 /// see the `player-key` event. The digits (top row and numpad) come as
-/// `digit-0` … `digit-9`, for the channel number entry.
-type PlayerKey = "next" | "prev" | "back" | "last" | `digit-${number}`;
+/// `digit-0` … `digit-9`, for the channel number entry. "info" shows the
+/// channel banner again, "restart" starts a movie over.
+type PlayerKey = "next" | "prev" | "back" | "last" | "info" | "restart" | `digit-${number}`;
+
+/// The channel banner mpv draws over the video (`player_osd_banner`).
+interface OsdBanner {
+  number?: string;
+  title: string;
+  /// Below the title, e.g. "20:00–20:15 · Tagesschau".
+  line?: string;
+  /// Dimmed after the line, e.g. "7 min left".
+  detail?: string;
+  /// Progress bar under the line, 0..1.
+  progress?: number;
+  /// Last, smaller line.
+  footer?: string;
+}
+
+/// "1:32:05" / "42:10" for a position in a movie.
+function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
 
 /// What mpv reports about the running stream (`player-stream-info`).
 interface StreamInfo {
@@ -170,6 +196,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     private nowPlayingService: NowPlayingService,
     private modal: NgbModal,
     private host: ElementRef<HTMLElement>,
+    private watchProgress: WatchProgressService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -304,13 +331,14 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.active = true;
     this.applyMode();
     const switchSeq = ++this.switchSeq;
+    let resumed: number | null = null;
     try {
       await invoke("player_set_visible", { visible: true });
       if (this.isStale(generation)) {
         await this.undoIfClosed();
         return;
       }
-      await this.playChannel(channel);
+      resumed = await this.playChannel(channel);
       if (this.isStale(generation)) {
         await this.undoIfClosed();
         return;
@@ -328,7 +356,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       this.scrollActiveIntoView(true);
     }, 0);
     this.startEpgTimer();
-    if (switchSeq === this.switchSeq) this.announce(channel);
+    if (switchSeq === this.switchSeq) this.announce(channel, true, resumed);
   }
 
   /** Runs player_init at most once at a time; concurrent callers share it. */
@@ -539,14 +567,14 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.clearStreamInfo();
     this.scrollActiveIntoView(focusInList);
     try {
-      await this.playChannel(channel);
+      const resumed = await this.playChannel(channel);
       if (this.isStale(generation)) {
         await this.undoIfClosed();
         return;
       }
       if (seq === this.switchSeq) this.streamInfoReady = true;
       invoke("add_last_watched", { id: channel.id }).catch(() => undefined);
-      if (seq === this.switchSeq) this.announce(channel, !fallback);
+      if (seq === this.switchSeq) this.announce(channel, !fallback, resumed);
     } catch (e) {
       if (this.isStale(generation)) return;
       if (seq === this.switchSeq) this.currentFailed = true;
@@ -606,6 +634,38 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       case "last":
         this.last();
         break;
+      case "info":
+        this.showInfo();
+        break;
+      case "restart":
+        this.restart();
+        break;
+    }
+  }
+
+  /** The channel banner again (the `i` key): name, now and next. */
+  showInfo() {
+    const channel = this.current;
+    if (!this.active || !channel) return;
+    if (channel.media_type !== MediaType.livestream) {
+      this.banner({ title: channel.name ?? "" });
+    } else if (this.nowPlaying) {
+      this.banner(this.liveBanner(channel, this.nowPlaying));
+    } else {
+      this.banner({ number: this.numberText(channel), title: channel.name ?? "" });
+    }
+  }
+
+  /** Starts the movie or episode over (the Home key) and forgets where it was left. */
+  async restart() {
+    const channel = this.current;
+    if (!this.active || !channel || channel.media_type === MediaType.livestream) return;
+    try {
+      await invoke("player_restart");
+      this.osd(this.translate.instant("PLAYER.RESTARTED"));
+      await this.watchProgress.clear(channel);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -643,6 +703,18 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       }
       if (event.key === "Enter" && this.zapDigits) {
         this.commitZap();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (event.key === "i" || event.key === "I") {
+        this.showInfo();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (event.key === "Home" && this.current?.media_type !== MediaType.livestream) {
+        this.restart();
         event.preventDefault();
         event.stopImmediatePropagation();
         return;
@@ -713,8 +785,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       return;
     }
     if (channel.id === this.current?.id && !this.currentFailed) {
-      // Already on it: replace the typed number in the OSD with the name.
-      this.osd(channel.name ?? "");
+      // Already on it: replace the typed number with the banner.
+      this.showInfo();
       this.scrollActiveIntoView(false);
       return;
     }
@@ -817,13 +889,62 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Shows the channel name (plus now/next when the guide has it) in mpv's
-   * OSD, the only surface visible over the video. Without `showName` a
-   * message already up (the fallback's) stays until now/next arrives.
+   * Shows the channel banner (number, name, now/next when the guide has it)
+   * over the video; mpv draws it, the only surface visible there. Without
+   * `showName` a message already up (the fallback's) stays until now/next
+   * arrives. A movie picked up where it was left says so.
    */
-  private announce(channel: Channel, showName = true) {
-    if (showName) this.osd(channel.name ?? "");
+  private announce(channel: Channel, showName = true, resumed?: number | null) {
+    if (channel.media_type !== MediaType.livestream) {
+      this.banner(this.movieBanner(channel, resumed ?? undefined));
+      return;
+    }
+    if (showName) this.banner({ number: this.numberText(channel), title: channel.name ?? "" });
     this.loadNowPlaying(channel, true);
+  }
+
+  private movieBanner(channel: Channel, resumed?: number): OsdBanner {
+    const banner: OsdBanner = { title: channel.name ?? "" };
+    if (resumed !== undefined && resumed > 0) {
+      banner.line = this.translate.instant("PLAYER.RESUMED_AT", { time: formatDuration(resumed) });
+      const duration = channel.watch_duration;
+      if (duration && duration > 0) {
+        banner.detail = `/ ${formatDuration(duration)}`;
+        banner.progress = Math.min(1, resumed / duration);
+      }
+      banner.footer = this.translate.instant("PLAYER.RESTART_HINT");
+    }
+    return banner;
+  }
+
+  private liveBanner(channel: Channel, nowPlaying: NowPlaying): OsdBanner {
+    const minutes = Math.max(0, Math.ceil((nowPlaying.end_timestamp - Date.now() / 1000) / 60));
+    const banner: OsdBanner = {
+      number: this.numberText(channel),
+      title: channel.name ?? "",
+      line: `${this.formatTime(nowPlaying.start_timestamp)}–${this.formatTime(nowPlaying.end_timestamp)} · ${nowPlaying.title}`,
+      detail: this.translate.instant("PLAYER.MIN_LEFT", { minutes }),
+      progress: programmeProgress(nowPlaying) / 100,
+    };
+    if (nowPlaying.next) {
+      banner.footer = `${this.translate.instant("PLAYER.NEXT")}  ${this.formatTime(nowPlaying.next.start_timestamp)} · ${nowPlaying.next.title}`;
+    }
+    return banner;
+  }
+
+  /** The channel's number for the banner: the provider's, or its place in an unnumbered list. */
+  private numberText(channel: Channel): string | undefined {
+    const number = channelNumber(channel);
+    if (number !== undefined) return number.toString();
+    const list = this.channels;
+    if (list.some((c) => channelNumber(c) !== undefined)) return undefined;
+    const index = list.findIndex((c) => c.id === channel.id);
+    return index >= 0 ? (index + 1).toString() : undefined;
+  }
+
+  private banner(banner: OsdBanner) {
+    if (!this.active || !banner.title) return;
+    invoke("player_osd_banner", { banner }).catch(() => undefined);
   }
 
   private osd(message: string) {
@@ -838,22 +959,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         if (!this.active || this.current !== channel) return;
         this.nowPlaying = nowPlaying;
         this.updateProgress();
-        if (announce && nowPlaying) this.osd(this.osdText(channel, nowPlaying));
+        if (announce && nowPlaying) this.banner(this.liveBanner(channel, nowPlaying));
       })
       .catch((e) => console.error(e));
-  }
-
-  private osdText(channel: Channel, nowPlaying: NowPlaying): string {
-    const lines = [
-      channel.name ?? "",
-      `${this.formatTime(nowPlaying.start_timestamp)}–${this.formatTime(nowPlaying.end_timestamp)}  ${nowPlaying.title}`,
-    ];
-    if (nowPlaying.next) {
-      lines.push(
-        `${this.translate.instant("PLAYER.NEXT")}: ${this.formatTime(nowPlaying.next.start_timestamp)}  ${nowPlaying.next.title}`,
-      );
-    }
-    return lines.join("\n");
   }
 
   formatTime(timestamp: number): string {
@@ -902,18 +1010,19 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
    * backend rejects a play on a dead player (and tears its remains down), so
    * without the retry the first click after a crash would be swallowed.
    */
-  private async playChannel(channel: Channel) {
+  private async playChannel(channel: Channel): Promise<number | null> {
     try {
-      await invoke("player_play", { channel });
-      return;
+      // Where a movie was picked up again, if it was.
+      return await invoke<number | null>("player_play", { channel });
     } catch (e) {
       console.error(e);
     }
     this.initialized = false;
     await this.ensureInitialized();
     await invoke("player_set_visible", { visible: true });
-    await invoke("player_play", { channel });
+    const resumed = await invoke<number | null>("player_play", { channel });
     this.syncBounds();
+    return resumed;
   }
 
   async back() {

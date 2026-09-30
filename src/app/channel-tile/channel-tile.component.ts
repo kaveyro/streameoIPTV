@@ -54,6 +54,7 @@ import { splitCountryPrefix } from "../country-prefix";
 import { FavoriteList, FavoriteListsService } from "../favorite-lists/favorite-lists.service";
 import { CommonModule } from "@angular/common";
 import { CountryNamePipe } from "../pipes/country-name.pipe";
+import { WatchProgressService, isResumable, watchPercent } from "../watch-progress.service";
 
 /// Tiles this far outside the viewport already load their now/next line, so
 /// it is there when they scroll in.
@@ -99,6 +100,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     private parental: ParentalService,
     private ngZone: NgZone,
     public favoriteLists: FavoriteListsService,
+    private watchProgressService: WatchProgressService,
   ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
@@ -139,6 +141,13 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /// now/next line and follow the minute ticks.
   private visible = false;
   private visibilityObserver?: IntersectionObserver;
+  /// Movies and episodes: how far they were watched (0..100) for the bar,
+  /// undefined when there is nothing to resume.
+  watchProgress?: number;
+  /// Left midway: can be resumed or started over.
+  resumable = false;
+  /// Watched to the end.
+  watched = false;
   /// Lists the channel is in, loaded when the context menu opens.
   listMembership?: Set<number>;
   sourceName = "";
@@ -157,6 +166,9 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     this.subscriptions.push(
       this.nowPlayingService.changed.subscribe(() => this.reloadNowPlaying()),
       this.nowPlayingService.minuteTick.subscribe(() => this.updateNowPlaying()),
+      this.watchProgressService.changed.subscribe((progress) => {
+        if (WatchProgressService.apply(this.channel, progress)) this.updateWatchProgress();
+      }),
     );
   }
 
@@ -202,6 +214,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     if (changes["channel"]) {
       this.sourceName = this.getSourceName();
       this.countryCode = splitCountryPrefix(this.channel?.name).code;
+      this.updateWatchProgress();
     }
     if (changes["format"] && !changes["format"].firstChange) {
       this.loadNowPlaying();
@@ -239,11 +252,45 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     this.loadNowPlaying();
   }
 
-  /** Accessible name: number, the full channel name and what is on right now. */
+  private updateWatchProgress() {
+    this.resumable = isResumable(this.channel);
+    this.watchProgress = watchPercent(this.channel);
+    this.watched = this.channel?.watch_finished === true;
+  }
+
+  /** Accessible name: number, the full channel name and what is on right now
+   *  (or how far a movie was watched). */
   ariaLabel(): string {
     const number = this.channel?.number;
     const name = (number != null ? `${number} ` : "") + (this.channel?.name ?? "");
-    return this.nowPlayingSummary ? `${name}, ${this.nowPlayingSummary}` : name;
+    if (this.nowPlayingSummary) return `${name}, ${this.nowPlayingSummary}`;
+    if (this.watchProgress !== undefined) {
+      const percent = Math.round(this.watchProgress);
+      return `${name}, ${this.translate.instant("TILE.WATCH_PROGRESS", { percent })}`;
+    }
+    if (this.watched) return `${name}, ${this.translate.instant("TILE.WATCHED")}`;
+    return name;
+  }
+
+  /** Forgets the resume point and plays the movie from the beginning. */
+  async playFromStart() {
+    if (!this.channel) return;
+    try {
+      await this.watchProgressService.clear(this.channel);
+    } catch (e) {
+      this.error.handleError(e);
+      return;
+    }
+    await this.click();
+  }
+
+  async markUnwatched() {
+    if (!this.channel) return;
+    try {
+      await this.watchProgressService.clear(this.channel);
+    } catch (e) {
+      this.error.handleError(e);
+    }
   }
 
   showNowPlayingLine(): boolean {
@@ -495,7 +542,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
 
   /** Movies and episodes in the history resume where they were left. */
   showResumeBadge(): boolean {
-    return this.viewMode == ViewMode.History && this.isMovie();
+    return this.resumable;
   }
 
   async toggleGroupLock() {

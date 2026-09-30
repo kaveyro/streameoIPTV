@@ -73,7 +73,9 @@
     "DELETE": "Sil",
     "LOCK_GROUP": "Grubu kilitle",
     "UNLOCK_GROUP": "Grubun kilidini aç",
-    "MAP_EPG": "EPG ata…"
+    "MAP_EPG": "EPG ata…",
+    "PLAY_FROM_START": "Baştan oynat",
+    "MARK_UNWATCHED": "İzlenmedi olarak işaretle"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Kanal bulunamadı",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Geriye dönük izleme mevcut",
     "IS_FAVORITE": "Favorilerde",
     "RESUME": "Devam et",
-    "LOCKED_GROUP": "Kilitli grup"
+    "LOCKED_GROUP": "Kilitli grup",
+    "WATCHED": "İzlendi",
+    "WATCH_PROGRESS": "%{{percent}} izlendi"
   },
   "LOADING": {
     "CHANNELS": "Kanallarınız yükleniyor..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "{{name}} kanalına geçiliyor …",
     "STREAM_INFO": "Yayın bilgisi",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "{{minutes}} dk kaldı",
+    "RESUMED_AT": "{{time}} konumundan devam ediliyor",
+    "RESTART_HINT": "Home: baştan başlat",
+    "RESTARTED": "Baştan başlatılıyor"
   },
   "GUIDE": {
     "CHANNEL": "Kanal",

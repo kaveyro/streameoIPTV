@@ -6,7 +6,7 @@ use crate::log::log;
 use crate::sort_type;
 use crate::types::{
     ChannelPreserve, CustomChannel, CustomChannelExtraData, EPGNotify, ExportedGroup, Group,
-    IdName, ScheduledRecording, Season,
+    IdName, ScheduledRecording, Season, WatchProgress,
 };
 use crate::{
     media_type, source_type,
@@ -27,6 +27,20 @@ const NOT_IN_LOCKED_GROUP: &str =
     "\nAND (group_id IS NULL OR group_id NOT IN (SELECT id FROM groups WHERE locked = 1))";
 /// Group filter hiding groups locked by the parental PIN.
 const GROUP_NOT_LOCKED: &str = "\nAND (locked IS NULL OR locked = 0)";
+/// The watch progress of movies and episodes, as extra result columns of a
+/// query over `channels` (see [`row_to_channel`]).
+const WATCH_PROGRESS_COLUMNS: &str = r#"
+        CASE WHEN media_type = 1 THEN (SELECT w.position FROM watch_progress w WHERE w.source_id = channels.source_id AND w.url = channels.url) END AS watch_position,
+        CASE WHEN media_type = 1 THEN (SELECT w.duration FROM watch_progress w WHERE w.source_id = channels.source_id AND w.url = channels.url) END AS watch_duration,
+        CASE WHEN media_type = 1 THEN (SELECT w.finished FROM watch_progress w WHERE w.source_id = channels.source_id AND w.url = channels.url) END AS watch_finished"#;
+/// Less than this into a movie is not worth resuming (seconds).
+const RESUME_MIN_SECONDS: f64 = 10.0;
+/// Watched this far (share of the length), or up to [`FINISHED_REST_SECONDS`]
+/// before the end, a movie counts as finished: the credits are left.
+const FINISHED_SHARE: f64 = 0.95;
+const FINISHED_REST_SECONDS: f64 = 30.0;
+/// Progress not touched for this long is dropped (seconds, a year).
+const WATCH_PROGRESS_KEEP_SECONDS: i64 = 365 * 24 * 60 * 60;
 
 /// start, end, title, description
 pub type XmltvProgramme = (i64, i64, String, Option<String>);
@@ -353,6 +367,19 @@ fn apply_migrations() -> Result<()> {
                 "alert_id" INTEGER NOT NULL,
                 "programme" TEXT NOT NULL,
                 PRIMARY KEY (alert_id, programme)
+              );
+            "#,
+        ),
+        M::up(
+            r#"
+              CREATE TABLE IF NOT EXISTS "watch_progress" (
+                "source_id" INTEGER NOT NULL,
+                "url" TEXT NOT NULL,
+                "position" REAL,
+                "duration" REAL,
+                "finished" INTEGER NOT NULL DEFAULT 0,
+                "updated" INTEGER NOT NULL,
+                PRIMARY KEY (source_id, url)
               );
             "#,
         ),
@@ -731,7 +758,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     };
     let mut sql_query = format!(
         r#"
-        SELECT * FROM CHANNELS
+        SELECT *, {WATCH_PROGRESS_COLUMNS} FROM CHANNELS
         WHERE ({})
         AND media_type IN ({})
         AND source_id IN ({})
@@ -869,6 +896,9 @@ fn search_series(filters: Filters) -> Result<Vec<Channel>> {
 fn season_row_to_channel(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
     Ok(Channel {
         number: None,
+        watch_position: None,
+        watch_duration: None,
+        watch_finished: None,
         id: row.get("id")?,
         image: row.get("image")?,
         favorite: false,
@@ -1267,6 +1297,9 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
 fn row_to_group(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
     let channel = Channel {
         number: None,
+        watch_position: None,
+        watch_duration: None,
+        watch_finished: None,
         id: row.get("id")?,
         name: row.get("name")?,
         group: None,
@@ -1290,6 +1323,10 @@ fn row_to_group(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
 fn row_to_channel(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
     let channel = Channel {
         number: row.get("number").unwrap_or(None),
+        // Only queries with WATCH_PROGRESS_COLUMNS have these.
+        watch_position: row.get("watch_position").unwrap_or(None),
+        watch_duration: row.get("watch_duration").unwrap_or(None),
+        watch_finished: row.get("watch_finished").unwrap_or(None),
         id: row.get("id")?,
         name: row.get("name")?,
         group_id: row.get("group_id")?,
@@ -1363,6 +1400,10 @@ pub fn delete_source(id: i64) -> Result<()> {
         tx.execute("DELETE FROM epg_mappings WHERE source_id = ?", params![id])?;
         tx.execute(
             "DELETE FROM favorite_list_items WHERE source_id = ?",
+            params![id],
+        )?;
+        tx.execute(
+            "DELETE FROM watch_progress WHERE source_id = ?",
             params![id],
         )?;
         let count = tx.execute("DELETE FROM sources WHERE id = ?", params![id])?;
@@ -1887,6 +1928,9 @@ fn row_to_custom_channel(row: &Row) -> Result<CustomChannel, rusqlite::Error> {
     Ok(CustomChannel {
         data: Channel {
             number: None,
+            watch_position: None,
+            watch_duration: None,
+            watch_finished: None,
             name: row.get("name")?,
             image: row.get("image")?,
             url: row.get("url")?,
@@ -3287,6 +3331,88 @@ pub fn get_channel_by_number(
         .optional()?)
 }
 
+/// Saves how far a movie or episode was watched. A position close to the end
+/// marks it finished; one right at the start changes nothing (a quick look
+/// must not wipe a real resume point). Returns what is stored now, None when
+/// nothing changed.
+pub fn save_watch_progress(
+    source_id: i64,
+    url: &str,
+    position: f64,
+    duration: Option<f64>,
+) -> Result<Option<WatchProgress>> {
+    save_watch_progress_on(&*get_conn()?, source_id, url, position, duration)
+}
+
+fn save_watch_progress_on(
+    conn: &rusqlite::Connection,
+    source_id: i64,
+    url: &str,
+    position: f64,
+    duration: Option<f64>,
+) -> Result<Option<WatchProgress>> {
+    if !position.is_finite() || position < 0.0 {
+        return Ok(None);
+    }
+    let duration = duration.filter(|d| d.is_finite() && *d > 0.0);
+    let finished = duration
+        .is_some_and(|d| position >= d * FINISHED_SHARE || d - position <= FINISHED_REST_SECONDS);
+    if !finished && position < RESUME_MIN_SECONDS {
+        return Ok(None);
+    }
+    let stored_position = if finished { None } else { Some(position) };
+    conn.execute(
+        r#"
+          INSERT INTO watch_progress (source_id, url, position, duration, finished, updated)
+          VALUES (?1, ?2, ?3, ?4, ?5, strftime('%s', 'now'))
+          ON CONFLICT (source_id, url) DO UPDATE SET
+            position = ?3, duration = COALESCE(?4, duration), finished = ?5, updated = strftime('%s', 'now')
+        "#,
+        params![source_id, url, stored_position, duration, finished],
+    )?;
+    conn.execute(
+        "DELETE FROM watch_progress WHERE updated < strftime('%s', 'now') - ?",
+        params![WATCH_PROGRESS_KEEP_SECONDS],
+    )?;
+    Ok(Some(WatchProgress {
+        source_id,
+        url: url.to_string(),
+        position: stored_position,
+        duration,
+        finished,
+    }))
+}
+
+/// Where to resume a movie or episode, if it was left midway.
+pub fn get_resume_position(source_id: i64, url: &str) -> Result<Option<f64>> {
+    get_resume_position_on(&*get_conn()?, source_id, url)
+}
+
+fn get_resume_position_on(
+    conn: &rusqlite::Connection,
+    source_id: i64,
+    url: &str,
+) -> Result<Option<f64>> {
+    Ok(conn
+        .query_row(
+            "SELECT position FROM watch_progress WHERE source_id = ? AND url = ? AND finished = 0",
+            params![source_id, url],
+            |row| row.get::<_, Option<f64>>(0),
+        )
+        .optional()?
+        .flatten())
+}
+
+/// Forgets how far a movie or episode was watched ("play from the start",
+/// "mark as unwatched").
+pub fn clear_watch_progress(source_id: i64, url: &str) -> Result<()> {
+    get_conn()?.execute(
+        "DELETE FROM watch_progress WHERE source_id = ? AND url = ?",
+        params![source_id, url],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod test_sql {
     use super::{country_like_patterns, get_preserve, restore_preserve};
@@ -3363,6 +3489,64 @@ mod test_sql {
         tx.commit().unwrap();
         assert!(locked(&conn, "Kids"));
         assert!(locked(&conn, "Adult"));
+    }
+
+    fn progress_db() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            CREATE TABLE watch_progress (source_id INTEGER NOT NULL, url TEXT NOT NULL,
+              position REAL, duration REAL, finished INTEGER NOT NULL DEFAULT 0,
+              updated INTEGER NOT NULL, PRIMARY KEY (source_id, url));
+            "#,
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn test_watch_progress_resume_and_finish() {
+        use super::{get_resume_position_on, save_watch_progress_on};
+        let conn = progress_db();
+        // A quick look stores nothing.
+        assert!(
+            save_watch_progress_on(&conn, 1, "u", 4.0, Some(5400.0))
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(get_resume_position_on(&conn, 1, "u").unwrap(), None);
+        // Midway: resume there.
+        save_watch_progress_on(&conn, 1, "u", 2520.0, Some(5400.0)).unwrap();
+        assert_eq!(get_resume_position_on(&conn, 1, "u").unwrap(), Some(2520.0));
+        // Leaving again right after the start keeps the resume point.
+        assert!(
+            save_watch_progress_on(&conn, 1, "u", 3.0, Some(5400.0))
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(get_resume_position_on(&conn, 1, "u").unwrap(), Some(2520.0));
+        // In the credits: finished, the next play starts at the beginning.
+        let stored = save_watch_progress_on(&conn, 1, "u", 5200.0, Some(5400.0))
+            .unwrap()
+            .unwrap();
+        assert!(stored.finished);
+        assert_eq!(stored.position, None);
+        assert_eq!(get_resume_position_on(&conn, 1, "u").unwrap(), None);
+        // Other sources and URLs are apart.
+        assert_eq!(get_resume_position_on(&conn, 2, "u").unwrap(), None);
+    }
+
+    #[test]
+    fn test_watch_progress_without_duration() {
+        use super::{get_resume_position_on, save_watch_progress_on};
+        let conn = progress_db();
+        save_watch_progress_on(&conn, 1, "u", 600.0, None).unwrap();
+        assert_eq!(get_resume_position_on(&conn, 1, "u").unwrap(), Some(600.0));
+        assert!(
+            save_watch_progress_on(&conn, 1, "u", f64::NAN, None)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[test]

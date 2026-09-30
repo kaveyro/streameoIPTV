@@ -332,6 +332,9 @@ fn get_channel_from_lines(
         .and_then(|x| x.trim().parse::<i64>().ok());
     let channel = Channel {
         number,
+        watch_position: None,
+        watch_duration: None,
+        watch_finished: None,
         id: None,
         name: name.trim().to_string(),
         group: group.map(|x| x.trim().to_string()),
@@ -428,6 +431,9 @@ mod test_m3u {
     ) -> Channel {
         Channel {
             number: None,
+            watch_position: None,
+            watch_duration: None,
+            watch_finished: None,
             id: None,
             name: name.to_string(),
             url: url.map(str::to_string),

@@ -73,7 +73,9 @@
     "DELETE": "Видалити",
     "LOCK_GROUP": "Заблокувати групу",
     "UNLOCK_GROUP": "Розблокувати групу",
-    "MAP_EPG": "Призначити EPG…"
+    "MAP_EPG": "Призначити EPG…",
+    "PLAY_FROM_START": "Відтворити спочатку",
+    "MARK_UNWATCHED": "Позначити як непереглянуте"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Канали не знайдено",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Доступний архів передач",
     "IS_FAVORITE": "В обраному",
     "RESUME": "Продовжити",
-    "LOCKED_GROUP": "Заблокована група"
+    "LOCKED_GROUP": "Заблокована група",
+    "WATCHED": "Переглянуто",
+    "WATCH_PROGRESS": "Переглянуто {{percent}}%"
   },
   "LOADING": {
     "CHANNELS": "Завантаження каналів..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "Перемикання на {{name}} …",
     "STREAM_INFO": "Інформація про потік",
     "BITRATE_MBITS": "{{value}} Мбіт/с",
-    "FPS_VALUE": "{{value}} кадр/с"
+    "FPS_VALUE": "{{value}} кадр/с",
+    "MIN_LEFT": "залишилось {{minutes}} хв",
+    "RESUMED_AT": "Продовжено з {{time}}",
+    "RESTART_HINT": "Home: спочатку",
+    "RESTARTED": "Спочатку"
   },
   "GUIDE": {
     "CHANNEL": "Канал",

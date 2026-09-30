@@ -73,7 +73,9 @@
     "DELETE": "Διαγραφή",
     "LOCK_GROUP": "Κλείδωμα ομάδας",
     "UNLOCK_GROUP": "Ξεκλείδωμα ομάδας",
-    "MAP_EPG": "Αντιστοίχιση EPG…"
+    "MAP_EPG": "Αντιστοίχιση EPG…",
+    "PLAY_FROM_START": "Αναπαραγωγή από την αρχή",
+    "MARK_UNWATCHED": "Σήμανση ως μη προβληθέν"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Δεν βρέθηκαν κανάλια",
@@ -637,7 +639,9 @@
     "CATCHUP_AVAILABLE": "Διαθέσιμη παρακολούθηση αργότερα",
     "IS_FAVORITE": "Στα αγαπημένα",
     "RESUME": "Συνέχεια",
-    "LOCKED_GROUP": "Κλειδωμένη ομάδα"
+    "LOCKED_GROUP": "Κλειδωμένη ομάδα",
+    "WATCHED": "Προβλήθηκε",
+    "WATCH_PROGRESS": "Προβλήθηκε {{percent}}%"
   },
   "LOADING": {
     "CHANNELS": "Φόρτωση των καναλιών σας..."
@@ -689,7 +693,11 @@
     "FALLBACK_SWITCHING": "Εναλλαγή σε {{name}} …",
     "STREAM_INFO": "Πληροφορίες ροής",
     "BITRATE_MBITS": "{{value}} Mbit/s",
-    "FPS_VALUE": "{{value}} fps"
+    "FPS_VALUE": "{{value}} fps",
+    "MIN_LEFT": "απομένουν {{minutes}} λεπ.",
+    "RESUMED_AT": "Συνέχεια από {{time}}",
+    "RESTART_HINT": "Home: από την αρχή",
+    "RESTARTED": "Από την αρχή"
   },
   "GUIDE": {
     "CHANNEL": "Κανάλι",

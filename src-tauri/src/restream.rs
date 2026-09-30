@@ -197,6 +197,9 @@ async fn delete_old_segments(dir: &Path) -> Result<()> {
 pub async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<()> {
     let channel = Channel {
         number: None,
+        watch_position: None,
+        watch_duration: None,
+        watch_finished: None,
         url: Some(format!("http://127.0.0.1:{port}/{}", stream_path())),
         name: "Local livestream".to_string(),
         favorite: false,
@@ -222,6 +225,9 @@ pub fn share_restream(address: String, channel: Channel, path: String) -> Result
         headers: sql::get_channel_headers_by_id(channel.id.context("No id on channel?")?)?,
         data: Channel {
             number: None,
+            watch_position: None,
+            watch_duration: None,
+            watch_finished: None,
             id: Some(-1),
             name: format!("RST | {}", channel.name).to_string(),
             url: Some(address),

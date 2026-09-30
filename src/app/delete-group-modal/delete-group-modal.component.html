@@ -1,31 +1,55 @@
 <div class="modal-header">
-    <h4 class="modal-title lbl">
-        {{ 'DELETE_GROUP.TITLE' | translate }}
-    </h4>
-    <button type="button" class="btn-close btn-close-white" [attr.aria-label]="('MODAL.CLOSE' | translate)"
-        (click)="activeModal.close('Cross click')"></button>
+  <h4 class="modal-title lbl">
+    {{ "DELETE_GROUP.TITLE" | translate }}
+  </h4>
+  <button
+    type="button"
+    class="btn-close btn-close-white"
+    [attr.aria-label]="'MODAL.CLOSE' | translate"
+    (click)="activeModal.close('Cross click')"
+  ></button>
 </div>
 <div class="modal-body">
-    <p class="notice">{{ 'DELETE_GROUP.NOTICE' | translate }}</p>
-    <div class="row mt-4 align-items-center">
-        <div class="col-2">
-            <span>{{ 'DELETE_GROUP.CATEGORY' | translate }}</span>
-        </div>
-        <div class="col">
-            <input [placeholder]="('FORM.TYPEAHEAD_PLACEHOLDER' | translate)" id="typeahead-basic" name="group" type="text" class="form-control"
-                [(ngModel)]="autocomplete_group" [ngbTypeahead]="search" (selectItem)="selectGroup($event)"
-                [resultFormatter]="formatter" [inputFormatter]="formatter" (ngModelChange)="checkEmpty($event)" />
-        </div>
+  <p class="notice">{{ "DELETE_GROUP.NOTICE" | translate }}</p>
+  <div class="row mt-4 align-items-center">
+    <div class="col-2">
+      <span>{{ "DELETE_GROUP.CATEGORY" | translate }}</span>
     </div>
+    <div class="col">
+      <input
+        [placeholder]="'FORM.TYPEAHEAD_PLACEHOLDER' | translate"
+        id="typeahead-basic"
+        name="group"
+        type="text"
+        class="form-control"
+        [(ngModel)]="autocomplete_group"
+        [ngbTypeahead]="search"
+        (selectItem)="selectGroup($event)"
+        [resultFormatter]="formatter"
+        [inputFormatter]="formatter"
+        (ngModelChange)="checkEmpty($event)"
+      />
+    </div>
+  </div>
 </div>
 <div class="modal-footer">
-    <button [disabled]="loading" (click)="delete()" class="btn btn-danger d-inline-flex align-items-center" type="submit">
-        <span>{{ 'MODAL.CONFIRM_DELETE' | translate }}</span>
-        <svg class="trash ms-1" viewBox="0 0 24 24" fill="currentColor">
-            <path
-                d="M 9,4 H 4 v 2 h 1 v 13 c 0,1.105 0.895,2 2,2 h 10 c 1.105,0 2,-0.895 2,-2 V 6 h 1 V 4 H 15 M 7,6 H 17 V 19 H 7 V 6 m 2,2 v 9 h 2 V 8 H 9 m 4,0 v 9 h 2 V 8 Z"
-                id="path1" />
-            <path class="trash-lid" id="rect2" d="m 7.4391144,0.7970474 h 9.1808116 v 2.538746 H 7.4391144 Z" />
-        </svg>
-    </button>
+  <button
+    [disabled]="loading"
+    (click)="delete()"
+    class="btn btn-danger d-inline-flex align-items-center"
+    type="submit"
+  >
+    <span>{{ "MODAL.CONFIRM_DELETE" | translate }}</span>
+    <svg class="trash ms-1" viewBox="0 0 24 24" fill="currentColor">
+      <path
+        d="M 9,4 H 4 v 2 h 1 v 13 c 0,1.105 0.895,2 2,2 h 10 c 1.105,0 2,-0.895 2,-2 V 6 h 1 V 4 H 15 M 7,6 H 17 V 19 H 7 V 6 m 2,2 v 9 h 2 V 8 H 9 m 4,0 v 9 h 2 V 8 Z"
+        id="path1"
+      />
+      <path
+        class="trash-lid"
+        id="rect2"
+        d="m 7.4391144,0.7970474 h 9.1808116 v 2.538746 H 7.4391144 Z"
+      />
+    </svg>
+  </button>
 </div>

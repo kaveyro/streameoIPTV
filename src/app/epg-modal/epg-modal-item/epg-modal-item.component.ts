@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, NgZone, OnDestroy, Output } from "@angular/core";
+import {
+  Component,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnDestroy,
+  Output,
+  AfterViewInit,
+} from "@angular/core";
 import { EPG } from "../../models/epg";
 import { MemoryService } from "../../memory.service";
 import { invoke } from "@tauri-apps/api/core";
@@ -19,7 +27,7 @@ import { TranslateService } from "@ngx-translate/core";
   templateUrl: "./epg-modal-item.component.html",
   styleUrl: "./epg-modal-item.component.css",
 })
-export class EpgModalItemComponent implements OnDestroy {
+export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
   private static nextUid = 0;
   /** Unique per instance: SVG ids are document-global. */
   readonly gradientId = `epg-dl-progress-${EpgModalItemComponent.nextUid++}`;
@@ -42,13 +50,13 @@ export class EpgModalItemComponent implements OnDestroy {
   scheduledRecordingId?: number;
   @Output()
   scheduleChanged = new EventEmitter<void>();
-  playing: boolean = false;
-  progress: number = 0;
-  loadingSchedule: boolean = false;
+  playing = false;
+  progress = 0;
+  loadingSchedule = false;
   subscriptions: Subscription[] = [];
 
   ngAfterViewInit(): void {
-    let download = this.download.Downloads.get(this.getDownloadId());
+    const download = this.download.Downloads.get(this.getDownloadId());
     if (download) {
       this.downloadSubscribe(download);
     }
@@ -135,7 +143,7 @@ export class EpgModalItemComponent implements OnDestroy {
   async timeshift() {
     if (this.playing) return;
     this.playing = true;
-    let channel: Channel = {
+    const channel: Channel = {
       id: -1,
       url: this.epg?.timeshift_url,
       name: this.epg?.title,
@@ -178,7 +186,7 @@ export class EpgModalItemComponent implements OnDestroy {
       }
     }
     if (this.downloading()) return;
-    let channel: Channel = {
+    const channel: Channel = {
       id: this.channelId,
       url: this.epg?.timeshift_url,
       name: this.epg?.title,
@@ -186,12 +194,12 @@ export class EpgModalItemComponent implements OnDestroy {
       favorite: false,
       source_id: this.sourceId,
     };
-    let download = await this.download.enqueue(this.getDownloadId(), channel, file ?? undefined);
+    const download = await this.download.enqueue(this.getDownloadId(), channel, file ?? undefined);
     this.downloadSubscribe(download);
   }
 
   downloadSubscribe(download: Download) {
-    let progressUpdate = download.progressUpdate.subscribe((progress) => {
+    const progressUpdate = download.progressUpdate.subscribe((progress) => {
       this.ngZone.run(() => {
         this.progress = Math.trunc(progress);
       });

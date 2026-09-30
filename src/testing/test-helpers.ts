@@ -21,8 +21,7 @@ import { ToastrModule } from "ngx-toastr";
 import { KeyboardShortcutsModule } from "ng-keyboard-shortcuts";
 import { clearMocks, mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { TimeAgoPipe } from "../app/pipes/time-ago.pipe";
-import { NotEmptyValidatorDirective } from "../app/setup/validators/not-empty-validator.directive";
-import { SourceNameExistsValidator } from "../app/setup/validators/source-name-exists-validator.directive";
+import { CountryNamePipe } from "../app/pipes/country-name.pipe";
 import { GroupNameExistsValidator } from "../app/edit-group-modal/validators/group-name-exists.directive";
 
 /// Navigation target for every route in tests.
@@ -51,15 +50,14 @@ export const TEST_IMPORTS = [
   NgbTypeaheadModule,
   NgbModalModule,
   KeyboardShortcutsModule.forRoot(),
+  // Standalone pipes AppModule imports for its declared components.
+  TimeAgoPipe,
+  CountryNamePipe,
 ];
 
-/// Pipes and directives shared by several templates.
-export const SHARED_DECLARATIONS = [
-  TimeAgoPipe,
-  NotEmptyValidatorDirective,
-  SourceNameExistsValidator,
-  GroupNameExistsValidator,
-];
+/// Non-standalone directives shared by several templates (standalone
+/// components import their own dependencies, so they need none of this).
+export const SHARED_DECLARATIONS = [GroupNameExistsValidator];
 
 export const TEST_PROVIDERS = [provideRouter([{ path: "**", component: BlankTestComponent }])];
 
@@ -116,7 +114,10 @@ export function mockTauri(handlers: Record<string, Handler> = {}): IpcCall[] {
     (cmd, payload) => {
       const args = (payload ?? {}) as Record<string, unknown>;
       calls.push({ cmd, args });
-      const handler = cmd in handlers ? handlers[cmd] : DEFAULTS[cmd];
+      // A copy of the defaults: a component that mutates an answer (as the
+      // settings page does with get_settings) must not change it for later
+      // specs. The real IPC bridge serialises anyway.
+      const handler = cmd in handlers ? handlers[cmd] : structuredClone(DEFAULTS[cmd]);
       return typeof handler === "function"
         ? (handler as (a: Record<string, unknown>) => unknown)(args)
         : (handler ?? null);

@@ -2,7 +2,6 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
-  Injectable,
   Input,
   NgZone,
   OnDestroy,
@@ -11,9 +10,9 @@ import {
   ViewChild,
   ViewChildren,
 } from "@angular/core";
-import { MatMenuTrigger } from "@angular/material/menu";
+import { MatMenuTrigger, MatMenuModule } from "@angular/material/menu";
 import { invoke } from "@tauri-apps/api/core";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { Subscription } from "rxjs";
 import { MemoryService } from "../memory.service";
 import { ErrorService } from "../error.service";
@@ -29,12 +28,10 @@ import { ProgrammeHit } from "../models/epgExtras";
 import { EpgAlert, EpgAlertAction, findEpgAlert } from "../models/epgAlert";
 import { splitCountryPrefix } from "../country-prefix";
 import { uiLocale } from "../utils";
-
-/// Session cache of the guide data per channel id, kept when the guide closes.
-@Injectable({ providedIn: "root" })
-export class GuideEpgCache {
-  readonly entries: Map<number, EPG[]> = new Map();
-}
+import { GuideEpgCache } from "./guide-epg-cache";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { CountryNamePipe } from "../pipes/country-name.pipe";
 
 type ProgrammeState = "past" | "now" | "future";
 
@@ -89,7 +86,7 @@ export interface GuideSearchDay {
  * for the session.
  */
 @Component({
-  standalone: false,
+  imports: [CommonModule, FormsModule, TranslatePipe, MatMenuModule, CountryNamePipe],
   selector: "app-tv-guide",
   templateUrl: "./tv-guide.component.html",
   styleUrls: ["./tv-guide.component.css", "./tv-guide-search.css", "./tv-guide-alerts.css"],

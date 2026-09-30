@@ -1,7 +1,9 @@
 import { Component, EventEmitter, Input, Output } from "@angular/core";
-import { MatMenuTrigger } from "@angular/material/menu";
+import { MatMenuTrigger, MatMenuModule } from "@angular/material/menu";
 import { MemoryService } from "../../memory.service";
 import { FavoriteList, FavoriteListsService } from "../favorite-lists.service";
+import { CommonModule } from "@angular/common";
+import { TranslatePipe } from "@ngx-translate/core";
 
 /**
  * The chip row above the favorites view: "Favorites", one chip per list (with
@@ -10,7 +12,7 @@ import { FavoriteList, FavoriteListsService } from "../favorite-lists.service";
  * {@link FavoriteListsService}, whose reload the home page follows.
  */
 @Component({
-  standalone: false,
+  imports: [CommonModule, TranslatePipe, MatMenuModule],
   selector: "app-favorite-list-chips",
   templateUrl: "./favorite-list-chips.component.html",
   styleUrl: "./favorite-list-chips.component.css",

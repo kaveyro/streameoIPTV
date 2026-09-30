@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ErrorService } from "../error.service";
 import { ConfirmService } from "../confirm.service";
 import { PlaybackService } from "../playback.service";
@@ -12,6 +12,9 @@ import { Channel } from "../models/channel";
 import { MediaType } from "../models/mediaType";
 import { EPG_ALERT_MIN_LENGTH, EpgAlert, EpgAlertAction, findEpgAlert } from "../models/epgAlert";
 import { formatFileSize, uiLocale } from "../utils";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 
 /**
  * The recordings view of the home page: the recording schedule (pending,
@@ -23,7 +26,7 @@ import { formatFileSize, uiLocale } from "../utils";
  * only opens web links, and the command can only open the recording folder.
  */
 @Component({
-  standalone: false,
+  imports: [CommonModule, FormsModule, TranslatePipe, NgbTooltipModule],
   selector: "app-recordings",
   templateUrl: "./recordings.component.html",
   styleUrl: "./recordings.component.css",

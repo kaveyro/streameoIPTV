@@ -34,7 +34,7 @@ export class ImportModalComponent {
     }
     this.nameOverride = this.nameOverride?.trim();
     if (this.nameOverride == "") this.nameOverride = undefined;
-    let fail = await this.memory.tryIPC(
+    const fail = await this.memory.tryIPC(
       this.translate.instant("TOAST.IMPORT_SUCCESS"),
       this.translate.instant("TOAST.IMPORT_FAILED"),
       () =>

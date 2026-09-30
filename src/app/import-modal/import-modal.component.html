@@ -1,30 +1,38 @@
 <div class="modal-header">
-    <h4 class="modal-title lbl">
-        {{ 'IMPORT.TITLE' | translate }}
-    </h4>
-    <button type="button" class="btn-close btn-close-white" [attr.aria-label]="('MODAL.CLOSE' | translate)"
-        (click)="activeModal.close('Cross click')"></button>
+  <h4 class="modal-title lbl">
+    {{ "IMPORT.TITLE" | translate }}
+  </h4>
+  <button
+    type="button"
+    class="btn-close btn-close-white"
+    [attr.aria-label]="'MODAL.CLOSE' | translate"
+    (click)="activeModal.close('Cross click')"
+  ></button>
 </div>
 <form #form="ngForm" (ngSubmit)="selectFile()">
-    <div class="modal-body">
-        <p class="mt-2 notice">{{ 'IMPORT.NOTICE' | translate }}</p>
-        <div class="row mt-3 align-items-center">
-            <div class="col-2">
-                <span>{{ 'IMPORT.NAME' | translate }}</span>
-            </div>
-            <div class="col">
-                <input #name="ngModel" name="name" class="form-control" [(ngModel)]="nameOverride" />
-            </div>
-        </div>
+  <div class="modal-body">
+    <p class="mt-2 notice">{{ "IMPORT.NOTICE" | translate }}</p>
+    <div class="row mt-3 align-items-center">
+      <div class="col-2">
+        <span>{{ "IMPORT.NAME" | translate }}</span>
+      </div>
+      <div class="col">
+        <input #name="ngModel" name="name" class="form-control" [(ngModel)]="nameOverride" />
+      </div>
     </div>
-    <div class="modal-footer">
-        <button [disabled]="!form.valid || memory.Loading" class="btn btn-primary d-inline-flex align-items-center"
-            type="submit">
-            <span>{{ 'IMPORT.IMPORT' | translate }}</span>
-            <svg fill="currentColor" class="import ms-1" aria-hidden="true" viewBox="0 0 24 24">
-                <path
-                    d="M6,2C4.89,2 4,2.9 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M13,3.5L18.5,9H13M10.05,11.22L12.88,14.05L15,11.93V19H7.93L10.05,16.88L7.22,14.05" />
-            </svg>
-        </button>
-    </div>
+  </div>
+  <div class="modal-footer">
+    <button
+      [disabled]="!form.valid || memory.Loading"
+      class="btn btn-primary d-inline-flex align-items-center"
+      type="submit"
+    >
+      <span>{{ "IMPORT.IMPORT" | translate }}</span>
+      <svg fill="currentColor" class="import ms-1" aria-hidden="true" viewBox="0 0 24 24">
+        <path
+          d="M6,2C4.89,2 4,2.9 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M13,3.5L18.5,9H13M10.05,11.22L12.88,14.05L15,11.93V19H7.93L10.05,16.88L7.22,14.05"
+        />
+      </svg>
+    </button>
+  </div>
 </form>

@@ -8,7 +8,6 @@ import { Channel } from "../models/channel";
 import { MediaType } from "../models/mediaType";
 import { ViewMode } from "../models/viewMode";
 import { EPG } from "../models/epg";
-import { CountryNamePipe } from "../pipes/country-name.pipe";
 import { NowPlayingService } from "../now-playing.service";
 import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
 import { Subject } from "rxjs";
@@ -43,7 +42,9 @@ class FakeIntersectionObserver {
     if (FakeIntersectionObserver.showOnObserve) this.show(true);
   }
 
-  unobserve() {}
+  unobserve() {
+    // Nothing to release in the fake.
+  }
 
   takeRecords(): IntersectionObserverEntry[] {
     return [];
@@ -71,12 +72,11 @@ describe("ChannelTileComponent", () => {
     channel: Channel,
     viewMode = ViewMode.All,
     handlers: Record<string, unknown> = {},
-    setup: () => void = () => {},
+    setup: () => void = () => undefined,
   ) {
     calls = mockTauri(handlers);
     await TestBed.configureTestingModule({
-      declarations: [ChannelTileComponent, CountryNamePipe],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, ChannelTileComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     fixture = TestBed.createComponent(ChannelTileComponent);

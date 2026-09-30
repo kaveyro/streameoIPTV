@@ -11,7 +11,7 @@ import {
   ViewChildren,
 } from "@angular/core";
 import { Router } from "@angular/router";
-import { AllowIn, ShortcutInput } from "ng-keyboard-shortcuts";
+import { AllowIn, ShortcutInput, KeyboardShortcutsModule } from "ng-keyboard-shortcuts";
 import { Subscription, debounceTime, filter, fromEvent, map, skip } from "rxjs";
 import { MemoryService } from "../memory.service";
 import { NowPlayingService } from "../now-playing.service";
@@ -30,20 +30,26 @@ import { ErrorService } from "../error.service";
 import { Settings } from "../models/settings";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SortType } from "../models/sortType";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { SIDEBAR_COLLAPSED } from "../models/localStorage";
 import { isInputFocused } from "../utils";
 import { Node } from "../models/node";
 import { NodeType } from "../models/nodeType";
 import { Stack } from "../models/stack";
 import { VIEW_FORMAT, ViewFormat } from "../models/viewFormat";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
 import { ParentalService } from "../parental.service";
 import { CountryCount } from "../models/epgExtras";
 import { toCountryPrefixMode } from "../country-prefix";
-import { CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
+import { CdkDragDrop, moveItemInArray, DragDropModule } from "@angular/cdk/drag-drop";
 import { FavoriteList, FavoriteListsService } from "../favorite-lists/favorite-lists.service";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { SortButtonComponent } from "./sort-button/sort-button.component";
+import { FavoriteListChipsComponent } from "../favorite-lists/favorite-list-chips/favorite-list-chips.component";
+import { TvGuideComponent } from "../tv-guide/tv-guide.component";
+import { RecordingsComponent } from "../recordings/recordings.component";
 
 /// What the main area shows: the channel library (all view modes, also
 /// "continue watching"), the TV guide or the recordings. Frontend only; the
@@ -55,7 +61,19 @@ const NAV_ITEM_COUNT = 7;
 
 @Component({
   selector: "app-home",
-  standalone: false,
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslatePipe,
+    NgbTooltipModule,
+    DragDropModule,
+    KeyboardShortcutsModule,
+    ChannelTileComponent,
+    SortButtonComponent,
+    FavoriteListChipsComponent,
+    TvGuideComponent,
+    RecordingsComponent,
+  ],
   templateUrl: "./home.component.html",
   styleUrl: "./home.component.css",
   animations: [
@@ -95,7 +113,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild("tileGrid") tileGrid?: ElementRef<HTMLElement>;
   @ViewChildren(ChannelTileComponent) tiles?: QueryList<ChannelTileComponent>;
   shortcuts: ShortcutInput[] = [];
-  focus: number = 0;
+  focus = 0;
   focusArea = FocusArea.Tiles;
   viewType = ViewMode.All;
   subscriptions: Subscription[] = [];
@@ -109,7 +127,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   loadMoreFailed = false;
   readonly PAGE_SIZE = 36;
   channelsVisible = true;
-  prevSearchValue: String = "";
+  prevSearchValue = "";
   loading = false;
   gridLoading = false;
   readonly skeletons = Array(9);
@@ -233,12 +251,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getSources() {
-    let get_settings = invoke("get_settings");
-    let get_sources = invoke("get_sources");
+    const get_settings = invoke("get_settings");
+    const get_sources = invoke("get_sources");
     Promise.all([get_settings, get_sources])
       .then((data) => {
-        let settings = data[0] as Settings;
-        let sources = data[1] as Source[];
+        const settings = data[0] as Settings;
+        const sources = data[1] as Source[];
         if (settings.zoom)
           getCurrentWebview()
             .setZoom(Math.trunc(settings.zoom! * 100) / 10000)
@@ -405,7 +423,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.loadMoreFailed = false;
     }
     try {
-      let channels: Channel[] = await invoke("search", { filters });
+      const channels: Channel[] = await invoke("search", { filters });
       if (seq !== this.loadSeq) return;
       this.filters.page = page;
       if (!more) {
@@ -481,16 +499,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.addEvents().then((_) => _);
     this.subscriptions.push(
-      fromEvent(this.search.nativeElement, "keyup")
+      fromEvent<KeyboardEvent>(this.search.nativeElement, "keyup")
         .pipe(
-          filter((event: any) => event.key !== "Escape"),
-          map((event: any) => {
+          filter((event: KeyboardEvent) => event.key !== "Escape"),
+          map((event: KeyboardEvent) => {
+            const value = (event.target as HTMLInputElement).value;
             this.focus = 0;
             this.focusArea = FocusArea.Tiles;
-            if (this.channelsVisible && event.target.value != this.prevSearchValue)
-              this.channelsVisible = false;
-            this.prevSearchValue = event.target.value;
-            return event.target.value;
+            if (this.channelsVisible && value != this.prevSearchValue) this.channelsVisible = false;
+            this.prevSearchValue = value;
+            return value;
           }),
           debounceTime(300),
         )
@@ -617,7 +635,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         key: "shift + f10",
         label: t("SHORTCUT.TILE_ACTIONS"),
         description: t("SHORTCUT.OPEN_CONTEXT_MENU"),
-        command: () => {},
+        command: () => undefined,
       },
       {
         key: "left",
@@ -656,7 +674,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     // "Continue watching" always shows movies/episodes only; the pills are
     // hidden there and the shortcuts must not change it either.
     if (this.continueWatching || this.panel !== "library") return;
-    let index = this.filters!.media_types.indexOf(mediaType);
+    const index = this.filters!.media_types.indexOf(mediaType);
     if (index == -1) this.filters!.media_types.push(mediaType);
     else this.filters!.media_types.splice(index, 1);
     this.load();
@@ -985,7 +1003,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         tmpFocus += 1;
         break;
     }
-    let goOverSize = this.shortFiltersMode() ? 1 : 2;
+    const goOverSize = this.shortFiltersMode() ? 1 : 2;
     tmpFocus += this.focus;
     if (tmpFocus < 0) {
       this.changeFocusArea(false);
@@ -1068,7 +1086,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   changeFocusArea(down: boolean) {
-    let increment = down ? 1 : -1;
+    const increment = down ? 1 : -1;
     this.focusArea += increment;
     if (this.focusArea == FocusArea.Filters && !this.filtersVisible()) this.focusArea += increment;
     if (this.focusArea < 0) this.focusArea = 0;
@@ -1083,7 +1101,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           ? 1
           : 2
         : NAV_ITEM_COUNT - 1;
-    let id = FocusAreaPrefix[this.focusArea] + this.focus;
+    const id = FocusAreaPrefix[this.focusArea] + this.focus;
     document.getElementById(id)?.focus();
   }
 
@@ -1132,7 +1150,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     if (event.key == "Enter" && this.focusArea == FocusArea.Filters && this.panel === "library")
-      (document.activeElement as any).click();
+      (document.activeElement as HTMLElement).click();
   }
 
   selectFirstChannel() {

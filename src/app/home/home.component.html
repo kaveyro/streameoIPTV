@@ -290,7 +290,8 @@
       class="mb-3 d-flex align-items-center"
       *ngIf="
         panel === 'library' &&
-        ((filters?.view_type == viewModeEnum.Categories && filters?.group_id) || filters?.series_id)
+        ((filters?.view_type === viewModeEnum.Categories && filters?.group_id) ||
+          filters?.series_id)
       "
     >
       <svg
@@ -386,7 +387,7 @@
         (cdkDropListDropped)="onTileDropped($event)"
       >
         <app-channel-tile
-          [attr.id]="i == 0 ? 'first' : null"
+          [attr.id]="i === 0 ? 'first' : null"
           *ngFor="let channel of channels; let i = index; trackBy: trackByChannel"
           cdkDrag
           [cdkDragDisabled]="!customOrderActive()"
@@ -413,8 +414,27 @@
       </button>
     </ng-container>
 
-    <app-tv-guide *ngIf="panel === 'guide'" [group]="guideGroup"></app-tv-guide>
-    <app-recordings *ngIf="panel === 'recordings'"></app-recordings>
+    <!-- Guide and recordings load as separate chunks the first time they
+         are opened. `when` fires only once, so the inner @if still destroys
+         the panel when it is closed, as before. -->
+    @defer (when panel === 'guide') {
+      @if (panel === "guide") {
+        <app-tv-guide [group]="guideGroup"></app-tv-guide>
+      }
+    } @loading (after 150ms) {
+      <div class="d-flex justify-content-center py-5 text-secondary" role="status">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      </div>
+    }
+    @defer (when panel === 'recordings') {
+      @if (panel === "recordings") {
+        <app-recordings></app-recordings>
+      }
+    } @loading (after 150ms) {
+      <div class="d-flex justify-content-center py-5 text-secondary" role="status">
+        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      </div>
+    }
   </main>
 </div>
 

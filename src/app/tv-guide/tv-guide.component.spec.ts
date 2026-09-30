@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
-import { GuideEpgCache, TvGuideComponent } from "./tv-guide.component";
+import { TvGuideComponent } from "./tv-guide.component";
+import { GuideEpgCache } from "./guide-epg-cache";
 import { MemoryService } from "../memory.service";
 import { PlaybackService } from "../playback.service";
 import { Channel } from "../models/channel";
@@ -9,7 +10,6 @@ import { Filters } from "../models/filters";
 import { MediaType } from "../models/mediaType";
 import { ProgrammeHit } from "../models/epgExtras";
 import { EpgAlert } from "../models/epgAlert";
-import { CountryNamePipe } from "../pipes/country-name.pipe";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -61,8 +61,7 @@ describe("TvGuideComponent", () => {
       ...handlers,
     });
     await TestBed.configureTestingModule({
-      declarations: [TvGuideComponent, CountryNamePipe],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, TvGuideComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     TestBed.inject(GuideEpgCache).entries.clear();

@@ -1,10 +1,13 @@
 import { Component, Input } from "@angular/core";
 import { SortType, getSortTypeText } from "../../../models/sortType";
 import { MemoryService } from "../../../memory.service";
+import { CommonModule } from "@angular/common";
+import { TranslatePipe } from "@ngx-translate/core";
+import { MatMenuModule } from "@angular/material/menu";
 
 @Component({
   selector: "app-sort-item",
-  standalone: false,
+  imports: [CommonModule, TranslatePipe, MatMenuModule],
   templateUrl: "./sort-item.component.html",
   styleUrl: "./sort-item.component.css",
 })

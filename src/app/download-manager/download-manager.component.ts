@@ -10,8 +10,8 @@ import { ConfirmService } from "../confirm.service";
   styleUrl: "./download-manager.component.css",
 })
 export class DownloadManagerComponent {
-  isMinimized: boolean = false;
-  showHistory: boolean = true;
+  isMinimized = false;
+  showHistory = true;
   statusEnum = DownloadStatus;
   concurrencyOptions = Array.from(
     { length: DownloadService.MAX_CONCURRENT_LIMIT },

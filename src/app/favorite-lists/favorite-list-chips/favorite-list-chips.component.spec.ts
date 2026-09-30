@@ -12,8 +12,7 @@ describe("FavoriteListChipsComponent", () => {
   beforeEach(async () => {
     mockTauri();
     await TestBed.configureTestingModule({
-      declarations: [FavoriteListChipsComponent],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, FavoriteListChipsComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     fixture = TestBed.createComponent(FavoriteListChipsComponent);

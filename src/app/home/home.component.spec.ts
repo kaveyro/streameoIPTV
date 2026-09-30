@@ -2,6 +2,11 @@ import { NO_ERRORS_SCHEMA } from "@angular/core";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { HomeComponent } from "./home.component";
+import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
+import { SortButtonComponent } from "./sort-button/sort-button.component";
+import { FavoriteListChipsComponent } from "../favorite-lists/favorite-list-chips/favorite-list-chips.component";
+import { TvGuideComponent } from "../tv-guide/tv-guide.component";
+import { RecordingsComponent } from "../recordings/recordings.component";
 import { MemoryService } from "../memory.service";
 import { ParentalService } from "../parental.service";
 import { Filters } from "../models/filters";
@@ -33,17 +38,36 @@ describe("HomeComponent", () => {
   async function create(handlers: Record<string, unknown> = {}) {
     calls = mockTauri({ get_sources: [source], ...handlers });
     await TestBed.configureTestingModule({
-      declarations: [HomeComponent],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, HomeComponent],
       providers: TEST_PROVIDERS,
+    })
       // Shallow: tiles, sort button, guide and recordings have their own specs.
-      schemas: [NO_ERRORS_SCHEMA],
-    }).compileComponents();
+      .overrideComponent(HomeComponent, {
+        remove: {
+          imports: [
+            ChannelTileComponent,
+            SortButtonComponent,
+            FavoriteListChipsComponent,
+            TvGuideComponent,
+            RecordingsComponent,
+          ],
+        },
+        add: { schemas: [NO_ERRORS_SCHEMA] },
+      })
+      .compileComponents();
     fixture = TestBed.createComponent(HomeComponent);
     component = fixture.componentInstance;
     element = fixture.nativeElement;
     fixture.detectChanges();
     await settle();
+    fixture.detectChanges();
+  }
+
+  /// The guide and recordings panels are @defer blocks: their content
+  /// renders once the (lazy) dependencies have loaded.
+  async function renderDeferred() {
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
   }
 
@@ -121,7 +145,7 @@ describe("HomeComponent", () => {
     await create();
     const searches = callsOf(calls, "search").length;
     (element.querySelector("#viewMode-6") as HTMLButtonElement).click();
-    fixture.detectChanges();
+    await renderDeferred();
     expect(component.panel).toBe("recordings");
     expect(element.querySelector("app-recordings")).not.toBeNull();
     expect(element.querySelector("app-channel-tile")).toBeNull();
@@ -134,13 +158,16 @@ describe("HomeComponent", () => {
     await component.switchMode(ViewMode.Categories);
     component.filters!.group_id = 5;
     component.showPanel("guide");
-    fixture.detectChanges();
+    await renderDeferred();
     expect(component.guideGroup?.id).toBe(5);
     expect(element.querySelector("app-tv-guide")).not.toBeNull();
 
     await component.switchMode(ViewMode.Categories);
     expect(component.panel).toBe("library");
     expect(lastSearch().group_id).toBe(5);
+    // The @defer trigger fires once; the guide itself is still removed.
+    fixture.detectChanges();
+    expect(element.querySelector("app-tv-guide")).toBeNull();
   });
 
   it("takes the stream fallback setting from the settings", async () => {

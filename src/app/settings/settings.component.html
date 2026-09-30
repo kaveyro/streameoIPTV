@@ -340,10 +340,10 @@
                   *ngFor="let accent of accentColors"
                   type="button"
                   class="accent-swatch"
-                  [class.accent-swatch--active]="(settings.accent_color ?? 'blue') == accent.id"
+                  [class.accent-swatch--active]="(settings.accent_color ?? 'blue') === accent.id"
                   [style.background-color]="accent.color"
                   [attr.aria-label]="accent.label | translate"
-                  [attr.aria-pressed]="(settings.accent_color ?? 'blue') == accent.id"
+                  [attr.aria-pressed]="(settings.accent_color ?? 'blue') === accent.id"
                   [ngbTooltip]="accent.label | translate"
                   (click)="setAccentColor(accent.id)"
                 ></button>
@@ -816,10 +816,10 @@
       >
         <h3 class="pane-title">{{ "SETTINGS.NAV.SOURCES" | translate }}</h3>
         <ng-container *ngFor="let source of sources; let i = index">
-          <div [ngClass]="{ 'mt-3': i != 0 }">
+          <div [ngClass]="{ 'mt-3': i !== 0 }">
             <app-source-tile
               [source]="source"
-              [expiry]="source.source_type == 2 ? expiries[source.id!] : undefined"
+              [expiry]="source.source_type === 2 ? expiries[source.id!] : undefined"
             ></app-source-tile>
           </div>
         </ng-container>

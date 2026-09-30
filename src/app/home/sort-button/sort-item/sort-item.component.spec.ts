@@ -12,8 +12,7 @@ describe("SortItemComponent", () => {
   beforeEach(async () => {
     mockTauri();
     await TestBed.configureTestingModule({
-      declarations: [SortItemComponent],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, SortItemComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SortItemComponent);

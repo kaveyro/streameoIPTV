@@ -13,15 +13,6 @@ import { DragDropModule } from "@angular/cdk/drag-drop";
 import { KeyboardShortcutsModule } from "ng-keyboard-shortcuts";
 import { ToastrModule } from "ngx-toastr";
 import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
-import { SetupComponent } from "./setup/setup.component";
-import { LoadingComponent } from "./loading/loading.component";
-import { SourceNameExistsValidator } from "./setup/validators/source-name-exists-validator.directive";
-import { NotEmptyValidatorDirective } from "./setup/validators/not-empty-validator.directive";
-import { ConfirmModalComponent } from "./setup/confirm-modal/confirm-modal.component";
-import { HomeComponent } from "./home/home.component";
-import { ChannelTileComponent } from "./channel-tile/channel-tile.component";
-import { SettingsComponent } from "./settings/settings.component";
-import { SourceTileComponent } from "./settings/source-tile/source-tile.component";
 import { ErrorModalComponent } from "./error-modal/error-modal.component";
 import { EditChannelModalComponent } from "./edit-channel-modal/edit-channel-modal.component";
 import { EditGroupModalComponent } from "./edit-group-modal/edit-group-modal.component";
@@ -33,34 +24,17 @@ import { EpgModalComponent } from "./epg-modal/epg-modal.component";
 import { EpgModalItemComponent } from "./epg-modal/epg-modal-item/epg-modal-item.component";
 import { EpgMappingModalComponent } from "./epg-mapping-modal/epg-mapping-modal.component";
 import { RestreamModalComponent } from "./restream-modal/restream-modal.component";
-import { SortButtonComponent } from "./home/sort-button/sort-button.component";
-import { SortItemComponent } from "./home/sort-button/sort-item/sort-item.component";
 import { DownloadManagerComponent } from "./download-manager/download-manager.component";
 import { PlayerComponent } from "./player/player.component";
 import { UpdateModalComponent } from "./update-modal/update-modal.component";
-import { RecordingsComponent } from "./recordings/recordings.component";
-import { TvGuideComponent } from "./tv-guide/tv-guide.component";
 import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
 import { FavoriteListNameModalComponent } from "./favorite-lists/favorite-list-name-modal/favorite-list-name-modal.component";
-import { FavoriteListChipsComponent } from "./favorite-lists/favorite-list-chips/favorite-list-chips.component";
-
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { CountryNamePipe } from "./pipes/country-name.pipe";
 
 @NgModule({
   declarations: [
     AppComponent,
-    TimeAgoPipe,
-    CountryNamePipe,
-    SetupComponent,
-    LoadingComponent,
-    SourceNameExistsValidator,
-    NotEmptyValidatorDirective,
-    ConfirmModalComponent,
-    HomeComponent,
-    ChannelTileComponent,
-    SettingsComponent,
-    SourceTileComponent,
     ErrorModalComponent,
     EditChannelModalComponent,
     EditGroupModalComponent,
@@ -72,16 +46,11 @@ import { CountryNamePipe } from "./pipes/country-name.pipe";
     EpgModalItemComponent,
     EpgMappingModalComponent,
     RestreamModalComponent,
-    SortButtonComponent,
-    SortItemComponent,
     DownloadManagerComponent,
     UpdateModalComponent,
     PlayerComponent,
-    RecordingsComponent,
-    TvGuideComponent,
     PinDialogComponent,
     FavoriteListNameModalComponent,
-    FavoriteListChipsComponent,
   ],
   imports: [
     BrowserModule,
@@ -107,6 +76,9 @@ import { CountryNamePipe } from "./pipes/country-name.pipe";
     NgbModalModule,
     NgbTypeaheadModule,
     TranslatePipe,
+    // Standalone pipes still used by the components declared here.
+    TimeAgoPipe,
+    CountryNamePipe,
   ],
   providers: [
     provideAnimationsAsync(),

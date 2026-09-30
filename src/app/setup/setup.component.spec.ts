@@ -3,14 +3,12 @@ import { Router } from "@angular/router";
 import { ToastrService } from "ngx-toastr";
 
 import { SetupComponent } from "./setup.component";
-import { LoadingComponent } from "../loading/loading.component";
 import { Source } from "../models/source";
 import { SourceType } from "../models/sourceType";
 import { MemoryService } from "../memory.service";
 import { FREE_EPG_SOURCES, freeEpgSourcesFor, topCountries } from "../epg-free-sources";
 import {
   IpcCall,
-  SHARED_DECLARATIONS,
   TEST_IMPORTS,
   TEST_PROVIDERS,
   callsOf,
@@ -28,8 +26,7 @@ describe("SetupComponent", () => {
   async function create(handlers: Record<string, unknown> = {}) {
     calls = mockTauri(handlers);
     await TestBed.configureTestingModule({
-      declarations: [SetupComponent, LoadingComponent, ...SHARED_DECLARATIONS],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, SetupComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     fixture = TestBed.createComponent(SetupComponent);

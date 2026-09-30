@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { SortButtonComponent } from "./sort-button.component";
-import { SortItemComponent } from "./sort-item/sort-item.component";
 import { TEST_IMPORTS, mockTauri, resetTauri } from "../../../testing/test-helpers";
 import { SortType } from "../../models/sortType";
 
@@ -12,8 +11,7 @@ describe("SortButtonComponent", () => {
   beforeEach(async () => {
     mockTauri();
     await TestBed.configureTestingModule({
-      declarations: [SortButtonComponent, SortItemComponent],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, SortButtonComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SortButtonComponent);

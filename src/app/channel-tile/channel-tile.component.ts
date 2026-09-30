@@ -13,14 +13,14 @@ import {
   SimpleChanges,
   ViewChild,
 } from "@angular/core";
-import { MatMenuTrigger } from "@angular/material/menu";
+import { MatMenuTrigger, MatMenuModule } from "@angular/material/menu";
 import { Channel } from "../models/channel";
 import { MemoryService } from "../memory.service";
 import { MediaType } from "../models/mediaType";
 import { invoke } from "@tauri-apps/api/core";
 import { ToastrService } from "ngx-toastr";
 import { ErrorService } from "../error.service";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { EditChannelModalComponent } from "../edit-channel-modal/edit-channel-modal.component";
 import { EditGroupModalComponent } from "../edit-group-modal/edit-group-modal.component";
 import { DeleteGroupModalComponent } from "../delete-group-modal/delete-group-modal.component";
@@ -34,7 +34,7 @@ import { Subscription, take } from "rxjs";
 import { save } from "@tauri-apps/plugin-dialog";
 import { CHANNEL_EXTENSION, GROUP_EXTENSION, RECORD_EXTENSION } from "../models/extensions";
 import { getDateFormatted, getExtension, sanitizeFileName, uiLocale } from "../utils";
-import { NodeType, fromMediaType } from "../models/nodeType";
+import { fromMediaType } from "../models/nodeType";
 
 import { ViewMode } from "../models/viewMode";
 import { ViewFormat } from "../models/viewFormat";
@@ -46,12 +46,14 @@ import {
   programmeEnded,
   programmeProgress,
 } from "../now-playing.service";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ConfirmService } from "../confirm.service";
 import { PlaybackService } from "../playback.service";
 import { ParentalService } from "../parental.service";
 import { splitCountryPrefix } from "../country-prefix";
 import { FavoriteList, FavoriteListsService } from "../favorite-lists/favorite-lists.service";
+import { CommonModule } from "@angular/common";
+import { CountryNamePipe } from "../pipes/country-name.pipe";
 
 /// Tiles this far outside the viewport already load their now/next line, so
 /// it is there when they scroll in.
@@ -76,7 +78,7 @@ function formatClock(timestamp: number, locale?: string): string {
 
 @Component({
   selector: "app-channel-tile",
-  standalone: false,
+  imports: [CommonModule, TranslatePipe, NgbTooltipModule, MatMenuModule, CountryNamePipe],
   templateUrl: "./channel-tile.component.html",
   styleUrl: "./channel-tile.component.css",
 })
@@ -100,7 +102,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
-  @Input() viewMode: number = 0;
+  @Input() viewMode = 0;
   @Input() format: ViewFormat = "grid";
   /// The favorites list the home page shows (favorites view only), for
   /// "remove from list".
@@ -115,8 +117,8 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   @Output() move = new EventEmitter<-1 | 1>();
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
   menuTopLeftPosition = { x: 0, y: 0 };
-  showImage: boolean = true;
-  starting: boolean = false;
+  showImage = true;
+  starting = false;
   alreadyExistsInFav = false;
   downloading = false;
   mediaTypeEnum = MediaType;
@@ -250,7 +252,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   // Download progress is drawn by channel-tile.component.css (.channel.downloading)
   // from the --dl-progress custom property, so theming/hover/focus keep working.
   setDownloadGradient(progress: number) {
-    let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
+    const element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
     if (!element) return;
     const clamped = Math.min(100, Math.max(0, progress || 0));
     this.renderer.addClass(element, "downloading");
@@ -258,7 +260,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   clearDownloadGradient() {
-    let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
+    const element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
     if (!element) return;
     this.renderer.removeClass(element, "downloading");
     (element as HTMLElement).style.removeProperty("--dl-progress");
@@ -440,7 +442,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     this.move.emit(delta);
   }
 
-  onError(event: Event) {
+  onError(_event: Event) {
     // If the cached data URL fails to render, fall back to the remote URL
     // once; if that fails too (or there is nothing to fall back to), hide
     // the image like before.
@@ -540,7 +542,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
 
   async showEPGModal() {
     try {
-      let data: EPG[] = await invoke("get_epg", { channel: this.channel });
+      const data: EPG[] = await invoke("get_epg", { channel: this.channel });
       if (data.length == 0) {
         this.toastr.info(this.translate.instant("TOAST.NO_EPG"));
         return;
@@ -613,7 +615,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
 
   async share() {
     const isGroup = this.channel?.media_type == MediaType.group;
-    let file = await save({
+    const file = await save({
       canCreateDirectories: true,
       title: this.translate.instant(isGroup ? "DIALOG.EXPORT_GROUP" : "DIALOG.EXPORT_CHANNEL"),
       defaultPath:
@@ -726,7 +728,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
         return;
       }
     }
-    let download = await this.download.enqueue(
+    const download = await this.download.enqueue(
       this.channel!.id!.toString(),
       this.channel!,
       file ?? undefined,
@@ -739,7 +741,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   getExistingDownload() {
-    let download = this.download.Downloads.get(this.channel!.id!.toString());
+    const download = this.download.Downloads.get(this.channel!.id!.toString());
     if (download) {
       this.setDownloadGradient(download.progress);
       this.downloadSubscribe(download);
@@ -747,7 +749,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   downloadSubscribe(download: Download) {
-    let progressUpdate = download.progressUpdate.subscribe((progress) => {
+    const progressUpdate = download.progressUpdate.subscribe((progress) => {
       this.setDownloadGradient(progress);
       if (progress == 100) progressUpdate.unsubscribe();
     });

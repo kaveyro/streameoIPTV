@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Observable, Subject, defer, share, timer } from "rxjs";
 import { MemoryService } from "./memory.service";
-import { GuideEpgCache } from "./tv-guide/tv-guide.component";
+import { GuideEpgCache } from "./tv-guide/guide-epg-cache";
 import { Channel } from "./models/channel";
 import { MediaType } from "./models/mediaType";
 import { EPG } from "./models/epg";

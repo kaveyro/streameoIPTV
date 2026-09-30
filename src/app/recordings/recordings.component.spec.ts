@@ -70,8 +70,7 @@ describe("RecordingsComponent", () => {
       ...handlers,
     });
     await TestBed.configureTestingModule({
-      declarations: [RecordingsComponent],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, RecordingsComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(true);

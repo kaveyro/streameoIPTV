@@ -1,6 +1,6 @@
 import { Component, HostListener, OnInit } from "@angular/core";
 import { Router } from "@angular/router";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { ToastrService } from "ngx-toastr";
 import { invoke } from "@tauri-apps/api/core";
 import { SourceType } from "../models/sourceType";
@@ -9,7 +9,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { ConfirmModalComponent } from "./confirm-modal/confirm-modal.component";
 import { MemoryService } from "../memory.service";
 import { ErrorService } from "../error.service";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ConfirmService } from "../confirm.service";
 import { LanguageService } from "../language.service";
 import { ThemeService } from "../theme.service";
@@ -20,6 +20,11 @@ import { CountryCount, XtreamLogin } from "../models/epgExtras";
 import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
 import { NowPlayingService } from "../now-playing.service";
 import { FREE_EPG_SOURCES, freeEpgSourcesFor, topCountries } from "../epg-free-sources";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { LoadingComponent } from "../loading/loading.component";
+import { NotEmptyValidatorDirective } from "./validators/not-empty-validator.directive";
+import { SourceNameExistsValidator } from "./validators/source-name-exists-validator.directive";
 
 /// How to import an M3U link that turned out to be an Xtream login.
 type LinkImportChoice = "xtream" | "m3u" | "abort";
@@ -30,7 +35,15 @@ export type SetupStep = "source" | "epg" | "done";
 
 @Component({
   selector: "app-setup",
-  standalone: false,
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslatePipe,
+    NgbTooltipModule,
+    LoadingComponent,
+    NotEmptyValidatorDirective,
+    SourceNameExistsValidator,
+  ],
   templateUrl: "./setup.component.html",
   styleUrl: "./setup.component.css",
 })

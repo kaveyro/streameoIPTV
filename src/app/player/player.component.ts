@@ -437,7 +437,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private reportPlaybackError(message: string) {
     const text = `${this.translate.instant("TOAST.PLAYER_ERROR")}: ${message}`;
     if (this.active) {
-      invoke("player_osd", { message: text }).catch(() => {});
+      invoke("player_osd", { message: text }).catch(() => undefined);
     }
     this.error.handleError(message, this.translate.instant("TOAST.PLAYER_ERROR"));
   }
@@ -545,7 +545,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         return;
       }
       if (seq === this.switchSeq) this.streamInfoReady = true;
-      invoke("add_last_watched", { id: channel.id }).catch(() => {});
+      invoke("add_last_watched", { id: channel.id }).catch(() => undefined);
       if (seq === this.switchSeq) this.announce(channel, !fallback);
     } catch (e) {
       if (this.isStale(generation)) return;
@@ -803,7 +803,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
 
   private osd(message: string) {
     if (!this.active || !message) return;
-    invoke("player_osd", { message }).catch(() => {});
+    invoke("player_osd", { message }).catch(() => undefined);
   }
 
   private loadNowPlaying(channel: Channel, announce: boolean) {
@@ -987,7 +987,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       y: Math.round(rect.top * dpr),
       w,
       h,
-    }).catch(() => {});
+    }).catch(() => undefined);
   }
 
   ngOnDestroy(): void {

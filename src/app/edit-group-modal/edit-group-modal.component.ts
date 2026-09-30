@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component } from "@angular/core";
 import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
 import { Group } from "../models/group";
 import { ErrorService } from "../error.service";
@@ -13,7 +13,7 @@ import { TranslateService } from "@ngx-translate/core";
   styleUrl: "./edit-group-modal.component.css",
 })
 export class EditGroupModalComponent {
-  editing: boolean = false;
+  editing = false;
   group: Group = {};
   loading = false;
   originalName?: string;

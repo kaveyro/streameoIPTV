@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
 import {
-  SHARED_DECLARATIONS,
   TEST_IMPORTS,
   TEST_PROVIDERS,
   activeModalStub,
@@ -20,8 +19,7 @@ describe("ConfirmModalComponent", () => {
     mockTauri();
     activeModal = activeModalStub();
     await TestBed.configureTestingModule({
-      declarations: [ConfirmModalComponent, ...SHARED_DECLARATIONS],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, ConfirmModalComponent],
       providers: [...TEST_PROVIDERS, { provide: NgbActiveModal, useValue: activeModal }],
     }).compileComponents();
 

@@ -1,8 +1,8 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, OnDestroy } from "@angular/core";
 import { NgbActiveModal, NgbTypeaheadSelectItemEvent } from "@ng-bootstrap/ng-bootstrap";
 import { CustomChannel } from "../models/customChannel";
 import { MediaType } from "../models/mediaType";
-import { Channel, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { MemoryService } from "../memory.service";
 import { ChannelHeaders } from "../models/channelHeaders";
 import {
@@ -11,7 +11,6 @@ import {
   distinctUntilChanged,
   filter,
   from,
-  map,
   Observable,
   OperatorFunction,
   Subject,
@@ -30,21 +29,21 @@ import { TranslateService } from "@ngx-translate/core";
   templateUrl: "./edit-channel-modal.component.html",
   styleUrl: "./edit-channel-modal.component.css",
 })
-export class EditChannelModalComponent implements OnInit {
+export class EditChannelModalComponent implements OnInit, OnDestroy {
   channel: CustomChannel = {
     data: {},
     headers: {},
   };
   beforeEditChannel?: CustomChannel;
   mediaTypeEnum = MediaType;
-  editing: boolean = false;
+  editing = false;
   group?: IdName;
-  search: any = (text$: Observable<string>) =>
+  search: OperatorFunction<string, readonly IdName[]> = (text$: Observable<string>) =>
     text$.pipe(
       debounceTime(200),
       distinctUntilChanged(),
       switchMap((term) => {
-        let promise: Promise<IdName> = invoke("group_auto_complete", {
+        const promise: Promise<IdName[]> = invoke("group_auto_complete", {
           query: term,
           sourceId: this.channel.data.source_id,
         });
@@ -145,7 +144,7 @@ export class EditChannelModalComponent implements OnInit {
     if (this.loading) return;
     this.saving = true;
     this.sanitize();
-    let channel = { ...this.channel };
+    const channel = { ...this.channel };
     channel.data.favorite = false;
     if (
       !channel.headers?.http_origin &&

@@ -1,11 +1,11 @@
 export enum FocusArea {
-    ViewMode,
-    Filters,
-    Tiles
+  ViewMode,
+  Filters,
+  Tiles,
 }
 
 export const FocusAreaPrefix = {
-    [FocusArea.ViewMode]: "viewMode-",
-    [FocusArea.Filters]: "filter-",
-    [FocusArea.Tiles]: "tile-"
-  };
+  [FocusArea.ViewMode]: "viewMode-",
+  [FocusArea.Filters]: "filter-",
+  [FocusArea.Tiles]: "tile-",
+};

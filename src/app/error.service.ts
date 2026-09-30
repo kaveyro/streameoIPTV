@@ -18,8 +18,8 @@ export class ErrorService {
     private injector: Injector,
   ) {}
 
-  public handleError(e: any, message?: string) {
-    let error = e as string;
+  public handleError(e: unknown, message?: string) {
+    const error = e as string;
     console.error(error);
     this.toastr
       .error(

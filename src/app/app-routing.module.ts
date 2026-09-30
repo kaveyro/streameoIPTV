@@ -1,17 +1,23 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-import { SetupComponent } from './setup/setup.component';
-import { HomeComponent } from './home/home.component';
-import { SettingsComponent } from './settings/settings.component';
+import { NgModule } from "@angular/core";
+import { RouterModule, Routes } from "@angular/router";
+import { HomeComponent } from "./home/home.component";
 
-const routes: Routes = [
-  {path: "", component: HomeComponent},
-  {path: "setup", component: SetupComponent},
-  {path: "settings", component: SettingsComponent},
+export const routes: Routes = [
+  // The start page stays in the initial bundle; setup and settings are only
+  // needed on demand and load as separate chunks.
+  { path: "", component: HomeComponent },
+  {
+    path: "setup",
+    loadComponent: () => import("./setup/setup.component").then((m) => m.SetupComponent),
+  },
+  {
+    path: "settings",
+    loadComponent: () => import("./settings/settings.component").then((m) => m.SettingsComponent),
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

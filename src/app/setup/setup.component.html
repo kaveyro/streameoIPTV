@@ -12,7 +12,7 @@
   </svg>
 </button>
 <div class="container mt-5">
-  <ng-container *ngIf="!loading && step == 'source'">
+  <ng-container *ngIf="!loading && step === 'source'">
     <div class="setup-preferences" *ngIf="!memory.AddingAdditionalSource">
       <div class="setup-preference">
         <label for="setup-language">{{ "SETTINGS.GENERAL.LANGUAGE" | translate }}</label>
@@ -54,7 +54,7 @@
         class="btn btn-secondary"
         [ngbTooltip]="'SETUP.M3U_FILE_TOOLTIP' | translate"
         triggers="hover"
-        [ngClass]="{ active: source.source_type == sourceTypeEnum.M3U }"
+        [ngClass]="{ active: source.source_type === sourceTypeEnum.M3U }"
       >
         {{ "SETUP.M3U_FILE" | translate }}
       </button>
@@ -63,28 +63,28 @@
         class="btn btn-secondary"
         [ngbTooltip]="'SETUP.M3U_URL_TOOLTIP' | translate"
         triggers="hover"
-        [ngClass]="{ active: source.source_type == sourceTypeEnum.M3ULink }"
+        [ngClass]="{ active: source.source_type === sourceTypeEnum.M3ULink }"
       >
         {{ "SETUP.M3U_URL" | translate }}
       </button>
       <button
         (click)="switchMode(sourceTypeEnum.Xtream)"
         class="btn btn-secondary"
-        [ngClass]="{ active: source.source_type == sourceTypeEnum.Xtream }"
+        [ngClass]="{ active: source.source_type === sourceTypeEnum.Xtream }"
       >
         Xtream
       </button>
       <button
         class="btn btn-secondary"
         (click)="switchMode(sourceTypeEnum.Custom)"
-        [ngClass]="{ active: source.source_type == sourceTypeEnum.Custom }"
+        [ngClass]="{ active: source.source_type === sourceTypeEnum.Custom }"
       >
         {{ "SETUP.CUSTOM" | translate }}
       </button>
       <button
         class="btn btn-secondary"
         (click)="switchMode(sourceTypeEnum.CustomImport)"
-        [ngClass]="{ active: source.source_type == sourceTypeEnum.CustomImport }"
+        [ngClass]="{ active: source.source_type === sourceTypeEnum.CustomImport }"
       >
         {{ "SETUP.CUSTOM_IMPORT" | translate }}
       </button>
@@ -98,7 +98,7 @@
             tabindex="0"
             autocomplete="off"
             #name="ngModel"
-            [emptyDisabled]="source.source_type == sourceTypeEnum.CustomImport"
+            [emptyDisabled]="source.source_type === sourceTypeEnum.CustomImport"
             source-name-exists
             name="name"
             empty
@@ -116,9 +116,9 @@
       </div>
       <div
         *ngIf="
-          source.source_type != sourceTypeEnum.M3U &&
-          source.source_type != sourceTypeEnum.Custom &&
-          source.source_type != sourceTypeEnum.CustomImport
+          source.source_type !== sourceTypeEnum.M3U &&
+          source.source_type !== sourceTypeEnum.Custom &&
+          source.source_type !== sourceTypeEnum.CustomImport
         "
       >
         <div class="row justify-content-center mt-2">
@@ -140,7 +140,7 @@
             <div
               id="setup-url-hint"
               class="form-text"
-              *ngIf="source.source_type == sourceTypeEnum.Xtream"
+              *ngIf="source.source_type === sourceTypeEnum.Xtream"
             >
               {{ "SETUP.XTREAM_URL_HINT" | translate }}
             </div>
@@ -154,8 +154,8 @@
       </div>
       <div
         *ngIf="
-          source.source_type == sourceTypeEnum.M3ULink ||
-          source.source_type == sourceTypeEnum.Xtream
+          source.source_type === sourceTypeEnum.M3ULink ||
+          source.source_type === sourceTypeEnum.Xtream
         "
         class="row mt-2 justify-content-center"
       >
@@ -176,7 +176,7 @@
 
       <div
         *ngIf="
-          source.source_type == sourceTypeEnum.M3U || source.source_type == sourceTypeEnum.M3ULink
+          source.source_type === sourceTypeEnum.M3U || source.source_type === sourceTypeEnum.M3ULink
         "
         class="row mt-2 justify-content-center"
       >
@@ -195,7 +195,7 @@
           </div>
         </div>
       </div>
-      <div *ngIf="source.source_type == sourceTypeEnum.Xtream">
+      <div *ngIf="source.source_type === sourceTypeEnum.Xtream">
         <div class="row mt-2 justify-content-center">
           <div class="col-lg-6 col-md-8">
             <label class="form-label" for="setup-username">{{
@@ -276,7 +276,7 @@
           {{ (checking ? "SOURCE.CHECKING" : "SOURCE.CHECK") | translate }}
         </button>
         <button [disabled]="!form.valid" class="btn btn-primary d-inline-flex align-items-center">
-          <ng-container *ngIf="source.source_type == sourceTypeEnum.M3U">
+          <ng-container *ngIf="source.source_type === sourceTypeEnum.M3U">
             <span>{{ "SETUP.SELECT_FILE" | translate }}</span>
             <svg class="anim-svg ms-1" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -284,13 +284,13 @@
               />
             </svg>
           </ng-container>
-          <ng-container *ngIf="source.source_type == sourceTypeEnum.M3ULink">
+          <ng-container *ngIf="source.source_type === sourceTypeEnum.M3ULink">
             <span>{{ "SETUP.FETCH" | translate }}</span>
             <svg class="anim-svg ms-1" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
               <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
             </svg>
           </ng-container>
-          <ng-container *ngIf="source.source_type == sourceTypeEnum.Xtream">
+          <ng-container *ngIf="source.source_type === sourceTypeEnum.Xtream">
             <span>{{ "SETUP.LOGIN" | translate }}</span>
             <svg class="anim-svg ms-1" aria-hidden="true" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -298,7 +298,7 @@
               />
             </svg>
           </ng-container>
-          <ng-container *ngIf="source.source_type == sourceTypeEnum.Custom">
+          <ng-container *ngIf="source.source_type === sourceTypeEnum.Custom">
             <span>
               {{ "SETUP.ADD_CUSTOM" | translate }}
             </span>
@@ -308,7 +308,7 @@
               />
             </svg>
           </ng-container>
-          <ng-container *ngIf="source.source_type == sourceTypeEnum.CustomImport">
+          <ng-container *ngIf="source.source_type === sourceTypeEnum.CustomImport">
             <span>
               {{ "SETUP.IMPORT_CUSTOM" | translate }}
             </span>
@@ -324,7 +324,7 @@
   </ng-container>
   <!-- First run only: free TV guides for the imported playlist -->
   <section
-    *ngIf="step == 'epg'"
+    *ngIf="step === 'epg'"
     class="setup-step"
     aria-labelledby="setup-step-title"
     [attr.aria-busy]="epgBusy"
@@ -380,7 +380,7 @@
       </button>
     </div>
   </section>
-  <section *ngIf="step == 'done'" class="setup-step" aria-labelledby="setup-step-title">
+  <section *ngIf="step === 'done'" class="setup-step" aria-labelledby="setup-step-title">
     <h2 class="text-center" id="setup-step-title" tabindex="-1">
       {{ "SETUP.DONE_TITLE" | translate }}
     </h2>
@@ -393,7 +393,7 @@
   </section>
   <app-loading *ngIf="loading" [center]="false"></app-loading>
 </div>
-<div class="setup-footer" *ngIf="!memory.AddingAdditionalSource && step == 'source'">
+<div class="setup-footer" *ngIf="!memory.AddingAdditionalSource && step === 'source'">
   <button type="button" (click)="nuke()" class="btn btn-link btn-sm reset-link">
     {{ "SETUP.DELETE_ALL_DATA" | translate }}
   </button>

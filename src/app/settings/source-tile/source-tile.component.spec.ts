@@ -8,7 +8,6 @@ import { ConfirmService } from "../../confirm.service";
 import { MemoryService } from "../../memory.service";
 import {
   IpcCall,
-  SHARED_DECLARATIONS,
   TEST_IMPORTS,
   TEST_PROVIDERS,
   callsOf,
@@ -36,8 +35,7 @@ describe("SourceTileComponent", () => {
   async function create(source: Source, handlers: Record<string, unknown> = {}) {
     calls = mockTauri(handlers);
     await TestBed.configureTestingModule({
-      declarations: [SourceTileComponent, ...SHARED_DECLARATIONS],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, SourceTileComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     fixture = TestBed.createComponent(SourceTileComponent);

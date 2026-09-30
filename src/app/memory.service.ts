@@ -50,20 +50,20 @@ export class MemoryService {
   public XtreamSourceIds: Set<number> = new Set();
   /** An external XMLTV guide is cached: any live channel may have EPG, matched
    *  by tvg-id or, without one, by its name. */
-  public HasXmltv: boolean = false;
+  public HasXmltv = false;
   /** How channel names show their country prefix (appearance setting). */
   public CountryPrefixMode: CountryPrefixMode = "show";
   /** Switch to another feed of the same channel when a live stream fails
    *  (playback setting, on by default). */
-  public AutoFallback: boolean = true;
+  public AutoFallback = true;
   public ModalRef?: NgbModalRef;
   public Watched_epgs: Set<string> = new Set();
   private downloadingChannels: Map<number, [number, Subject<boolean>]> = new Map();
-  public LoadingNotification: boolean = false;
+  public LoadingNotification = false;
   public trayEnabled?: boolean;
   public IsContainer?: boolean;
   public AlwaysAskSave?: boolean;
-  public ShowChannelSource: boolean = true;
+  public ShowChannelSource = true;
   /// Embedded player: a channel-tile requests playback by emitting here; the
   /// PlayerComponent opens the in-app player and drives mpv over IPC.
   public PlayerOpen: Subject<Channel> = new Subject();
@@ -72,20 +72,20 @@ export class MemoryService {
   public PlayerChannelList: Channel[] = [];
   /// When true, playback keeps using the classic external mpv window instead of
   /// the embedded player (user setting / non-Windows).
-  public UseExternalPlayer: boolean = false;
+  public UseExternalPlayer = false;
   /// Whether the embedded player view is currently shown.
-  public PlayerVisible: boolean = false;
+  public PlayerVisible = false;
   /// Whether the embedded player plays on in the small corner window while
   /// the rest of the app is used (PlayerVisible is false then).
-  public PlayerMini: boolean = false;
+  public PlayerMini = false;
   /// Emits after settings that only apply when mpv spawns were changed and the
   /// embedded player was torn down; the PlayerComponent re-inits on next open.
   public PlayerReset: Subject<void> = new Subject();
   /// Parental lock: whether a PIN is set (refreshed by the home page and the
   /// settings), and whether the PIN was entered in this session so locked
   /// groups are listed. Every `search` sends ShowLocked as `show_locked`.
-  public HasParentalPin: boolean = false;
-  public ShowLocked: boolean = false;
+  public HasParentalPin = false;
+  public ShowLocked = false;
   /// Ids of the groups locked by the parental PIN.
   public LockedGroupIds: Set<number> = new Set();
 
@@ -116,17 +116,17 @@ export class MemoryService {
    */
   async hidePlayerWhile(closed: Promise<unknown>): Promise<void> {
     if (!this.PlayerVisible) {
-      await closed.catch(() => {});
+      await closed.catch(() => undefined);
       return;
     }
     // Counted, so with two dialogs open closing the top one does not bring
     // the video back over the other.
     if (this.playerHiddenBy++ === 0) {
-      await invoke("player_set_visible", { visible: false }).catch(() => {});
+      await invoke("player_set_visible", { visible: false }).catch(() => undefined);
     }
-    await closed.catch(() => {});
+    await closed.catch(() => undefined);
     if (--this.playerHiddenBy === 0 && this.PlayerVisible) {
-      await invoke("player_set_visible", { visible: true }).catch(() => {});
+      await invoke("player_set_visible", { visible: true }).catch(() => undefined);
     }
   }
 
@@ -145,8 +145,8 @@ export class MemoryService {
   }
 
   async get_epg_ids() {
-    let data = await invoke("get_epg_ids");
-    let set = new Set(data as Array<string>);
+    const data = await invoke("get_epg_ids");
+    const set = new Set(data as Array<string>);
     this.Watched_epgs = set;
   }
 

@@ -31,7 +31,7 @@ export class EpgModalComponent implements OnInit {
   ngOnInit() {
     invoke("get_epg_ids")
       .then((x) => {
-        let set = new Set(x as Array<string>);
+        const set = new Set(x as Array<string>);
         this.memory.Watched_epgs = set;
       })
       .catch((e) => console.error(e));

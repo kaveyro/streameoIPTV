@@ -87,7 +87,7 @@ export class LanguageService {
         document.documentElement.dir = this.isRtl(lang) ? "rtl" : "ltr";
         this.appRef.tick();
       },
-      error: () => {},
+      error: () => undefined,
     });
   }
 }

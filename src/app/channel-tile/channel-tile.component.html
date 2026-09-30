@@ -105,14 +105,18 @@
 
 <mat-menu #rightMenu="matMenu">
   <ng-template matMenuContent let-item="item">
-    <button [hidden]="viewMode != viewModeEnum.History" mat-menu-item (click)="removeFromHistory()">
+    <button
+      [hidden]="viewMode !== viewModeEnum.History"
+      mat-menu-item
+      (click)="removeFromHistory()"
+    >
       {{ "MENU.REMOVE" | translate }}
     </button>
     <button
       [hidden]="
-        channel?.media_type == mediaTypeEnum.group ||
-        channel?.media_type == mediaTypeEnum.season ||
-        viewMode == viewModeEnum.History
+        channel?.media_type === mediaTypeEnum.group ||
+        channel?.media_type === mediaTypeEnum.season ||
+        viewMode === viewModeEnum.History
       "
       mat-menu-item
       (click)="favorite()"
@@ -159,7 +163,7 @@
     <button
       mat-menu-item
       [hidden]="
-        channel?.media_type == mediaTypeEnum.group || channel?.media_type == mediaTypeEnum.season
+        channel?.media_type === mediaTypeEnum.group || channel?.media_type === mediaTypeEnum.season
       "
       (click)="copyURL()"
     >

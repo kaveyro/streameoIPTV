@@ -30,10 +30,10 @@
     <dt>{{ "SOURCE.TYPE" | translate }}</dt>
     <dd>{{ get_source_type_name() }}</dd>
 
-    <ng-container *ngIf="source?.source_type != sourceTypeEnum.Custom">
+    <ng-container *ngIf="source?.source_type !== sourceTypeEnum.Custom">
       <dt>{{ "SOURCE.URL" | translate }}</dt>
       <dd *ngIf="!editing" class="wrap-text selectable">{{ source?.url }}</dd>
-      <dd *ngIf="editing && source?.source_type != sourceTypeEnum.M3U">
+      <dd *ngIf="editing && source?.source_type !== sourceTypeEnum.M3U">
         <input
           class="form-control form-control-sm"
           name="url"
@@ -42,7 +42,7 @@
         />
       </dd>
       <dd
-        *ngIf="editing && source?.source_type == sourceTypeEnum.M3U"
+        *ngIf="editing && source?.source_type === sourceTypeEnum.M3U"
         class="wrap-text selectable d-flex align-items-center gap-2"
       >
         <span class="wrap-text">{{ editableSource.url }}</span>
@@ -64,7 +64,7 @@
 
     <ng-container
       *ngIf="
-        source?.source_type != sourceTypeEnum.M3U && source?.source_type != sourceTypeEnum.Custom
+        source?.source_type !== sourceTypeEnum.M3U && source?.source_type !== sourceTypeEnum.Custom
       "
     >
       <dt [ngbTooltip]="'SOURCE.USER_AGENT_TOOLTIP' | translate">
@@ -99,8 +99,8 @@
 
     <ng-container
       *ngIf="
-        source?.source_type != sourceTypeEnum.Custom &&
-        source?.source_type != sourceTypeEnum.CustomImport
+        source?.source_type !== sourceTypeEnum.Custom &&
+        source?.source_type !== sourceTypeEnum.CustomImport
       "
     >
       <dt [ngbTooltip]="'SOURCE.MAX_STREAMS_TOOLTIP' | translate">
@@ -119,7 +119,7 @@
       </dd>
     </ng-container>
 
-    <ng-container *ngIf="source?.source_type == 2">
+    <ng-container *ngIf="source?.source_type === 2">
       <dt>{{ "SOURCE.USERNAME" | translate }}</dt>
       <dd *ngIf="!editing" class="secret-row">
         <span class="field" [class.selectable]="showUsername">{{
@@ -200,7 +200,7 @@
     class="form-check form-switch mt-2"
     *ngIf="
       editing &&
-      (source?.source_type == sourceTypeEnum.M3U || source?.source_type == sourceTypeEnum.M3ULink)
+      (source?.source_type === sourceTypeEnum.M3U || source?.source_type === sourceTypeEnum.M3ULink)
     "
   >
     <input
@@ -283,7 +283,7 @@
     <ng-container *ngIf="!editing">
       <button
         type="button"
-        *ngIf="source?.source_type != sourceTypeEnum.Custom"
+        *ngIf="source?.source_type !== sourceTypeEnum.Custom"
         [disabled]="memory.Loading"
         (click)="refresh()"
         class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1"
@@ -298,7 +298,7 @@
       </button>
       <button
         type="button"
-        *ngIf="source?.source_type == sourceTypeEnum.Custom"
+        *ngIf="source?.source_type === sourceTypeEnum.Custom"
         [disabled]="memory.Loading"
         (click)="addCustomChannel()"
         class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1"
@@ -328,7 +328,7 @@
 </article>
 
 <mat-menu #sourceActions="matMenu" xPosition="before">
-  <ng-container *ngIf="source?.source_type != sourceTypeEnum.Custom">
+  <ng-container *ngIf="source?.source_type !== sourceTypeEnum.Custom">
     <button mat-menu-item type="button" (click)="edit()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
@@ -354,7 +354,7 @@
       <span>{{ "SOURCE.RESTORE_FAVS" | translate }}</span>
     </button>
   </ng-container>
-  <ng-container *ngIf="source?.source_type == sourceTypeEnum.Custom">
+  <ng-container *ngIf="source?.source_type === sourceTypeEnum.Custom">
     <button mat-menu-item type="button" (click)="addCustomGroup()">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path

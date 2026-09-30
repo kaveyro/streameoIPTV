@@ -1,11 +1,14 @@
 import { Component, Input, ViewChild } from "@angular/core";
 import { MemoryService } from "../../memory.service";
-import { MatMenuTrigger } from "@angular/material/menu";
+import { MatMenuTrigger, MatMenuModule } from "@angular/material/menu";
 import { SORT_TYPES, SortType } from "../../models/sortType";
+import { CommonModule } from "@angular/common";
+import { TranslatePipe } from "@ngx-translate/core";
+import { SortItemComponent } from "./sort-item/sort-item.component";
 
 @Component({
   selector: "app-sort-button",
-  standalone: false,
+  imports: [CommonModule, TranslatePipe, MatMenuModule, SortItemComponent],
   templateUrl: "./sort-button.component.html",
   styleUrl: "./sort-button.component.css",
 })

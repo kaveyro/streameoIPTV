@@ -1,5 +1,5 @@
 :host {
-    background-color: var(--bg-modal);
-    color: var(--text-primary);
-    border-radius: var(--radius-lg);
+  background-color: var(--bg-modal);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
 }

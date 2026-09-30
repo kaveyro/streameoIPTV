@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ToastrService } from "ngx-toastr";
 
 import { SettingsComponent } from "./settings.component";
-import { SourceTileComponent } from "./source-tile/source-tile.component";
 import { ConfirmService } from "../confirm.service";
 import { MemoryService } from "../memory.service";
 import { SourceType } from "../models/sourceType";
@@ -11,7 +10,6 @@ import { NowPlayingService } from "../now-playing.service";
 import { FREE_EPG_SOURCES } from "../epg-free-sources";
 import {
   IpcCall,
-  SHARED_DECLARATIONS,
   TEST_IMPORTS,
   TEST_PROVIDERS,
   callsOf,
@@ -31,8 +29,7 @@ describe("SettingsComponent", () => {
   async function create(handlers: Record<string, unknown> = {}) {
     calls = mockTauri({ get_sources: [source], ...handlers });
     await TestBed.configureTestingModule({
-      declarations: [SettingsComponent, SourceTileComponent, ...SHARED_DECLARATIONS],
-      imports: TEST_IMPORTS,
+      imports: [...TEST_IMPORTS, SettingsComponent],
       providers: TEST_PROVIDERS,
     }).compileComponents();
     fixture = TestBed.createComponent(SettingsComponent);

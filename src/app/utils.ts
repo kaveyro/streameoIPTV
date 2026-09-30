@@ -1,13 +1,14 @@
 export const isInputFocused = () => {
-  var activeElement = document.activeElement;
-  var inputs = ["input", "select", "button", "textarea"];
+  const activeElement = document.activeElement;
+  const inputs = ["input", "select", "button", "textarea"];
   return activeElement && inputs.indexOf(activeElement.tagName?.toLowerCase()) !== -1;
 };
 
 export const sanitizeFileName = (fileName: string) => {
   return (
     fileName
-      .replace(/[\/\\:*?"<>|]/g, "_")
+      .replace(/[/\\:*?"<>|]/g, "_")
+      // eslint-disable-next-line no-control-regex -- control characters are invalid in file names
       .replace(/[\x00-\x1F\x7F]/g, "")
       .replace(/^\.+/, "")
       .replace(/\.+$/, "")
@@ -20,8 +21,8 @@ export const getDateFormatted = (): string => {
 };
 
 export const getExtension = (url: string): string => {
-  let split = url.split(".");
-  let last = split[split.length - 1];
+  const split = url.split(".");
+  const last = split[split.length - 1];
   if (split.length == 1 || last.startsWith("php?")) return "mp4";
   else return last;
 };

@@ -10,7 +10,6 @@ import { TranslateService } from "@ngx-translate/core";
  */
 @Pipe({
   name: "timeAgo",
-  standalone: false,
   pure: false,
 })
 export class TimeAgoPipe implements PipeTransform {
@@ -32,7 +31,7 @@ export class TimeAgoPipe implements PipeTransform {
 
   constructor(private translate: TranslateService) {}
 
-  transform(value: any): string {
+  transform(value: number | string | Date | null | undefined): string {
     if (!value) return "";
     const lang = this.translate.getCurrentLang() || this.translate.getFallbackLang() || "en";
     const now = Date.now();
@@ -50,7 +49,7 @@ export class TimeAgoPipe implements PipeTransform {
     return this.lastResult;
   }
 
-  private format(value: any, lang: string, now: number): string {
+  private format(value: number | string | Date, lang: string, now: number): string {
     const time = +new Date(value);
     if (Number.isNaN(time)) return String(value);
     const seconds = Math.floor((now - time) / 1000);

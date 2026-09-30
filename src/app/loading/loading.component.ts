@@ -1,19 +1,20 @@
 import { Component, Input, OnDestroy, OnInit } from "@angular/core";
+import { TranslatePipe } from "@ngx-translate/core";
 
 @Component({
   selector: "app-loading",
-  standalone: false,
+  imports: [TranslatePipe],
   templateUrl: "./loading.component.html",
   styleUrl: "./loading.component.css",
 })
 export class LoadingComponent implements OnInit, OnDestroy {
   @Input()
-  center: boolean = false;
+  center = false;
   count = 0;
   /// Translation keys, rotated every few seconds.
   texts: string[] = ["LOADING.CHANNELS"];
 
-  currentText: string = "";
+  currentText = "";
   private interval?: ReturnType<typeof setInterval>;
 
   ngOnInit() {

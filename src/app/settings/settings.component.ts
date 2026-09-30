@@ -1,4 +1,12 @@
-import { Component, ElementRef, HostListener, ViewChild } from "@angular/core";
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  OnInit,
+  AfterViewInit,
+  OnDestroy,
+} from "@angular/core";
 import { debounceTime, distinctUntilChanged, fromEvent, map, Subject, Subscription } from "rxjs";
 import { Settings } from "../models/settings";
 import { invoke } from "@tauri-apps/api/core";
@@ -8,11 +16,11 @@ import { Source } from "../models/source";
 import { MemoryService } from "../memory.service";
 import { NowPlayingService } from "../now-playing.service";
 import { ViewMode } from "../models/viewMode";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { SORT_TYPES, SortType, getSortTypeText } from "../models/sortType";
 import { ThemeService } from "../theme.service";
 import { LanguageService } from "../language.service";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { getVersion } from "@tauri-apps/api/app";
 import { UpdateService } from "../update.service";
 import { ErrorService } from "../error.service";
@@ -28,6 +36,10 @@ import {
 } from "../country-prefix";
 import { uiLocale } from "../utils";
 import { FREE_EPG_SOURCES } from "../epg-free-sources";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { SourceTileComponent } from "./source-tile/source-tile.component";
+import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 
 /// Settings that are passed to mpv as launch arguments (see
 /// get_global_mpv_args in src-tauri/src/mpv.rs): changing one only takes effect
@@ -54,11 +66,18 @@ const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
 
 @Component({
   selector: "app-settings",
-  standalone: false,
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslatePipe,
+    NgbTooltipModule,
+    SourceTileComponent,
+    TimeAgoPipe,
+  ],
   templateUrl: "./settings.component.html",
   styleUrl: "./settings.component.css",
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
   subscriptions: Subscription[] = [];
   settings: Settings = {
     use_stream_caching: true,
@@ -497,15 +516,15 @@ export class SettingsComponent {
       .then((expiries) => {
         this.expiries = expiries as Record<number, number>;
       })
-      .catch(() => {});
+      .catch(() => undefined);
   }
 
   ngAfterViewInit(): void {
     this.subscriptions.push(
-      fromEvent(this.mpvParams.nativeElement, "keyup")
+      fromEvent<KeyboardEvent>(this.mpvParams.nativeElement, "keyup")
         .pipe(
-          map((event: any) => {
-            return event.target.value;
+          map((event: KeyboardEvent) => {
+            return (event.target as HTMLInputElement).value;
           }),
           debounceTime(500),
           distinctUntilChanged(),
@@ -578,7 +597,7 @@ export class SettingsComponent {
     }
     this.playerSnapshot = snapshot;
     this.memory.PlayerReset.next();
-    invoke("player_destroy").catch(() => {});
+    invoke("player_destroy").catch(() => undefined);
   }
 
   private refreshParental() {
@@ -727,7 +746,7 @@ export class SettingsComponent {
       this.memory.RefreshSources.next(true);
       // The restored settings may change how mpv is launched.
       this.memory.PlayerReset.next();
-      invoke("player_destroy").catch(() => {});
+      invoke("player_destroy").catch(() => undefined);
     }
   }
 

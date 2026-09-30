@@ -3,8 +3,6 @@ import { Node } from "./node";
 export class Stack {
   private nodes: Node[] = [];
 
-  constructor() {}
-
   add(node: Node): void {
     this.nodes.push(node);
   }

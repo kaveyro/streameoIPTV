@@ -4,26 +4,30 @@ import { SourceType } from "../../models/sourceType";
 import { invoke } from "@tauri-apps/api/core";
 import { MemoryService } from "../../memory.service";
 import { EditChannelModalComponent } from "../../edit-channel-modal/edit-channel-modal.component";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { EditGroupModalComponent } from "../../edit-group-modal/edit-group-modal.component";
 import { ImportModalComponent } from "../../import-modal/import-modal.component";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { FAVS_BACKUP, FAVS_BACKUP_EXTENSIONS, PLAYLIST_EXTENSION } from "../../models/extensions";
 import { sanitizeFileName } from "../../utils";
-import { TranslateService } from "@ngx-translate/core";
+import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ConfirmService } from "../../confirm.service";
 import { ToastrService } from "ngx-toastr";
 import { canCheckSource, sourceForCheck } from "../../source-check";
 import { XtreamLogin } from "../../models/epgExtras";
+import { CommonModule } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import { MatMenuModule } from "@angular/material/menu";
+import { TimeAgoPipe } from "../../pipes/time-ago.pipe";
 
 @Component({
   selector: "app-source-tile",
-  standalone: false,
+  imports: [CommonModule, FormsModule, TranslatePipe, NgbTooltipModule, MatMenuModule, TimeAgoPipe],
   templateUrl: "./source-tile.component.html",
   styleUrl: "./source-tile.component.css",
 })
 export class SourceTileComponent {
-  @Input("source")
+  @Input()
   set source(value: Source | undefined) {
     this._source = value;
     this.detectXtreamLogin();
@@ -32,7 +36,7 @@ export class SourceTileComponent {
     return this._source;
   }
   private _source?: Source;
-  @Input("expiry")
+  @Input()
   expiry?: number;
   showUsername = false;
   showPassword = false;
@@ -187,7 +191,7 @@ export class SourceTileComponent {
   }
 
   async share() {
-    let file = await save({
+    const file = await save({
       canCreateDirectories: true,
       title: this.translate.instant("DIALOG.EXPORT_SOURCE"),
       defaultPath: sanitizeFileName(this.source?.name!) + PLAYLIST_EXTENSION,

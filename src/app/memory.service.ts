@@ -53,6 +53,9 @@ export class MemoryService {
   public HasXmltv: boolean = false;
   /** How channel names show their country prefix (appearance setting). */
   public CountryPrefixMode: CountryPrefixMode = "show";
+  /** Switch to another feed of the same channel when a live stream fails
+   *  (playback setting, on by default). */
+  public AutoFallback: boolean = true;
   public ModalRef?: NgbModalRef;
   public Watched_epgs: Set<string> = new Set();
   private downloadingChannels: Map<number, [number, Subject<boolean>]> = new Map();

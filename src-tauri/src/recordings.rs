@@ -90,7 +90,13 @@ pub fn folder() -> Result<String> {
 /// than through the shell plugin, whose scope only allows web links; this can
 /// only ever open the recording folder.
 pub fn open_folder() -> Result<()> {
-    let dir = folder()?;
+    open_in_file_manager(&folder()?)
+}
+
+/// Opens one of the app's own folders (recordings, logs) in the system file
+/// manager. Never called with a path from the frontend.
+pub fn open_in_file_manager(dir: &str) -> Result<()> {
+    std::fs::create_dir_all(dir)?;
     #[cfg(target_os = "windows")]
     let program = "explorer";
     #[cfg(target_os = "macos")]
@@ -99,7 +105,7 @@ pub fn open_folder() -> Result<()> {
     let program = "xdg-open";
     // explorer.exe exits with 1 even on success, so only a failed spawn counts.
     std::process::Command::new(program)
-        .arg(&dir)
+        .arg(dir)
         .spawn()
         .with_context(|| format!("could not open {dir}"))?;
     Ok(())

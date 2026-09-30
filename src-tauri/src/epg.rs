@@ -10,7 +10,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use chrono::Local;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use tauri_plugin_notification::NotificationExt;
 use tokio::sync::Mutex;
 
@@ -289,4 +289,134 @@ pub fn search_programmes(query: &str, show_locked: bool) -> Result<Vec<Programme
         })
         .take(SEARCH_LIMIT)
         .collect())
+}
+
+/// Quality rank of a feed name for the fallback order: 4K/UHD first, then
+/// FHD, HD, unmarked, SD last.
+fn quality_rank(name: &str) -> u8 {
+    let lower = name.to_lowercase();
+    let tokens: Vec<&str> = lower
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|t| !t.is_empty())
+        .collect();
+    let has = |t: &str| tokens.contains(&t);
+    if has("4k") || has("uhd") {
+        0
+    } else if has("fhd") || (has("full") && has("hd")) {
+        1
+    } else if has("hd") {
+        2
+    } else if has("sd") {
+        4
+    } else {
+        3
+    }
+}
+
+/// Other feeds of the same channel in the same source ("HD: beIN Sports 1"
+/// for "SD: beIN Sports 1"), best quality first, for the automatic fallback
+/// when a live stream fails.
+pub fn alternatives(channel: &Channel, show_locked: bool) -> Result<Vec<Channel>> {
+    let Some(source_id) = channel.source_id else {
+        return Ok(Vec::new());
+    };
+    let key = xmltv::normalize_name(&channel.name);
+    if key.is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut out: Vec<Channel> = sql::get_live_channels_of_source(source_id, show_locked)?
+        .into_iter()
+        .filter(|c| c.id != channel.id && xmltv::normalize_name(&c.name) == key)
+        .collect();
+    out.sort_by(|a, b| {
+        quality_rank(&a.name)
+            .cmp(&quality_rank(&b.name))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+    Ok(out)
+}
+
+/// Applies the saved guide searches: a reminder, or a scheduled recording,
+/// for every upcoming programme they find. Runs after each XMLTV refresh
+/// check and when an alert is added. Idempotent: existing reminders are
+/// skipped and the recording schedule refuses duplicates.
+pub async fn process_alerts(app: &AppHandle) -> Result<()> {
+    let alerts = sql::get_epg_alerts()?;
+    if alerts.is_empty() {
+        return Ok(());
+    }
+    let now = chrono::Utc::now().timestamp();
+    let mut reminders: std::collections::HashSet<String> =
+        sql::get_epg_ids()?.into_iter().collect();
+    let mut added_reminder = false;
+    for alert in alerts {
+        let query = alert.query.clone();
+        let hits = tokio::task::spawn_blocking(move || search_programmes(&query, false)).await??;
+        // One programme is often in two guides (SD and HD channel ids).
+        let mut seen = std::collections::HashSet::new();
+        for hit in hits {
+            if hit.start_timestamp <= now || !seen.insert((hit.title.clone(), hit.start_timestamp))
+            {
+                continue;
+            }
+            match alert.action.as_str() {
+                "record" => {
+                    if let Some(channel_id) = hit.channel.id {
+                        // Already scheduled: the unique index says no.
+                        let _ = crate::recording_scheduler::schedule(
+                            channel_id,
+                            Some(hit.title.clone()),
+                            hit.start_timestamp,
+                            hit.end_timestamp,
+                        );
+                    }
+                }
+                _ => {
+                    if reminders.insert(hit.epg_id.clone()) {
+                        sql::add_epg(EPGNotify {
+                            epg_id: hit.epg_id,
+                            title: hit.title,
+                            start_timestamp: hit.start_timestamp,
+                            channel_name: hit.channel.name,
+                        })?;
+                        added_reminder = true;
+                    }
+                }
+            }
+        }
+    }
+    if added_reminder {
+        let state = app.state::<Mutex<AppState>>();
+        restart_poller(&state, app.clone()).await?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod test_epg_fallback {
+    use super::quality_rank;
+
+    #[test]
+    fn test_quality_order() {
+        let mut names = vec![
+            "SD: beIN Sports 1",
+            "beIN Sports 1",
+            "HD: beIN Sports 1",
+            "Full HD: beIN Sports 1",
+            "beIN Sports 1 4K",
+            "FHD beIN Sports 1",
+        ];
+        names.sort_by_key(|n| quality_rank(n));
+        assert_eq!(
+            names,
+            vec![
+                "beIN Sports 1 4K",
+                "Full HD: beIN Sports 1",
+                "FHD beIN Sports 1",
+                "HD: beIN Sports 1",
+                "beIN Sports 1",
+                "SD: beIN Sports 1"
+            ]
+        );
+    }
 }

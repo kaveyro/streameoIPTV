@@ -103,4 +103,8 @@ async fn refresh_xmltv_if_due(app: &AppHandle) {
         Ok(false) => {}
         Err(e) => log(format!("{:?}", e.context("auto refresh xmltv"))),
     }
+    // Saved guide searches: new programmes may have come in with the guide.
+    if let Err(e) = crate::epg::process_alerts(app).await {
+        log(format!("{:?}", e.context("guide alerts")));
+    }
 }

@@ -98,13 +98,81 @@ static INIT_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 /// mpv keys that control the app while the video has keyboard focus. The
 /// WebView gets no key events then, so they come back as script-messages and
 /// are forwarded to the frontend as a `player-key` event with the action.
+/// The digits (channel number zapping) come back as `digit-N`.
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
-const APP_KEYS: [(&str, &str); 4] = [
+const APP_KEYS: [(&str, &str); 24] = [
     ("PGDWN", "next"),
     ("PGUP", "prev"),
     ("ESC", "back"),
     ("BS", "last"),
+    ("0", "digit-0"),
+    ("1", "digit-1"),
+    ("2", "digit-2"),
+    ("3", "digit-3"),
+    ("4", "digit-4"),
+    ("5", "digit-5"),
+    ("6", "digit-6"),
+    ("7", "digit-7"),
+    ("8", "digit-8"),
+    ("9", "digit-9"),
+    ("KP0", "digit-0"),
+    ("KP1", "digit-1"),
+    ("KP2", "digit-2"),
+    ("KP3", "digit-3"),
+    ("KP4", "digit-4"),
+    ("KP5", "digit-5"),
+    ("KP6", "digit-6"),
+    ("KP7", "digit-7"),
+    ("KP8", "digit-8"),
+    ("KP9", "digit-9"),
 ];
+
+/// mpv properties behind the stream info in the player bar
+/// (`player-stream-info`). Observed with the index as id.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+const STREAM_INFO_PROPS: [&str; 5] = [
+    "video-params",
+    "video-format",
+    "audio-codec-name",
+    "video-bitrate",
+    "container-fps",
+];
+
+/// What the player bar shows about the running stream.
+#[derive(serde::Serialize, Clone, Default, PartialEq, Debug)]
+struct StreamInfo {
+    width: Option<u64>,
+    height: Option<u64>,
+    video_codec: Option<String>,
+    audio_codec: Option<String>,
+    /// Bits per second.
+    bitrate: Option<f64>,
+    fps: Option<f64>,
+}
+
+impl StreamInfo {
+    /// Applies one `property-change`; returns whether something other than
+    /// the bitrate changed (the bitrate changes all the time).
+    #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+    fn apply(&mut self, name: &str, data: &Value) -> bool {
+        let before = self.clone();
+        match name {
+            "video-params" => {
+                self.width = data.get("w").and_then(Value::as_u64);
+                self.height = data.get("h").and_then(Value::as_u64);
+            }
+            "video-format" => self.video_codec = data.as_str().map(str::to_string),
+            "audio-codec-name" => self.audio_codec = data.as_str().map(str::to_string),
+            "video-bitrate" => {
+                self.bitrate = data.as_f64();
+                return false;
+            }
+            "container-fps" => self.fps = data.as_f64(),
+            _ => return false,
+        }
+        before != *self
+    }
+}
 
 /// Creates the native child window + persistent mpv process and wires up IPC.
 /// Idempotent: a second call while a player already exists is a no-op.
@@ -176,6 +244,12 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
             let _ = ipc_tx.send(json!({
                 "command": ["keybind", key, format!("script-message streameo-key {action}")]
             }));
+        }
+        // mpv seeks 10 s on the wheel, which is useless for live TV.
+        let _ = ipc_tx.send(json!({ "command": ["keybind", "WHEEL_UP", "add volume 2"] }));
+        let _ = ipc_tx.send(json!({ "command": ["keybind", "WHEEL_DOWN", "add volume -2"] }));
+        for (id, prop) in STREAM_INFO_PROPS.iter().enumerate() {
+            let _ = ipc_tx.send(json!({ "command": ["observe_property", id + 1, prop] }));
         }
 
         // mpv creates its video window (a WS_DISABLED child of our host) a moment
@@ -342,7 +416,10 @@ pub async fn set_popout(
                 .ok()
                 .and_then(|map| map.get(POPOUT_BOUNDS).and_then(|v| parse_bounds(v)));
             app.run_on_main_thread(move || unsafe { win::pop_out(child, main, saved, &title) })?;
+            // Dragging the picture moves the floating window.
+            set_drag_binding(&state, true).await;
         } else if POPPED_OUT.swap(false, Ordering::SeqCst) {
+            set_drag_binding(&state, false).await;
             let (tx, rx) = std::sync::mpsc::channel();
             app.run_on_main_thread(move || {
                 let _ = tx.send(unsafe { win::dock(child, main) });
@@ -364,6 +441,35 @@ pub async fn set_popout(
     #[cfg(not(target_os = "windows"))]
     let _ = (&app, &state, popout, title);
     Ok(())
+}
+
+/// Binds a left press in the video to `streameo-drag` while the video floats,
+/// and gives the button back to mpv (unbound) inside the app.
+#[cfg(target_os = "windows")]
+async fn set_drag_binding(state: &State<'_, Mutex<AppState>>, drag: bool) {
+    let Some(tx) = state.lock().await.player_ipc_tx.clone() else {
+        return;
+    };
+    let command = if drag {
+        "script-message streameo-drag"
+    } else {
+        "ignore"
+    };
+    let _ = tx.send(json!({ "command": ["keybind", "MBTN_LEFT", command] }));
+}
+
+/// Starts moving the floating window with the mouse (the button is held in
+/// mpv's video window, which belongs to another process).
+#[cfg(target_os = "windows")]
+fn begin_drag(app: &AppHandle) {
+    if !POPPED_OUT.load(Ordering::SeqCst) {
+        return;
+    }
+    let host = PLAYER_HWND.load(Ordering::SeqCst);
+    if host == 0 {
+        return;
+    }
+    let _ = app.run_on_main_thread(move || unsafe { win::begin_drag(host) });
 }
 
 /// Parses the stored "x,y,w,h" of the floating window.
@@ -598,6 +704,8 @@ async fn run_ipc(
     let reader_app = app.clone();
     tokio::spawn(async move {
         let mut lines = BufReader::new(reader).lines();
+        let mut info = StreamInfo::default();
+        let mut info_sent = std::time::Instant::now();
         while let Ok(Some(line)) = lines.next_line().await {
             let Ok(v) = serde_json::from_str::<Value>(&line) else {
                 continue;
@@ -618,7 +726,18 @@ async fn run_ipc(
                         {
                             let _ = reader_app.emit("player-key", action.to_string());
                         }
+                        ["streameo-drag", ..] => begin_drag(&reader_app),
                         _ => {}
+                    }
+                }
+                // Stream info for the player bar; the bitrate at most every 3 s.
+                Some("property-change") => {
+                    let name = v.get("name").and_then(Value::as_str).unwrap_or_default();
+                    let data = v.get("data").cloned().unwrap_or(Value::Null);
+                    let changed = info.apply(name, &data);
+                    if changed || info_sent.elapsed() >= std::time::Duration::from_secs(3) {
+                        info_sent = std::time::Instant::now();
+                        let _ = reader_app.emit("player-stream-info", info.clone());
                     }
                 }
                 // mpv could not open or keep reading the stream. The other
@@ -705,7 +824,9 @@ mod win {
     };
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows_sys::Win32::UI::HiDpi::GetDpiForWindow;
-    use windows_sys::Win32::UI::Input::KeyboardAndMouse::EnableWindow;
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        EnableWindow, GetAsyncKeyState, ReleaseCapture, VK_LBUTTON,
+    };
     use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
     fn wide(s: &str) -> Vec<u16> {
@@ -966,6 +1087,19 @@ mod win {
     /// `WS_DISABLED` (so input flows to the parent). Re-enable it so mpv gets
     /// mouse/keyboard directly and its OSC/right-click work. Returns false while
     /// the child does not exist yet (mpv creates it shortly after launch).
+    /// Hands a press in mpv's window to the floating host as a caption drag.
+    /// Only while the button is still down: a move loop started after a
+    /// quick click would follow the mouse until the next click.
+    pub unsafe fn begin_drag(host: isize) {
+        unsafe {
+            if (GetAsyncKeyState(VK_LBUTTON as i32) as u16 & 0x8000) == 0 {
+                return;
+            }
+            ReleaseCapture();
+            SendMessageW(host as HWND, WM_NCLBUTTONDOWN, HTCAPTION as WPARAM, 0);
+        }
+    }
+
     pub unsafe fn enable_child_input(host: isize) -> bool {
         let child = unsafe { GetWindow(host as HWND, GW_CHILD) };
         if child.is_null() {
@@ -985,6 +1119,7 @@ mod test_player {
 
     fn channel() -> Channel {
         Channel {
+            number: None,
             id: Some(1),
             name: "Test".to_string(),
             url: Some("http://example.com/live".to_string()),
@@ -1006,6 +1141,19 @@ mod test_player {
 
     /// The provider only allows so many connections at once, so the running
     /// stream has to be closed before the next one is opened.
+    #[test]
+    fn test_stream_info_changes() {
+        let mut info = StreamInfo::default();
+        assert!(info.apply("video-params", &json!({"w": 1920, "h": 1080})));
+        assert!(!info.apply("video-params", &json!({"w": 1920, "h": 1080})));
+        assert!(info.apply("video-format", &json!("h264")));
+        // The bitrate is stored but never counts as a change.
+        assert!(!info.apply("video-bitrate", &json!(6_200_000.0)));
+        assert_eq!(info.bitrate, Some(6_200_000.0));
+        assert!(!info.apply("unknown", &json!(1)));
+        assert_eq!((info.width, info.height), (Some(1920), Some(1080)));
+    }
+
     #[test]
     fn test_parse_bounds() {
         assert_eq!(parse_bounds("10,-20,640,380"), Some((10, -20, 640, 380)));

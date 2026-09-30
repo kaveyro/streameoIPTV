@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 
 use crate::sql;
 
-const PARENTAL_PIN: &str = "parentalPin";
+pub const PARENTAL_PIN: &str = "parentalPin";
 
 fn hash(salt: &str, pin: &str) -> String {
     let digest = Sha256::digest(format!("{salt}:{pin}").as_bytes());

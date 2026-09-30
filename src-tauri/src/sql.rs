@@ -315,6 +315,38 @@ fn apply_migrations() -> Result<()> {
               );
             "#,
         ),
+        M::up(
+            r#"
+              ALTER TABLE channels ADD COLUMN number INTEGER;
+              ALTER TABLE channels ADD COLUMN favorite_position INTEGER;
+              -- Today's favorites start in the order they were shown in.
+              WITH ordered AS (
+                SELECT id, ROW_NUMBER() OVER (ORDER BY name, id) AS position
+                FROM channels WHERE favorite = 1
+              )
+              UPDATE channels
+              SET favorite_position = (SELECT position FROM ordered WHERE ordered.id = channels.id)
+              WHERE favorite = 1;
+              CREATE TABLE IF NOT EXISTS "favorite_lists" (
+                "id" INTEGER PRIMARY KEY,
+                "name" TEXT NOT NULL,
+                "position" INTEGER NOT NULL DEFAULT 0
+              );
+              CREATE TABLE IF NOT EXISTS "favorite_list_items" (
+                "list_id" INTEGER NOT NULL,
+                "source_id" INTEGER NOT NULL,
+                "channel_name" TEXT NOT NULL,
+                "position" INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (list_id, source_id, channel_name)
+              );
+              CREATE TABLE IF NOT EXISTS "epg_alerts" (
+                "id" INTEGER PRIMARY KEY,
+                "query" TEXT NOT NULL,
+                "action" TEXT NOT NULL,
+                "created" INTEGER NOT NULL
+              );
+            "#,
+        ),
     ]);
     migrations.to_latest(&mut sql)?;
     Ok(())
@@ -505,8 +537,8 @@ pub fn insert_season(tx: &Transaction, season: Season) -> Result<i64> {
 pub fn insert_channel(tx: &Transaction, channel: Channel) -> Result<()> {
     tx.execute(
         r#"
-INSERT INTO channels (name, group_id, image, url, source_id, media_type, series_id, favorite, stream_id, tv_archive, season_id, episode_num, epg_channel_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO channels (name, group_id, image, url, source_id, media_type, series_id, favorite, stream_id, tv_archive, season_id, episode_num, epg_channel_id, number)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (name, source_id, url, series_id, season_id)
 DO UPDATE SET
     url = excluded.url,
@@ -516,7 +548,8 @@ DO UPDATE SET
     series_id = excluded.series_id,
     tv_archive = excluded.tv_archive,
     season_id = excluded.season_id,
-    epg_channel_id = excluded.epg_channel_id;
+    epg_channel_id = excluded.epg_channel_id,
+    number = excluded.number;
 "#,
         params![
             channel.name,
@@ -531,7 +564,8 @@ DO UPDATE SET
             channel.tv_archive,
             channel.season_id,
             channel.episode_num,
-            channel.epg_channel_id
+            channel.epg_channel_id,
+            channel.number
         ],
     )?;
     Ok(())
@@ -704,7 +738,16 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     let country_patterns = country_like_patterns(filters.country.as_deref());
     sql_query += &country_sql(country_patterns.len());
     let mut baked_params = 2;
-    if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
+    // A favorites list holds (source, name) pairs, so it survives refreshes;
+    // its id is an integer and goes into the SQL directly.
+    let favorite_list = filters
+        .favorite_list
+        .filter(|_| filters.view_type == view_type::FAVORITES && filters.series_id.is_none());
+    if let Some(list) = favorite_list {
+        sql_query += &format!(
+            "\nAND EXISTS (SELECT 1 FROM favorite_list_items f WHERE f.list_id = {list} AND f.source_id = channels.source_id AND f.channel_name = channels.name)"
+        );
+    } else if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
         sql_query += "\nAND favorite = 1";
     }
 
@@ -728,6 +771,17 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         sql_query += "\nORDER BY last_watched DESC";
     } else if filters.season.is_some() {
         sql_query += &format!("\nORDER BY episode_num {0}, name {0}", order)
+    } else if filters.sort == sort_type::CUSTOM && filters.view_type == view_type::FAVORITES {
+        sql_query += &match favorite_list {
+            Some(list) => format!(
+                "\nORDER BY (SELECT f.position FROM favorite_list_items f WHERE f.list_id = {list} AND f.source_id = channels.source_id AND f.channel_name = channels.name), name"
+            ),
+            None => "\nORDER BY favorite_position IS NULL, favorite_position, name".to_string(),
+        };
+    } else if filters.sort == sort_type::NUMBER {
+        sql_query += "\nORDER BY number IS NULL, number, name";
+    } else if filters.sort == sort_type::CUSTOM {
+        // Only favorites have an own order: elsewhere, the provider's.
     } else if filters.sort != sort_type::PROVIDER {
         sql_query += &format!("\nORDER BY name {}", order);
     }
@@ -805,6 +859,7 @@ fn search_series(filters: Filters) -> Result<Vec<Channel>> {
 
 fn season_row_to_channel(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
     Ok(Channel {
+        number: None,
         id: row.get("id")?,
         image: row.get("image")?,
         favorite: false,
@@ -1202,6 +1257,7 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
 
 fn row_to_group(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
     let channel = Channel {
+        number: None,
         id: row.get("id")?,
         name: row.get("name")?,
         group: None,
@@ -1224,6 +1280,7 @@ fn row_to_group(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
 
 fn row_to_channel(row: &Row) -> std::result::Result<Channel, rusqlite::Error> {
     let channel = Channel {
+        number: row.get("number").unwrap_or(None),
         id: row.get("id")?,
         name: row.get("name")?,
         group_id: row.get("group_id")?,
@@ -1295,6 +1352,10 @@ pub fn delete_source(id: i64) -> Result<()> {
         delete_groups_by_source(tx, id)?;
         delete_seasons_by_source(tx, id)?;
         tx.execute("DELETE FROM epg_mappings WHERE source_id = ?", params![id])?;
+        tx.execute(
+            "DELETE FROM favorite_list_items WHERE source_id = ?",
+            params![id],
+        )?;
         let count = tx.execute("DELETE FROM sources WHERE id = ?", params![id])?;
         if count != 1 {
             return Err(anyhow!("No sources were deleted"));
@@ -1335,10 +1396,14 @@ pub fn source_name_exists(name: &str) -> Result<bool> {
 
 pub fn favorite_channel(channel_id: i64, favorite: bool) -> Result<()> {
     let sql = get_conn()?;
+    // A new favorite goes to the end of the own order.
     sql.execute(
         r#"
         UPDATE channels
-        SET favorite = ?1
+        SET favorite = ?1,
+            favorite_position = CASE WHEN ?1 THEN
+              (SELECT COALESCE(MAX(favorite_position), 0) + 1 FROM channels WHERE favorite = 1)
+            ELSE NULL END
         WHERE id = ?2
     "#,
         params![favorite, channel_id],
@@ -1812,6 +1877,7 @@ pub fn get_custom_channels(group_id: Option<i64>, source_id: i64) -> Result<Vec<
 fn row_to_custom_channel(row: &Row) -> Result<CustomChannel, rusqlite::Error> {
     Ok(CustomChannel {
         data: Channel {
+            number: None,
             name: row.get("name")?,
             image: row.get("image")?,
             url: row.get("url")?,
@@ -1983,7 +2049,7 @@ pub fn get_preserve(tx: &Transaction, source_id: i64) -> Result<Vec<ChannelPrese
     let mut channels: Vec<ChannelPreserve> = tx
         .prepare(
             r#"
-              SELECT name, favorite, last_watched, hidden
+              SELECT name, favorite, last_watched, hidden, favorite_position
               FROM channels
               WHERE (favorite = 1 OR last_watched IS NOT NULL OR hidden = 1)
               AND series_id IS NULL
@@ -2019,6 +2085,7 @@ fn row_to_channel_preserve(row: &Row) -> Result<ChannelPreserve, rusqlite::Error
         hidden: row.get("hidden")?,
         is_group: false,
         locked: false,
+        favorite_position: row.get("favorite_position")?,
     })
 }
 
@@ -2030,6 +2097,7 @@ fn row_to_group_preserve(row: &Row) -> Result<ChannelPreserve, rusqlite::Error> 
         last_watched: None,
         is_group: true,
         locked: row.get::<_, Option<bool>>("locked")?.unwrap_or(false),
+        favorite_position: None,
     })
 }
 
@@ -2115,7 +2183,8 @@ pub fn restore_preserve(
             tx.execute(
                 r#"
                   UPDATE channels
-                  SET favorite = ?, last_watched = ?, hidden = ?
+                  SET favorite = ?, last_watched = ?, hidden = ?,
+                      favorite_position = COALESCE(?, favorite_position)
                   WHERE name = ?
                   AND source_id = ?
                 "#,
@@ -2123,6 +2192,7 @@ pub fn restore_preserve(
                     item.favorite,
                     item.last_watched,
                     item.hidden,
+                    item.favorite_position,
                     item.name,
                     source_id
                 ],
@@ -2818,7 +2888,6 @@ pub fn get_names_for_countries(source_ids: &[i64], show_locked: bool) -> Result<
     Ok(rows)
 }
 
-
 /// Replaces `from` with `to` in the stream URLs of one source; returns how
 /// many rows changed. Used to take the Xtream login out of stored URLs.
 pub fn replace_in_channel_urls(source_id: i64, from: &str, to: &str) -> Result<usize> {
@@ -2826,6 +2895,303 @@ pub fn replace_in_channel_urls(source_id: i64, from: &str, to: &str) -> Result<u
         "UPDATE channels SET url = replace(url, ?2, ?3) WHERE source_id = ?1 AND instr(url, ?2) > 0",
         params![source_id, from, to],
     )?)
+}
+
+/// The favorites lists with the number of channels in each.
+pub fn get_favorite_lists() -> Result<Vec<crate::types::FavoriteList>> {
+    let conn = get_conn()?;
+    let rows = conn
+        .prepare(
+            r#"
+            SELECT l.id, l.name, l.position,
+                   (SELECT COUNT(*) FROM favorite_list_items i WHERE i.list_id = l.id)
+            FROM favorite_lists l ORDER BY l.position, l.id
+            "#,
+        )?
+        .query_map([], |row| {
+            Ok(crate::types::FavoriteList {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                position: row.get(2)?,
+                count: row.get(3)?,
+            })
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+pub fn create_favorite_list(name: &str) -> Result<i64> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT INTO favorite_lists (name, position) VALUES (?1, (SELECT COALESCE(MAX(position), 0) + 1 FROM favorite_lists))",
+        params![name],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+/// The id of the list with this name, created when missing (backup restore).
+fn favorite_list_by_name(tx: &Transaction, name: &str) -> Result<i64> {
+    if let Some(id) = tx
+        .query_row(
+            "SELECT id FROM favorite_lists WHERE name = ? LIMIT 1",
+            params![name],
+            |row| row.get(0),
+        )
+        .optional()?
+    {
+        return Ok(id);
+    }
+    tx.execute(
+        "INSERT INTO favorite_lists (name, position) VALUES (?1, (SELECT COALESCE(MAX(position), 0) + 1 FROM favorite_lists))",
+        params![name],
+    )?;
+    Ok(tx.last_insert_rowid())
+}
+
+pub fn rename_favorite_list(id: i64, name: &str) -> Result<()> {
+    get_conn()?.execute(
+        "UPDATE favorite_lists SET name = ? WHERE id = ?",
+        params![name, id],
+    )?;
+    Ok(())
+}
+
+pub fn delete_favorite_list(id: i64) -> Result<()> {
+    do_tx(|tx| {
+        tx.execute(
+            "DELETE FROM favorite_list_items WHERE list_id = ?",
+            params![id],
+        )?;
+        tx.execute("DELETE FROM favorite_lists WHERE id = ?", params![id])?;
+        Ok(())
+    })
+}
+
+/// Adds a channel to the end of a list (no-op when it is already in it).
+pub fn add_to_favorite_list(list_id: i64, source_id: i64, channel_name: &str) -> Result<()> {
+    get_conn()?.execute(
+        r#"
+        INSERT OR IGNORE INTO favorite_list_items (list_id, source_id, channel_name, position)
+        VALUES (?1, ?2, ?3,
+          (SELECT COALESCE(MAX(position), 0) + 1 FROM favorite_list_items WHERE list_id = ?1))
+        "#,
+        params![list_id, source_id, channel_name],
+    )?;
+    Ok(())
+}
+
+pub fn remove_from_favorite_list(list_id: i64, source_id: i64, channel_name: &str) -> Result<()> {
+    get_conn()?.execute(
+        "DELETE FROM favorite_list_items WHERE list_id = ? AND source_id = ? AND channel_name = ?",
+        params![list_id, source_id, channel_name],
+    )?;
+    Ok(())
+}
+
+/// Ids of the lists a channel is in.
+pub fn get_channel_favorite_lists(source_id: i64, channel_name: &str) -> Result<Vec<i64>> {
+    let conn = get_conn()?;
+    let rows = conn
+        .prepare(
+            "SELECT list_id FROM favorite_list_items WHERE source_id = ? AND channel_name = ?",
+        )?
+        .query_map(params![source_id, channel_name], |row| row.get(0))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// `ids` with `moved` taken out and put in front of `before` (at the end
+/// when `before` is None or not in the list).
+fn reorder(ids: &[i64], moved: i64, before: Option<i64>) -> Vec<i64> {
+    let mut out: Vec<i64> = ids.iter().copied().filter(|id| *id != moved).collect();
+    let at = before
+        .and_then(|b| out.iter().position(|id| *id == b))
+        .unwrap_or(out.len());
+    out.insert(at, moved);
+    out
+}
+
+/// Moves a favorite (or a channel of a list) in the own order, in front of
+/// `before_id` or to the end. The whole order is renumbered: favorites lists
+/// are short, and gaps or duplicates never build up this way.
+pub fn move_favorite(list_id: Option<i64>, channel_id: i64, before_id: Option<i64>) -> Result<()> {
+    do_tx(|tx| {
+        match list_id {
+            None => {
+                let ids: Vec<i64> = tx
+                    .prepare(
+                        "SELECT id FROM channels WHERE favorite = 1 ORDER BY favorite_position IS NULL, favorite_position, name",
+                    )?
+                    .query_map([], |row| row.get(0))?
+                    .collect::<rusqlite::Result<_>>()?;
+                let mut stmt =
+                    tx.prepare("UPDATE channels SET favorite_position = ? WHERE id = ?")?;
+                for (i, id) in reorder(&ids, channel_id, before_id).iter().enumerate() {
+                    stmt.execute(params![i as i64 + 1, id])?;
+                }
+            }
+            Some(list) => {
+                let key = |id: i64| -> Result<Option<(i64, String)>> {
+                    Ok(tx
+                        .query_row(
+                            "SELECT source_id, name FROM channels WHERE id = ?",
+                            params![id],
+                            |row| Ok((row.get(0)?, row.get(1)?)),
+                        )
+                        .optional()?)
+                };
+                let moved = key(channel_id)?.context("channel not found")?;
+                let before = match before_id {
+                    Some(id) => key(id)?,
+                    None => None,
+                };
+                let items: Vec<(i64, String)> = tx
+                    .prepare(
+                        "SELECT source_id, channel_name FROM favorite_list_items WHERE list_id = ? ORDER BY position",
+                    )?
+                    .query_map(params![list], |row| Ok((row.get(0)?, row.get(1)?)))?
+                    .collect::<rusqlite::Result<_>>()?;
+                // Reorder by index, then write the positions back.
+                let index = |k: &(i64, String)| items.iter().position(|i| i == k);
+                let Some(from) = index(&moved) else {
+                    return Ok(());
+                };
+                let ids: Vec<i64> = (0..items.len() as i64).collect();
+                let order = reorder(
+                    &ids,
+                    from as i64,
+                    before.as_ref().and_then(index).map(|i| i as i64),
+                );
+                let mut stmt = tx.prepare(
+                    "UPDATE favorite_list_items SET position = ? WHERE list_id = ? AND source_id = ? AND channel_name = ?",
+                )?;
+                for (pos, idx) in order.iter().enumerate() {
+                    let (source_id, name) = &items[*idx as usize];
+                    stmt.execute(params![pos as i64 + 1, list, source_id, name])?;
+                }
+            }
+        }
+        Ok(())
+    })
+}
+
+pub fn get_epg_alerts() -> Result<Vec<crate::types::EpgAlert>> {
+    let conn = get_conn()?;
+    let rows = conn
+        .prepare("SELECT id, query, action, created FROM epg_alerts ORDER BY created")?
+        .query_map([], |row| {
+            Ok(crate::types::EpgAlert {
+                id: row.get(0)?,
+                query: row.get(1)?,
+                action: row.get(2)?,
+                created: row.get(3)?,
+            })
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+pub fn add_epg_alert(query: &str, action: &str, created: i64) -> Result<i64> {
+    let conn = get_conn()?;
+    conn.execute(
+        "INSERT INTO epg_alerts (query, action, created) VALUES (?, ?, ?)",
+        params![query, action, created],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn delete_epg_alert(id: i64) -> Result<()> {
+    get_conn()?.execute("DELETE FROM epg_alerts WHERE id = ?", params![id])?;
+    Ok(())
+}
+
+/// Live channels of one source, for the fallback to another feed.
+pub fn get_live_channels_of_source(source_id: i64, show_locked: bool) -> Result<Vec<Channel>> {
+    let conn = get_conn()?;
+    let mut query = format!(
+        "SELECT * FROM channels WHERE source_id = ? AND media_type = {} AND hidden = 0 AND url IS NOT NULL",
+        media_type::LIVESTREAM
+    );
+    if !show_locked {
+        query += NOT_IN_LOCKED_GROUP;
+    }
+    let rows = conn
+        .prepare(&query)?
+        .query_map(params![source_id], row_to_channel)?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+/// The hand-made EPG assignments and list places of one source, for the
+/// favorites backup.
+pub fn get_backup_extras(
+    tx: &Transaction,
+    source_id: i64,
+) -> Result<(
+    Vec<crate::types::EpgMappingEntry>,
+    Vec<crate::types::FavoriteListEntry>,
+)> {
+    let mappings = tx
+        .prepare("SELECT channel_name, xmltv_id FROM epg_mappings WHERE source_id = ?")?
+        .query_map(params![source_id], |row| {
+            Ok(crate::types::EpgMappingEntry {
+                channel_name: row.get(0)?,
+                xmltv_id: row.get(1)?,
+            })
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+    let lists = tx
+        .prepare(
+            r#"
+            SELECT l.name, i.channel_name, i.position
+            FROM favorite_list_items i JOIN favorite_lists l ON l.id = i.list_id
+            WHERE i.source_id = ?
+            "#,
+        )?
+        .query_map(params![source_id], |row| {
+            Ok(crate::types::FavoriteListEntry {
+                list: row.get(0)?,
+                channel_name: row.get(1)?,
+                position: row.get(2)?,
+            })
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok((mappings, lists))
+}
+
+/// Restores what [`get_backup_extras`] saved; lists are matched by name and
+/// created when missing.
+pub fn restore_backup_extras(
+    tx: &Transaction,
+    source_id: i64,
+    mappings: &[crate::types::EpgMappingEntry],
+    lists: &[crate::types::FavoriteListEntry],
+) -> Result<()> {
+    for m in mappings {
+        tx.execute(
+            r#"
+            INSERT INTO epg_mappings (source_id, channel_name, xmltv_id) VALUES (?1, ?2, ?3)
+            ON CONFLICT(source_id, channel_name) DO UPDATE SET xmltv_id = ?3
+            "#,
+            params![source_id, m.channel_name, m.xmltv_id],
+        )?;
+    }
+    for entry in lists {
+        let list_id = favorite_list_by_name(tx, &entry.list)?;
+        tx.execute(
+            r#"
+            INSERT INTO favorite_list_items (list_id, source_id, channel_name, position)
+            VALUES (?1, ?2, ?3, ?4)
+            ON CONFLICT(list_id, source_id, channel_name) DO UPDATE SET position = ?4
+            "#,
+            params![list_id, source_id, entry.channel_name, entry.position],
+        )?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -2841,7 +3207,7 @@ mod test_sql {
               media_type INTEGER, hidden INTEGER DEFAULT 0, locked INTEGER DEFAULT 0);
             CREATE TABLE channels (id INTEGER PRIMARY KEY, name TEXT, source_id INTEGER,
               favorite INTEGER DEFAULT 0, last_watched INTEGER, hidden INTEGER DEFAULT 0,
-              series_id INTEGER);
+              series_id INTEGER, favorite_position INTEGER);
             INSERT INTO groups (name, source_id, hidden, locked) VALUES
               ('Kids', 1, 0, 1), ('Adult', 1, 1, 1), ('News', 1, 0, 0);
             "#,
@@ -2904,6 +3270,15 @@ mod test_sql {
         tx.commit().unwrap();
         assert!(locked(&conn, "Kids"));
         assert!(locked(&conn, "Adult"));
+    }
+
+    #[test]
+    fn test_reorder() {
+        use super::reorder;
+        assert_eq!(reorder(&[1, 2, 3, 4], 4, Some(2)), vec![1, 4, 2, 3]);
+        assert_eq!(reorder(&[1, 2, 3, 4], 1, None), vec![2, 3, 4, 1]);
+        assert_eq!(reorder(&[1, 2, 3], 2, Some(9)), vec![1, 3, 2]);
+        assert_eq!(reorder(&[1, 2, 3], 3, Some(1)), vec![3, 1, 2]);
     }
 
     #[test]

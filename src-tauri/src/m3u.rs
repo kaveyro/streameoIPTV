@@ -27,6 +27,8 @@ static ID_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"tvg-id="(?P<id>[^"]*)""#).unwrap());
 static LOGO_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"tvg-logo="(?P<logo>[^"]*)""#).unwrap());
+static CHNO_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"tvg-chno="(?P<chno>[^"]*)""#).unwrap());
 static GROUP_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"group-title="(?P<group>[^"]*)""#).unwrap());
 
@@ -324,7 +326,12 @@ fn get_channel_from_lines(
         .captures(&first)
         .and_then(extract_non_empty_capture)
         .map(|x| x.trim().to_string());
+    let number = CHNO_REGEX
+        .captures(&first)
+        .and_then(extract_non_empty_capture)
+        .and_then(|x| x.trim().parse::<i64>().ok());
     let channel = Channel {
+        number,
         id: None,
         name: name.trim().to_string(),
         group: group.map(|x| x.trim().to_string()),
@@ -420,6 +427,7 @@ mod test_m3u {
         image: Option<&str>,
     ) -> Channel {
         Channel {
+            number: None,
             id: None,
             name: name.to_string(),
             url: url.map(str::to_string),

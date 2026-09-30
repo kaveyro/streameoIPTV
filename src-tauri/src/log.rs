@@ -57,12 +57,18 @@ fn init_logger() -> bool {
     }
 }
 
-fn get_and_create_log_path() -> String {
+/// The folder of the app logs and mpv.log.
+pub fn log_dir() -> std::path::PathBuf {
     let mut path = ProjectDirs::from("dev", "kaveyro", "streameoIPTV")
         .unwrap()
         .cache_dir()
         .to_owned();
     path.push("logs");
+    path
+}
+
+fn get_and_create_log_path() -> String {
+    let mut path = log_dir();
     if !path.exists() {
         std::fs::create_dir_all(&path).unwrap();
     }

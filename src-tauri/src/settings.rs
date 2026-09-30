@@ -39,6 +39,7 @@ pub const XMLTV_SOURCES: &str = "xmltvSources";
 pub const XMLTV_LAST_UPDATED: &str = "xmltvLastUpdated";
 pub const XMLTV_STATUS: &str = "xmltvStatus";
 pub const COUNTRY_PREFIX: &str = "countryPrefix";
+pub const AUTO_FALLBACK: &str = "autoFallback";
 
 /// Per-source results of the last XMLTV refresh, keyed by URL.
 pub fn get_xmltv_status() -> Result<HashMap<String, XmltvSourceStatus>> {
@@ -130,6 +131,7 @@ pub fn get_settings() -> Result<Settings> {
         auto_update: map.get(AUTO_UPDATE).and_then(|s| s.parse().ok()),
         mpv_debug_log: map.get(MPV_DEBUG_LOG).and_then(|s| s.parse().ok()),
         country_prefix: map.get(COUNTRY_PREFIX).map(|s| s.to_string()),
+        auto_fallback: map.get(AUTO_FALLBACK).and_then(|s| s.parse().ok()),
     };
     Ok(settings)
 }
@@ -210,6 +212,9 @@ pub fn update_settings(settings: Settings) -> Result<()> {
             USE_EXTERNAL_PLAYER.to_string(),
             Some(use_external_player.to_string()),
         );
+    }
+    if let Some(auto_fallback) = settings.auto_fallback {
+        map.insert(AUTO_FALLBACK.to_string(), Some(auto_fallback.to_string()));
     }
     if let Some(country_prefix) = settings.country_prefix {
         map.insert(COUNTRY_PREFIX.to_string(), Some(country_prefix));

@@ -22,6 +22,7 @@ use {
 pub mod auto_refresh;
 pub mod bulk_action_type;
 pub mod credentials;
+pub mod diagnostics;
 pub mod epg;
 pub mod log;
 pub mod logo_cache;
@@ -160,6 +161,20 @@ pub fn run() {
             has_xmltv_data,
             detect_xtream_login,
             resolve_channel_url,
+            get_favorite_lists,
+            create_favorite_list,
+            rename_favorite_list,
+            delete_favorite_list,
+            add_to_favorite_list,
+            remove_from_favorite_list,
+            get_channel_favorite_lists,
+            move_favorite,
+            get_epg_alerts,
+            add_epg_alert,
+            delete_epg_alert,
+            get_alternative_streams,
+            open_log_folder,
+            export_diagnostics,
             convert_source_to_xtream,
             search_xmltv_channels,
             get_epg_mapping,
@@ -620,6 +635,110 @@ async fn refresh_xmltv() -> Result<(), String> {
 #[tauri::command(async)]
 fn has_xmltv_data() -> Result<bool, String> {
     sql::has_xmltv_programmes().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_favorite_lists() -> Result<Vec<types::FavoriteList>, String> {
+    sql::get_favorite_lists().map_err(map_err_frontend)
+}
+
+/// A list name as the user typed it; empty names are refused.
+fn list_name(name: &str) -> Result<String, String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err("the list needs a name".to_string());
+    }
+    Ok(name.chars().take(80).collect())
+}
+
+#[tauri::command(async)]
+fn create_favorite_list(name: String) -> Result<i64, String> {
+    sql::create_favorite_list(&list_name(&name)?).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn rename_favorite_list(id: i64, name: String) -> Result<(), String> {
+    sql::rename_favorite_list(id, &list_name(&name)?).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn delete_favorite_list(id: i64) -> Result<(), String> {
+    sql::delete_favorite_list(id).map_err(map_err_frontend)
+}
+
+fn channel_key(channel: &Channel) -> Result<(i64, String), String> {
+    let source_id = channel
+        .source_id
+        .ok_or_else(|| "channel has no source".to_string())?;
+    Ok((source_id, channel.name.clone()))
+}
+
+#[tauri::command(async)]
+fn add_to_favorite_list(list_id: i64, channel: Channel) -> Result<(), String> {
+    let (source_id, name) = channel_key(&channel)?;
+    sql::add_to_favorite_list(list_id, source_id, &name).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn remove_from_favorite_list(list_id: i64, channel: Channel) -> Result<(), String> {
+    let (source_id, name) = channel_key(&channel)?;
+    sql::remove_from_favorite_list(list_id, source_id, &name).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_channel_favorite_lists(channel: Channel) -> Result<Vec<i64>, String> {
+    let (source_id, name) = channel_key(&channel)?;
+    sql::get_channel_favorite_lists(source_id, &name).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn move_favorite(
+    list_id: Option<i64>,
+    channel_id: i64,
+    before_id: Option<i64>,
+) -> Result<(), String> {
+    sql::move_favorite(list_id, channel_id, before_id).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_epg_alerts() -> Result<Vec<types::EpgAlert>, String> {
+    sql::get_epg_alerts().map_err(map_err_frontend)
+}
+
+#[tauri::command]
+async fn add_epg_alert(app: AppHandle, query: String, action: String) -> Result<i64, String> {
+    let query = query.trim().to_string();
+    if query.chars().count() < 2 {
+        return Err("the search needs at least two characters".to_string());
+    }
+    if action != "remind" && action != "record" {
+        return Err("unknown alert action".to_string());
+    }
+    let id = sql::add_epg_alert(&query, &action, chrono::Utc::now().timestamp())
+        .map_err(map_err_frontend)?;
+    // Apply it to the programmes already in the guide right away.
+    epg::process_alerts(&app).await.map_err(map_err_frontend)?;
+    Ok(id)
+}
+
+#[tauri::command(async)]
+fn delete_epg_alert(id: i64) -> Result<(), String> {
+    sql::delete_epg_alert(id).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_alternative_streams(channel: Channel, show_locked: bool) -> Result<Vec<Channel>, String> {
+    epg::alternatives(&channel, show_locked).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn open_log_folder() -> Result<(), String> {
+    recordings::open_in_file_manager(&log::log_dir().to_string_lossy()).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn export_diagnostics(app: AppHandle, path: String) -> Result<(), String> {
+    diagnostics::export(&app.package_info().version.to_string(), &path).map_err(map_err_frontend)
 }
 
 /// The playable URL of a channel, for "copy URL" (it carries the login).

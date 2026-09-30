@@ -375,18 +375,40 @@ pub fn serialize_to_file<T: Serialize>(obj: T, path: String) -> Result<()> {
 
 pub fn backup_favs(source_id: i64, path: String) -> Result<()> {
     sql::do_tx(|tx| {
-        let preserve = sql::get_preserve(tx, source_id)?;
-        serialize_to_file(preserve, path)?;
+        let items = sql::get_preserve(tx, source_id)?;
+        let (epg_mappings, favorite_lists) = sql::get_backup_extras(tx, source_id)?;
+        let backup = crate::types::FavoritesBackup {
+            version: 2,
+            items,
+            epg_mappings,
+            favorite_lists,
+        };
+        serialize_to_file(backup, path)?;
         Ok(())
     })?;
     Ok(())
 }
 
+/// Reads a favorites backup: version 2 (an object) or the bare array that
+/// older versions wrote.
+fn parse_favorites_backup(data: &str) -> Result<crate::types::FavoritesBackup> {
+    if let Ok(items) = serde_json::from_str::<Vec<ChannelPreserve>>(data) {
+        return Ok(crate::types::FavoritesBackup {
+            version: 1,
+            items,
+            epg_mappings: Vec::new(),
+            favorite_lists: Vec::new(),
+        });
+    }
+    Ok(serde_json::from_str(data)?)
+}
+
 pub fn restore_favs(source_id: i64, path: String) -> Result<()> {
     let data = std::fs::read_to_string(path)?;
-    let preserve: Vec<ChannelPreserve> = serde_json::from_str(&data)?;
+    let backup = parse_favorites_backup(&data)?;
     sql::do_tx(|tx| {
-        sql::restore_preserve(tx, source_id, preserve, crate::parental::has_pin()?)?;
+        sql::restore_preserve(tx, source_id, backup.items, crate::parental::has_pin()?)?;
+        sql::restore_backup_extras(tx, source_id, &backup.epg_mappings, &backup.favorite_lists)?;
         Ok(())
     })?;
     Ok(())
@@ -557,5 +579,26 @@ mod test_download_filename {
     fn test_filename_has_no_path_characters() {
         let name = get_filename("A/B: C?".to_string(), "http://h/x.mp4?t=1");
         assert_eq!(name, "AB C.mp4");
+    }
+}
+
+#[cfg(test)]
+mod test_favorites_backup {
+    use super::parse_favorites_backup;
+
+    #[test]
+    fn test_reads_both_backup_versions() {
+        let v1 = r#"[{"name":"A","favorite":true,"last_watched":null,"hidden":false}]"#;
+        let backup = parse_favorites_backup(v1).unwrap();
+        assert_eq!(backup.version, 1);
+        assert_eq!(backup.items.len(), 1);
+        assert!(backup.epg_mappings.is_empty());
+        let v2 = r#"{"version":2,"items":[],"epg_mappings":[{"channel_name":"A","xmltv_id":"A.tr"}],
+            "favorite_lists":[{"list":"Sport","channel_name":"A","position":1}]}"#;
+        let backup = parse_favorites_backup(v2).unwrap();
+        assert_eq!(backup.version, 2);
+        assert_eq!(backup.epg_mappings[0].xmltv_id, "A.tr");
+        assert_eq!(backup.favorite_lists[0].list, "Sport");
+        assert!(parse_favorites_backup("nonsense").is_err());
     }
 }

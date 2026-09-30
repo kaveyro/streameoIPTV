@@ -36,6 +36,9 @@ pub struct Channel {
     /// XMLTV / tvg-id used to match external EPG data. None when unknown.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub epg_channel_id: Option<String>,
+    /// Channel number from the playlist (tvg-chno) or the Xtream provider.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub number: Option<i64>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
@@ -113,6 +116,9 @@ pub struct Settings {
     /// How channel names show their country prefix: "show", "hide" or "badge".
     #[serde(default)]
     pub country_prefix: Option<String>,
+    /// Switch to another feed of the same channel when a live stream fails.
+    #[serde(default)]
+    pub auto_fallback: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
@@ -134,6 +140,9 @@ pub struct Filters {
     /// Only names with this country prefix ("TR" for "TR: Kanal D").
     #[serde(default)]
     pub country: Option<String>,
+    /// In the favorites view: a favorites list instead of the favorites.
+    #[serde(default)]
+    pub favorite_list: Option<i64>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]
@@ -261,6 +270,9 @@ pub struct ChannelPreserve {
     /// Group locked by the parental PIN. A restore only ever adds locks.
     #[serde(default)]
     pub locked: bool,
+    /// Place in the user's own favorites order.
+    #[serde(default)]
+    pub favorite_position: Option<i64>,
 }
 
 /// Xtream login found in an M3U link such as `http://host/get.php?username=u&password=p`.
@@ -317,4 +329,49 @@ pub struct ProgrammeHit {
 pub struct CountryCount {
     pub code: String,
     pub count: usize,
+}
+
+/// A named favorites list besides the favorites themselves.
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct FavoriteList {
+    pub id: i64,
+    pub name: String,
+    pub position: i64,
+    pub count: i64,
+}
+
+/// A saved guide search: remind of, or record, every programme it finds.
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct EpgAlert {
+    pub id: i64,
+    pub query: String,
+    /// "remind" or "record".
+    pub action: String,
+    pub created: i64,
+}
+
+/// A hand-made EPG assignment in a favorites backup.
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct EpgMappingEntry {
+    pub channel_name: String,
+    pub xmltv_id: String,
+}
+
+/// A channel's place in a favorites list, in a favorites backup.
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct FavoriteListEntry {
+    pub list: String,
+    pub channel_name: String,
+    pub position: i64,
+}
+
+/// Favorites backup file, version 2. Version 1 was the bare `items` array.
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct FavoritesBackup {
+    pub version: u32,
+    pub items: Vec<ChannelPreserve>,
+    #[serde(default)]
+    pub epg_mappings: Vec<EpgMappingEntry>,
+    #[serde(default)]
+    pub favorite_lists: Vec<FavoriteListEntry>,
 }

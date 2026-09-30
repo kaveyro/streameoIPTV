@@ -57,6 +57,9 @@ struct XtreamStream {
     tv_archive: serde_json::Value,
     #[serde(default)]
     epg_channel_id: Option<String>,
+    /// Channel number; a number or a string depending on the panel.
+    #[serde(default)]
+    num: serde_json::Value,
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct XtreamSeries {
@@ -382,7 +385,13 @@ fn convert_xtream_live_to_channel(
     category_name: Option<String>,
 ) -> Result<Channel> {
     let stream_id = get_serde_json_u64(&stream.stream_id);
+    let number = if stream_type == media_type::LIVESTREAM {
+        get_serde_json_u64(&stream.num).and_then(|n| i64::try_from(n).ok())
+    } else {
+        None
+    };
     Ok(Channel {
+        number,
         id: None,
         group: category_name.map(|x| x.trim().to_string()),
         image: stream
@@ -710,6 +719,7 @@ fn episode_to_channel(
     season_id: i64,
 ) -> Result<Channel> {
     Ok(Channel {
+        number: None,
         id: None,
         group: None,
         image: serde_json::from_value::<XtreamEpisodeInfo>(episode.info)

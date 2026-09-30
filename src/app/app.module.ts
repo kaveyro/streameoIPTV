@@ -9,6 +9,7 @@ import { AppComponent } from "./app.component";
 import { NgbModalModule, NgbTooltipModule, NgbTypeaheadModule } from "@ng-bootstrap/ng-bootstrap";
 import { FormsModule } from "@angular/forms";
 import { MatMenuModule } from "@angular/material/menu";
+import { DragDropModule } from "@angular/cdk/drag-drop";
 import { KeyboardShortcutsModule } from "ng-keyboard-shortcuts";
 import { ToastrModule } from "ngx-toastr";
 import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
@@ -40,6 +41,8 @@ import { UpdateModalComponent } from "./update-modal/update-modal.component";
 import { RecordingsComponent } from "./recordings/recordings.component";
 import { TvGuideComponent } from "./tv-guide/tv-guide.component";
 import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
+import { FavoriteListNameModalComponent } from "./favorite-lists/favorite-list-name-modal/favorite-list-name-modal.component";
+import { FavoriteListChipsComponent } from "./favorite-lists/favorite-list-chips/favorite-list-chips.component";
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { CountryNamePipe } from "./pipes/country-name.pipe";
@@ -77,6 +80,8 @@ import { CountryNamePipe } from "./pipes/country-name.pipe";
     RecordingsComponent,
     TvGuideComponent,
     PinDialogComponent,
+    FavoriteListNameModalComponent,
+    FavoriteListChipsComponent,
   ],
   imports: [
     BrowserModule,
@@ -98,6 +103,7 @@ import { CountryNamePipe } from "./pipes/country-name.pipe";
     }),
     KeyboardShortcutsModule.forRoot(),
     MatMenuModule,
+    DragDropModule,
     NgbModalModule,
     NgbTypeaheadModule,
     TranslatePipe,

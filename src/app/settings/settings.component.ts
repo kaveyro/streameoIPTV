@@ -27,6 +27,7 @@ import {
   toCountryPrefixMode,
 } from "../country-prefix";
 import { uiLocale } from "../utils";
+import { FREE_EPG_SOURCES } from "../epg-free-sources";
 
 /// Settings that are passed to mpv as launch arguments (see
 /// get_global_mpv_args in src-tauri/src/mpv.rs): changing one only takes effect
@@ -50,13 +51,6 @@ const SAVED_TOAST_INTERVAL_MS = 2000;
 
 /// Channel name the country prefix preview is rendered with.
 const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
-
-/// A curated free XMLTV guide; `country` is an ISO 3166 region code.
-interface FreeEpgSource {
-  label: string;
-  url: string;
-  country: string;
-}
 
 @Component({
   selector: "app-settings",
@@ -116,50 +110,7 @@ export class SettingsComponent {
   refreshingXmltv = false;
   /// Version of the running app, shown next to the update controls.
   appVersion = "";
-  // Curated free public XMLTV EPG sources for one-click adding. The country
-  // lets the page point out guides that cover the same one twice.
-  freeEpgSources: FreeEpgSource[] = [
-    {
-      label: "IPTV-EPG · Deutschland",
-      url: "https://iptv-epg.org/files/epg-de.xml",
-      country: "DE",
-    },
-    { label: "IPTV-EPG · Türkiye", url: "https://iptv-epg.org/files/epg-tr.xml", country: "TR" },
-    {
-      label: "IPTV-EPG · United Kingdom",
-      url: "https://iptv-epg.org/files/epg-uk.xml",
-      country: "GB",
-    },
-    {
-      label: "IPTV-EPG · United States",
-      url: "https://iptv-epg.org/files/epg-us.xml",
-      country: "US",
-    },
-    { label: "IPTV-EPG · France", url: "https://iptv-epg.org/files/epg-fr.xml", country: "FR" },
-    { label: "IPTV-EPG · Nederland", url: "https://iptv-epg.org/files/epg-nl.xml", country: "NL" },
-    { label: "IPTV-EPG · España", url: "https://iptv-epg.org/files/epg-es.xml", country: "ES" },
-    { label: "IPTV-EPG · Italia", url: "https://iptv-epg.org/files/epg-it.xml", country: "IT" },
-    {
-      label: "EPGShare · Germany",
-      url: "https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz",
-      country: "DE",
-    },
-    {
-      label: "EPGShare · Turkey",
-      url: "https://epgshare01.online/epgshare01/epg_ripper_TR1.xml.gz",
-      country: "TR",
-    },
-    {
-      label: "EPGShare · UK",
-      url: "https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz",
-      country: "GB",
-    },
-    {
-      label: "EPGShare · USA",
-      url: "https://epgshare01.online/epgshare01/epg_ripper_US1.xml.gz",
-      country: "US",
-    },
-  ];
+  freeEpgSources = FREE_EPG_SOURCES;
   /// Countries covered by two or more of the added free guides.
   duplicateCountries: { code: string; count: number }[] = [];
   countryPrefixModes = COUNTRY_PREFIX_MODES;
@@ -428,6 +379,8 @@ export class SettingsComponent {
         if (this.settings.auto_refresh_hours == undefined) this.settings.auto_refresh_hours = 0;
         if (this.settings.show_channel_source == undefined)
           this.settings.show_channel_source = true;
+        // Unset means on, like the player's own check.
+        if (this.settings.auto_fallback == undefined) this.settings.auto_fallback = true;
         this.settings.country_prefix = toCountryPrefixMode(this.settings.country_prefix);
         this.settings.language = this.settings.language ?? "system";
         this.playerSnapshot = this.playerSettingsSnapshot();
@@ -475,6 +428,7 @@ export class SettingsComponent {
     this.language.apply(this.settings.language === "system" ? undefined : this.settings.language);
     this.memory.ShowChannelSource = this.settings.show_channel_source ?? true;
     this.memory.CountryPrefixMode = toCountryPrefixMode(this.settings.country_prefix);
+    this.memory.AutoFallback = this.settings.auto_fallback ?? true;
     if (this.settings.zoom) {
       getCurrentWebview()
         .setZoom(Math.trunc(this.settings.zoom * 100) / 10000)
@@ -512,6 +466,12 @@ export class SettingsComponent {
     if (mode !== undefined) this.settings.country_prefix = mode;
     // Applied live, like the playlist name, so the lists match on return.
     this.memory.CountryPrefixMode = toCountryPrefixMode(this.settings.country_prefix);
+    await this.updateSettings();
+  }
+
+  async updateAutoFallback() {
+    // The player reads the flag when a stream fails: apply it before saving.
+    this.memory.AutoFallback = this.settings.auto_fallback ?? true;
     await this.updateSettings();
   }
 
@@ -785,6 +745,32 @@ export class SettingsComponent {
       this.translate.instant("TOAST.FAVORITES_EXPORTED", { path: file }),
       this.translate.instant("TOAST.FAVORITES_EXPORT_FAILED"),
       () => invoke("export_favorites_m3u", { path: file }),
+    );
+  }
+
+  async openLogFolder() {
+    try {
+      await invoke("open_log_folder");
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.LOG_FOLDER_FAILED"));
+    }
+  }
+
+  /// Writes the redacted diagnostics report (no passwords, no stream
+  /// addresses) to a file the user picks, e.g. to attach it to a bug report.
+  async exportDiagnostics() {
+    const date = new Date().toISOString().split("T")[0];
+    const file = await save({
+      canCreateDirectories: true,
+      title: this.translate.instant("SETTINGS.DIALOG.SAVE_DIAGNOSTICS"),
+      defaultPath: `streameo-diagnose-${date}.txt`,
+      filters: [{ name: this.translate.instant("SETTINGS.DIALOG.TEXT_FILE"), extensions: ["txt"] }],
+    });
+    if (!file) return;
+    await this.memory.tryIPC(
+      this.translate.instant("TOAST.DIAGNOSTICS_EXPORTED", { path: file }),
+      this.translate.instant("TOAST.DIAGNOSTICS_EXPORT_FAILED"),
+      () => invoke("export_diagnostics", { path: file }),
     );
   }
 

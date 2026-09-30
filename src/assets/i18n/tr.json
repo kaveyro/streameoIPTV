@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "Kanalları sırala",
     "ALPHABETICAL_ASC": "Alfabetik artan",
     "ALPHABETICAL_DESC": "Alfabetik azalan",
-    "PROVIDER": "Sağlayıcı"
+    "PROVIDER": "Sağlayıcı",
+    "CUSTOM": "Kendi sıralamam",
+    "NUMBER": "Kanal numarası"
   },
   "SHORTCUT": {
     "SEARCH": "Ara",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "ör. tr,en",
       "MPV_PARAMS_PLACEHOLDER": "ör. --hwdec=auto",
       "DEBUG_LOG": "Oynatıcı günlüğü yaz",
-      "DEBUG_LOG_DESC": "Yalnızca sorun giderme için: günlük klasöründeki mpv.log, içindeki giriş bilgileri dahil her yayın adresini kaydeder. Oynatıcı bir sonraki açılışta etkinleşir."
+      "DEBUG_LOG_DESC": "Yalnızca sorun giderme için: günlük klasöründeki mpv.log, içindeki giriş bilgileri dahil her yayın adresini kaydeder. Oynatıcı bir sonraki açılışta etkinleşir.",
+      "AUTO_FALLBACK": "Yayın kesilirse kanalın başka bir akışına geç",
+      "AUTO_FALLBACK_DESC": "Canlı yayın kesilirse oynatıcı otomatik olarak aynı kanalın başka bir kalitesine geçer, örneğin HD'den SD'ye."
     },
     "RECORDING": {
       "PATH": "Kayıt yolu",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "Temizle",
       "DELETE_ALL": "Her şeyi sil",
       "DELETE_ALL_DESC": "Tüm kaynakları, kanalları, favorileri ve ayarları kaldır. Bir yükseltmenin bir hatayı düzeltmediği durumda bunu kullanın.",
-      "DELETE_BTN": "Sil"
+      "DELETE_BTN": "Sil",
+      "LOG_FOLDER": "Günlük dosyaları",
+      "LOG_FOLDER_DESC": "Uygulamanın ve oynatıcının günlük dosyalarının bulunduğu klasörü açar.",
+      "LOG_FOLDER_BTN": "Günlük klasörünü aç",
+      "DIAGNOSTICS": "Tanılama raporu",
+      "DIAGNOSTICS_DESC": "Şifre veya yayın adresi içermez, bu yüzden bir hata raporuna ekleyebilirsin.",
+      "DIAGNOSTICS_BTN": "Tanılamayı dışa aktar…"
     },
     "RESTORE_MODAL": {
       "TITLE": "Veritabanı geri yüklemesini onayla",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "Bir veritabanı yedeği seçin",
       "SQLITE_DATABASE": "SQLite veritabanı",
       "SAVE_FAVORITES": "Favoriler oynatma listesinin kaydedileceği yeri seçin",
-      "M3U_PLAYLIST": "M3U oynatma listesi"
+      "M3U_PLAYLIST": "M3U oynatma listesi",
+      "SAVE_DIAGNOSTICS": "Tanılama raporunun kaydedileceği yeri seç",
+      "TEXT_FILE": "Metin dosyası"
     },
     "EPG": {
       "TITLE": "Harici EPG",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "Bu M3U bağlantısı bir Xtream girişi içeriyor. Xtream kaynağı olarak içe aktarırsanız sağlayıcınızın EPG'sini, kaçırılan programlar için catch-up'ı ve sezonlara göre dizileri alırsınız.",
     "XTREAM_DETECTED_BODY2": "Xtream olarak içe aktarmanız önerilir, ancak düz bir M3U bağlantısı olarak da içe aktarabilirsiniz.",
     "IMPORT_AS_XTREAM": "Xtream olarak içe aktar (önerilen)",
-    "IMPORT_AS_M3U": "M3U bağlantısı olarak içe aktar"
+    "IMPORT_AS_M3U": "M3U bağlantısı olarak içe aktar",
+    "EPG_TITLE": "Yayın akışı (EPG)",
+    "EPG_INTRO": "Ücretsiz yayın akışları kanallarında ne olduğunu gösterir – kanallarının ülkelerine uygun olanları seç (bunu daha sonra ayarlardan değiştirebilirsin).",
+    "EPG_APPLY": "Uygula",
+    "EPG_SKIP": "Atla",
+    "DONE_TITLE": "Hazır",
+    "DONE_TEXT": "Kaynağın hazır. İyi seyirler!",
+    "GO_TO_CHANNELS": "Kanallara git"
   },
   "EPG": {
     "PLAYING_NOW": "Şu anda oynatılıyor",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "Kaynak Xtream'e dönüştürülemedi",
     "EPG_MAPPED": "{{name}} artık {{id}} rehberini gösteriyor",
     "EPG_MAPPING_REMOVED": "{{name}} EPG'sini yeniden otomatik alıyor",
-    "EPG_MAPPING_FAILED": "EPG atanamadı"
+    "EPG_MAPPING_FAILED": "EPG atanamadı",
+    "LOG_FOLDER_FAILED": "Günlük klasörü açılamadı",
+    "DIAGNOSTICS_EXPORTED": "Tanılama raporu {{path}} konumuna kaydedildi",
+    "DIAGNOSTICS_EXPORT_FAILED": "Tanılama raporu dışa aktarılamadı",
+    "EPG_LOADING": "Yayın akışı arka planda yükleniyor…"
   },
   "UPDATE": {
     "TITLE": "Güncelleme mevcut",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "Tüm kilitli grupların kilidi açılacak ve herkese gösterilecek.",
     "CONVERT_XTREAM_TITLE": "“{{name}}” Xtream'e dönüştürülsün mü?",
     "CONVERT_XTREAM_BODY1": "Kaynak, Xtream girişiyle yeniden içe aktarılır. Favoriler, geçmiş, gizlenen ve kilitli gruplar ile planlanmış kayıtlar kanal adına göre korunur.",
-    "CONVERT_XTREAM_BODY2": "Bu işlem, kaynağı yenilemek kadar sürer. Başarısız olursa kaynak değişmeden kalır."
+    "CONVERT_XTREAM_BODY2": "Bu işlem, kaynağı yenilemek kadar sürer. Başarısız olursa kaynak değişmeden kalır.",
+    "DELETE_ALERT_TITLE": "Otomatik kural silinsin mi?",
+    "DELETE_ALERT_REMIND_BODY": "Başlığında \"{{query}}\" geçen programlar artık otomatik hatırlatma almayacak.",
+    "DELETE_ALERT_RECORD_BODY": "Başlığında \"{{query}}\" geçen programlar artık otomatik olarak kaydedilmeyecek.",
+    "DELETE_ALERT_KEEP": "Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır. Artık istemiyorsan bunları tek tek kaldır."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Kanallara dön",
@@ -656,7 +683,13 @@
     "MINIMIZE": "Küçült",
     "EXPAND": "Büyüt",
     "CLOSE": "Kapat",
-    "MINI_PLAYER": "Mini oynatıcı"
+    "MINI_PLAYER": "Mini oynatıcı",
+    "ZAP_NUMBER": "Kanal {{number}}",
+    "ZAP_UNKNOWN": "Kanal {{number}} yok",
+    "FALLBACK_SWITCHING": "{{name}} kanalına geçiliyor …",
+    "STREAM_INFO": "Yayın bilgisi",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "Kanal",
@@ -673,7 +706,19 @@
     "TODAY": "Bugün",
     "TOMORROW": "Yarın",
     "WATCH": "İzle",
-    "REMIND": "Hatırlat"
+    "REMIND": "Hatırlat",
+    "ALERTS_LABEL": "Bu arama için otomatik hatırlatmalar ve kayıtlar",
+    "ALERT_REMIND": "\"{{query}}\" için her zaman hatırlat",
+    "ALERT_RECORD": "\"{{query}}\" için her zaman kaydet",
+    "ALERT_REMIND_ACTIVE": "\"{{query}}\" için hatırlatma etkin",
+    "ALERT_RECORD_ACTIVE": "\"{{query}}\" için kayıt etkin",
+    "ALERT_REMIND_REMOVE": "\"{{query}}\" için otomatik hatırlatmayı durdur",
+    "ALERT_RECORD_REMOVE": "\"{{query}}\" için otomatik kaydı durdur",
+    "ALERT_HINT": "Başlığında bu metin geçen her program için geçerlidir, rehbere sonradan eklenenler de dahil.",
+    "ALERT_NEEDS_TRAY": "Hatırlatmalar için tepsi simgesi gerekir (Ayarlar → Genel).",
+    "ALERT_REMIND_ADDED": "Başlığında \"{{query}}\" geçen her program için hatırlatılacaksın, rehbere sonradan eklenenler de dahil.",
+    "ALERT_RECORD_ADDED": "Başlığında \"{{query}}\" geçen her program kaydedilecek, rehbere sonradan eklenenler de dahil.",
+    "ALERT_REMOVED": "\"{{query}}\" için otomatik kural durduruldu. Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır."
   },
   "PARENTAL": {
     "CONFIRM": "Tamam",
@@ -709,7 +754,21 @@
     "PLAY": "Oynat",
     "PLAY_ARIA": "{{name}} oynat",
     "UNKNOWN_CHANNEL": "Bilinmeyen kanal",
-    "OPEN_FOLDER": "Klasörü aç"
+    "OPEN_FOLDER": "Klasörü aç",
+    "ALERTS": "Otomatik kayıtlar ve hatırlatmalar",
+    "ALERTS_EMPTY": "Henüz otomatik kayıt veya hatırlatma yok",
+    "ALERTS_EMPTY_HINT": "Bir başlığın bir kısmını gir: önümüzdeki 7 gün içinde bunu içeren her program kaydedilir ya da sana hatırlatılır, rehbere sonradan eklenen programlar da dahil. Bunun için Ayarlar → Harici EPG bölümünde harici EPG kaynakları (XMLTV) gerekir.",
+    "ALERTS_LOAD_FAILED": "Otomatik kayıtlar ve hatırlatmalar yüklenemedi",
+    "ALERT_QUERY_LABEL": "Başlık şunu içerir",
+    "ALERT_QUERY_PLACEHOLDER": "Program başlığının bir kısmı",
+    "ALERT_ACTION_LABEL": "İşlem",
+    "ALERT_ADD": "Ekle",
+    "ALERT_TOO_SHORT": "En az {{count}} karakter gir.",
+    "ALERT_EXISTS": "Bu kural zaten var.",
+    "ALERT_KIND_REMIND": "Hatırlatma",
+    "ALERT_KIND_RECORD": "Kayıt",
+    "ALERT_CREATED": "Oluşturuldu: {{date}}",
+    "ALERT_DELETE_ARIA": "\"{{query}}\" için otomatik kuralı sil"
   },
   "EPG_MAPPING": {
     "TITLE": "EPG ata",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "Rehber kanalı bulunamadı.",
     "AUTO": "Otomatik ata",
     "XTREAM_NOTE": "Burada atanan rehber, bu kanal için sağlayıcının kendi rehberinin ve dolayısıyla geçmiş programları izleme (catch-up) özelliğinin yerini alır."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "Favori listeleri",
+    "NEW_LIST": "Yeni liste",
+    "NEW_LIST_ELLIPSIS": "Yeni liste…",
+    "LIST_OPTIONS": "“{{name}}” listesi için seçenekler",
+    "CHIP_LABEL": "{{name}}, {{count}} kanal",
+    "RENAME": "Yeniden adlandır",
+    "NAME": "Listenin adı",
+    "CREATE_TITLE": "Yeni favori listesi",
+    "RENAME_TITLE": "Listeyi yeniden adlandır",
+    "CREATE": "Oluştur",
+    "DELETE_TITLE": "Liste silinsin mi?",
+    "DELETE_BODY": "“{{name}}” listesi silinecek. Kanalların kendisi ve favorilerin korunur.",
+    "DELETED": "“{{name}}” listesi silindi",
+    "CREATE_FAILED": "Liste oluşturulamadı",
+    "RENAME_FAILED": "Liste yeniden adlandırılamadı",
+    "DELETE_FAILED": "Liste silinemedi",
+    "ADDED": "“{{name}}”, “{{list}}” listesine eklendi",
+    "REMOVED": "“{{name}}”, “{{list}}” listesinden çıkarıldı",
+    "UPDATE_FAILED": "“{{name}}” için “{{list}}” listesi değiştirilemedi",
+    "EMPTY": "Bu liste boş",
+    "EMPTY_HINT": "Bir kanala sağ tıklayıp “Listeye ekle”yi seç",
+    "ADD_TO_LIST": "Listeye ekle",
+    "REMOVE_FROM_LIST": "Listeden çıkar",
+    "MOVE_FORWARD": "Öne taşı",
+    "MOVE_BACK": "Arkaya taşı",
+    "REORDER_HINT": "Sırayı değiştirmek için kutucukları sürükle veya bağlam menüsünde “Öne/Arkaya taşı”yı kullan",
+    "MOVE_FAILED": "Yeni sıralama kaydedilemedi"
   }
 }

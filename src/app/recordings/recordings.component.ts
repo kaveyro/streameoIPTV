@@ -5,16 +5,19 @@ import { TranslateService } from "@ngx-translate/core";
 import { ErrorService } from "../error.service";
 import { ConfirmService } from "../confirm.service";
 import { PlaybackService } from "../playback.service";
+import { MemoryService } from "../memory.service";
 import { RecordingStatus, ScheduledRecording } from "../models/scheduledRecording";
 import { RecordingFile } from "../models/recordingFile";
 import { Channel } from "../models/channel";
 import { MediaType } from "../models/mediaType";
+import { EPG_ALERT_MIN_LENGTH, EpgAlert, EpgAlertAction, findEpgAlert } from "../models/epgAlert";
 import { formatFileSize, uiLocale } from "../utils";
 
 /**
  * The recordings view of the home page: the recording schedule (pending,
- * running and finished scheduled recordings) and the finished files in the
- * recording folder.
+ * running and finished scheduled recordings), the saved guide searches that
+ * record or remind automatically, and the finished files in the recording
+ * folder.
  *
  * "Open folder" goes through a backend command: the shell plugin's scope
  * only opens web links, and the command can only open the recording folder.
@@ -29,13 +32,22 @@ export class RecordingsComponent implements OnInit, OnDestroy {
   /// The schedule and the folder are reloaded this often while the view is shown.
   static readonly REFRESH_MS = 30 * 1000;
   readonly statusEnum = RecordingStatus;
+  readonly alertMinLength = EPG_ALERT_MIN_LENGTH;
   schedule: ScheduledRecording[] = [];
   files: RecordingFile[] = [];
   folder?: string;
   scheduleLoaded = false;
   filesLoaded = false;
   clearing = false;
-  /// Rows with an action in progress ("s<id>" / "f<path>").
+  alerts: EpgAlert[] = [];
+  alertsLoaded = false;
+  /// The "add" form.
+  alertQuery = "";
+  alertAction: EpgAlertAction = "record";
+  /// Validation messages show after the first attempt to add.
+  alertTouched = false;
+  addingAlert = false;
+  /// Rows with an action in progress ("s<id>" / "a<id>" / "f<path>").
   busy = new Set<string>();
   private timer?: ReturnType<typeof setInterval>;
   private cachedFormats?: { dateTime: Intl.DateTimeFormat; time: Intl.DateTimeFormat };
@@ -46,10 +58,12 @@ export class RecordingsComponent implements OnInit, OnDestroy {
     private translate: TranslateService,
     private confirmService: ConfirmService,
     private playback: PlaybackService,
+    public memory: MemoryService,
   ) {}
 
   ngOnInit(): void {
     this.refresh(false);
+    this.loadAlerts();
     this.loadFolder();
     this.timer = setInterval(() => {
       // Nothing to show while the window is hidden (tray).
@@ -94,6 +108,17 @@ export class RecordingsComponent implements OnInit, OnDestroy {
       this.folder = await invoke<string>("get_recording_folder");
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  async loadAlerts(silent = false) {
+    try {
+      this.alerts = (await invoke<EpgAlert[]>("get_epg_alerts")) ?? [];
+    } catch (e) {
+      if (!silent)
+        this.error.handleError(e, this.translate.instant("RECORDINGS.ALERTS_LOAD_FAILED"));
+    } finally {
+      this.alertsLoaded = true;
     }
   }
 
@@ -167,6 +192,75 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 
   trackFile(_: number, file: RecordingFile) {
     return file.path;
+  }
+
+  trackAlert(_: number, alert: EpgAlert) {
+    return alert.id;
+  }
+
+  // ----------------------------------------------------------------- alerts
+
+  /// Why the form cannot be sent, as a translation key (undefined: it can).
+  alertProblem(): string | undefined {
+    const query = this.alertQuery.trim();
+    if (query.length < EPG_ALERT_MIN_LENGTH) return "RECORDINGS.ALERT_TOO_SHORT";
+    if (findEpgAlert(this.alerts, query, this.alertAction)) return "RECORDINGS.ALERT_EXISTS";
+    // Reminders are desktop notifications from the tray process.
+    if (this.alertAction === "remind" && !this.memory.trayEnabled) return "GUIDE.ALERT_NEEDS_TRAY";
+    return undefined;
+  }
+
+  async addAlert() {
+    if (this.addingAlert) return;
+    this.alertTouched = true;
+    if (this.alertProblem()) return;
+    const query = this.alertQuery.trim();
+    const action = this.alertAction;
+    this.addingAlert = true;
+    try {
+      await invoke<number>("add_epg_alert", { query, action });
+      this.error.success(
+        this.translate.instant(
+          action === "remind" ? "GUIDE.ALERT_REMIND_ADDED" : "GUIDE.ALERT_RECORD_ADDED",
+          { query },
+        ),
+      );
+      this.alertQuery = "";
+      this.alertTouched = false;
+    } catch (e) {
+      this.error.handleError(e);
+    } finally {
+      this.addingAlert = false;
+    }
+    // A recording alert has scheduled the matching programmes right away.
+    await Promise.all([this.loadAlerts(), this.loadSchedule()]);
+  }
+
+  async deleteAlert(alert: EpgAlert) {
+    const key = `a${alert.id}`;
+    if (this.busy.has(key)) return;
+    const confirmed = await this.confirmService.confirm({
+      title: "CONFIRM.DELETE_ALERT_TITLE",
+      messages: [
+        alert.action === "remind"
+          ? "CONFIRM.DELETE_ALERT_REMIND_BODY"
+          : "CONFIRM.DELETE_ALERT_RECORD_BODY",
+        "CONFIRM.DELETE_ALERT_KEEP",
+      ],
+      confirmLabel: "MODAL.DELETE",
+      params: { query: alert.query },
+    });
+    if (!confirmed) return;
+    this.busy.add(key);
+    try {
+      await invoke("delete_epg_alert", { id: alert.id });
+      this.error.success(this.translate.instant("GUIDE.ALERT_REMOVED", { query: alert.query }));
+    } catch (e) {
+      this.error.handleError(e);
+    } finally {
+      this.busy.delete(key);
+    }
+    await this.loadAlerts();
   }
 
   async cancel(recording: ScheduledRecording) {

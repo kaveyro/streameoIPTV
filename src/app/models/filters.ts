@@ -17,4 +17,7 @@ export class Filters {
   public show_locked?: boolean;
   /// Only names with this country prefix ("TR"); undefined for all.
   public country?: string;
+  /// Favorites view only: show this favorites list instead of the favorites
+  /// (with SortType.custom in the list's own order).
+  public favorite_list?: number;
 }

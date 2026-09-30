@@ -27,6 +27,13 @@
       </svg>
       <span>{{ "PLAYER.CHANNELS" | translate }}</span>
     </button>
+    <!-- The channel number being typed; mpv's OSD shows it over the video.
+         Always rendered, so screen readers pick up the live region. -->
+    <span class="pzap" role="status" aria-live="polite"
+      ><ng-container *ngIf="zapDigits">{{
+        "PLAYER.ZAP_NUMBER" | translate: { number: zapDigits + "_" }
+      }}</ng-container></span
+    >
     <span class="ptitle" [title]="current?.name">
       <ng-container *ngTemplateOutlet="channelName; context: { $implicit: current }"></ng-container>
     </span>
@@ -54,6 +61,16 @@
         {{ nowPlaying.next.title }}
       </span>
     </div>
+    <ul
+      class="pinfo"
+      *ngIf="streamBadges.length > 0"
+      [title]="streamInfoText"
+      [attr.aria-label]="'PLAYER.STREAM_INFO' | translate"
+    >
+      <li class="pinfo-badge" *ngFor="let badge of streamBadges" [class.pinfo-extra]="badge.extra">
+        {{ badge.text }}
+      </li>
+    </ul>
     <button
       type="button"
       class="pbtn"

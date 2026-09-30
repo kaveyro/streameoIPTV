@@ -8,6 +8,7 @@ import { EPG } from "../models/epg";
 import { Filters } from "../models/filters";
 import { MediaType } from "../models/mediaType";
 import { ProgrammeHit } from "../models/epgExtras";
+import { EpgAlert } from "../models/epgAlert";
 import { CountryNamePipe } from "../pipes/country-name.pipe";
 import {
   IpcCall,
@@ -368,6 +369,95 @@ describe("TvGuideComponent", () => {
       fixture.detectChanges();
       expect(results()).toContain("GUIDE.SEARCH_SCOPE");
       expect(results()).not.toContain("GUIDE.SEARCH_NEEDS_XMLTV");
+    });
+
+    describe("always remind / record", () => {
+      const bar = () => element.querySelector(".guide-alerts");
+      const addButton = (action: string) =>
+        element.querySelector(`#guide-alert-${action}-add`) as HTMLButtonElement | null;
+      const removeButton = (action: string) =>
+        element.querySelector(`#guide-alert-${action}-remove`) as HTMLButtonElement | null;
+
+      /// A backend that keeps the alerts added and deleted during the test.
+      function alertBackend(initial: EpgAlert[] = []) {
+        let alerts = [...initial];
+        return {
+          get_epg_alerts: () => alerts,
+          add_epg_alert: (args: Record<string, unknown>) => {
+            const id = alerts.length + 100;
+            alerts = alerts.concat({
+              id,
+              query: args["query"] as string,
+              action: args["action"] as EpgAlert["action"],
+              created: now,
+            });
+            return id;
+          },
+          delete_epg_alert: (args: Record<string, unknown>) => {
+            alerts = alerts.filter((a) => a.id !== args["id"]);
+            return null;
+          },
+        };
+      }
+
+      it("records every match, refreshes the rows and shows the alert as active", async () => {
+        await create({ search_programmes: hits, ...alertBackend() });
+        TestBed.inject(MemoryService).HasXmltv = true;
+        await type("Tatort");
+        expect(bar()).not.toBeNull();
+        const epgIdsBefore = callsOf(calls, "get_epg_ids").length;
+        const scheduledBefore = callsOf(calls, "get_scheduled_recordings").length;
+        addButton("record")!.click();
+        await settle();
+        fixture.detectChanges();
+        expect(callsOf(calls, "add_epg_alert").map((c) => c.args)).toEqual([
+          { query: "Tatort", action: "record" },
+        ]);
+        // The result rows pick up the reminders and recordings it created.
+        expect(callsOf(calls, "get_scheduled_recordings").length).toBe(scheduledBefore + 1);
+        expect(callsOf(calls, "get_epg_ids").length).toBe(epgIdsBefore + 1);
+        expect(addButton("record")).toBeNull();
+        expect(bar()!.textContent).toContain("GUIDE.ALERT_RECORD_ACTIVE");
+
+        removeButton("record")!.click();
+        await settle();
+        fixture.detectChanges();
+        expect(callsOf(calls, "delete_epg_alert").map((c) => c.args)).toEqual([{ id: 100 }]);
+        expect(addButton("record")).not.toBeNull();
+      });
+
+      it("matches an existing alert case-insensitively", async () => {
+        await create({
+          search_programmes: hits,
+          ...alertBackend([{ id: 5, query: "tatort", action: "remind", created: now }]),
+        });
+        const memory = TestBed.inject(MemoryService);
+        memory.HasXmltv = true;
+        memory.trayEnabled = true;
+        await type("TATORT ");
+        expect(addButton("remind")).toBeNull();
+        expect(removeButton("remind")).not.toBeNull();
+        expect(addButton("record")).not.toBeNull();
+        // A different query has no alert yet.
+        await type("Tatort classic");
+        expect(addButton("remind")).not.toBeNull();
+        expect(addButton("remind")!.disabled).toBeFalse();
+      });
+
+      it("needs the tray icon for reminders and XMLTV data for new alerts", async () => {
+        await create({ search_programmes: hits, ...alertBackend() });
+        const memory = TestBed.inject(MemoryService);
+        memory.HasXmltv = false;
+        await type("Tatort");
+        expect(bar()).toBeNull();
+        memory.HasXmltv = true;
+        memory.trayEnabled = false;
+        fixture.detectChanges();
+        expect(addButton("remind")!.disabled).toBeTrue();
+        expect(bar()!.textContent).toContain("GUIDE.ALERT_NEEDS_TRAY");
+        await component.addAlert("remind");
+        expect(callsOf(calls, "add_epg_alert").length).toBe(0);
+      });
     });
   });
 });

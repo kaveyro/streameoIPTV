@@ -237,6 +237,23 @@
   min-width: 0;
 }
 
+/* Own order (favorites, sort "own order"): tiles can be dragged. The preview
+   is a clone of the tile appended to <body>, so no .tile-grid ancestor. */
+.tile-grid.reorderable > app-channel-tile {
+  cursor: grab;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+
+.cdk-drag-preview {
+  border-radius: var(--radius-tile);
+  box-shadow: 0 0 0 2px var(--accent);
+  opacity: 0.9;
+  cursor: grabbing;
+}
+
 /* ------------------------------- Misc ---------------------------------- */
 .clickable {
   cursor: pointer;

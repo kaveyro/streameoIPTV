@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "채널 정렬",
     "ALPHABETICAL_ASC": "알파벳 오름차순",
     "ALPHABETICAL_DESC": "알파벳 내림차순",
-    "PROVIDER": "제공업체"
+    "PROVIDER": "제공업체",
+    "CUSTOM": "사용자 지정 순서",
+    "NUMBER": "채널 번호"
   },
   "SHORTCUT": {
     "SEARCH": "검색",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "예: ko,en",
       "MPV_PARAMS_PLACEHOLDER": "예: --hwdec=auto",
       "DEBUG_LOG": "플레이어 로그 기록",
-      "DEBUG_LOG_DESC": "문제 해결 전용: 로그 폴더의 mpv.log에 포함된 로그인 정보를 비롯해 모든 스트림 주소가 기록됩니다. 다음에 플레이어를 열 때 적용됩니다."
+      "DEBUG_LOG_DESC": "문제 해결 전용: 로그 폴더의 mpv.log에 포함된 로그인 정보를 비롯해 모든 스트림 주소가 기록됩니다. 다음에 플레이어를 열 때 적용됩니다.",
+      "AUTO_FALLBACK": "스트림이 끊기면 채널의 다른 스트림으로 전환",
+      "AUTO_FALLBACK_DESC": "라이브 스트림이 끊기면 플레이어가 같은 채널의 다른 화질(예: HD에서 SD)로 자동 전환합니다."
     },
     "RECORDING": {
       "PATH": "녹화 경로",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "지우기",
       "DELETE_ALL": "모두 삭제",
       "DELETE_ALL_DESC": "모든 소스, 채널, 즐겨찾기, 설정을 제거합니다. 업그레이드로 발생 중인 버그가 해결되지 않은 경우 사용하세요.",
-      "DELETE_BTN": "삭제"
+      "DELETE_BTN": "삭제",
+      "LOG_FOLDER": "로그 파일",
+      "LOG_FOLDER_DESC": "앱과 플레이어의 로그 파일이 있는 폴더를 엽니다.",
+      "LOG_FOLDER_BTN": "로그 폴더 열기",
+      "DIAGNOSTICS": "진단 보고서",
+      "DIAGNOSTICS_DESC": "비밀번호나 스트림 주소가 포함되지 않으므로 버그 신고에 첨부할 수 있습니다.",
+      "DIAGNOSTICS_BTN": "진단 내보내기…"
     },
     "RESTORE_MODAL": {
       "TITLE": "데이터베이스 복원 확인",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "데이터베이스 백업 선택",
       "SQLITE_DATABASE": "SQLite 데이터베이스",
       "SAVE_FAVORITES": "즐겨찾기 재생 목록을 저장할 위치 선택",
-      "M3U_PLAYLIST": "M3U 재생 목록"
+      "M3U_PLAYLIST": "M3U 재생 목록",
+      "SAVE_DIAGNOSTICS": "진단 보고서를 저장할 위치 선택",
+      "TEXT_FILE": "텍스트 파일"
     },
     "EPG": {
       "TITLE": "외부 EPG",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "이 M3U 링크에는 Xtream 로그인이 포함되어 있습니다. Xtream 소스로 가져오면 제공업체의 EPG, 놓친 프로그램 다시보기, 시즌별 시리즈를 이용할 수 있습니다.",
     "XTREAM_DETECTED_BODY2": "Xtream으로 가져오는 것을 권장하지만, 일반 M3U 링크로 가져올 수도 있습니다.",
     "IMPORT_AS_XTREAM": "Xtream으로 가져오기(권장)",
-    "IMPORT_AS_M3U": "M3U 링크로 가져오기"
+    "IMPORT_AS_M3U": "M3U 링크로 가져오기",
+    "EPG_TITLE": "편성표 (EPG)",
+    "EPG_INTRO": "무료 편성표로 채널에서 방송 중인 내용을 볼 수 있습니다. 채널 국가에 맞는 편성표를 선택하세요(나중에 설정에서 변경할 수 있음).",
+    "EPG_APPLY": "적용",
+    "EPG_SKIP": "건너뛰기",
+    "DONE_TITLE": "완료",
+    "DONE_TEXT": "소스 설정이 완료되었습니다. 즐겁게 시청하세요!",
+    "GO_TO_CHANNELS": "채널로 이동"
   },
   "EPG": {
     "PLAYING_NOW": "지금 재생 중",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "소스를 Xtream으로 변환하지 못했습니다",
     "EPG_MAPPED": "{{name}}에 이제 {{id}}의 편성표가 표시됩니다",
     "EPG_MAPPING_REMOVED": "{{name}}의 EPG가 다시 자동으로 지정됩니다",
-    "EPG_MAPPING_FAILED": "EPG를 지정할 수 없습니다"
+    "EPG_MAPPING_FAILED": "EPG를 지정할 수 없습니다",
+    "LOG_FOLDER_FAILED": "로그 폴더를 열 수 없습니다",
+    "DIAGNOSTICS_EXPORTED": "진단 보고서를 {{path}}에 저장했습니다",
+    "DIAGNOSTICS_EXPORT_FAILED": "진단 보고서를 내보낼 수 없습니다",
+    "EPG_LOADING": "편성표를 백그라운드에서 불러오는 중…"
   },
   "UPDATE": {
     "TITLE": "업데이트 있음",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "잠긴 모든 그룹의 잠금이 해제되어 모두에게 표시됩니다.",
     "CONVERT_XTREAM_TITLE": "“{{name}}”을(를) Xtream으로 변환할까요?",
     "CONVERT_XTREAM_BODY1": "소스를 Xtream 로그인으로 다시 가져옵니다. 즐겨찾기, 기록, 숨긴 그룹과 잠긴 그룹, 예약 녹화는 채널 이름 기준으로 유지됩니다.",
-    "CONVERT_XTREAM_BODY2": "소스를 새로 고치는 것과 비슷한 시간이 걸립니다. 실패하면 소스는 변경되지 않습니다."
+    "CONVERT_XTREAM_BODY2": "소스를 새로 고치는 것과 비슷한 시간이 걸립니다. 실패하면 소스는 변경되지 않습니다.",
+    "DELETE_ALERT_TITLE": "자동 규칙을 삭제할까요?",
+    "DELETE_ALERT_REMIND_BODY": "제목에 \"{{query}}\"이(가) 포함된 프로그램에 더 이상 자동 알림이 전송되지 않습니다.",
+    "DELETE_ALERT_RECORD_BODY": "제목에 \"{{query}}\"이(가) 포함된 프로그램이 더 이상 자동으로 녹화되지 않습니다.",
+    "DELETE_ALERT_KEEP": "이미 만든 알림과 녹화는 그대로 유지됩니다. 더 이상 필요 없으면 하나씩 삭제하세요."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "채널로 돌아가기",
@@ -656,7 +683,13 @@
     "MINIMIZE": "축소",
     "EXPAND": "확대",
     "CLOSE": "닫기",
-    "MINI_PLAYER": "미니 플레이어"
+    "MINI_PLAYER": "미니 플레이어",
+    "ZAP_NUMBER": "채널 {{number}}",
+    "ZAP_UNKNOWN": "채널 {{number}} 없음",
+    "FALLBACK_SWITCHING": "{{name}}(으)로 전환 중 …",
+    "STREAM_INFO": "스트림 정보",
+    "BITRATE_MBITS": "{{value}} Mbps",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "채널",
@@ -673,7 +706,19 @@
     "TODAY": "오늘",
     "TOMORROW": "내일",
     "WATCH": "시청",
-    "REMIND": "알림 받기"
+    "REMIND": "알림 받기",
+    "ALERTS_LABEL": "이 검색에 대한 자동 알림 및 녹화",
+    "ALERT_REMIND": "\"{{query}}\" 항상 알림",
+    "ALERT_RECORD": "\"{{query}}\" 항상 녹화",
+    "ALERT_REMIND_ACTIVE": "\"{{query}}\" 알림 사용 중",
+    "ALERT_RECORD_ACTIVE": "\"{{query}}\" 녹화 사용 중",
+    "ALERT_REMIND_REMOVE": "\"{{query}}\" 자동 알림 중지",
+    "ALERT_RECORD_REMOVE": "\"{{query}}\" 자동 녹화 중지",
+    "ALERT_HINT": "제목에 이 텍스트가 포함된 모든 프로그램에 적용되며, 나중에 편성표에 추가되는 프로그램도 포함됩니다.",
+    "ALERT_NEEDS_TRAY": "알림을 받으려면 트레이 아이콘이 필요합니다(설정 → 일반).",
+    "ALERT_REMIND_ADDED": "제목에 \"{{query}}\"이(가) 포함된 모든 프로그램을 알려 드립니다. 나중에 편성표에 추가되는 프로그램도 포함됩니다.",
+    "ALERT_RECORD_ADDED": "제목에 \"{{query}}\"이(가) 포함된 모든 프로그램이 녹화됩니다. 나중에 편성표에 추가되는 프로그램도 포함됩니다.",
+    "ALERT_REMOVED": "\"{{query}}\" 자동 규칙을 중지했습니다. 이미 만든 알림과 녹화는 그대로 유지됩니다."
   },
   "PARENTAL": {
     "CONFIRM": "확인",
@@ -709,7 +754,21 @@
     "PLAY": "재생",
     "PLAY_ARIA": "{{name}} 재생",
     "UNKNOWN_CHANNEL": "알 수 없는 채널",
-    "OPEN_FOLDER": "폴더 열기"
+    "OPEN_FOLDER": "폴더 열기",
+    "ALERTS": "자동 녹화 및 알림",
+    "ALERTS_EMPTY": "아직 자동 녹화나 알림이 없습니다",
+    "ALERTS_EMPTY_HINT": "제목의 일부를 입력하세요. 앞으로 7일 동안 이를 포함하는 모든 프로그램이 녹화되거나 알림이 전송되며, 나중에 편성표에 추가되는 프로그램도 포함됩니다. 설정 → 외부 EPG에서 외부 EPG 소스(XMLTV)를 추가해야 합니다.",
+    "ALERTS_LOAD_FAILED": "자동 녹화 및 알림을 불러오지 못했습니다",
+    "ALERT_QUERY_LABEL": "제목에 포함",
+    "ALERT_QUERY_PLACEHOLDER": "프로그램 제목의 일부",
+    "ALERT_ACTION_LABEL": "동작",
+    "ALERT_ADD": "추가",
+    "ALERT_TOO_SHORT": "{{count}}자 이상 입력하세요.",
+    "ALERT_EXISTS": "이미 있는 규칙입니다.",
+    "ALERT_KIND_REMIND": "알림",
+    "ALERT_KIND_RECORD": "녹화",
+    "ALERT_CREATED": "만든 날짜: {{date}}",
+    "ALERT_DELETE_ARIA": "\"{{query}}\" 자동 규칙 삭제"
   },
   "EPG_MAPPING": {
     "TITLE": "EPG 지정",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "편성표 채널을 찾을 수 없습니다.",
     "AUTO": "자동 지정",
     "XTREAM_NOTE": "여기서 지정한 편성표는 이 채널의 제공자 편성표를 대신하며, 그에 따라 지난 프로그램 다시 보기(catch-up)도 사용할 수 없게 됩니다."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "즐겨찾기 목록",
+    "NEW_LIST": "새 목록",
+    "NEW_LIST_ELLIPSIS": "새 목록…",
+    "LIST_OPTIONS": "‘{{name}}’ 목록 옵션",
+    "CHIP_LABEL": "{{name}}, 채널 {{count}}개",
+    "RENAME": "이름 바꾸기",
+    "NAME": "목록 이름",
+    "CREATE_TITLE": "새 즐겨찾기 목록",
+    "RENAME_TITLE": "목록 이름 바꾸기",
+    "CREATE": "만들기",
+    "DELETE_TITLE": "목록을 삭제할까요?",
+    "DELETE_BODY": "‘{{name}}’ 목록이 삭제됩니다. 채널 자체와 즐겨찾기는 그대로 유지됩니다.",
+    "DELETED": "‘{{name}}’ 목록을 삭제했습니다",
+    "CREATE_FAILED": "목록을 만들지 못했습니다",
+    "RENAME_FAILED": "목록 이름을 바꾸지 못했습니다",
+    "DELETE_FAILED": "목록을 삭제하지 못했습니다",
+    "ADDED": "‘{{name}}’을(를) ‘{{list}}’에 추가했습니다",
+    "REMOVED": "‘{{name}}’을(를) ‘{{list}}’에서 제거했습니다",
+    "UPDATE_FAILED": "‘{{name}}’의 ‘{{list}}’ 목록을 변경하지 못했습니다",
+    "EMPTY": "이 목록은 비어 있습니다",
+    "EMPTY_HINT": "채널을 마우스 오른쪽 버튼으로 클릭하고 ‘목록에 추가’를 선택하세요",
+    "ADD_TO_LIST": "목록에 추가",
+    "REMOVE_FROM_LIST": "목록에서 제거",
+    "MOVE_FORWARD": "앞으로 이동",
+    "MOVE_BACK": "뒤로 이동",
+    "REORDER_HINT": "타일을 끌어 순서를 바꾸거나 컨텍스트 메뉴의 ‘앞으로/뒤로 이동’을 사용하세요",
+    "MOVE_FAILED": "새 순서를 저장하지 못했습니다"
   }
 }

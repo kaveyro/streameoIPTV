@@ -15,13 +15,56 @@ import { TranslateService } from "@ngx-translate/core";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { MemoryService } from "../memory.service";
 import { Channel } from "../models/channel";
+import { MediaType } from "../models/mediaType";
 import { ErrorService } from "../error.service";
 import { NowPlaying, NowPlayingService } from "../now-playing.service";
 import { splitCountryPrefix } from "../country-prefix";
 
 /// Keys the backend forwards while mpv (not the WebView) has keyboard focus,
-/// see the `player-key` event.
-type PlayerKey = "next" | "prev" | "back" | "last";
+/// see the `player-key` event. The digits (top row and numpad) come as
+/// `digit-0` … `digit-9`, for the channel number entry.
+type PlayerKey = "next" | "prev" | "back" | "last" | `digit-${number}`;
+
+/// What mpv reports about the running stream (`player-stream-info`).
+interface StreamInfo {
+  width?: number | null;
+  height?: number | null;
+  video_codec?: string | null;
+  audio_codec?: string | null;
+  /** Bits per second. */
+  bitrate?: number | null;
+  fps?: number | null;
+}
+
+/// One entry of the stream info in the player bar. `extra` ones are the first
+/// to go when the bar gets narrow.
+interface StreamBadge {
+  text: string;
+  extra: boolean;
+}
+
+/// Common names of mpv's (ffmpeg's) video codec ids; others are upper-cased.
+const VIDEO_CODEC_NAMES: Record<string, string> = {
+  h264: "H.264",
+  hevc: "HEVC",
+  h265: "HEVC",
+  mpeg2video: "MPEG-2",
+  mpeg1video: "MPEG-1",
+  mpeg4: "MPEG-4",
+};
+
+/// The channel number from the playlist/provider, when it has one.
+function channelNumber(channel: Channel): number | undefined {
+  const number = (channel as { number?: number | null }).number;
+  return typeof number === "number" ? number : undefined;
+}
+
+function resolutionLabel(height: number): string {
+  if (height >= 2160) return "4K";
+  if (height >= 1080) return "1080p";
+  if (height >= 720) return "720p";
+  return `${height}p`;
+}
 
 /// Class on <body> while the player is shown (the toasts are styled with it).
 const BODY_CLASS = "player-open";
@@ -60,6 +103,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private static readonly ERROR_TOAST_INTERVAL_MS = 5000;
   /// How often the now/next line and its progress bar are refreshed.
   private static readonly EPG_REFRESH_MS = 30 * 1000;
+  /// Pause after the last typed digit before the channel number is taken.
+  private static readonly ZAP_TIMEOUT_MS = 1500;
+  /// A number this long is taken right away (no provider numbers beyond it).
+  private static readonly ZAP_MAX_DIGITS = 5;
   active = false;
   /// Playing on in the small corner window while the rest of the app is used.
   mini = false;
@@ -71,6 +118,24 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   filterText = "";
   nowPlaying?: NowPlaying;
   nowProgress = 0;
+  /// Digits of the channel number being typed (empty when none).
+  zapDigits = "";
+  /// Stream info badges of the running stream, see `player-stream-info`.
+  streamBadges: StreamBadge[] = [];
+  /// The same as one line, for the tooltip.
+  streamInfoText = "";
+  private zapTimer?: ReturnType<typeof setTimeout>;
+  /// False from a channel switch until its play went out: mpv's info about the
+  /// previous stream that is still on its way must not show for the new one.
+  private streamInfoReady = false;
+  /// Channel ids the automatic fallback already played (or started from)
+  /// since the user last picked a channel. Never played twice, so it can't loop.
+  private fallbackTried = new Set<number>();
+  /// No untried alternative was left: report further errors as usual.
+  private fallbackExhausted = false;
+  /// switchSeq of the fallback lookup in flight: mpv's retries of the failed
+  /// stream report errors meanwhile, they must not start a second one.
+  private fallbackSeq?: number;
   private initialized = false;
   /// Shared by concurrent opens so player_init runs only once.
   private initPromise?: Promise<void>;
@@ -134,22 +199,22 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       this.ngZone.run(() => (this.mini ? this.expand() : this.toggleFullscreen()));
     }).then((unlisten) => this.unlistens.push(unlisten));
     // Channel keys pressed while mpv has keyboard focus (the WebView gets no
-    // key events then): PgDn/PgUp/Esc/Backspace.
+    // key events then): PgDn/PgUp/Esc/Backspace and the digits.
     listen<string>("player-key", (event) => {
       if (!this.active) return;
       this.ngZone.run(() => this.handlePlayerKey(event.payload as PlayerKey));
+    }).then((unlisten) => this.unlistens.push(unlisten));
+    // Resolution, codecs, bitrate and frame rate for the player bar.
+    listen<StreamInfo>("player-stream-info", (event) => {
+      if (!this.active || !this.streamInfoReady) return;
+      this.ngZone.run(() => this.setStreamInfo(event.payload));
     }).then((unlisten) => this.unlistens.push(unlisten));
     // mpv failed to open or read the stream. Without this the video area would
     // just stay black: mpv's output is not captured anywhere else.
     listen<string>("player-error", (event) => {
       // Selecting the failed channel again must retry it.
       this.currentFailed = true;
-      // A live stream that keeps failing makes mpv retry (loop-playlist=inf),
-      // so report at most one failure per interval instead of a toast storm.
-      const now = Date.now();
-      if (now - this.lastErrorAt < PlayerComponent.ERROR_TOAST_INTERVAL_MS) return;
-      this.lastErrorAt = now;
-      this.ngZone.run(() => this.reportPlaybackError(event.payload));
+      this.ngZone.run(() => this.onPlaybackError(event.payload));
     }).then((unlisten) => this.unlistens.push(unlisten));
     // mpv died or its IPC pipe broke and the backend tore the player down; the
     // next play has to build a new one.
@@ -233,6 +298,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.setCurrent(channel);
     this.currentFailed = false;
     this.nowPlaying = undefined;
+    this.clearStreamInfo();
+    this.cancelZap();
+    this.resetFallback();
     this.active = true;
     this.applyMode();
     const switchSeq = ++this.switchSeq;
@@ -247,6 +315,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         await this.undoIfClosed();
         return;
       }
+      if (switchSeq === this.switchSeq) this.streamInfoReady = true;
     } catch (e) {
       if (this.isStale(generation)) return;
       if (switchSeq === this.switchSeq) this.currentFailed = true;
@@ -373,6 +442,74 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.error.handleError(message, this.translate.instant("TOAST.PLAYER_ERROR"));
   }
 
+  /**
+   * A `player-error`: a live channel falls back to another feed of the same
+   * channel (SD/HD/backup) when the setting allows it; the error is reported
+   * only when none is left.
+   */
+  private async onPlaybackError(message: string) {
+    const failed = this.current;
+    if (
+      this.active &&
+      failed &&
+      this.memory.AutoFallback &&
+      failed.media_type === MediaType.livestream &&
+      !this.fallbackExhausted
+    ) {
+      // mpv keeps retrying the failed stream: its further errors wait for the
+      // lookup already running for this switch.
+      if (this.fallbackSeq === this.switchSeq) return;
+      const outcome = await this.fallBackFrom(failed);
+      if (outcome !== "none") return;
+    }
+    // A live stream that keeps failing makes mpv retry (loop-playlist=inf),
+    // so report at most one failure per interval instead of a toast storm.
+    const now = Date.now();
+    if (now - this.lastErrorAt < PlayerComponent.ERROR_TOAST_INTERVAL_MS) return;
+    this.lastErrorAt = now;
+    this.reportPlaybackError(message);
+  }
+
+  /**
+   * Switches to the best alternative of `failed` not tried since the user's
+   * last pick. "stale" when the user moved on meanwhile (the error belonged
+   * to a channel that is gone), "none" when nothing is left to try.
+   */
+  private async fallBackFrom(failed: Channel): Promise<"switched" | "none" | "stale"> {
+    const seq = this.switchSeq;
+    const generation = this.openGeneration;
+    this.fallbackSeq = seq;
+    if (failed.id !== undefined) this.fallbackTried.add(failed.id);
+    let alternatives: Channel[] = [];
+    try {
+      alternatives = await invoke<Channel[]>("get_alternative_streams", {
+        channel: failed,
+        showLocked: this.memory.ShowLocked,
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (this.fallbackSeq === seq) this.fallbackSeq = undefined;
+    }
+    if (!this.active || this.isStale(generation) || seq !== this.switchSeq) return "stale";
+    const next = alternatives.find((c) => c.id !== undefined && !this.fallbackTried.has(c.id));
+    if (!next) {
+      this.fallbackExhausted = true;
+      return "none";
+    }
+    this.fallbackTried.add(next.id!);
+    this.osd(this.translate.instant("PLAYER.FALLBACK_SWITCHING", { name: next.name ?? "" }));
+    this.switch(next, true);
+    return "switched";
+  }
+
+  /** A channel the user picked: the fallback may try every feed again. */
+  private resetFallback() {
+    this.fallbackTried.clear();
+    this.fallbackExhausted = false;
+    this.fallbackSeq = undefined;
+  }
+
   private async fallback(channel: Channel) {
     try {
       await invoke("play", { channel, record: false, recordPath: null });
@@ -381,7 +518,12 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  async switch(channel: Channel) {
+  /**
+   * Plays another channel in the open player. `fallback`: started by the
+   * automatic fallback, not by the user, so the feeds it already tried stay
+   * tried and its own OSD message stays up instead of the channel name.
+   */
+  async switch(channel: Channel, fallback = false) {
     if (!this.active) return;
     if (channel.id === this.current?.id && !this.currentFailed) {
       this.scrollActiveIntoView(false);
@@ -390,9 +532,11 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     const generation = this.openGeneration;
     const seq = ++this.switchSeq;
     const focusInList = this.isFocusInList();
+    if (!fallback) this.resetFallback();
     this.setCurrent(channel);
     this.currentFailed = false;
     this.nowPlaying = undefined;
+    this.clearStreamInfo();
     this.scrollActiveIntoView(focusInList);
     try {
       await this.playChannel(channel);
@@ -400,8 +544,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         await this.undoIfClosed();
         return;
       }
+      if (seq === this.switchSeq) this.streamInfoReady = true;
       invoke("add_last_watched", { id: channel.id }).catch(() => {});
-      if (seq === this.switchSeq) this.announce(channel);
+      if (seq === this.switchSeq) this.announce(channel, !fallback);
     } catch (e) {
       if (this.isStale(generation)) return;
       if (seq === this.switchSeq) this.currentFailed = true;
@@ -442,6 +587,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   private handlePlayerKey(key: PlayerKey) {
+    if (key.startsWith("digit-")) {
+      this.typeDigit(key.slice("digit-".length));
+      return;
+    }
     switch (key) {
       case "next":
         this.next();
@@ -484,6 +633,21 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement;
+    // Channel number entry (top row and numpad give the same `key`).
+    if (!inTextInput && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      if (/^[0-9]$/.test(event.key)) {
+        if (!event.repeat) this.typeDigit(event.key);
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (event.key === "Enter" && this.zapDigits) {
+        this.commitZap();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+    }
     switch (event.key) {
       case "Escape":
       case "BrowserBack":
@@ -507,6 +671,100 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
     event.preventDefault();
     event.stopImmediatePropagation();
+  }
+
+  /**
+   * One digit of a channel number. The typed number shows in mpv's OSD (the
+   * only surface over the video) and in the player bar; it is taken after a
+   * pause, on Enter or once it is as long as a number gets.
+   */
+  private typeDigit(digit: string) {
+    if (!this.active || !/^[0-9]$/.test(digit)) return;
+    if (this.zapTimer !== undefined) clearTimeout(this.zapTimer);
+    this.zapTimer = undefined;
+    this.zapDigits += digit;
+    if (this.zapDigits.length >= PlayerComponent.ZAP_MAX_DIGITS) {
+      this.commitZap();
+      return;
+    }
+    this.osd(`${this.zapDigits}_`);
+    this.zapTimer = setTimeout(() => this.commitZap(), PlayerComponent.ZAP_TIMEOUT_MS);
+  }
+
+  private cancelZap() {
+    if (this.zapTimer !== undefined) clearTimeout(this.zapTimer);
+    this.zapTimer = undefined;
+    this.zapDigits = "";
+  }
+
+  /** Switches to the channel with the typed number, if there is one. */
+  private commitZap() {
+    const digits = this.zapDigits;
+    this.cancelZap();
+    if (!digits || !this.active) return;
+    const number = parseInt(digits, 10);
+    const channel = this.channelByNumber(number);
+    if (!channel) {
+      this.osd(this.translate.instant("PLAYER.ZAP_UNKNOWN", { number }));
+      return;
+    }
+    if (channel.id === this.current?.id && !this.currentFailed) {
+      // Already on it: replace the typed number in the OSD with the name.
+      this.osd(channel.name ?? "");
+      this.scrollActiveIntoView(false);
+      return;
+    }
+    this.switch(channel);
+  }
+
+  /**
+   * The channel of the player's list with that number. A list without any
+   * numbers (most M3U playlists) is numbered by its order, starting at 1.
+   */
+  private channelByNumber(number: number): Channel | undefined {
+    const list = this.channels;
+    if (list.some((c) => channelNumber(c) !== undefined)) {
+      return list.find((c) => channelNumber(c) === number);
+    }
+    return number >= 1 ? list[number - 1] : undefined;
+  }
+
+  /** Drops the stream info until mpv reports the new stream. */
+  private clearStreamInfo() {
+    this.streamInfoReady = false;
+    this.streamBadges = [];
+    this.streamInfoText = "";
+  }
+
+  private setStreamInfo(info: StreamInfo) {
+    const badges: StreamBadge[] = [];
+    if (info.height) badges.push({ text: resolutionLabel(info.height), extra: false });
+    if (info.video_codec)
+      badges.push({ text: this.videoCodecName(info.video_codec), extra: false });
+    if (info.audio_codec) badges.push({ text: info.audio_codec.toUpperCase(), extra: false });
+    if (info.bitrate) {
+      const value = this.formatNumber(info.bitrate / 1_000_000, 1, 1);
+      badges.push({ text: this.translate.instant("PLAYER.BITRATE_MBITS", { value }), extra: true });
+    }
+    if (info.fps) {
+      const value = this.formatNumber(info.fps, 0, 2);
+      badges.push({ text: this.translate.instant("PLAYER.FPS_VALUE", { value }), extra: true });
+    }
+    this.streamBadges = badges;
+    this.streamInfoText = badges.map((b) => b.text).join(" · ");
+  }
+
+  private videoCodecName(codec: string): string {
+    return VIDEO_CODEC_NAMES[codec.toLowerCase()] ?? codec.toUpperCase();
+  }
+
+  private formatNumber(value: number, minDigits: number, maxDigits: number): string {
+    const options = { minimumFractionDigits: minDigits, maximumFractionDigits: maxDigits };
+    try {
+      return value.toLocaleString(this.translate.getCurrentLang() || "en", options);
+    } catch {
+      return value.toLocaleString(undefined, options);
+    }
   }
 
   private setCurrent(channel: Channel) {
@@ -535,10 +793,11 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
 
   /**
    * Shows the channel name (plus now/next when the guide has it) in mpv's
-   * OSD, the only surface visible over the video.
+   * OSD, the only surface visible over the video. Without `showName` a
+   * message already up (the fallback's) stays until now/next arrives.
    */
-  private announce(channel: Channel) {
-    this.osd(channel.name ?? "");
+  private announce(channel: Channel, showName = true) {
+    if (showName) this.osd(channel.name ?? "");
     this.loadNowPlaying(channel, true);
   }
 
@@ -652,6 +911,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
     this.filterText = "";
     this.nowPlaying = undefined;
+    this.clearStreamInfo();
+    this.cancelZap();
+    this.resetFallback();
     this.stopBoundsSync();
     this.stopEpgTimer();
     try {
@@ -730,6 +992,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
+    this.cancelZap();
     this.stopBoundsSync();
     this.stopEpgTimer();
     this.unlistens.forEach((unlisten) => unlisten());

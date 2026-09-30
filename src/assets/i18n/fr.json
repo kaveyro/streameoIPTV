@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "Trier les chaînes",
     "ALPHABETICAL_ASC": "Alphabétique croissant",
     "ALPHABETICAL_DESC": "Alphabétique décroissant",
-    "PROVIDER": "Fournisseur"
+    "PROVIDER": "Fournisseur",
+    "CUSTOM": "Ordre personnalisé",
+    "NUMBER": "Numéro de chaîne"
   },
   "SHORTCUT": {
     "SEARCH": "Rechercher",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "p. ex. fr,en",
       "MPV_PARAMS_PLACEHOLDER": "p. ex. --hwdec=auto",
       "DEBUG_LOG": "Écrire un journal du lecteur",
-      "DEBUG_LOG_DESC": "Pour le dépannage uniquement : mpv.log dans le dossier des journaux enregistre chaque adresse de flux, y compris les identifiants qu'elle contient. Prend effet à la prochaine ouverture du lecteur."
+      "DEBUG_LOG_DESC": "Pour le dépannage uniquement : mpv.log dans le dossier des journaux enregistre chaque adresse de flux, y compris les identifiants qu'elle contient. Prend effet à la prochaine ouverture du lecteur.",
+      "AUTO_FALLBACK": "Passer à un autre flux de la chaîne en cas de panne",
+      "AUTO_FALLBACK_DESC": "Si un flux en direct tombe en panne, le lecteur passe automatiquement à une autre qualité de la même chaîne, par exemple de HD à SD."
     },
     "RECORDING": {
       "PATH": "Chemin d'enregistrement",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "Effacer",
       "DELETE_ALL": "Tout supprimer",
       "DELETE_ALL_DESC": "Retire toutes les sources, chaînes, favoris et paramètres. Utilisez ceci si une mise à niveau n'a pas corrigé un bug que vous rencontrez.",
-      "DELETE_BTN": "Supprimer"
+      "DELETE_BTN": "Supprimer",
+      "LOG_FOLDER": "Fichiers journaux",
+      "LOG_FOLDER_DESC": "Ouvre le dossier contenant les journaux de l'application et du lecteur.",
+      "LOG_FOLDER_BTN": "Ouvrir le dossier des journaux",
+      "DIAGNOSTICS": "Rapport de diagnostic",
+      "DIAGNOSTICS_DESC": "Ne contient ni mots de passe ni adresses de flux : tu peux le joindre à un rapport de bug.",
+      "DIAGNOSTICS_BTN": "Exporter le diagnostic…"
     },
     "RESTORE_MODAL": {
       "TITLE": "Confirmer la restauration de la base de données",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "Sélectionnez une sauvegarde de la base de données",
       "SQLITE_DATABASE": "Base de données SQLite",
       "SAVE_FAVORITES": "Sélectionnez où enregistrer la playlist de favoris",
-      "M3U_PLAYLIST": "Playlist M3U"
+      "M3U_PLAYLIST": "Playlist M3U",
+      "SAVE_DIAGNOSTICS": "Choisis où enregistrer le rapport de diagnostic",
+      "TEXT_FILE": "Fichier texte"
     },
     "EPG": {
       "TITLE": "EPG externe",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "Ce lien M3U contient un identifiant Xtream. Importé comme source Xtream, vous obtenez l’EPG de votre fournisseur, le catch-up des programmes manqués et les séries classées par saison.",
     "XTREAM_DETECTED_BODY2": "L’import en Xtream est recommandé, mais vous pouvez aussi l’importer comme simple lien M3U.",
     "IMPORT_AS_XTREAM": "Importer en Xtream (recommandé)",
-    "IMPORT_AS_M3U": "Importer comme lien M3U"
+    "IMPORT_AS_M3U": "Importer comme lien M3U",
+    "EPG_TITLE": "Guide des programmes (EPG)",
+    "EPG_INTRO": "Les guides gratuits indiquent ce que diffusent tes chaînes : choisis ceux des pays de tes chaînes (tu pourras modifier cela plus tard dans les paramètres).",
+    "EPG_APPLY": "Appliquer",
+    "EPG_SKIP": "Passer",
+    "DONE_TITLE": "C'est prêt",
+    "DONE_TEXT": "Ta source est configurée. Bon visionnage !",
+    "GO_TO_CHANNELS": "Aller aux chaînes"
   },
   "EPG": {
     "PLAYING_NOW": "En cours de diffusion",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "Impossible de convertir la source en Xtream",
     "EPG_MAPPED": "{{name}} affiche désormais le guide de {{id}}",
     "EPG_MAPPING_REMOVED": "{{name}} reçoit de nouveau son EPG automatiquement",
-    "EPG_MAPPING_FAILED": "Impossible d'associer l'EPG"
+    "EPG_MAPPING_FAILED": "Impossible d'associer l'EPG",
+    "LOG_FOLDER_FAILED": "Impossible d'ouvrir le dossier des journaux",
+    "DIAGNOSTICS_EXPORTED": "Rapport de diagnostic enregistré dans {{path}}",
+    "DIAGNOSTICS_EXPORT_FAILED": "Impossible d'exporter le rapport de diagnostic",
+    "EPG_LOADING": "Le guide des programmes se charge en arrière-plan…"
   },
   "UPDATE": {
     "TITLE": "Mise à jour disponible",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "Tous les groupes verrouillés seront déverrouillés et visibles par tous.",
     "CONVERT_XTREAM_TITLE": "Convertir « {{name}} » en Xtream ?",
     "CONVERT_XTREAM_BODY1": "La source est réimportée via son identifiant Xtream. Les favoris, l’historique, les groupes masqués et verrouillés ainsi que les enregistrements programmés sont conservés d’après le nom de la chaîne.",
-    "CONVERT_XTREAM_BODY2": "Cela prend à peu près autant de temps qu’une actualisation de la source. En cas d’échec, la source reste inchangée."
+    "CONVERT_XTREAM_BODY2": "Cela prend à peu près autant de temps qu’une actualisation de la source. En cas d’échec, la source reste inchangée.",
+    "DELETE_ALERT_TITLE": "Supprimer la règle automatique ?",
+    "DELETE_ALERT_REMIND_BODY": "Les émissions dont le titre contient « {{query}} » ne recevront plus de rappel automatique.",
+    "DELETE_ALERT_RECORD_BODY": "Les émissions dont le titre contient « {{query}} » ne seront plus enregistrées automatiquement.",
+    "DELETE_ALERT_KEEP": "Les rappels et enregistrements déjà créés sont conservés. Supprime-les un par un si tu n'en veux plus."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Retour aux chaînes",
@@ -656,7 +683,13 @@
     "MINIMIZE": "Réduire",
     "EXPAND": "Agrandir",
     "CLOSE": "Fermer",
-    "MINI_PLAYER": "Mini-lecteur"
+    "MINI_PLAYER": "Mini-lecteur",
+    "ZAP_NUMBER": "Chaîne {{number}}",
+    "ZAP_UNKNOWN": "Aucune chaîne {{number}}",
+    "FALLBACK_SWITCHING": "Passage à {{name}} …",
+    "STREAM_INFO": "Infos du flux",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} i/s"
   },
   "GUIDE": {
     "CHANNEL": "Chaîne",
@@ -673,7 +706,19 @@
     "TODAY": "Aujourd'hui",
     "TOMORROW": "Demain",
     "WATCH": "Regarder",
-    "REMIND": "Me rappeler"
+    "REMIND": "Me rappeler",
+    "ALERTS_LABEL": "Rappels et enregistrements automatiques pour cette recherche",
+    "ALERT_REMIND": "Toujours rappeler « {{query}} »",
+    "ALERT_RECORD": "Toujours enregistrer « {{query}} »",
+    "ALERT_REMIND_ACTIVE": "Rappel actif pour « {{query}} »",
+    "ALERT_RECORD_ACTIVE": "Enregistrement actif pour « {{query}} »",
+    "ALERT_REMIND_REMOVE": "Arrêter le rappel automatique pour « {{query}} »",
+    "ALERT_RECORD_REMOVE": "Arrêter l'enregistrement automatique pour « {{query}} »",
+    "ALERT_HINT": "S'applique à chaque émission dont le titre contient ce texte, y compris celles ajoutées plus tard au guide.",
+    "ALERT_NEEDS_TRAY": "Les rappels nécessitent l'icône dans la barre d'état (Paramètres → Général).",
+    "ALERT_REMIND_ADDED": "Tu recevras un rappel pour chaque émission dont le titre contient « {{query}} », y compris celles ajoutées plus tard au guide.",
+    "ALERT_RECORD_ADDED": "Chaque émission dont le titre contient « {{query}} » sera enregistrée, y compris celles ajoutées plus tard au guide.",
+    "ALERT_REMOVED": "Règle automatique pour « {{query}} » arrêtée. Les rappels et enregistrements déjà créés sont conservés."
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -709,7 +754,21 @@
     "PLAY": "Lire",
     "PLAY_ARIA": "Lire {{name}}",
     "UNKNOWN_CHANNEL": "Chaîne inconnue",
-    "OPEN_FOLDER": "Ouvrir le dossier"
+    "OPEN_FOLDER": "Ouvrir le dossier",
+    "ALERTS": "Enregistrements et rappels automatiques",
+    "ALERTS_EMPTY": "Aucun enregistrement ni rappel automatique pour l'instant",
+    "ALERTS_EMPTY_HINT": "Saisis une partie d'un titre : chaque émission des 7 prochains jours qui le contient est enregistrée ou fait l'objet d'un rappel, y compris les émissions ajoutées plus tard au guide. Il faut des sources EPG externes (XMLTV) dans Paramètres → EPG externe.",
+    "ALERTS_LOAD_FAILED": "Impossible de charger les enregistrements et rappels automatiques",
+    "ALERT_QUERY_LABEL": "Le titre contient",
+    "ALERT_QUERY_PLACEHOLDER": "Partie d'un titre d'émission",
+    "ALERT_ACTION_LABEL": "Action",
+    "ALERT_ADD": "Ajouter",
+    "ALERT_TOO_SHORT": "Saisis au moins {{count}} caractères.",
+    "ALERT_EXISTS": "Cette règle existe déjà.",
+    "ALERT_KIND_REMIND": "Rappel",
+    "ALERT_KIND_RECORD": "Enregistrement",
+    "ALERT_CREATED": "Créée : {{date}}",
+    "ALERT_DELETE_ARIA": "Supprimer la règle automatique pour « {{query}} »"
   },
   "EPG_MAPPING": {
     "TITLE": "Associer un EPG",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "Aucune chaîne du guide trouvée.",
     "AUTO": "Associer automatiquement",
     "XTREAM_NOTE": "Un guide attribué ici remplace, pour cette chaîne, le guide de ton fournisseur et donc le replay des programmes passés (catch-up)."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "Listes de favoris",
+    "NEW_LIST": "Nouvelle liste",
+    "NEW_LIST_ELLIPSIS": "Nouvelle liste…",
+    "LIST_OPTIONS": "Options de la liste « {{name}} »",
+    "CHIP_LABEL": "{{name}}, {{count}} chaînes",
+    "RENAME": "Renommer",
+    "NAME": "Nom de la liste",
+    "CREATE_TITLE": "Nouvelle liste de favoris",
+    "RENAME_TITLE": "Renommer la liste",
+    "CREATE": "Créer",
+    "DELETE_TITLE": "Supprimer la liste ?",
+    "DELETE_BODY": "La liste « {{name}} » sera supprimée. Les chaînes elles-mêmes et tes favoris sont conservés.",
+    "DELETED": "Liste « {{name}} » supprimée",
+    "CREATE_FAILED": "Impossible de créer la liste",
+    "RENAME_FAILED": "Impossible de renommer la liste",
+    "DELETE_FAILED": "Impossible de supprimer la liste",
+    "ADDED": "« {{name}} » ajoutée à « {{list}} »",
+    "REMOVED": "« {{name}} » retirée de « {{list}} »",
+    "UPDATE_FAILED": "Impossible de modifier la liste « {{list}} » pour « {{name}} »",
+    "EMPTY": "Cette liste est vide",
+    "EMPTY_HINT": "Fais un clic droit sur une chaîne et choisis « Ajouter à une liste »",
+    "ADD_TO_LIST": "Ajouter à une liste",
+    "REMOVE_FROM_LIST": "Retirer de la liste",
+    "MOVE_FORWARD": "Avancer",
+    "MOVE_BACK": "Reculer",
+    "REORDER_HINT": "Fais glisser les tuiles pour changer l'ordre, ou utilise « Avancer/Reculer » dans le menu contextuel",
+    "MOVE_FAILED": "Impossible d'enregistrer le nouvel ordre"
   }
 }

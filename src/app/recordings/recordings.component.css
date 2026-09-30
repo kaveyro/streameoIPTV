@@ -151,3 +151,45 @@
 .skeleton-row {
   height: 3.5rem;
 }
+
+/* Saved guide searches: the "add" form and the icon per action. */
+.alert-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.alert-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-field--query {
+  flex: 1 1 14rem;
+  max-width: 28rem;
+}
+
+.alert-field .form-label {
+  margin-bottom: 0.25rem;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.alert-error {
+  flex-basis: 100%;
+  font-size: var(--fs-sm);
+  color: var(--color-danger);
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  fill: var(--text-secondary);
+}
+
+.alert-icon--record {
+  fill: var(--color-danger);
+}

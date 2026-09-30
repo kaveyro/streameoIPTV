@@ -44,6 +44,69 @@
   padding: 0.5rem 0.75rem;
   background: var(--bg-surface-alt);
   border-top: 1px solid var(--border-subtle);
+  /* The stream info below is hidden by the bar's own width. */
+  container-type: inline-size;
+}
+
+/* The channel number being typed. Kept in the tree while empty (a live
+   region), but out of the flex layout so it adds no gap. */
+.pzap {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pzap:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* Stream info (resolution, codecs, bitrate, fps) next to now/next. */
+.pinfo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pinfo-badge {
+  padding: 0 0.4rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* A narrow bar keeps its room for the channel name: bitrate and frame rate
+   go first, then the whole stream info. */
+@container (max-width: 1150px) {
+  .pinfo-extra {
+    display: none;
+  }
+}
+
+@container (max-width: 850px) {
+  .pinfo {
+    display: none;
+  }
 }
 
 .ptitle {

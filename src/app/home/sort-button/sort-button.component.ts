@@ -12,8 +12,15 @@ import { SORT_TYPES, SortType } from "../../models/sortType";
 export class SortButtonComponent {
   constructor(private memory: MemoryService) {}
   menuTopLeftPosition = { x: 0, y: 0 };
-  sortTypes = SORT_TYPES;
+  /// The favorites view is shown: only there the own order exists.
+  @Input() favorites = false;
+  private readonly allSortTypes = SORT_TYPES;
+  private readonly withoutCustom = SORT_TYPES.filter((x) => x !== SortType.custom);
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
+
+  get sortTypes(): SortType[] {
+    return this.favorites ? this.allSortTypes : this.withoutCustom;
+  }
 
   click(event: Event) {
     event.preventDefault();

@@ -16,11 +16,17 @@ import { ThemeService } from "../theme.service";
 import { Settings } from "../models/settings";
 import { PLAYLIST_EXTENSIONS } from "../models/extensions";
 import { canCheckSource, sourceForCheck } from "../source-check";
-import { XtreamLogin } from "../models/epgExtras";
+import { CountryCount, XtreamLogin } from "../models/epgExtras";
 import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
+import { NowPlayingService } from "../now-playing.service";
+import { FREE_EPG_SOURCES, freeEpgSourcesFor, topCountries } from "../epg-free-sources";
 
 /// How to import an M3U link that turned out to be an Xtream login.
 type LinkImportChoice = "xtream" | "m3u" | "abort";
+
+/// First-run wizard: add a source, pick free guides, done. Adding another
+/// source later only has the first step.
+export type SetupStep = "source" | "epg" | "done";
 
 @Component({
   selector: "app-setup",
@@ -39,6 +45,7 @@ export class SetupComponent implements OnInit {
     private confirmService: ConfirmService,
     private languageService: LanguageService,
     private themeService: ThemeService,
+    private nowPlaying: NowPlayingService,
   ) {}
   loading = false;
   /// "Test connection" is running.
@@ -61,6 +68,14 @@ export class SetupComponent implements OnInit {
     enabled: true,
     use_tvg_id: false,
   };
+  step: SetupStep = "source";
+  readonly freeEpgSources = FREE_EPG_SOURCES;
+  /// URLs of the free guides chosen in the EPG step.
+  selectedEpg = new Set<string>();
+  /// The EPG step is detecting the playlist's countries or saving.
+  epgBusy = false;
+  /// Configured XMLTV URLs that are no free guide: kept when applying.
+  private otherXmltvUrls: string[] = [];
 
   @HostListener("document:keydown", ["$event"])
   onKeyDown(event: KeyboardEvent) {
@@ -174,6 +189,94 @@ export class SetupComponent implements OnInit {
 
   success() {
     this.toastr.success(this.translate.instant("TOAST.SOURCE_ADDED", { name: this.source.name }));
+    if (this.memory.AddingAdditionalSource) {
+      this.nav.navigateByUrl("");
+      return;
+    }
+    // First run: offer a TV guide before the channels open.
+    this.goToStep("epg");
+    void this.suggestEpgSources();
+  }
+
+  /// Preselects the free guides for the countries most channels of the
+  /// imported playlist carry in their names. Best effort: without an answer
+  /// nothing is preselected.
+  async suggestEpgSources() {
+    this.epgBusy = true;
+    try {
+      const [sources, configured] = await Promise.all([
+        invoke<Source[]>("get_sources"),
+        invoke<string[]>("get_xmltv_sources").catch(() => [] as string[]),
+      ]);
+      const sourceIds = (sources ?? [])
+        .filter((s) => s.enabled && s.id != undefined)
+        .map((s) => s.id);
+      const countries =
+        (await invoke<CountryCount[]>("get_countries", { sourceIds, showLocked: false })) ?? [];
+      const free = new Set(this.freeEpgSources.map((s) => s.url));
+      this.otherXmltvUrls = (configured ?? []).filter((url) => !free.has(url));
+      this.selectedEpg = new Set([
+        ...(configured ?? []).filter((url) => free.has(url)),
+        ...freeEpgSourcesFor(topCountries(countries)).map((s) => s.url),
+      ]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.epgBusy = false;
+    }
+  }
+
+  isEpgSelected(url: string): boolean {
+    return this.selectedEpg.has(url);
+  }
+
+  toggleEpg(url: string) {
+    if (!this.selectedEpg.delete(url)) this.selectedEpg.add(url);
+  }
+
+  /// Saves the chosen guides and loads them in the background: the download
+  /// can take a while and must not hold up the first look at the channels.
+  async applyEpg() {
+    if (this.epgBusy) return;
+    const urls = [
+      ...this.otherXmltvUrls,
+      ...this.freeEpgSources.map((s) => s.url).filter((url) => this.selectedEpg.has(url)),
+    ];
+    this.epgBusy = true;
+    try {
+      await invoke("set_xmltv_sources", { urls });
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("TOAST.SETTINGS_SAVE_FAILED"));
+      return;
+    } finally {
+      this.epgBusy = false;
+    }
+    if (urls.length) {
+      this.toastr.info(this.translate.instant("TOAST.EPG_LOADING"));
+      invoke("refresh_xmltv")
+        .then(() => {
+          this.nowPlaying.xmltvChanged();
+          this.toastr.success(this.translate.instant("TOAST.EPG_REFRESHED"));
+        })
+        .catch((e) =>
+          this.error.handleError(e, this.translate.instant("TOAST.EPG_REFRESH_FAILED")),
+        );
+    }
+    this.goToStep("done");
+  }
+
+  skipEpg() {
+    this.goToStep("done");
+  }
+
+  /// Moves the focus to the new step's heading so keyboard and screen reader
+  /// users start there instead of on the removed form.
+  private goToStep(step: SetupStep) {
+    this.step = step;
+    setTimeout(() => document.getElementById("setup-step-title")?.focus());
+  }
+
+  finish() {
     this.nav.navigateByUrl("");
   }
 

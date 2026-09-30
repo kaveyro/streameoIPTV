@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "Kanalen sorteren",
     "ALPHABETICAL_ASC": "Alfabetisch oplopend",
     "ALPHABETICAL_DESC": "Alfabetisch aflopend",
-    "PROVIDER": "Aanbieder"
+    "PROVIDER": "Aanbieder",
+    "CUSTOM": "Eigen volgorde",
+    "NUMBER": "Kanaalnummer"
   },
   "SHORTCUT": {
     "SEARCH": "Zoeken",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "bijv. nl,en",
       "MPV_PARAMS_PLACEHOLDER": "bijv. --hwdec=auto",
       "DEBUG_LOG": "Spelerlogboek schrijven",
-      "DEBUG_LOG_DESC": "Alleen voor probleemoplossing: mpv.log in de logmap legt elk streamadres vast, inclusief de inloggegevens erin. Werkt vanaf de volgende keer dat de speler opent."
+      "DEBUG_LOG_DESC": "Alleen voor probleemoplossing: mpv.log in de logmap legt elk streamadres vast, inclusief de inloggegevens erin. Werkt vanaf de volgende keer dat de speler opent.",
+      "AUTO_FALLBACK": "Bij uitval een andere stream van de zender gebruiken",
+      "AUTO_FALLBACK_DESC": "Valt een livestream uit, dan schakelt de speler automatisch over naar een andere kwaliteit van dezelfde zender, bijvoorbeeld van HD naar SD."
     },
     "RECORDING": {
       "PATH": "Opnamepad",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "Wissen",
       "DELETE_ALL": "Alles verwijderen",
       "DELETE_ALL_DESC": "Verwijdert alle bronnen, kanalen, favorieten en instellingen. Gebruik dit als een upgrade een bug die je ondervindt niet heeft opgelost.",
-      "DELETE_BTN": "Verwijderen"
+      "DELETE_BTN": "Verwijderen",
+      "LOG_FOLDER": "Logbestanden",
+      "LOG_FOLDER_DESC": "Opent de map met de logbestanden van de app en de speler.",
+      "LOG_FOLDER_BTN": "Logmap openen",
+      "DIAGNOSTICS": "Diagnoserapport",
+      "DIAGNOSTICS_DESC": "Bevat geen wachtwoorden of streamadressen, dus je kunt het bij een foutmelding voegen.",
+      "DIAGNOSTICS_BTN": "Diagnose exporteren…"
     },
     "RESTORE_MODAL": {
       "TITLE": "Databaseherstel bevestigen",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "Selecteer een databaseback-up",
       "SQLITE_DATABASE": "SQLite-database",
       "SAVE_FAVORITES": "Selecteer waar de favorietenafspeellijst wordt opgeslagen",
-      "M3U_PLAYLIST": "M3U-afspeellijst"
+      "M3U_PLAYLIST": "M3U-afspeellijst",
+      "SAVE_DIAGNOSTICS": "Kies waar het diagnoserapport moet worden opgeslagen",
+      "TEXT_FILE": "Tekstbestand"
     },
     "EPG": {
       "TITLE": "Externe EPG",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "Deze M3U-link bevat een Xtream-login. Geïmporteerd als Xtream-bron krijg je de EPG van je provider, catch-up voor gemiste programma’s en series per seizoen.",
     "XTREAM_DETECTED_BODY2": "Importeren als Xtream wordt aanbevolen, maar je kunt de link ook als gewone M3U-link importeren.",
     "IMPORT_AS_XTREAM": "Importeren als Xtream (aanbevolen)",
-    "IMPORT_AS_M3U": "Importeren als M3U-link"
+    "IMPORT_AS_M3U": "Importeren als M3U-link",
+    "EPG_TITLE": "Tv-gids (EPG)",
+    "EPG_INTRO": "Gratis gidsen laten zien wat er op je zenders te zien is – kies die voor de landen van je zenders (je kunt dit later in de instellingen wijzigen).",
+    "EPG_APPLY": "Toepassen",
+    "EPG_SKIP": "Overslaan",
+    "DONE_TITLE": "Klaar",
+    "DONE_TEXT": "Je bron is ingesteld. Veel kijkplezier!",
+    "GO_TO_CHANNELS": "Naar de zenders"
   },
   "EPG": {
     "PLAYING_NOW": "Nu bezig",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "De bron kon niet worden omgezet naar Xtream",
     "EPG_MAPPED": "{{name}} toont nu de gids van {{id}}",
     "EPG_MAPPING_REMOVED": "{{name}} krijgt zijn EPG weer automatisch",
-    "EPG_MAPPING_FAILED": "EPG kon niet worden toegewezen"
+    "EPG_MAPPING_FAILED": "EPG kon niet worden toegewezen",
+    "LOG_FOLDER_FAILED": "De logmap kon niet worden geopend",
+    "DIAGNOSTICS_EXPORTED": "Diagnoserapport opgeslagen in {{path}}",
+    "DIAGNOSTICS_EXPORT_FAILED": "Het diagnoserapport kon niet worden geëxporteerd",
+    "EPG_LOADING": "De tv-gids wordt op de achtergrond geladen…"
   },
   "UPDATE": {
     "TITLE": "Update beschikbaar",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "Alle vergrendelde groepen worden ontgrendeld en voor iedereen getoond.",
     "CONVERT_XTREAM_TITLE": "“{{name}}” omzetten naar Xtream?",
     "CONVERT_XTREAM_BODY1": "De bron wordt opnieuw geïmporteerd via de Xtream-login. Favorieten, geschiedenis, verborgen en vergrendelde groepen en geplande opnames blijven behouden op basis van de kanaalnaam.",
-    "CONVERT_XTREAM_BODY2": "Dit duurt ongeveer even lang als het vernieuwen van de bron. Mislukt het, dan blijft de bron ongewijzigd."
+    "CONVERT_XTREAM_BODY2": "Dit duurt ongeveer even lang als het vernieuwen van de bron. Mislukt het, dan blijft de bron ongewijzigd.",
+    "DELETE_ALERT_TITLE": "Automatische regel verwijderen?",
+    "DELETE_ALERT_REMIND_BODY": "Programma's met \"{{query}}\" in de titel krijgen dan geen automatische herinnering meer.",
+    "DELETE_ALERT_RECORD_BODY": "Programma's met \"{{query}}\" in de titel worden dan niet meer automatisch opgenomen.",
+    "DELETE_ALERT_KEEP": "Herinneringen en opnames die al zijn aangemaakt, blijven bestaan. Verwijder ze afzonderlijk als je ze niet meer wilt."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Terug naar kanalen",
@@ -656,7 +683,13 @@
     "MINIMIZE": "Verkleinen",
     "EXPAND": "Vergroten",
     "CLOSE": "Sluiten",
-    "MINI_PLAYER": "Minispeler"
+    "MINI_PLAYER": "Minispeler",
+    "ZAP_NUMBER": "Zender {{number}}",
+    "ZAP_UNKNOWN": "Geen zender {{number}}",
+    "FALLBACK_SWITCHING": "Overschakelen naar {{name}} …",
+    "STREAM_INFO": "Streaminfo",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "Kanaal",
@@ -673,7 +706,19 @@
     "TODAY": "Vandaag",
     "TOMORROW": "Morgen",
     "WATCH": "Bekijken",
-    "REMIND": "Herinneren"
+    "REMIND": "Herinneren",
+    "ALERTS_LABEL": "Automatische herinneringen en opnames voor deze zoekopdracht",
+    "ALERT_REMIND": "Altijd herinneren bij \"{{query}}\"",
+    "ALERT_RECORD": "Altijd opnemen bij \"{{query}}\"",
+    "ALERT_REMIND_ACTIVE": "Herinnering actief bij \"{{query}}\"",
+    "ALERT_RECORD_ACTIVE": "Opname actief bij \"{{query}}\"",
+    "ALERT_REMIND_REMOVE": "Automatische herinnering bij \"{{query}}\" stoppen",
+    "ALERT_RECORD_REMOVE": "Automatische opname bij \"{{query}}\" stoppen",
+    "ALERT_HINT": "Geldt voor elk programma met deze tekst in de titel, ook voor programma's die later aan de gids worden toegevoegd.",
+    "ALERT_NEEDS_TRAY": "Voor herinneringen is het systeemvakpictogram nodig (Instellingen → Algemeen).",
+    "ALERT_REMIND_ADDED": "Je krijgt een herinnering voor elk programma met \"{{query}}\" in de titel, ook voor programma's die later aan de gids worden toegevoegd.",
+    "ALERT_RECORD_ADDED": "Elk programma met \"{{query}}\" in de titel wordt opgenomen, ook programma's die later aan de gids worden toegevoegd.",
+    "ALERT_REMOVED": "Automatische regel voor \"{{query}}\" gestopt. Herinneringen en opnames die al zijn aangemaakt, blijven bestaan."
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -709,7 +754,21 @@
     "PLAY": "Afspelen",
     "PLAY_ARIA": "{{name}} afspelen",
     "UNKNOWN_CHANNEL": "Onbekend kanaal",
-    "OPEN_FOLDER": "Map openen"
+    "OPEN_FOLDER": "Map openen",
+    "ALERTS": "Automatische opnames en herinneringen",
+    "ALERTS_EMPTY": "Nog geen automatische opnames of herinneringen",
+    "ALERTS_EMPTY_HINT": "Voer een deel van een titel in: elk programma van de komende 7 dagen dat het bevat, wordt opgenomen of krijgt een herinnering, ook programma's die later aan de gids worden toegevoegd. Hiervoor heb je externe EPG-bronnen (XMLTV) nodig via Instellingen → Externe EPG.",
+    "ALERTS_LOAD_FAILED": "Automatische opnames en herinneringen konden niet worden geladen",
+    "ALERT_QUERY_LABEL": "Titel bevat",
+    "ALERT_QUERY_PLACEHOLDER": "Deel van een programmatitel",
+    "ALERT_ACTION_LABEL": "Actie",
+    "ALERT_ADD": "Toevoegen",
+    "ALERT_TOO_SHORT": "Voer minstens {{count}} tekens in.",
+    "ALERT_EXISTS": "Deze regel bestaat al.",
+    "ALERT_KIND_REMIND": "Herinnering",
+    "ALERT_KIND_RECORD": "Opname",
+    "ALERT_CREATED": "Aangemaakt: {{date}}",
+    "ALERT_DELETE_ARIA": "Automatische regel voor \"{{query}}\" verwijderen"
   },
   "EPG_MAPPING": {
     "TITLE": "EPG toewijzen",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "Geen gidszender gevonden.",
     "AUTO": "Automatisch toewijzen",
     "XTREAM_NOTE": "Een hier toegewezen gids vervangt voor deze zender de gids van je aanbieder, en daarmee ook het terugkijken van eerdere programma's (catch-up)."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "Favorietenlijsten",
+    "NEW_LIST": "Nieuwe lijst",
+    "NEW_LIST_ELLIPSIS": "Nieuwe lijst…",
+    "LIST_OPTIONS": "Opties voor de lijst ‘{{name}}’",
+    "CHIP_LABEL": "{{name}}, {{count}} kanalen",
+    "RENAME": "Naam wijzigen",
+    "NAME": "Naam van de lijst",
+    "CREATE_TITLE": "Nieuwe favorietenlijst",
+    "RENAME_TITLE": "Lijst hernoemen",
+    "CREATE": "Aanmaken",
+    "DELETE_TITLE": "Lijst verwijderen?",
+    "DELETE_BODY": "De lijst ‘{{name}}’ wordt verwijderd. De kanalen zelf en je favorieten blijven behouden.",
+    "DELETED": "Lijst ‘{{name}}’ verwijderd",
+    "CREATE_FAILED": "De lijst kon niet worden aangemaakt",
+    "RENAME_FAILED": "De lijst kon niet worden hernoemd",
+    "DELETE_FAILED": "De lijst kon niet worden verwijderd",
+    "ADDED": "‘{{name}}’ toegevoegd aan ‘{{list}}’",
+    "REMOVED": "‘{{name}}’ verwijderd uit ‘{{list}}’",
+    "UPDATE_FAILED": "De lijst ‘{{list}}’ kon niet worden gewijzigd voor ‘{{name}}’",
+    "EMPTY": "Deze lijst is leeg",
+    "EMPTY_HINT": "Klik met de rechtermuisknop op een kanaal en kies ‘Aan lijst toevoegen’",
+    "ADD_TO_LIST": "Aan lijst toevoegen",
+    "REMOVE_FROM_LIST": "Uit lijst verwijderen",
+    "MOVE_FORWARD": "Naar voren",
+    "MOVE_BACK": "Naar achteren",
+    "REORDER_HINT": "Sleep tegels om de volgorde te wijzigen, of gebruik ‘Naar voren/achteren’ in het contextmenu",
+    "MOVE_FAILED": "De nieuwe volgorde kon niet worden opgeslagen"
   }
 }

@@ -2,10 +2,13 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
+  NgZone,
   OnChanges,
   OnDestroy,
   OnInit,
+  Output,
   Renderer2,
   SimpleChanges,
   ViewChild,
@@ -37,12 +40,22 @@ import { ViewMode } from "../models/viewMode";
 import { ViewFormat } from "../models/viewFormat";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { LogoCacheService } from "../logo-cache.service";
-import { NowPlaying, NowPlayingService } from "../now-playing.service";
+import {
+  NowPlaying,
+  NowPlayingService,
+  programmeEnded,
+  programmeProgress,
+} from "../now-playing.service";
 import { TranslateService } from "@ngx-translate/core";
 import { ConfirmService } from "../confirm.service";
 import { PlaybackService } from "../playback.service";
 import { ParentalService } from "../parental.service";
 import { splitCountryPrefix } from "../country-prefix";
+import { FavoriteList, FavoriteListsService } from "../favorite-lists/favorite-lists.service";
+
+/// Tiles this far outside the viewport already load their now/next line, so
+/// it is there when they scroll in.
+const VISIBILITY_MARGIN = "200px";
 
 /// One clock formatter per locale, shared by all tiles (a grid page shows dozens).
 const clockFormats = new Map<string, Intl.DateTimeFormat>();
@@ -82,11 +95,24 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     private confirmService: ConfirmService,
     private playback: PlaybackService,
     private parental: ParentalService,
+    private ngZone: NgZone,
+    public favoriteLists: FavoriteListsService,
   ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
   @Input() viewMode: number = 0;
   @Input() format: ViewFormat = "grid";
+  /// The favorites list the home page shows (favorites view only), for
+  /// "remove from list".
+  @Input() favoriteList?: number;
+  /// The home page shows the own order: offer moving the tile.
+  @Input() reorderable = false;
+  /// First/last tile of the whole order (nothing to move past).
+  @Input() first = false;
+  @Input() last = false;
+  /// "Move forward" (-1) / "move back" (+1) from the context menu; the home
+  /// page moves the tile and saves the order.
+  @Output() move = new EventEmitter<-1 | 1>();
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
   menuTopLeftPosition = { x: 0, y: 0 };
   showImage: boolean = true;
@@ -107,6 +133,12 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /// "Playing now: <title> (20:15–21:15)" for the tile's accessible name.
   private nowPlayingSummary = "";
   private nowPlayingRequested = false;
+  /// Within VISIBILITY_MARGIN of the viewport: only such tiles load their
+  /// now/next line and follow the minute ticks.
+  private visible = false;
+  private visibilityObserver?: IntersectionObserver;
+  /// Lists the channel is in, loaded when the context menu opens.
+  listMembership?: Set<number>;
   sourceName = "";
   /// Country prefix of the name ("TR"), for the badge display mode.
   countryCode?: string;
@@ -119,10 +151,49 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     if (image) {
       this.logoCache.getLogo(image).then((src) => (this.logoSrc = src));
     }
-    this.loadNowPlaying();
+    this.watchVisibility();
     this.subscriptions.push(
       this.nowPlayingService.changed.subscribe(() => this.reloadNowPlaying()),
+      this.nowPlayingService.minuteTick.subscribe(() => this.updateNowPlaying()),
     );
+  }
+
+  /// Loads the now/next line once the tile comes near the viewport (a page
+  /// of 36 tiles would otherwise ask for 36 guides at once). Without
+  /// IntersectionObserver every tile counts as visible.
+  private watchVisibility() {
+    if (typeof IntersectionObserver === "undefined") {
+      this.visible = true;
+      this.loadNowPlaying();
+      return;
+    }
+    // Callbacks come often while scrolling: only re-enter the zone when the
+    // tile became visible.
+    this.ngZone.runOutsideAngular(() => {
+      this.visibilityObserver = new IntersectionObserver(
+        (entries) => {
+          const visible = entries[entries.length - 1]?.isIntersecting ?? false;
+          if (visible === this.visible) return;
+          this.visible = visible;
+          if (visible) this.ngZone.run(() => this.onVisible());
+        },
+        { rootMargin: VISIBILITY_MARGIN },
+      );
+      this.visibilityObserver.observe(this.el.nativeElement);
+    });
+  }
+
+  private onVisible() {
+    if (!this.nowPlayingRequested) this.loadNowPlaying();
+    else this.updateNowPlaying();
+  }
+
+  /// Minute tick (and back in view): moves the progress bar on, or loads the
+  /// next programme once the current one ended.
+  private updateNowPlaying() {
+    if (!this.visible || !this.nowPlaying) return;
+    if (programmeEnded(this.nowPlaying)) this.reloadNowPlaying();
+    else this.nowPlayingProgress = programmeProgress(this.nowPlaying);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -136,15 +207,12 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   private loadNowPlaying() {
-    if (this.nowPlayingRequested || !this.showNowPlayingLine()) return;
+    if (this.nowPlayingRequested || !this.visible || !this.showNowPlayingLine()) return;
     this.nowPlayingRequested = true;
     this.nowPlayingService.getNowPlaying(this.channel!).then((nowPlaying) => {
       if (!nowPlaying) return;
       this.nowPlaying = nowPlaying;
-      const duration = nowPlaying.end_timestamp - nowPlaying.start_timestamp;
-      const elapsed = Date.now() / 1000 - nowPlaying.start_timestamp;
-      this.nowPlayingProgress =
-        duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
+      this.nowPlayingProgress = programmeProgress(nowPlaying);
       const locale = uiLocale(this.translate);
       this.nowPlayingTimes = `${formatClock(nowPlaying.start_timestamp, locale)}–${formatClock(nowPlaying.end_timestamp, locale)}`;
       this.nextStart = nowPlaying.next ? formatClock(nowPlaying.next.start_timestamp, locale) : "";
@@ -161,9 +229,10 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     this.loadNowPlaying();
   }
 
-  /** Accessible name: the full channel name plus what is on right now. */
+  /** Accessible name: number, the full channel name and what is on right now. */
   ariaLabel(): string {
-    const name = this.channel?.name ?? "";
+    const number = this.channel?.number;
+    const name = (number != null ? `${number} ` : "") + (this.channel?.name ?? "");
     return this.nowPlayingSummary ? `${name}, ${this.nowPlayingSummary}` : name;
   }
 
@@ -301,6 +370,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   private openMenuAt(x: number, y: number) {
     this.alreadyExistsInFav = this.channel!.favorite!;
     this.downloading = this.isDownloading();
+    this.loadListMembership();
     this.menuTopLeftPosition.x = x;
     this.menuTopLeftPosition.y = y;
     if (this.memory.currentContextMenu?.menuOpen) this.memory.currentContextMenu.closeMenu();
@@ -316,6 +386,58 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       this.channel?.media_type != MediaType.season &&
       this.viewMode != ViewMode.History
     );
+  }
+
+  /// Fills the check marks of the "add to list" submenu. The lists
+  /// themselves come from the service (loaded by the home page).
+  private loadListMembership() {
+    this.listMembership = undefined;
+    if (!this.canFavorite() || !this.channel) return;
+    if (this.favoriteLists.lists.value === undefined) void this.favoriteLists.load();
+    const channel = this.channel;
+    this.favoriteLists.membership(channel).then((ids) => {
+      if (this.channel === channel) this.listMembership = ids;
+    });
+  }
+
+  isInList(list: FavoriteList): boolean {
+    return this.listMembership?.has(list.id) ?? false;
+  }
+
+  /** Adds the channel to the list or takes it out (check mark in the submenu). */
+  async toggleList(list: FavoriteList, event?: Event) {
+    // Keep the submenu open, so several lists can be ticked in a row.
+    event?.stopPropagation();
+    if (!this.channel || !this.listMembership) return;
+    const member = !this.isInList(list);
+    if (await this.favoriteLists.setMember(list, this.channel, member)) {
+      if (member) this.listMembership.add(list.id);
+      else this.listMembership.delete(list.id);
+      // Taken out of the list that is shown: gone after the next load.
+      if (!member && list.id === this.favoriteList) this.memory.Refresh.next(false);
+    }
+  }
+
+  /** "New list…": asks for a name and puts the channel into the new list. */
+  async addToNewList() {
+    const channel = this.channel;
+    if (!channel) return;
+    const id = await this.favoriteLists.promptCreate();
+    const list = this.favoriteLists.current().find((l) => l.id === id);
+    if (list) await this.favoriteLists.setMember(list, channel, true);
+  }
+
+  /** "Remove from list" in the list view of a favorites list. */
+  async removeFromList() {
+    const list = this.favoriteLists.current().find((l) => l.id === this.favoriteList);
+    if (!list || !this.channel) return;
+    if (await this.favoriteLists.setMember(list, this.channel, false)) {
+      this.memory.Refresh.next(false);
+    }
+  }
+
+  moveBy(delta: -1 | 1) {
+    this.move.emit(delta);
   }
 
   onError(event: Event) {
@@ -640,7 +762,9 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
 
   async copyURL() {
     try {
-      await writeText(this.channel?.url ?? "");
+      // Stored Xtream URLs hold placeholders instead of the login.
+      const url = await invoke<string>("resolve_channel_url", { channel: this.channel });
+      await writeText(url ?? "");
       this.error.success(this.translate.instant("TOAST.URL_COPIED"));
     } catch (e) {
       this.error.handleError(e);
@@ -648,6 +772,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   ngOnDestroy() {
+    this.visibilityObserver?.disconnect();
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
 }

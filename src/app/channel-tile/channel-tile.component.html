@@ -28,7 +28,10 @@
   <div class="channel-title-container">
     <div class="channel-names">
       <div class="channel-title">
-        <span
+        <span *ngIf="channel?.number != null" class="channel-number" aria-hidden="true">{{
+          channel?.number
+        }}</span
+        ><span
           *ngIf="countryCode && memory.CountryPrefixMode === 'badge'"
           class="country-badge"
           aria-hidden="true"
@@ -117,6 +120,18 @@
       <ng-container *ngIf="alreadyExistsInFav">{{ "MENU.UNFAVORITE" | translate }}</ng-container>
       <ng-container *ngIf="!alreadyExistsInFav">{{ "MENU.FAVORITE" | translate }}</ng-container>
     </button>
+    <button [hidden]="!canFavorite()" mat-menu-item [matMenuTriggerFor]="listsMenu">
+      {{ "FAV_LISTS.ADD_TO_LIST" | translate }}
+    </button>
+    <button [hidden]="favoriteList === undefined" mat-menu-item (click)="removeFromList()">
+      {{ "FAV_LISTS.REMOVE_FROM_LIST" | translate }}
+    </button>
+    <button [hidden]="!reorderable || first" mat-menu-item (click)="moveBy(-1)">
+      {{ "FAV_LISTS.MOVE_FORWARD" | translate }}
+    </button>
+    <button [hidden]="!reorderable || last" mat-menu-item (click)="moveBy(1)">
+      {{ "FAV_LISTS.MOVE_BACK" | translate }}
+    </button>
     <button [hidden]="!isLivestream()" mat-menu-item (click)="record()">
       {{ "MENU.RECORD" | translate }}
     </button>
@@ -155,6 +170,32 @@
     </button>
     <button [hidden]="!isCustom()" mat-menu-item (click)="delete()">
       {{ "MENU.DELETE" | translate }}
+    </button>
+  </ng-template>
+</mat-menu>
+
+<!-- "Add to list": ticking a list keeps the menu open, so several lists can
+     be set in a row. -->
+<mat-menu #listsMenu="matMenu">
+  <ng-template matMenuContent>
+    <button
+      *ngFor="let list of favoriteLists.lists | async"
+      mat-menu-item
+      role="menuitemcheckbox"
+      [attr.aria-checked]="isInList(list)"
+      [disabled]="!listMembership"
+      (click)="toggleList(list, $event)"
+    >
+      <span class="list-check" aria-hidden="true">
+        <svg *ngIf="isInList(list)" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+        </svg>
+      </span>
+      {{ list.name }}
+    </button>
+    <button mat-menu-item (click)="addToNewList()">
+      <span class="list-check" aria-hidden="true"></span>
+      {{ "FAV_LISTS.NEW_LIST_ELLIPSIS" | translate }}
     </button>
   </ng-template>
 </mat-menu>

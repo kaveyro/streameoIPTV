@@ -68,6 +68,117 @@
     </ul>
   </section>
 
+  <!-- Saved guide searches: automatic recordings and reminders -->
+  <section class="rec-section" aria-labelledby="rec-alerts-title">
+    <div class="section-head">
+      <h3 id="rec-alerts-title" class="section-title">{{ "RECORDINGS.ALERTS" | translate }}</h3>
+    </div>
+
+    <form class="alert-form" novalidate (ngSubmit)="addAlert()">
+      <div class="alert-field alert-field--query">
+        <label class="form-label" for="rec-alert-query">{{
+          "RECORDINGS.ALERT_QUERY_LABEL" | translate
+        }}</label>
+        <input
+          id="rec-alert-query"
+          name="alertQuery"
+          type="text"
+          class="form-control form-control-sm"
+          autocomplete="off"
+          spellcheck="false"
+          maxlength="200"
+          [(ngModel)]="alertQuery"
+          [class.is-invalid]="alertTouched && !!alertProblem()"
+          [attr.aria-invalid]="alertTouched && !!alertProblem()"
+          [attr.aria-describedby]="alertTouched && alertProblem() ? 'rec-alert-error' : null"
+          [placeholder]="'RECORDINGS.ALERT_QUERY_PLACEHOLDER' | translate"
+        />
+      </div>
+      <div class="alert-field">
+        <label class="form-label" for="rec-alert-action">{{
+          "RECORDINGS.ALERT_ACTION_LABEL" | translate
+        }}</label>
+        <select
+          id="rec-alert-action"
+          name="alertAction"
+          class="form-select form-select-sm"
+          [(ngModel)]="alertAction"
+        >
+          <option value="record">{{ "MENU.RECORD" | translate }}</option>
+          <option value="remind">{{ "GUIDE.REMIND" | translate }}</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm alert-add" [disabled]="addingAlert">
+        {{ "RECORDINGS.ALERT_ADD" | translate }}
+      </button>
+      <div
+        *ngIf="alertTouched && alertProblem() as problem"
+        id="rec-alert-error"
+        class="alert-error"
+        role="alert"
+      >
+        {{ problem | translate: { count: alertMinLength } }}
+      </div>
+    </form>
+
+    <div *ngIf="!alertsLoaded" class="skeleton skeleton-row" aria-hidden="true"></div>
+    <div *ngIf="alertsLoaded && alerts.length === 0" class="empty-state">
+      <p class="mb-1">{{ "RECORDINGS.ALERTS_EMPTY" | translate }}</p>
+      <small>{{ "RECORDINGS.ALERTS_EMPTY_HINT" | translate }}</small>
+    </div>
+    <ul class="rec-list" *ngIf="alerts.length > 0">
+      <li class="recording-row" *ngFor="let alert of alerts; trackBy: trackAlert">
+        <svg
+          *ngIf="alert.action === 'remind'"
+          class="alert-icon"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+          />
+        </svg>
+        <svg
+          *ngIf="alert.action === 'record'"
+          class="alert-icon alert-icon--record"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
+          />
+        </svg>
+        <div class="recording-info">
+          <div class="recording-title" [title]="alert.query">{{ alert.query }}</div>
+          <div class="recording-time">
+            {{
+              (alert.action === "remind"
+                ? "RECORDINGS.ALERT_KIND_REMIND"
+                : "RECORDINGS.ALERT_KIND_RECORD"
+              ) | translate
+            }}
+            ·
+            {{ "RECORDINGS.ALERT_CREATED" | translate: { date: formatDate(alert.created) } }}
+          </div>
+        </div>
+        <button
+          type="button"
+          class="icon-btn row-action row-action--danger"
+          [disabled]="busy.has('a' + alert.id)"
+          (click)="deleteAlert(alert)"
+          [attr.aria-label]="'RECORDINGS.ALERT_DELETE_ARIA' | translate: { query: alert.query }"
+          [ngbTooltip]="'MODAL.DELETE' | translate"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"
+            />
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </section>
+
   <!-- Recorded files -->
   <section class="rec-section" aria-labelledby="rec-files-title">
     <div class="section-head">

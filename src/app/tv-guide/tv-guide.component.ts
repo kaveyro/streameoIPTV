@@ -26,6 +26,7 @@ import { MediaType } from "../models/mediaType";
 import { ViewMode } from "../models/viewMode";
 import { ScheduledRecording } from "../models/scheduledRecording";
 import { ProgrammeHit } from "../models/epgExtras";
+import { EpgAlert, EpgAlertAction, findEpgAlert } from "../models/epgAlert";
 import { splitCountryPrefix } from "../country-prefix";
 import { uiLocale } from "../utils";
 
@@ -91,7 +92,7 @@ export interface GuideSearchDay {
   standalone: false,
   selector: "app-tv-guide",
   templateUrl: "./tv-guide.component.html",
-  styleUrls: ["./tv-guide.component.css", "./tv-guide-search.css"],
+  styleUrls: ["./tv-guide.component.css", "./tv-guide-search.css", "./tv-guide-alerts.css"],
 })
 export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   static readonly PAGE_SIZE = 36;
@@ -137,6 +138,9 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   searching = false;
   /// An answer for the current query has arrived.
   searched = false;
+  /// Saved searches ("always remind / record"), offered for the current query.
+  alerts: EpgAlert[] = [];
+  alertBusy = false;
 
   @ViewChild("scroller") scroller?: ElementRef<HTMLElement>;
   @ViewChild("sentinel") sentinel?: ElementRef<HTMLElement>;
@@ -173,6 +177,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     this.computeWindow();
     this.load();
     this.loadScheduled();
+    this.loadAlerts();
     this.memory.get_epg_ids().catch((e) => console.error(e));
     // The "now" line moves every minute; programme states follow it.
     this.timer = setInterval(() => this.tick(), 60 * 1000);
@@ -696,6 +701,79 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     } finally {
       this.memory.LoadingNotification = false;
     }
+  }
+
+  // ----------------------------------------------------------------- alerts
+
+  async loadAlerts() {
+    try {
+      this.alerts = (await invoke<EpgAlert[]>("get_epg_alerts")) ?? [];
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  /// The saved search for the current query and action, shown as active.
+  alertFor(action: EpgAlertAction): EpgAlert | undefined {
+    return findEpgAlert(this.alerts, this.searchQuery, action);
+  }
+
+  /// Offered with XMLTV data only (nothing to match without it), but an
+  /// existing alert stays visible so it can be removed.
+  alertsOffered(): boolean {
+    return (
+      this.searchActive() &&
+      (this.memory.HasXmltv || !!this.alertFor("remind") || !!this.alertFor("record"))
+    );
+  }
+
+  /** Saves the current query as an alert; the backend applies it at once. */
+  async addAlert(action: EpgAlertAction) {
+    const query = this.searchQuery.trim();
+    if (this.alertBusy || !this.searchActive() || this.alertFor(action)) return;
+    if (action === "remind" && !this.memory.trayEnabled) return;
+    this.alertBusy = true;
+    try {
+      await invoke<number>("add_epg_alert", { query, action });
+      this.error.success(
+        this.translate.instant(
+          action === "remind" ? "GUIDE.ALERT_REMIND_ADDED" : "GUIDE.ALERT_RECORD_ADDED",
+          { query },
+        ),
+      );
+    } catch (e) {
+      this.error.handleError(e);
+    } finally {
+      this.alertBusy = false;
+    }
+    // The result rows show the reminders and recordings it just created.
+    await Promise.all([
+      this.loadAlerts(),
+      this.loadScheduled(),
+      this.memory.get_epg_ids().catch((e) => console.error(e)),
+    ]);
+    // The button turned into the "active" chip: keep the focus on it.
+    this.focusById(`guide-alert-${action}-remove`);
+  }
+
+  /** Stops future matches; reminders and recordings made so far stay. */
+  async removeAlert(alert: EpgAlert) {
+    if (this.alertBusy) return;
+    this.alertBusy = true;
+    try {
+      await invoke("delete_epg_alert", { id: alert.id });
+      this.error.success(this.translate.instant("GUIDE.ALERT_REMOVED", { query: alert.query }));
+    } catch (e) {
+      this.error.handleError(e);
+    } finally {
+      this.alertBusy = false;
+    }
+    await this.loadAlerts();
+    this.focusById(`guide-alert-${alert.action}-add`);
+  }
+
+  private focusById(id: string) {
+    setTimeout(() => document.getElementById(id)?.focus(), 0);
   }
 
   // --------------------------------------------------------------- keyboard

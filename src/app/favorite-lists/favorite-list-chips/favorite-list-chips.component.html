@@ -1,0 +1,61 @@
+<div class="list-chips" role="group" [attr.aria-label]="'FAV_LISTS.LISTS_LABEL' | translate">
+  <button
+    type="button"
+    class="list-chip"
+    [class.active]="selected === undefined"
+    [attr.aria-pressed]="selected === undefined"
+    (click)="selectList.emit(undefined)"
+  >
+    {{ "HOME.NAV.FAVORITES" | translate }}
+  </button>
+  <div
+    *ngFor="let list of lists; trackBy: trackByList"
+    class="list-chip-group"
+    [class.active]="selected === list.id"
+  >
+    <button
+      type="button"
+      class="list-chip"
+      [attr.aria-pressed]="selected === list.id"
+      [attr.aria-label]="'FAV_LISTS.CHIP_LABEL' | translate: { name: list.name, count: list.count }"
+      (click)="selectList.emit(list.id)"
+    >
+      <span class="chip-name">{{ list.name }}</span>
+      <span class="chip-count" aria-hidden="true">{{ list.count }}</span>
+    </button>
+    <button
+      type="button"
+      class="list-chip-menu"
+      #trigger="matMenuTrigger"
+      [matMenuTriggerFor]="listMenu"
+      [matMenuTriggerData]="{ list: list }"
+      (menuOpened)="menuOpened(trigger)"
+      [attr.aria-label]="'FAV_LISTS.LIST_OPTIONS' | translate: { name: list.name }"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z"
+        />
+      </svg>
+    </button>
+  </div>
+  <button type="button" class="list-chip list-chip-new" (click)="createList.emit()">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+    </svg>
+    {{ "FAV_LISTS.NEW_LIST" | translate }}
+  </button>
+  <span *ngIf="reorderHint" class="reorder-hint">{{ "FAV_LISTS.REORDER_HINT" | translate }}</span>
+</div>
+
+<mat-menu #listMenu="matMenu">
+  <ng-template matMenuContent let-list="list">
+    <button mat-menu-item (click)="rename(list)">
+      {{ "FAV_LISTS.RENAME" | translate }}
+    </button>
+    <button mat-menu-item (click)="delete(list)">
+      {{ "MENU.DELETE" | translate }}
+    </button>
+  </ng-template>
+</mat-menu>

@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "Ordenar canais",
     "ALPHABETICAL_ASC": "Alfabética cresc.",
     "ALPHABETICAL_DESC": "Alfabética decr.",
-    "PROVIDER": "Fornecedor"
+    "PROVIDER": "Fornecedor",
+    "CUSTOM": "Ordem própria",
+    "NUMBER": "Número do canal"
   },
   "SHORTCUT": {
     "SEARCH": "Pesquisar",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "ex.: pt,en",
       "MPV_PARAMS_PLACEHOLDER": "ex.: --hwdec=auto",
       "DEBUG_LOG": "Gravar um registo do leitor",
-      "DEBUG_LOG_DESC": "Apenas para diagnóstico: o mpv.log na pasta de registos guarda cada endereço de stream, incluindo os dados de acesso que contém. Aplica-se na próxima vez que o leitor abrir."
+      "DEBUG_LOG_DESC": "Apenas para diagnóstico: o mpv.log na pasta de registos guarda cada endereço de stream, incluindo os dados de acesso que contém. Aplica-se na próxima vez que o leitor abrir.",
+      "AUTO_FALLBACK": "Mudar para outro stream do canal se um falhar",
+      "AUTO_FALLBACK_DESC": "Se um stream ao vivo falhar, o player muda automaticamente para outra qualidade do mesmo canal, por exemplo de HD para SD."
     },
     "RECORDING": {
       "PATH": "Caminho de gravação",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "Limpar",
       "DELETE_ALL": "Eliminar tudo",
       "DELETE_ALL_DESC": "Remove todas as fontes, canais, favoritos e definições. Use isto se uma atualização não tiver corrigido um erro que está a ter.",
-      "DELETE_BTN": "Eliminar"
+      "DELETE_BTN": "Eliminar",
+      "LOG_FOLDER": "Arquivos de log",
+      "LOG_FOLDER_DESC": "Abre a pasta com os arquivos de log do app e do player.",
+      "LOG_FOLDER_BTN": "Abrir pasta de logs",
+      "DIAGNOSTICS": "Relatório de diagnóstico",
+      "DIAGNOSTICS_DESC": "Não contém senhas nem endereços de streams, então você pode anexá-lo a um relatório de erro.",
+      "DIAGNOSTICS_BTN": "Exportar diagnóstico…"
     },
     "RESTORE_MODAL": {
       "TITLE": "Confirmar restauro da base de dados",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "Selecione uma cópia de segurança da base de dados",
       "SQLITE_DATABASE": "Base de dados SQLite",
       "SAVE_FAVORITES": "Selecione onde guardar a lista de favoritos",
-      "M3U_PLAYLIST": "Lista de reprodução M3U"
+      "M3U_PLAYLIST": "Lista de reprodução M3U",
+      "SAVE_DIAGNOSTICS": "Escolha onde salvar o relatório de diagnóstico",
+      "TEXT_FILE": "Arquivo de texto"
     },
     "EPG": {
       "TITLE": "EPG externo",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "Este link M3U contém um login Xtream. Importado como fonte Xtream, você obtém o EPG do seu provedor, catch-up para programas perdidos e séries por temporada.",
     "XTREAM_DETECTED_BODY2": "Recomenda-se importá-lo como Xtream, mas você também pode importá-lo como um link M3U simples.",
     "IMPORT_AS_XTREAM": "Importar como Xtream (recomendado)",
-    "IMPORT_AS_M3U": "Importar como link M3U"
+    "IMPORT_AS_M3U": "Importar como link M3U",
+    "EPG_TITLE": "Guia de programação (EPG)",
+    "EPG_INTRO": "Guias gratuitos mostram o que está passando nos seus canais – escolha os dos países dos seus canais (você pode alterar isso depois nas configurações).",
+    "EPG_APPLY": "Aplicar",
+    "EPG_SKIP": "Pular",
+    "DONE_TITLE": "Tudo pronto",
+    "DONE_TEXT": "Sua fonte está configurada. Bom divertimento!",
+    "GO_TO_CHANNELS": "Ir para os canais"
   },
   "EPG": {
     "PLAYING_NOW": "Em exibição agora",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "Falha ao converter a fonte para Xtream",
     "EPG_MAPPED": "{{name}} agora mostra o guia de {{id}}",
     "EPG_MAPPING_REMOVED": "{{name}} volta a receber o EPG automaticamente",
-    "EPG_MAPPING_FAILED": "Não foi possível atribuir o EPG"
+    "EPG_MAPPING_FAILED": "Não foi possível atribuir o EPG",
+    "LOG_FOLDER_FAILED": "Não foi possível abrir a pasta de logs",
+    "DIAGNOSTICS_EXPORTED": "Relatório de diagnóstico salvo em {{path}}",
+    "DIAGNOSTICS_EXPORT_FAILED": "Não foi possível exportar o relatório de diagnóstico",
+    "EPG_LOADING": "O guia de programação está carregando em segundo plano…"
   },
   "UPDATE": {
     "TITLE": "Atualização disponível",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "Todos os grupos bloqueados serão desbloqueados e exibidos para todos.",
     "CONVERT_XTREAM_TITLE": "Converter “{{name}}” para Xtream?",
     "CONVERT_XTREAM_BODY1": "A fonte é importada novamente pelo seu login Xtream. Favoritos, histórico, grupos ocultos e bloqueados e gravações agendadas são mantidos pelo nome do canal.",
-    "CONVERT_XTREAM_BODY2": "Isso leva mais ou menos o mesmo tempo que atualizar a fonte. Se falhar, a fonte permanece inalterada."
+    "CONVERT_XTREAM_BODY2": "Isso leva mais ou menos o mesmo tempo que atualizar a fonte. Se falhar, a fonte permanece inalterada.",
+    "DELETE_ALERT_TITLE": "Eliminar a regra automática?",
+    "DELETE_ALERT_REMIND_BODY": "Os programas com \"{{query}}\" no título deixam de receber um lembrete automático.",
+    "DELETE_ALERT_RECORD_BODY": "Os programas com \"{{query}}\" no título deixam de ser gravados automaticamente.",
+    "DELETE_ALERT_KEEP": "Os lembretes e gravações já criados mantêm-se. Remove-os um a um se já não os quiseres."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Voltar aos canais",
@@ -656,7 +683,13 @@
     "MINIMIZE": "Minimizar",
     "EXPAND": "Ampliar",
     "CLOSE": "Fechar",
-    "MINI_PLAYER": "Minileitor"
+    "MINI_PLAYER": "Minileitor",
+    "ZAP_NUMBER": "Canal {{number}}",
+    "ZAP_UNKNOWN": "Nenhum canal {{number}}",
+    "FALLBACK_SWITCHING": "Mudando para {{name}} …",
+    "STREAM_INFO": "Informações do stream",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
@@ -673,7 +706,19 @@
     "TODAY": "Hoje",
     "TOMORROW": "Amanhã",
     "WATCH": "Ver",
-    "REMIND": "Lembrar-me"
+    "REMIND": "Lembrar-me",
+    "ALERTS_LABEL": "Lembretes e gravações automáticos para esta pesquisa",
+    "ALERT_REMIND": "Lembrar sempre \"{{query}}\"",
+    "ALERT_RECORD": "Gravar sempre \"{{query}}\"",
+    "ALERT_REMIND_ACTIVE": "Lembrete ativo para \"{{query}}\"",
+    "ALERT_RECORD_ACTIVE": "Gravação ativa para \"{{query}}\"",
+    "ALERT_REMIND_REMOVE": "Parar o lembrete automático para \"{{query}}\"",
+    "ALERT_RECORD_REMOVE": "Parar a gravação automática para \"{{query}}\"",
+    "ALERT_HINT": "Aplica-se a todos os programas com este texto no título, incluindo os que forem adicionados ao guia mais tarde.",
+    "ALERT_NEEDS_TRAY": "Os lembretes precisam do ícone na bandeja (Definições → Geral).",
+    "ALERT_REMIND_ADDED": "Vais receber um lembrete para cada programa com \"{{query}}\" no título, incluindo os que forem adicionados ao guia mais tarde.",
+    "ALERT_RECORD_ADDED": "Cada programa com \"{{query}}\" no título será gravado, incluindo os que forem adicionados ao guia mais tarde.",
+    "ALERT_REMOVED": "Regra automática para \"{{query}}\" parada. Os lembretes e gravações já criados mantêm-se."
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -709,7 +754,21 @@
     "PLAY": "Reproduzir",
     "PLAY_ARIA": "Reproduzir {{name}}",
     "UNKNOWN_CHANNEL": "Canal desconhecido",
-    "OPEN_FOLDER": "Abrir pasta"
+    "OPEN_FOLDER": "Abrir pasta",
+    "ALERTS": "Gravações e lembretes automáticos",
+    "ALERTS_EMPTY": "Ainda não há gravações nem lembretes automáticos",
+    "ALERTS_EMPTY_HINT": "Escreve parte de um título: cada programa dos próximos 7 dias que o contenha é gravado ou recebe um lembrete, incluindo programas adicionados ao guia mais tarde. Precisas de fontes de EPG externas (XMLTV) em Definições → EPG externo.",
+    "ALERTS_LOAD_FAILED": "Não foi possível carregar as gravações e lembretes automáticos",
+    "ALERT_QUERY_LABEL": "O título contém",
+    "ALERT_QUERY_PLACEHOLDER": "Parte do título de um programa",
+    "ALERT_ACTION_LABEL": "Ação",
+    "ALERT_ADD": "Adicionar",
+    "ALERT_TOO_SHORT": "Escreve pelo menos {{count}} caracteres.",
+    "ALERT_EXISTS": "Esta regra já existe.",
+    "ALERT_KIND_REMIND": "Lembrete",
+    "ALERT_KIND_RECORD": "Gravação",
+    "ALERT_CREATED": "Criada: {{date}}",
+    "ALERT_DELETE_ARIA": "Eliminar a regra automática para \"{{query}}\""
   },
   "EPG_MAPPING": {
     "TITLE": "Atribuir EPG",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "Nenhum canal do guia encontrado.",
     "AUTO": "Atribuir automaticamente",
     "XTREAM_NOTE": "Um guia atribuído aqui substitui, para este canal, o guia do teu fornecedor e, com ele, a visualização de programas passados (catch-up)."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "Listas de favoritos",
+    "NEW_LIST": "Nova lista",
+    "NEW_LIST_ELLIPSIS": "Nova lista…",
+    "LIST_OPTIONS": "Opções da lista «{{name}}»",
+    "CHIP_LABEL": "{{name}}, {{count}} canais",
+    "RENAME": "Mudar o nome",
+    "NAME": "Nome da lista",
+    "CREATE_TITLE": "Nova lista de favoritos",
+    "RENAME_TITLE": "Mudar o nome da lista",
+    "CREATE": "Criar",
+    "DELETE_TITLE": "Eliminar a lista?",
+    "DELETE_BODY": "A lista «{{name}}» será eliminada. Os canais e os teus favoritos mantêm-se.",
+    "DELETED": "Lista «{{name}}» eliminada",
+    "CREATE_FAILED": "Não foi possível criar a lista",
+    "RENAME_FAILED": "Não foi possível mudar o nome da lista",
+    "DELETE_FAILED": "Não foi possível eliminar a lista",
+    "ADDED": "«{{name}}» adicionado a «{{list}}»",
+    "REMOVED": "«{{name}}» removido de «{{list}}»",
+    "UPDATE_FAILED": "Não foi possível alterar a lista «{{list}}» para «{{name}}»",
+    "EMPTY": "Esta lista está vazia",
+    "EMPTY_HINT": "Clica com o botão direito num canal e escolhe «Adicionar à lista»",
+    "ADD_TO_LIST": "Adicionar à lista",
+    "REMOVE_FROM_LIST": "Remover da lista",
+    "MOVE_FORWARD": "Mover para a frente",
+    "MOVE_BACK": "Mover para trás",
+    "REORDER_HINT": "Arrasta os mosaicos para mudar a ordem ou usa «Mover para a frente/para trás» no menu de contexto",
+    "MOVE_FAILED": "Não foi possível guardar a nova ordem"
   }
 }

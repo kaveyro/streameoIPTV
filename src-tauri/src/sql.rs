@@ -3096,6 +3096,17 @@ pub fn get_epg_alerts() -> Result<Vec<crate::types::EpgAlert>> {
 
 pub fn add_epg_alert(query: &str, action: &str, created: i64) -> Result<i64> {
     let conn = get_conn()?;
+    // The same search and action again is the same alert.
+    if let Some(id) = conn
+        .query_row(
+            "SELECT id FROM epg_alerts WHERE lower(query) = lower(?) AND action = ? LIMIT 1",
+            params![query, action],
+            |row| row.get(0),
+        )
+        .optional()?
+    {
+        return Ok(id);
+    }
     conn.execute(
         "INSERT INTO epg_alerts (query, action, created) VALUES (?, ?, ?)",
         params![query, action, created],

@@ -1,9 +1,14 @@
-<button mat-menu-item (click)="notifySortChange()">
+<button
+  mat-menu-item
+  role="menuitemradio"
+  [attr.aria-checked]="isSelected()"
+  (click)="notifySortChange()"
+>
   {{ getText() | translate }}
   <svg
     class="check"
     fill="currentColor"
-    *ngIf="memory.Sort.getValue()[0] == sortType"
+    *ngIf="isSelected()"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
   >

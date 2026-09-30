@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "チャンネルを並べ替え",
     "ALPHABETICAL_ASC": "アルファベット昇順",
     "ALPHABETICAL_DESC": "アルファベット降順",
-    "PROVIDER": "プロバイダー"
+    "PROVIDER": "プロバイダー",
+    "CUSTOM": "カスタム順",
+    "NUMBER": "チャンネル番号"
   },
   "SHORTCUT": {
     "SEARCH": "検索",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "例: ja,en",
       "MPV_PARAMS_PLACEHOLDER": "例: --hwdec=auto",
       "DEBUG_LOG": "プレーヤーのログを書き込む",
-      "DEBUG_LOG_DESC": "トラブルシューティング専用：ログフォルダーの mpv.log に、含まれるログイン情報も含めてすべてのストリームアドレスが記録されます。次にプレーヤーを開いたときに有効になります。"
+      "DEBUG_LOG_DESC": "トラブルシューティング専用：ログフォルダーの mpv.log に、含まれるログイン情報も含めてすべてのストリームアドレスが記録されます。次にプレーヤーを開いたときに有効になります。",
+      "AUTO_FALLBACK": "ストリームが途切れたらチャンネルの別のストリームに切り替える",
+      "AUTO_FALLBACK_DESC": "ライブストリームが途切れると、プレーヤーは同じチャンネルの別の画質（例: HD から SD）に自動で切り替えます。"
     },
     "RECORDING": {
       "PATH": "録画パス",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "消去",
       "DELETE_ALL": "すべて削除",
       "DELETE_ALL_DESC": "すべてのソース、チャンネル、お気に入り、設定を削除します。アップグレードで問題が解決しない場合に使用してください。",
-      "DELETE_BTN": "削除"
+      "DELETE_BTN": "削除",
+      "LOG_FOLDER": "ログファイル",
+      "LOG_FOLDER_DESC": "アプリとプレーヤーのログファイルがあるフォルダーを開きます。",
+      "LOG_FOLDER_BTN": "ログフォルダーを開く",
+      "DIAGNOSTICS": "診断レポート",
+      "DIAGNOSTICS_DESC": "パスワードやストリームのアドレスは含まれないため、バグ報告に添付できます。",
+      "DIAGNOSTICS_BTN": "診断をエクスポート…"
     },
     "RESTORE_MODAL": {
       "TITLE": "データベース復元の確認",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "データベースバックアップを選択",
       "SQLITE_DATABASE": "SQLite データベース",
       "SAVE_FAVORITES": "お気に入りプレイリストの保存先を選択",
-      "M3U_PLAYLIST": "M3U プレイリスト"
+      "M3U_PLAYLIST": "M3U プレイリスト",
+      "SAVE_DIAGNOSTICS": "診断レポートの保存先を選択",
+      "TEXT_FILE": "テキストファイル"
     },
     "EPG": {
       "TITLE": "外部 EPG",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "この M3U リンクには Xtream のログイン情報が含まれています。Xtream ソースとしてインポートすると、プロバイダーの EPG、見逃した番組のキャッチアップ、シーズン別のシリーズが利用できます。",
     "XTREAM_DETECTED_BODY2": "Xtream としてのインポートをおすすめしますが、通常の M3U リンクとしてインポートすることもできます。",
     "IMPORT_AS_XTREAM": "Xtream としてインポート（推奨）",
-    "IMPORT_AS_M3U": "M3U リンクとしてインポート"
+    "IMPORT_AS_M3U": "M3U リンクとしてインポート",
+    "EPG_TITLE": "番組表 (EPG)",
+    "EPG_INTRO": "無料の番組表でチャンネルの放送内容を確認できます。チャンネルの国に合うものを選んでください（後から設定で変更できます）。",
+    "EPG_APPLY": "適用",
+    "EPG_SKIP": "スキップ",
+    "DONE_TITLE": "準備完了",
+    "DONE_TEXT": "ソースの設定が完了しました。お楽しみください！",
+    "GO_TO_CHANNELS": "チャンネルへ"
   },
   "EPG": {
     "PLAYING_NOW": "再生中",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "ソースを Xtream に変換できませんでした",
     "EPG_MAPPED": "{{name}} は {{id}} の番組表を表示します",
     "EPG_MAPPING_REMOVED": "{{name}} の EPG は再び自動で割り当てられます",
-    "EPG_MAPPING_FAILED": "EPG を割り当てられませんでした"
+    "EPG_MAPPING_FAILED": "EPG を割り当てられませんでした",
+    "LOG_FOLDER_FAILED": "ログフォルダーを開けませんでした",
+    "DIAGNOSTICS_EXPORTED": "診断レポートを {{path}} に保存しました",
+    "DIAGNOSTICS_EXPORT_FAILED": "診断レポートをエクスポートできませんでした",
+    "EPG_LOADING": "番組表をバックグラウンドで読み込んでいます…"
   },
   "UPDATE": {
     "TITLE": "更新があります",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "ロックされたすべてのグループのロックが解除され、全員に表示されます。",
     "CONVERT_XTREAM_TITLE": "「{{name}}」を Xtream に変換しますか？",
     "CONVERT_XTREAM_BODY1": "ソースは Xtream ログインで再インポートされます。お気に入り、履歴、非表示・ロック中のグループ、予約録画はチャンネル名で引き継がれます。",
-    "CONVERT_XTREAM_BODY2": "ソースの更新とほぼ同じ時間がかかります。失敗した場合、ソースは変更されません。"
+    "CONVERT_XTREAM_BODY2": "ソースの更新とほぼ同じ時間がかかります。失敗した場合、ソースは変更されません。",
+    "DELETE_ALERT_TITLE": "自動ルールを削除しますか？",
+    "DELETE_ALERT_REMIND_BODY": "タイトルに「{{query}}」を含む番組は、今後自動でリマインドされなくなります。",
+    "DELETE_ALERT_RECORD_BODY": "タイトルに「{{query}}」を含む番組は、今後自動で録画されなくなります。",
+    "DELETE_ALERT_KEEP": "作成済みのリマインドと録画はそのまま残ります。不要な場合は個別に削除してください。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "チャンネルに戻る",
@@ -656,7 +683,13 @@
     "MINIMIZE": "縮小",
     "EXPAND": "拡大",
     "CLOSE": "閉じる",
-    "MINI_PLAYER": "ミニプレーヤー"
+    "MINI_PLAYER": "ミニプレーヤー",
+    "ZAP_NUMBER": "チャンネル {{number}}",
+    "ZAP_UNKNOWN": "チャンネル {{number}} はありません",
+    "FALLBACK_SWITCHING": "{{name}} に切り替えています …",
+    "STREAM_INFO": "ストリーム情報",
+    "BITRATE_MBITS": "{{value}} Mbps",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "チャンネル",
@@ -673,7 +706,19 @@
     "TODAY": "今日",
     "TOMORROW": "明日",
     "WATCH": "視聴",
-    "REMIND": "リマインド"
+    "REMIND": "リマインド",
+    "ALERTS_LABEL": "この検索の自動リマインドと録画",
+    "ALERT_REMIND": "「{{query}}」を常にリマインド",
+    "ALERT_RECORD": "「{{query}}」を常に録画",
+    "ALERT_REMIND_ACTIVE": "「{{query}}」のリマインドが有効",
+    "ALERT_RECORD_ACTIVE": "「{{query}}」の録画が有効",
+    "ALERT_REMIND_REMOVE": "「{{query}}」の自動リマインドを停止",
+    "ALERT_RECORD_REMOVE": "「{{query}}」の自動録画を停止",
+    "ALERT_HINT": "タイトルにこのテキストを含むすべての番組に適用されます。後から番組表に追加された番組も含みます。",
+    "ALERT_NEEDS_TRAY": "リマインドにはトレイアイコンが必要です（設定 → 一般）。",
+    "ALERT_REMIND_ADDED": "タイトルに「{{query}}」を含むすべての番組をリマインドします。後から番組表に追加された番組も含みます。",
+    "ALERT_RECORD_ADDED": "タイトルに「{{query}}」を含むすべての番組を録画します。後から番組表に追加された番組も含みます。",
+    "ALERT_REMOVED": "「{{query}}」の自動ルールを停止しました。作成済みのリマインドと録画はそのまま残ります。"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -709,7 +754,21 @@
     "PLAY": "再生",
     "PLAY_ARIA": "{{name}} を再生",
     "UNKNOWN_CHANNEL": "不明なチャンネル",
-    "OPEN_FOLDER": "フォルダーを開く"
+    "OPEN_FOLDER": "フォルダーを開く",
+    "ALERTS": "自動録画とリマインド",
+    "ALERTS_EMPTY": "自動録画やリマインドはまだありません",
+    "ALERTS_EMPTY_HINT": "タイトルの一部を入力してください。今後 7 日間でそれを含むすべての番組が録画またはリマインドされます。後から番組表に追加された番組も対象です。外部 EPG ソース（XMLTV）が必要です。設定 → 外部 EPG で追加してください。",
+    "ALERTS_LOAD_FAILED": "自動録画とリマインドを読み込めませんでした",
+    "ALERT_QUERY_LABEL": "タイトルに含む",
+    "ALERT_QUERY_PLACEHOLDER": "番組タイトルの一部",
+    "ALERT_ACTION_LABEL": "アクション",
+    "ALERT_ADD": "追加",
+    "ALERT_TOO_SHORT": "{{count}} 文字以上入力してください。",
+    "ALERT_EXISTS": "このルールはすでにあります。",
+    "ALERT_KIND_REMIND": "リマインド",
+    "ALERT_KIND_RECORD": "録画",
+    "ALERT_CREATED": "作成日時: {{date}}",
+    "ALERT_DELETE_ARIA": "「{{query}}」の自動ルールを削除"
   },
   "EPG_MAPPING": {
     "TITLE": "EPG の割り当て",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "番組表のチャンネルが見つかりません。",
     "AUTO": "自動で割り当て",
     "XTREAM_NOTE": "ここで割り当てた番組表は、このチャンネルのプロバイダーの番組表に置き換わり、過去番組の見逃し視聴（キャッチアップ）も使えなくなります。"
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "お気に入りリスト",
+    "NEW_LIST": "新しいリスト",
+    "NEW_LIST_ELLIPSIS": "新しいリスト…",
+    "LIST_OPTIONS": "リスト「{{name}}」のオプション",
+    "CHIP_LABEL": "{{name}}、{{count}} チャンネル",
+    "RENAME": "名前を変更",
+    "NAME": "リスト名",
+    "CREATE_TITLE": "新しいお気に入りリスト",
+    "RENAME_TITLE": "リスト名を変更",
+    "CREATE": "作成",
+    "DELETE_TITLE": "リストを削除しますか？",
+    "DELETE_BODY": "リスト「{{name}}」を削除します。チャンネル自体とお気に入りはそのまま残ります。",
+    "DELETED": "リスト「{{name}}」を削除しました",
+    "CREATE_FAILED": "リストを作成できませんでした",
+    "RENAME_FAILED": "リスト名を変更できませんでした",
+    "DELETE_FAILED": "リストを削除できませんでした",
+    "ADDED": "「{{name}}」を「{{list}}」に追加しました",
+    "REMOVED": "「{{name}}」を「{{list}}」から削除しました",
+    "UPDATE_FAILED": "「{{name}}」のリスト「{{list}}」を変更できませんでした",
+    "EMPTY": "このリストは空です",
+    "EMPTY_HINT": "チャンネルを右クリックして「リストに追加」を選んでください",
+    "ADD_TO_LIST": "リストに追加",
+    "REMOVE_FROM_LIST": "リストから削除",
+    "MOVE_FORWARD": "前へ移動",
+    "MOVE_BACK": "後ろへ移動",
+    "REORDER_HINT": "タイルをドラッグして順番を変更するか、コンテキストメニューの「前へ/後ろへ移動」を使ってください",
+    "MOVE_FAILED": "新しい順番を保存できませんでした"
   }
 }

@@ -41,6 +41,104 @@
   [attr.aria-label]="'GUIDE.SEARCH_RESULTS' | translate"
   [attr.aria-busy]="searching"
 >
+  <div
+    *ngIf="alertsOffered()"
+    class="guide-alerts"
+    role="group"
+    [attr.aria-label]="'GUIDE.ALERTS_LABEL' | translate"
+  >
+    <ng-container *ngIf="alertFor('remind') as alert; else addRemind">
+      <span class="guide-alert is-active">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+          />
+        </svg>
+        {{ "GUIDE.ALERT_REMIND_ACTIVE" | translate: { query: alert.query } }}
+        <button
+          type="button"
+          class="icon-btn guide-alert-remove"
+          id="guide-alert-remind-remove"
+          [disabled]="alertBusy"
+          [attr.aria-label]="'GUIDE.ALERT_REMIND_REMOVE' | translate: { query: alert.query }"
+          [title]="'GUIDE.ALERT_REMIND_REMOVE' | translate: { query: alert.query }"
+          (click)="removeAlert(alert)"
+        >
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
+      </span>
+    </ng-container>
+    <ng-template #addRemind>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary guide-alert"
+        id="guide-alert-remind-add"
+        [disabled]="alertBusy || !memory.trayEnabled"
+        aria-describedby="guide-alerts-hint"
+        (click)="addAlert('remind')"
+      >
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+          />
+        </svg>
+        {{ "GUIDE.ALERT_REMIND" | translate: { query: searchQuery.trim() } }}
+      </button>
+    </ng-template>
+    <ng-container *ngIf="alertFor('record') as alert; else addRecord">
+      <span class="guide-alert is-active">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
+          />
+        </svg>
+        {{ "GUIDE.ALERT_RECORD_ACTIVE" | translate: { query: alert.query } }}
+        <button
+          type="button"
+          class="icon-btn guide-alert-remove"
+          id="guide-alert-record-remove"
+          [disabled]="alertBusy"
+          [attr.aria-label]="'GUIDE.ALERT_RECORD_REMOVE' | translate: { query: alert.query }"
+          [title]="'GUIDE.ALERT_RECORD_REMOVE' | translate: { query: alert.query }"
+          (click)="removeAlert(alert)"
+        >
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path
+              d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+            />
+          </svg>
+        </button>
+      </span>
+    </ng-container>
+    <ng-template #addRecord>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary guide-alert"
+        id="guide-alert-record-add"
+        [disabled]="alertBusy"
+        aria-describedby="guide-alerts-hint"
+        (click)="addAlert('record')"
+      >
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path
+            d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
+          />
+        </svg>
+        {{ "GUIDE.ALERT_RECORD" | translate: { query: searchQuery.trim() } }}
+      </button>
+    </ng-template>
+    <small class="guide-alerts-hint" id="guide-alerts-hint">
+      {{ "GUIDE.ALERT_HINT" | translate }}
+      <ng-container *ngIf="!memory.trayEnabled && !alertFor('remind')">{{
+        "GUIDE.ALERT_NEEDS_TRAY" | translate
+      }}</ng-container>
+    </small>
+  </div>
+
   <div *ngIf="searching && searchDays.length === 0" class="guide-hits" aria-hidden="true">
     <div *ngFor="let _ of [1, 2, 3]" class="guide-hit-skeleton skeleton"></div>
   </div>

@@ -35,4 +35,15 @@ describe("SortItemComponent", () => {
       true,
     ]);
   });
+
+  it("checks the provider order outside the favorites while the own order is set", () => {
+    const memory = TestBed.inject(MemoryService);
+    memory.Sort.next([SortType.custom, false]);
+    component.sortType = SortType.provider;
+    expect(component.isSelected()).toBeTrue();
+    component.favorites = true;
+    expect(component.isSelected()).toBeFalse();
+    component.sortType = SortType.custom;
+    expect(component.isSelected()).toBeTrue();
+  });
 });

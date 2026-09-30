@@ -7,6 +7,7 @@ import { Component, NgModule } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { FormsModule } from "@angular/forms";
 import { MatMenuModule } from "@angular/material/menu";
+import { DragDropModule } from "@angular/cdk/drag-drop";
 import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { provideRouter } from "@angular/router";
 import {
@@ -45,6 +46,7 @@ export const TEST_IMPORTS = [
   TestTranslateModule,
   ToastrModule.forRoot(),
   MatMenuModule,
+  DragDropModule,
   NgbTooltipModule,
   NgbTypeaheadModule,
   NgbModalModule,
@@ -91,6 +93,11 @@ const DEFAULTS: Record<string, unknown> = {
   get_countries: [],
   has_xmltv_data: false,
   search: [],
+  get_favorite_lists: [],
+  get_epg_alerts: [],
+  get_channel_favorite_lists: [],
+  create_favorite_list: 1,
+  resolve_channel_url: "http://example.test/live/1.ts",
   group_auto_complete: [],
   get_network_info: { port: 3000, local_ips: ["192.168.1.2"], wan_ip: "203.0.113.1" },
   "plugin:app|version": "0.0.0-test",

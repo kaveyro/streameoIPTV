@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Subject } from "rxjs";
+import { Observable, Subject, defer, share, timer } from "rxjs";
 import { MemoryService } from "./memory.service";
 import { GuideEpgCache } from "./tv-guide/tv-guide.component";
 import { Channel } from "./models/channel";
@@ -17,6 +17,18 @@ export interface Programme {
 export interface NowPlaying extends Programme {
   /// The programme after the current one, when the guide has it.
   next?: Programme;
+}
+
+/** Whether the programme is over (the tile's line then needs a reload). */
+export function programmeEnded(programme: Programme): boolean {
+  return programme.end_timestamp <= Date.now() / 1000;
+}
+
+/** How far the programme is, 0..100. */
+export function programmeProgress(programme: Programme): number {
+  const duration = programme.end_timestamp - programme.start_timestamp;
+  const elapsed = Date.now() / 1000 - programme.start_timestamp;
+  return duration > 0 ? Math.min(100, Math.max(0, (elapsed / duration) * 100)) : 0;
 }
 
 interface CacheEntry {
@@ -39,6 +51,11 @@ export class NowPlayingService {
   /** Emits when the EPG data behind the tiles changed (a guide appeared or
    *  was refreshed): tiles that are already shown load their line again. */
   readonly changed = new Subject<void>();
+  /** Ticks on every full minute for the tiles' progress bars: one timer for
+   *  all tiles, started by the first subscriber and stopped with the last. */
+  readonly minuteTick: Observable<number> = defer(() =>
+    timer(60_000 - (Date.now() % 60_000), 60_000),
+  ).pipe(share());
 
   constructor(
     private memory: MemoryService,

@@ -28,4 +28,7 @@ export class Settings {
   mpv_debug_log?: boolean;
   /// "show" | "hide" | "badge", see country-prefix.ts.
   country_prefix?: string;
+  /// Switch to another feed of the same channel when a live stream fails;
+  /// unset means on (memory.AutoFallback mirrors it).
+  auto_fallback?: boolean;
 }

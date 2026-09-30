@@ -8,6 +8,7 @@ import { MemoryService } from "../memory.service";
 import { SourceType } from "../models/sourceType";
 import { Settings } from "../models/settings";
 import { NowPlayingService } from "../now-playing.service";
+import { FREE_EPG_SOURCES } from "../epg-free-sources";
 import {
   IpcCall,
   SHARED_DECLARATIONS,
@@ -197,6 +198,61 @@ describe("SettingsComponent", () => {
     expect(TestBed.inject(MemoryService).CountryPrefixMode).toBe("badge");
     const saved = callsOf(calls, "update_settings").pop()!.args["settings"] as Settings;
     expect(saved.country_prefix).toBe("badge");
+  });
+
+  it("offers the shared free EPG sources", async () => {
+    await create();
+    expect(component.freeEpgSources).toBe(FREE_EPG_SOURCES);
+    component.setCategory("epg");
+    await settle();
+    fixture.detectChanges();
+    expect(element.querySelectorAll(".free-epg-chip").length).toBe(FREE_EPG_SOURCES.length);
+  });
+
+  it("defaults the stream fallback to on and applies a change at once", async () => {
+    await create();
+    expect(component.settings.auto_fallback).toBeTrue();
+    const memory = TestBed.inject(MemoryService);
+    component.settings.auto_fallback = false;
+    const pending = component.updateAutoFallback();
+    expect(memory.AutoFallback).toBeFalse();
+    await pending;
+    const saved = callsOf(calls, "update_settings").pop()!.args["settings"] as Settings;
+    expect(saved.auto_fallback).toBeFalse();
+  });
+
+  it("keeps a stored stream fallback choice", async () => {
+    await create({ get_settings: { auto_fallback: false } });
+    expect(component.settings.auto_fallback).toBeFalse();
+  });
+
+  it("opens the log folder and reports failures", async () => {
+    await create({ open_log_folder: () => Promise.reject("no file manager") });
+    const error = spyOn(TestBed.inject(ToastrService), "error").and.callThrough();
+    await component.openLogFolder();
+    expect(callsOf(calls, "open_log_folder").length).toBe(1);
+    expect(error).toHaveBeenCalled();
+  });
+
+  it("exports the diagnostics report to the chosen file", async () => {
+    const path = "C:/Temp/streameo-diagnose.txt";
+    await create({ "plugin:dialog|save": path });
+    const success = spyOn(TestBed.inject(ToastrService), "success").and.callThrough();
+    await component.exportDiagnostics();
+    const dialog = callsOf(calls, "plugin:dialog|save")[0].args["options"] as {
+      defaultPath: string;
+      filters: { extensions: string[] }[];
+    };
+    expect(dialog.defaultPath).toMatch(/^streameo-diagnose-\d{4}-\d{2}-\d{2}\.txt$/);
+    expect(dialog.filters[0].extensions).toEqual(["txt"]);
+    expect(callsOf(calls, "export_diagnostics").map((c) => c.args)).toEqual([{ path }]);
+    expect(success).toHaveBeenCalledWith("TOAST.DIAGNOSTICS_EXPORTED");
+  });
+
+  it("exports no diagnostics when the dialog is cancelled", async () => {
+    await create({ "plugin:dialog|save": null });
+    await component.exportDiagnostics();
+    expect(callsOf(calls, "export_diagnostics").length).toBe(0);
   });
 
   it("removes the PIN after confirming", async () => {

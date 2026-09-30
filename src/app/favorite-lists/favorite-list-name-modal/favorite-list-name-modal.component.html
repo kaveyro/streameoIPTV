@@ -1,0 +1,34 @@
+<form (ngSubmit)="submit()" novalidate>
+  <div class="modal-header">
+    <h4 class="modal-title" id="favorite-list-name-title">{{ title | translate }}</h4>
+    <button
+      type="button"
+      class="btn-close btn-close-white"
+      [attr.aria-label]="'MODAL.CLOSE' | translate"
+      (click)="cancel()"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <label class="form-label" for="favorite-list-name-input">{{
+      "FAV_LISTS.NAME" | translate
+    }}</label>
+    <input
+      id="favorite-list-name-input"
+      name="name"
+      class="form-control"
+      type="text"
+      autocomplete="off"
+      ngbAutofocus
+      [maxlength]="maxLength"
+      [(ngModel)]="name"
+    />
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-primary" [disabled]="!valid">
+      {{ confirmLabel | translate }}
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="cancel()">
+      {{ "MODAL.CANCEL" | translate }}
+    </button>
+  </div>
+</form>

@@ -4,7 +4,9 @@
   width: var(--icon-size-md);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: transform var(--transition-slow), color var(--transition-fast);
+  transition:
+    transform var(--transition-slow),
+    color var(--transition-fast);
 }
 
 .sort-icon:hover {

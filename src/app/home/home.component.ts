@@ -42,6 +42,8 @@ import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
 import { ParentalService } from "../parental.service";
 import { CountryCount } from "../models/epgExtras";
 import { toCountryPrefixMode } from "../country-prefix";
+import { CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
+import { FavoriteList, FavoriteListsService } from "../favorite-lists/favorite-lists.service";
 
 /// What the main area shows: the channel library (all view modes, also
 /// "continue watching"), the TV guide or the recordings. Frontend only; the
@@ -137,6 +139,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   countries: CountryCount[] = [];
   /// Sequence number of the latest loadCountries(); older answers are dropped.
   private countriesSeq = 0;
+  /// The favorites lists, as chips above the favorites view.
+  favoriteListItems: FavoriteList[] = [];
+  /// Sort and favorites list of the shown channels (committed with them, like
+  /// viewType), so drag & drop matches what is on screen.
+  private shownSort?: SortType;
+  shownFavoriteList?: number;
 
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -182,6 +190,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private translate: TranslateService,
     private parental: ParentalService,
     private nowPlaying: NowPlayingService,
+    private favoriteLists: FavoriteListsService,
   ) {
     this.getSources();
     this.listenForAutoRefresh();
@@ -199,6 +208,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     // The help labels are translated: rebuild them once the language file is
     // loaded (it may still be loading when the home page opens) or switched.
     this.subscriptions.push(this.translate.onLangChange.subscribe(() => this.buildShortcuts()));
+    this.subscriptions.push(
+      this.favoriteLists.lists
+        .pipe(filter((lists): lists is FavoriteList[] => lists !== undefined))
+        .subscribe((lists) => this.favoriteListsChanged(lists)),
+    );
   }
 
   private listenForAutoRefresh() {
@@ -234,6 +248,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.memory.ShowChannelSource = settings.show_channel_source ?? true;
         this.memory.UseExternalPlayer = settings.use_external_player ?? false;
         this.memory.CountryPrefixMode = toCountryPrefixMode(settings.country_prefix);
+        this.memory.AutoFallback = settings.auto_fallback ?? true;
         // Best effort: without it the lock button stays hidden.
         this.memory.refreshParental().catch((e) => console.error(e));
         this.memory.Sources = new Map(sources.filter((x) => x.enabled).map((s) => [s.id!, s]));
@@ -266,6 +281,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             page: 1,
             use_keywords: false,
             sort: sort,
+            favorite_list: this.favoriteLists.selected,
           };
           this.memory.Sort.next([sort, false]);
           this.chkSerie = this.hasXtream;
@@ -275,6 +291,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           }
           this.load().then((_) => _);
           this.loadCountries();
+          // After the filters: a remembered list that is gone gets dropped.
+          void this.favoriteLists.load();
         }
       })
       .catch((e) => {
@@ -395,17 +413,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.channelsVisible = true;
         // prevent flicker of hiding opacity
         this.viewType = this.filters.view_type;
+        this.shownSort = filters.sort;
+        this.shownFavoriteList =
+          filters.view_type === ViewMode.Favorites && filters.series_id === undefined
+            ? filters.favorite_list
+            : undefined;
       } else {
         this.channels = this.channels.concat(channels);
       }
-      // Mirror the directly-playable channels so the embedded player's side
-      // list can switch channels without returning to the grid. The guide
-      // publishes its own rows while it is shown.
-      if (this.panel === "library") {
-        this.memory.PlayerChannelList = this.channels.filter(
-          (c) => c.media_type === MediaType.livestream || c.media_type === MediaType.movie,
-        );
-      }
+      this.mirrorPlayerList();
       this.reachedMax = channels.length < this.PAGE_SIZE;
       this.loadMoreFailed = false;
     } catch (e) {
@@ -427,6 +443,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.gridLoading = false;
       }
     }
+  }
+
+  /// Mirror the directly-playable channels so the embedded player's side
+  /// list can switch channels without returning to the grid. The guide
+  /// publishes its own rows while it is shown.
+  private mirrorPlayerList() {
+    if (this.panel !== "library") return;
+    this.memory.PlayerChannelList = this.channels.filter(
+      (c) => c.media_type === MediaType.livestream || c.media_type === MediaType.movie,
+    );
   }
 
   /** Runs outside the Angular zone (see ngOnInit). */
@@ -684,6 +710,111 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (country === this.filters.country) return;
     this.filters.country = country;
     this.load();
+  }
+
+  /// The list chips: the favorites view at its top level (not inside a series).
+  favoriteChipsVisible(): boolean {
+    return this.isMode(ViewMode.Favorites) && this.filters?.series_id === undefined;
+  }
+
+  /** A chip was chosen: the favorites (undefined) or one of the lists. */
+  async selectFavoriteList(id?: number) {
+    if (!this.filters) return;
+    this.favoriteLists.selected = id;
+    if (this.filters.favorite_list === id) return;
+    this.filters.favorite_list = id;
+    // Kept for the next visit when another view is shown.
+    if (this.filters.view_type !== ViewMode.Favorites || this.filters.series_id !== undefined)
+      return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    await this.load();
+  }
+
+  async createFavoriteList() {
+    const id = await this.favoriteLists.promptCreate();
+    if (id !== undefined) await this.selectFavoriteList(id);
+  }
+
+  /// The lists were (re)loaded, e.g. after a rename or delete in the chips:
+  /// a shown list that is gone switches back to the favorites.
+  private favoriteListsChanged(lists: FavoriteList[]) {
+    this.favoriteListItems = lists;
+    const selected = this.filters?.favorite_list;
+    if (selected !== undefined && !lists.some((l) => l.id === selected)) {
+      void this.selectFavoriteList(undefined);
+    }
+  }
+
+  /// The shown list is in the own order and can be rearranged (drag & drop,
+  /// "move forward/back" in the tile menu).
+  customOrderActive(): boolean {
+    return (
+      this.panel === "library" &&
+      !this.continueWatching &&
+      this.viewType === ViewMode.Favorites &&
+      this.shownSort === SortType.custom &&
+      this.filters?.series_id === undefined
+    );
+  }
+
+  onTileDropped(event: CdkDragDrop<Channel[]>) {
+    void this.reorder(event.previousIndex, event.currentIndex);
+  }
+
+  /** Keyboard alternative to drag & drop: one place forward (-1) or back (+1). */
+  async moveChannel(index: number, delta: -1 | 1) {
+    const to = index + delta;
+    if (to < 0) return;
+    if (to >= this.channels.length) {
+      // The tile after the last loaded one is on the next page.
+      if (this.reachedMax) return;
+      await this.loadMore(true);
+      if (to >= this.channels.length) return;
+    }
+    if (await this.reorder(index, to)) {
+      // Keep the keyboard on the moved tile.
+      setTimeout(() => document.getElementById(`tile-${to}`)?.focus(), 0);
+    }
+  }
+
+  /**
+   * Moves a tile in the own order: shown right away, then saved in front of
+   * the tile that now follows it (at the end when none does). With a search
+   * or media filter only a part of the list is shown; "in front of the next
+   * shown tile" keeps the saved order in line with the screen then, too.
+   * Resolves to true once saved.
+   */
+  private async reorder(from: number, to: number): Promise<boolean> {
+    if (!this.customOrderActive() || this.loading || from === to) return false;
+    const moved = this.channels[from];
+    if (moved?.id === undefined) return false;
+    const listId = this.shownFavoriteList ?? null;
+    const channels = [...this.channels];
+    moveItemInArray(channels, from, to);
+    this.channels = channels;
+    // Moved behind the last loaded tile: its successor is on the next page,
+    // and the next page does not change by the move (it stays in the loaded part).
+    if (to === channels.length - 1 && !this.reachedMax) await this.loadMore(true);
+    const before = this.channels[to + 1];
+    if (!before && !this.reachedMax) {
+      // The next page did not load: "at the end" would be wrong.
+      await this.load();
+      return false;
+    }
+    try {
+      await invoke("move_favorite", {
+        listId,
+        channelId: moved.id,
+        beforeId: before?.id ?? null,
+      });
+      this.mirrorPlayerList();
+      return true;
+    } catch (e) {
+      this.error.handleError(e, this.translate.instant("FAV_LISTS.MOVE_FAILED"));
+      // Back to the saved order.
+      await this.load();
+      return false;
+    }
   }
 
   filtersVisible() {

@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "排序频道",
     "ALPHABETICAL_ASC": "按字母升序",
     "ALPHABETICAL_DESC": "按字母降序",
-    "PROVIDER": "提供商"
+    "PROVIDER": "提供商",
+    "CUSTOM": "自定义顺序",
+    "NUMBER": "频道编号"
   },
   "SHORTCUT": {
     "SEARCH": "搜索",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "例如 zh,en",
       "MPV_PARAMS_PLACEHOLDER": "例如 --hwdec=auto",
       "DEBUG_LOG": "写入播放器日志",
-      "DEBUG_LOG_DESC": "仅用于排查问题：日志文件夹中的 mpv.log 会记录每个流地址，包括其中的登录信息。下次打开播放器时生效。"
+      "DEBUG_LOG_DESC": "仅用于排查问题：日志文件夹中的 mpv.log 会记录每个流地址，包括其中的登录信息。下次打开播放器时生效。",
+      "AUTO_FALLBACK": "直播流失败时切换到该频道的其他流",
+      "AUTO_FALLBACK_DESC": "直播流失败时，播放器会自动切换到同一频道的其他画质，例如从 HD 切换到 SD。"
     },
     "RECORDING": {
       "PATH": "录制路径",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "清除",
       "DELETE_ALL": "删除全部",
       "DELETE_ALL_DESC": "移除所有来源、频道、收藏和设置。如果升级未修复您遇到的错误，请使用此项。",
-      "DELETE_BTN": "删除"
+      "DELETE_BTN": "删除",
+      "LOG_FOLDER": "日志文件",
+      "LOG_FOLDER_DESC": "打开存放应用和播放器日志文件的文件夹。",
+      "LOG_FOLDER_BTN": "打开日志文件夹",
+      "DIAGNOSTICS": "诊断报告",
+      "DIAGNOSTICS_DESC": "不包含密码或流地址，可直接附加到错误报告中。",
+      "DIAGNOSTICS_BTN": "导出诊断…"
     },
     "RESTORE_MODAL": {
       "TITLE": "确认还原数据库",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "选择数据库备份",
       "SQLITE_DATABASE": "SQLite 数据库",
       "SAVE_FAVORITES": "选择收藏播放列表的保存位置",
-      "M3U_PLAYLIST": "M3U 播放列表"
+      "M3U_PLAYLIST": "M3U 播放列表",
+      "SAVE_DIAGNOSTICS": "选择诊断报告的保存位置",
+      "TEXT_FILE": "文本文件"
     },
     "EPG": {
       "TITLE": "外部 EPG",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "此 M3U 链接包含 Xtream 登录信息。以 Xtream 源导入后，你可以获得提供商的 EPG、错过节目的回看以及按季排列的剧集。",
     "XTREAM_DETECTED_BODY2": "建议以 Xtream 导入，但你也可以将其作为普通 M3U 链接导入。",
     "IMPORT_AS_XTREAM": "以 Xtream 导入（推荐）",
-    "IMPORT_AS_M3U": "作为 M3U 链接导入"
+    "IMPORT_AS_M3U": "作为 M3U 链接导入",
+    "EPG_TITLE": "节目指南 (EPG)",
+    "EPG_INTRO": "免费节目指南可显示你的频道正在播放什么——请选择与你频道所属国家匹配的指南（之后可在设置中更改）。",
+    "EPG_APPLY": "应用",
+    "EPG_SKIP": "跳过",
+    "DONE_TITLE": "完成",
+    "DONE_TEXT": "你的来源已设置完成。祝观看愉快！",
+    "GO_TO_CHANNELS": "前往频道"
   },
   "EPG": {
     "PLAYING_NOW": "正在播放",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "无法将源转换为 Xtream",
     "EPG_MAPPED": "{{name}} 现在显示 {{id}} 的节目指南",
     "EPG_MAPPING_REMOVED": "{{name}} 重新自动获取 EPG",
-    "EPG_MAPPING_FAILED": "无法分配 EPG"
+    "EPG_MAPPING_FAILED": "无法分配 EPG",
+    "LOG_FOLDER_FAILED": "无法打开日志文件夹",
+    "DIAGNOSTICS_EXPORTED": "诊断报告已保存到 {{path}}",
+    "DIAGNOSTICS_EXPORT_FAILED": "无法导出诊断报告",
+    "EPG_LOADING": "节目指南正在后台加载…"
   },
   "UPDATE": {
     "TITLE": "有可用更新",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "所有已锁定的分组都将解锁并对所有人可见。",
     "CONVERT_XTREAM_TITLE": "将“{{name}}”转换为 Xtream？",
     "CONVERT_XTREAM_BODY1": "该源将通过其 Xtream 登录重新导入。收藏、历史记录、隐藏和锁定的分组以及计划的录制会按频道名称保留。",
-    "CONVERT_XTREAM_BODY2": "所需时间与刷新该源大致相同。如果失败，源将保持不变。"
+    "CONVERT_XTREAM_BODY2": "所需时间与刷新该源大致相同。如果失败，源将保持不变。",
+    "DELETE_ALERT_TITLE": "删除自动规则？",
+    "DELETE_ALERT_REMIND_BODY": "标题包含“{{query}}”的节目将不再自动提醒。",
+    "DELETE_ALERT_RECORD_BODY": "标题包含“{{query}}”的节目将不再自动录制。",
+    "DELETE_ALERT_KEEP": "已创建的提醒和录制会保留。如果不再需要，请逐个删除。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "返回频道",
@@ -656,7 +683,13 @@
     "MINIMIZE": "缩小",
     "EXPAND": "放大",
     "CLOSE": "关闭",
-    "MINI_PLAYER": "迷你播放器"
+    "MINI_PLAYER": "迷你播放器",
+    "ZAP_NUMBER": "频道 {{number}}",
+    "ZAP_UNKNOWN": "没有频道 {{number}}",
+    "FALLBACK_SWITCHING": "正在切换到 {{name}} …",
+    "STREAM_INFO": "流信息",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "频道",
@@ -673,7 +706,19 @@
     "TODAY": "今天",
     "TOMORROW": "明天",
     "WATCH": "观看",
-    "REMIND": "提醒我"
+    "REMIND": "提醒我",
+    "ALERTS_LABEL": "此搜索的自动提醒和录制",
+    "ALERT_REMIND": "始终提醒“{{query}}”",
+    "ALERT_RECORD": "始终录制“{{query}}”",
+    "ALERT_REMIND_ACTIVE": "“{{query}}”的提醒已启用",
+    "ALERT_RECORD_ACTIVE": "“{{query}}”的录制已启用",
+    "ALERT_REMIND_REMOVE": "停止“{{query}}”的自动提醒",
+    "ALERT_RECORD_REMOVE": "停止“{{query}}”的自动录制",
+    "ALERT_HINT": "适用于标题包含此文字的所有节目，包括之后加入节目指南的节目。",
+    "ALERT_NEEDS_TRAY": "提醒需要启用托盘图标（设置 → 常规）。",
+    "ALERT_REMIND_ADDED": "标题包含“{{query}}”的每个节目都会提醒你，包括之后加入节目指南的节目。",
+    "ALERT_RECORD_ADDED": "标题包含“{{query}}”的每个节目都会被录制，包括之后加入节目指南的节目。",
+    "ALERT_REMOVED": "已停止“{{query}}”的自动规则。已创建的提醒和录制会保留。"
   },
   "PARENTAL": {
     "CONFIRM": "确定",
@@ -709,7 +754,21 @@
     "PLAY": "播放",
     "PLAY_ARIA": "播放 {{name}}",
     "UNKNOWN_CHANNEL": "未知频道",
-    "OPEN_FOLDER": "打开文件夹"
+    "OPEN_FOLDER": "打开文件夹",
+    "ALERTS": "自动录制和提醒",
+    "ALERTS_EMPTY": "还没有自动录制或提醒",
+    "ALERTS_EMPTY_HINT": "输入标题的一部分：未来 7 天内标题包含它的每个节目都会被录制或提醒你，包括之后加入节目指南的节目。这需要在 设置 → 外部 EPG 中添加外部 EPG 源（XMLTV）。",
+    "ALERTS_LOAD_FAILED": "无法加载自动录制和提醒",
+    "ALERT_QUERY_LABEL": "标题包含",
+    "ALERT_QUERY_PLACEHOLDER": "节目标题的一部分",
+    "ALERT_ACTION_LABEL": "操作",
+    "ALERT_ADD": "添加",
+    "ALERT_TOO_SHORT": "请至少输入 {{count}} 个字符。",
+    "ALERT_EXISTS": "此规则已存在。",
+    "ALERT_KIND_REMIND": "提醒",
+    "ALERT_KIND_RECORD": "录制",
+    "ALERT_CREATED": "创建于：{{date}}",
+    "ALERT_DELETE_ARIA": "删除“{{query}}”的自动规则"
   },
   "EPG_MAPPING": {
     "TITLE": "分配 EPG",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "未找到节目指南频道。",
     "AUTO": "自动分配",
     "XTREAM_NOTE": "在此指定的节目单会替换该频道提供商自带的节目单，同时也无法再回看已播节目（catch-up）。"
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "收藏列表",
+    "NEW_LIST": "新建列表",
+    "NEW_LIST_ELLIPSIS": "新建列表…",
+    "LIST_OPTIONS": "列表“{{name}}”的选项",
+    "CHIP_LABEL": "{{name}}，{{count}} 个频道",
+    "RENAME": "重命名",
+    "NAME": "列表名称",
+    "CREATE_TITLE": "新建收藏列表",
+    "RENAME_TITLE": "重命名列表",
+    "CREATE": "创建",
+    "DELETE_TITLE": "删除列表？",
+    "DELETE_BODY": "列表“{{name}}”将被删除。频道本身和你的收藏会保留。",
+    "DELETED": "已删除列表“{{name}}”",
+    "CREATE_FAILED": "无法创建列表",
+    "RENAME_FAILED": "无法重命名列表",
+    "DELETE_FAILED": "无法删除列表",
+    "ADDED": "已将“{{name}}”添加到“{{list}}”",
+    "REMOVED": "已将“{{name}}”从“{{list}}”中移除",
+    "UPDATE_FAILED": "无法为“{{name}}”更改列表“{{list}}”",
+    "EMPTY": "此列表为空",
+    "EMPTY_HINT": "右键点击频道并选择“添加到列表”",
+    "ADD_TO_LIST": "添加到列表",
+    "REMOVE_FROM_LIST": "从列表中移除",
+    "MOVE_FORWARD": "前移",
+    "MOVE_BACK": "后移",
+    "REORDER_HINT": "拖动磁贴以更改顺序，或使用右键菜单中的“前移/后移”",
+    "MOVE_FAILED": "无法保存新顺序"
   }
 }

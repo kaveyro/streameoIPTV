@@ -11,6 +11,8 @@ import { EPG } from "../models/epg";
 import { CountryNamePipe } from "../pipes/country-name.pipe";
 import { NowPlayingService } from "../now-playing.service";
 import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
+import { Subject } from "rxjs";
+import { FavoriteListsService } from "../favorite-lists/favorite-lists.service";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -20,6 +22,44 @@ import {
   resetTauri,
   settle,
 } from "../../testing/test-helpers";
+
+/// Stands in for IntersectionObserver: by default a tile counts as visible
+/// as soon as it is observed; `show()` changes that by hand.
+class FakeIntersectionObserver {
+  static instances: FakeIntersectionObserver[] = [];
+  static showOnObserve = true;
+  elements: Element[] = [];
+  disconnected = false;
+
+  constructor(
+    private callback: IntersectionObserverCallback,
+    public options?: IntersectionObserverInit,
+  ) {
+    FakeIntersectionObserver.instances.push(this);
+  }
+
+  observe(element: Element) {
+    this.elements.push(element);
+    if (FakeIntersectionObserver.showOnObserve) this.show(true);
+  }
+
+  unobserve() {}
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+
+  disconnect() {
+    this.disconnected = true;
+  }
+
+  show(visible: boolean) {
+    const entries = this.elements.map(
+      (target) => ({ isIntersecting: visible, target }) as IntersectionObserverEntry,
+    );
+    this.callback(entries, this as unknown as IntersectionObserver);
+  }
+}
 
 describe("ChannelTileComponent", () => {
   let component: ChannelTileComponent;
@@ -80,7 +120,20 @@ describe("ChannelTileComponent", () => {
     };
   }
 
-  afterEach(() => resetTauri());
+  let originalObserver: typeof IntersectionObserver;
+
+  beforeEach(() => {
+    originalObserver = window.IntersectionObserver;
+    FakeIntersectionObserver.instances = [];
+    FakeIntersectionObserver.showOnObserve = true;
+    (window as unknown as Record<string, unknown>)["IntersectionObserver"] =
+      FakeIntersectionObserver;
+  });
+
+  afterEach(() => {
+    resetTauri();
+    window.IntersectionObserver = originalObserver;
+  });
 
   const movie: Channel = { id: 1, name: "Movie", media_type: MediaType.movie, favorite: false };
   const group: Channel = { id: 9, name: "Kids", media_type: MediaType.group, favorite: false };
@@ -216,5 +269,193 @@ describe("ChannelTileComponent", () => {
     await settle();
     expect(getNowPlaying).toHaveBeenCalledOnceWith(live);
     expect(TestBed.inject(MemoryService).ModalRef).toBeUndefined();
+  });
+
+  it("shows the channel number in front of the name", async () => {
+    await create({ ...live, number: 101 }, ViewMode.All, { get_epg: [] });
+    expect(element.querySelector(".channel-number")?.textContent?.trim()).toBe("101");
+    expect(tile().getAttribute("aria-label")).toBe("101 TR: Kanal D");
+  });
+
+  it("has no number without one", async () => {
+    await create(live, ViewMode.All, { get_epg: [] });
+    expect(element.querySelector(".channel-number")).toBeNull();
+  });
+
+  describe("now/next line", () => {
+    it("loads only once the tile comes near the viewport", async () => {
+      FakeIntersectionObserver.showOnObserve = false;
+      await create(live, ViewMode.All, { get_epg: [programme("Haberler", -30, 30)] });
+      await settle();
+      expect(callsOf(calls, "get_epg").length).toBe(0);
+      const observer = FakeIntersectionObserver.instances[0];
+      expect(observer.options?.rootMargin).toBe("200px");
+      expect(observer.elements).toEqual([element]);
+
+      observer.show(true);
+      await settle();
+      fixture.detectChanges();
+      expect(callsOf(calls, "get_epg").length).toBe(1);
+      expect(element.querySelector(".now-title")?.textContent).toContain("Haberler");
+    });
+
+    it("disconnects the observer when the tile goes away", async () => {
+      await create(live, ViewMode.All, { get_epg: [] });
+      const observer = FakeIntersectionObserver.instances[0];
+      fixture.destroy();
+      expect(observer.disconnected).toBeTrue();
+    });
+
+    it("loads right away without IntersectionObserver", async () => {
+      (window as unknown as Record<string, unknown>)["IntersectionObserver"] = undefined;
+      await create(live, ViewMode.All, { get_epg: [programme("Haberler", -30, 30)] });
+      await settle();
+      expect(callsOf(calls, "get_epg").length).toBe(1);
+    });
+
+    it("moves the progress on with the shared minute tick", async () => {
+      const tick = new Subject<number>();
+      await create(live, ViewMode.All, { get_epg: [programme("Haberler", -30, 30)] }, () => {
+        (TestBed.inject(NowPlayingService) as unknown as Record<string, unknown>)["minuteTick"] =
+          tick;
+      });
+      await settle();
+      expect(component.nowPlayingProgress).toBeCloseTo(50, 0);
+      // Half an hour later: the bar is full, the programme has not ended yet.
+      component.nowPlaying!.start_timestamp -= 1790;
+      component.nowPlaying!.end_timestamp -= 1790;
+      tick.next(1);
+      expect(component.nowPlayingProgress).toBeGreaterThan(99);
+      expect(callsOf(calls, "get_epg").length).toBe(1);
+    });
+
+    it("loads the next programme once the current one ended", async () => {
+      const tick = new Subject<number>();
+      await create(live, ViewMode.All, { get_epg: [programme("Haberler", -30, 30)] }, () => {
+        (TestBed.inject(NowPlayingService) as unknown as Record<string, unknown>)["minuteTick"] =
+          tick;
+      });
+      await settle();
+      const getNowPlaying = spyOn(TestBed.inject(NowPlayingService), "getNowPlaying").and.resolveTo(
+        undefined,
+      );
+      component.nowPlaying!.end_timestamp = Math.floor(Date.now() / 1000) - 1;
+      tick.next(1);
+      expect(getNowPlaying).toHaveBeenCalledOnceWith(live);
+    });
+
+    it("ignores ticks while the tile is off screen", async () => {
+      const tick = new Subject<number>();
+      await create(live, ViewMode.All, { get_epg: [programme("Haberler", -30, 30)] }, () => {
+        (TestBed.inject(NowPlayingService) as unknown as Record<string, unknown>)["minuteTick"] =
+          tick;
+      });
+      await settle();
+      FakeIntersectionObserver.instances[0].show(false);
+      const getNowPlaying = spyOn(TestBed.inject(NowPlayingService), "getNowPlaying").and.resolveTo(
+        undefined,
+      );
+      component.nowPlaying!.end_timestamp = Math.floor(Date.now() / 1000) - 1;
+      tick.next(1);
+      expect(getNowPlaying).not.toHaveBeenCalled();
+      // Back in view: the ended programme is replaced.
+      FakeIntersectionObserver.instances[0].show(true);
+      expect(getNowPlaying).toHaveBeenCalledOnceWith(live);
+    });
+  });
+
+  it("copies the resolved stream URL, not the stored one", async () => {
+    await create({ ...live, url: "http://host/live/{username}/{password}/3.ts" }, ViewMode.All, {
+      get_epg: [],
+      resolve_channel_url: "http://host/live/user/pass/3.ts",
+    });
+    await component.copyURL();
+    expect(callsOf(calls, "resolve_channel_url").length).toBe(1);
+    const write = calls.find((c) => c.cmd.includes("clipboard"));
+    expect(JSON.stringify(write?.args)).toContain("http://host/live/user/pass/3.ts");
+  });
+
+  describe("favorites lists", () => {
+    const sport = { id: 4, name: "Sport", position: 1, count: 1 };
+    const news = { id: 5, name: "News", position: 2, count: 0 };
+
+    async function openMenu(handlers: Record<string, unknown> = {}, viewMode = ViewMode.All) {
+      await create(live, viewMode, {
+        get_epg: [],
+        get_favorite_lists: [sport, news],
+        get_channel_favorite_lists: [4],
+        ...handlers,
+      });
+      await TestBed.inject(FavoriteListsService).load();
+      spyOn(component.matMenuTrigger, "openMenu");
+      component.openContextMenuFromKeyboard();
+      await settle();
+    }
+
+    it("loads the check marks when the menu opens", async () => {
+      await openMenu();
+      expect(callsOf(calls, "get_channel_favorite_lists").map((c) => c.args)).toEqual([
+        { channel: live },
+      ]);
+      expect(component.isInList(sport)).toBeTrue();
+      expect(component.isInList(news)).toBeFalse();
+    });
+
+    it("toggles the channel in a list", async () => {
+      await openMenu();
+      await component.toggleList(news);
+      expect(callsOf(calls, "add_to_favorite_list").map((c) => c.args)).toEqual([
+        { listId: 5, channel: live },
+      ]);
+      expect(component.isInList(news)).toBeTrue();
+      await component.toggleList(sport);
+      expect(callsOf(calls, "remove_from_favorite_list").map((c) => c.args)).toEqual([
+        { listId: 4, channel: live },
+      ]);
+      expect(component.isInList(sport)).toBeFalse();
+    });
+
+    it("keeps the check mark when the backend refuses", async () => {
+      await openMenu({
+        add_to_favorite_list: () => {
+          throw "nope";
+        },
+      });
+      await component.toggleList(news);
+      expect(component.isInList(news)).toBeFalse();
+    });
+
+    it("creates a list and puts the channel into it", async () => {
+      await openMenu({ create_favorite_list: 5 });
+      spyOn(TestBed.inject(NgbModal), "open").and.returnValue({
+        componentInstance: {},
+        result: Promise.resolve("News"),
+      } as unknown as NgbModalRef);
+      await component.addToNewList();
+      expect(callsOf(calls, "create_favorite_list").map((c) => c.args)).toEqual([{ name: "News" }]);
+      expect(callsOf(calls, "add_to_favorite_list").map((c) => c.args)).toEqual([
+        { listId: 5, channel: live },
+      ]);
+    });
+
+    it("removes the channel from the shown list and reloads", async () => {
+      await openMenu({}, ViewMode.Favorites);
+      component.favoriteList = 4;
+      const refresh = spyOn(TestBed.inject(MemoryService).Refresh, "next");
+      await component.removeFromList();
+      expect(callsOf(calls, "remove_from_favorite_list").map((c) => c.args)).toEqual([
+        { listId: 4, channel: live },
+      ]);
+      expect(refresh).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("asks the home page to move the tile", async () => {
+    await create(live, ViewMode.Favorites, { get_epg: [] });
+    const moves: number[] = [];
+    component.move.subscribe((delta) => moves.push(delta));
+    component.moveBy(-1);
+    component.moveBy(1);
+    expect(moves).toEqual([-1, 1]);
   });
 });

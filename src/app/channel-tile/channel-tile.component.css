@@ -348,3 +348,29 @@
   cursor: pointer;
   margin-bottom: 4px;
 }
+
+/* Channel number (tvg-chno / Xtream num) in front of the name. */
+.channel-number {
+  margin-inline-end: 0.35rem;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.playing .channel-number {
+  color: var(--on-accent);
+}
+
+/* Check mark column of the "add to list" submenu (the menu lives in the CDK
+   overlay, but keeps this component's style scope). */
+.list-check {
+  display: inline-flex;
+  width: 1.25em;
+  margin-inline-end: 0.35rem;
+  vertical-align: -0.125em;
+}
+
+.list-check svg {
+  width: 1em;
+  height: 1em;
+}

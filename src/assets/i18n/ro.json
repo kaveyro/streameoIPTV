@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "Sortează canalele",
     "ALPHABETICAL_ASC": "Alfabetic crescător",
     "ALPHABETICAL_DESC": "Alfabetic descrescător",
-    "PROVIDER": "Furnizor"
+    "PROVIDER": "Furnizor",
+    "CUSTOM": "Ordine proprie",
+    "NUMBER": "Numărul canalului"
   },
   "SHORTCUT": {
     "SEARCH": "Caută",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "ex. ro,en",
       "MPV_PARAMS_PLACEHOLDER": "ex. --hwdec=auto",
       "DEBUG_LOG": "Scrie un jurnal al playerului",
-      "DEBUG_LOG_DESC": "Doar pentru depanare: mpv.log din folderul de jurnale înregistrează fiecare adresă de stream, inclusiv datele de autentificare din ea. Se aplică la următoarea deschidere a playerului."
+      "DEBUG_LOG_DESC": "Doar pentru depanare: mpv.log din folderul de jurnale înregistrează fiecare adresă de stream, inclusiv datele de autentificare din ea. Se aplică la următoarea deschidere a playerului.",
+      "AUTO_FALLBACK": "Comută pe alt stream al canalului când unul cade",
+      "AUTO_FALLBACK_DESC": "Dacă un stream live cade, playerul comută automat pe altă calitate a aceluiași canal, de exemplu de la HD la SD."
     },
     "RECORDING": {
       "PATH": "Cale înregistrări",
@@ -252,7 +256,13 @@
       "CLEAR_BTN": "Șterge",
       "DELETE_ALL": "Șterge tot",
       "DELETE_ALL_DESC": "Elimină toate sursele, canalele, favoritele și setările. Folosește această opțiune dacă o actualizare nu a rezolvat o problemă întâmpinată.",
-      "DELETE_BTN": "Șterge"
+      "DELETE_BTN": "Șterge",
+      "LOG_FOLDER": "Fișiere jurnal",
+      "LOG_FOLDER_DESC": "Deschide folderul cu fișierele jurnal ale aplicației și ale playerului.",
+      "LOG_FOLDER_BTN": "Deschide folderul jurnal",
+      "DIAGNOSTICS": "Raport de diagnosticare",
+      "DIAGNOSTICS_DESC": "Nu conține parole sau adrese de stream, așa că îl poți atașa la un raport de eroare.",
+      "DIAGNOSTICS_BTN": "Exportă diagnosticarea…"
     },
     "RESTORE_MODAL": {
       "TITLE": "Confirmă restaurarea bazei de date",
@@ -266,7 +276,9 @@
       "SELECT_BACKUP": "Selectează un backup al bazei de date",
       "SQLITE_DATABASE": "Bază de date SQLite",
       "SAVE_FAVORITES": "Selectează unde se salvează lista de redare a favoritelor",
-      "M3U_PLAYLIST": "Listă de redare M3U"
+      "M3U_PLAYLIST": "Listă de redare M3U",
+      "SAVE_DIAGNOSTICS": "Alege unde se salvează raportul de diagnosticare",
+      "TEXT_FILE": "Fișier text"
     },
     "EPG": {
       "TITLE": "EPG extern",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "Acest link M3U conține o autentificare Xtream. Importat ca sursă Xtream, primești EPG-ul furnizorului, catch-up pentru emisiunile ratate și seriale pe sezoane.",
     "XTREAM_DETECTED_BODY2": "Se recomandă importul ca Xtream, dar îl poți importa și ca link M3U simplu.",
     "IMPORT_AS_XTREAM": "Importă ca Xtream (recomandat)",
-    "IMPORT_AS_M3U": "Importă ca link M3U"
+    "IMPORT_AS_M3U": "Importă ca link M3U",
+    "EPG_TITLE": "Ghid TV (EPG)",
+    "EPG_INTRO": "Ghidurile gratuite arată ce rulează pe canalele tale – alege-le pe cele pentru țările canalelor tale (poți schimba asta mai târziu în setări).",
+    "EPG_APPLY": "Aplică",
+    "EPG_SKIP": "Omite",
+    "DONE_TITLE": "Gata",
+    "DONE_TEXT": "Sursa ta este configurată. Vizionare plăcută!",
+    "GO_TO_CHANNELS": "Mergi la canale"
   },
   "EPG": {
     "PLAYING_NOW": "Acum se redă",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "Sursa nu a putut fi convertită în Xtream",
     "EPG_MAPPED": "{{name}} afișează acum ghidul {{id}}",
     "EPG_MAPPING_REMOVED": "{{name}} primește din nou EPG automat",
-    "EPG_MAPPING_FAILED": "EPG-ul nu a putut fi atribuit"
+    "EPG_MAPPING_FAILED": "EPG-ul nu a putut fi atribuit",
+    "LOG_FOLDER_FAILED": "Folderul jurnal nu a putut fi deschis",
+    "DIAGNOSTICS_EXPORTED": "Raportul de diagnosticare a fost salvat în {{path}}",
+    "DIAGNOSTICS_EXPORT_FAILED": "Raportul de diagnosticare nu a putut fi exportat",
+    "EPG_LOADING": "Ghidul TV se încarcă în fundal…"
   },
   "UPDATE": {
     "TITLE": "Actualizare disponibilă",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "Toate grupurile blocate vor fi deblocate și afișate tuturor.",
     "CONVERT_XTREAM_TITLE": "Convertești „{{name}}” în Xtream?",
     "CONVERT_XTREAM_BODY1": "Sursa este importată din nou prin autentificarea Xtream. Favoritele, istoricul, grupurile ascunse și blocate și înregistrările programate se păstrează după numele canalului.",
-    "CONVERT_XTREAM_BODY2": "Durează cam cât o reîmprospătare a sursei. Dacă eșuează, sursa rămâne neschimbată."
+    "CONVERT_XTREAM_BODY2": "Durează cam cât o reîmprospătare a sursei. Dacă eșuează, sursa rămâne neschimbată.",
+    "DELETE_ALERT_TITLE": "Ștergi regula automată?",
+    "DELETE_ALERT_REMIND_BODY": "Emisiunile cu „{{query}}” în titlu nu vor mai primi automat un memento.",
+    "DELETE_ALERT_RECORD_BODY": "Emisiunile cu „{{query}}” în titlu nu vor mai fi înregistrate automat.",
+    "DELETE_ALERT_KEEP": "Mementourile și înregistrările deja create rămân. Șterge-le pe rând dacă nu le mai vrei."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Înapoi la canale",
@@ -656,7 +683,13 @@
     "MINIMIZE": "Micșorează",
     "EXPAND": "Mărește",
     "CLOSE": "Închide",
-    "MINI_PLAYER": "Mini player"
+    "MINI_PLAYER": "Mini player",
+    "ZAP_NUMBER": "Canal {{number}}",
+    "ZAP_UNKNOWN": "Nu există canalul {{number}}",
+    "FALLBACK_SWITCHING": "Se comută la {{name}} …",
+    "STREAM_INFO": "Informații despre flux",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
@@ -673,7 +706,19 @@
     "TODAY": "Astăzi",
     "TOMORROW": "Mâine",
     "WATCH": "Vizionează",
-    "REMIND": "Amintește-mi"
+    "REMIND": "Amintește-mi",
+    "ALERTS_LABEL": "Mementouri și înregistrări automate pentru această căutare",
+    "ALERT_REMIND": "Amintește-mi mereu de „{{query}}”",
+    "ALERT_RECORD": "Înregistrează mereu „{{query}}”",
+    "ALERT_REMIND_ACTIVE": "Memento activ pentru „{{query}}”",
+    "ALERT_RECORD_ACTIVE": "Înregistrare activă pentru „{{query}}”",
+    "ALERT_REMIND_REMOVE": "Oprește mementoul automat pentru „{{query}}”",
+    "ALERT_RECORD_REMOVE": "Oprește înregistrarea automată pentru „{{query}}”",
+    "ALERT_HINT": "Se aplică fiecărei emisiuni cu acest text în titlu, inclusiv celor adăugate mai târziu în ghid.",
+    "ALERT_NEEDS_TRAY": "Mementourile au nevoie de pictograma din bara de sistem (Setări → General).",
+    "ALERT_REMIND_ADDED": "Vei primi un memento pentru fiecare emisiune cu „{{query}}” în titlu, inclusiv pentru cele adăugate mai târziu în ghid.",
+    "ALERT_RECORD_ADDED": "Fiecare emisiune cu „{{query}}” în titlu va fi înregistrată, inclusiv cele adăugate mai târziu în ghid.",
+    "ALERT_REMOVED": "Regula automată pentru „{{query}}” a fost oprită. Mementourile și înregistrările deja create rămân."
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -709,7 +754,21 @@
     "PLAY": "Redă",
     "PLAY_ARIA": "Redă {{name}}",
     "UNKNOWN_CHANNEL": "Canal necunoscut",
-    "OPEN_FOLDER": "Deschide folderul"
+    "OPEN_FOLDER": "Deschide folderul",
+    "ALERTS": "Înregistrări și mementouri automate",
+    "ALERTS_EMPTY": "Încă nu există înregistrări sau mementouri automate",
+    "ALERTS_EMPTY_HINT": "Introdu o parte dintr-un titlu: fiecare emisiune din următoarele 7 zile care îl conține este înregistrată sau primești un memento, inclusiv pentru emisiunile adăugate mai târziu în ghid. Ai nevoie de surse EPG externe (XMLTV) în Setări → EPG extern.",
+    "ALERTS_LOAD_FAILED": "Înregistrările și mementourile automate nu au putut fi încărcate",
+    "ALERT_QUERY_LABEL": "Titlul conține",
+    "ALERT_QUERY_PLACEHOLDER": "O parte din titlul unei emisiuni",
+    "ALERT_ACTION_LABEL": "Acțiune",
+    "ALERT_ADD": "Adaugă",
+    "ALERT_TOO_SHORT": "Introdu cel puțin {{count}} caractere.",
+    "ALERT_EXISTS": "Această regulă există deja.",
+    "ALERT_KIND_REMIND": "Memento",
+    "ALERT_KIND_RECORD": "Înregistrare",
+    "ALERT_CREATED": "Creată: {{date}}",
+    "ALERT_DELETE_ARIA": "Șterge regula automată pentru „{{query}}”"
   },
   "EPG_MAPPING": {
     "TITLE": "Atribuie EPG",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "Niciun canal din ghid găsit.",
     "AUTO": "Atribuie automat",
     "XTREAM_NOTE": "Un ghid atribuit aici înlocuiește pentru acest canal ghidul furnizorului tău și, odată cu el, vizionarea emisiunilor trecute (catch-up)."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "Liste de favorite",
+    "NEW_LIST": "Listă nouă",
+    "NEW_LIST_ELLIPSIS": "Listă nouă…",
+    "LIST_OPTIONS": "Opțiuni pentru lista „{{name}}”",
+    "CHIP_LABEL": "{{name}}, {{count}} canale",
+    "RENAME": "Redenumește",
+    "NAME": "Numele listei",
+    "CREATE_TITLE": "Listă nouă de favorite",
+    "RENAME_TITLE": "Redenumește lista",
+    "CREATE": "Creează",
+    "DELETE_TITLE": "Ștergi lista?",
+    "DELETE_BODY": "Lista „{{name}}” va fi ștearsă. Canalele în sine și favoritele tale rămân.",
+    "DELETED": "Lista „{{name}}” a fost ștearsă",
+    "CREATE_FAILED": "Lista nu a putut fi creată",
+    "RENAME_FAILED": "Lista nu a putut fi redenumită",
+    "DELETE_FAILED": "Lista nu a putut fi ștearsă",
+    "ADDED": "„{{name}}” a fost adăugat în „{{list}}”",
+    "REMOVED": "„{{name}}” a fost eliminat din „{{list}}”",
+    "UPDATE_FAILED": "Lista „{{list}}” nu a putut fi modificată pentru „{{name}}”",
+    "EMPTY": "Această listă este goală",
+    "EMPTY_HINT": "Fă clic dreapta pe un canal și alege „Adaugă în listă”",
+    "ADD_TO_LIST": "Adaugă în listă",
+    "REMOVE_FROM_LIST": "Elimină din listă",
+    "MOVE_FORWARD": "Mută înainte",
+    "MOVE_BACK": "Mută înapoi",
+    "REORDER_HINT": "Trage plăcile pentru a schimba ordinea sau folosește „Mută înainte/înapoi” din meniul contextual",
+    "MOVE_FAILED": "Noua ordine nu a putut fi salvată"
   }
 }

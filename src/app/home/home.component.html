@@ -250,7 +250,7 @@
             d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"
           />
         </svg>
-        <app-sort-button></app-sort-button>
+        <app-sort-button [favorites]="isMode(viewModeEnum.Favorites)"></app-sort-button>
         <div
           class="format-switcher"
           role="group"
@@ -313,6 +313,16 @@
       </h4>
     </div>
 
+    <!-- Favorites view: the favorites plus the user's own lists. -->
+    <app-favorite-list-chips
+      *ngIf="panel === 'library' && favoriteChipsVisible()"
+      [lists]="favoriteListItems"
+      [selected]="filters?.favorite_list"
+      [reorderHint]="customOrderActive()"
+      (selectList)="selectFavoriteList($event)"
+      (createList)="createFavoriteList()"
+    ></app-favorite-list-chips>
+
     <span class="visually-hidden" aria-live="polite" role="status">
       <ng-container *ngIf="!loading && filters && panel === 'library'">{{
         "HOME.CHANNELS_SHOWN" | translate: { count: channels.length }
@@ -336,8 +346,14 @@
         <ng-template #noQueryEmpty>
           <ng-container [ngSwitch]="filters.view_type">
             <ng-container *ngSwitchCase="viewModeEnum.Favorites">
-              <p class="mb-1">{{ "EMPTY.NO_FAVORITES" | translate }}</p>
-              <small>{{ "EMPTY.NO_FAVORITES_HINT" | translate }}</small>
+              <ng-container *ngIf="shownFavoriteList === undefined; else emptyList">
+                <p class="mb-1">{{ "EMPTY.NO_FAVORITES" | translate }}</p>
+                <small>{{ "EMPTY.NO_FAVORITES_HINT" | translate }}</small>
+              </ng-container>
+              <ng-template #emptyList>
+                <p class="mb-1">{{ "FAV_LISTS.EMPTY" | translate }}</p>
+                <small>{{ "FAV_LISTS.EMPTY_HINT" | translate }}</small>
+              </ng-template>
             </ng-container>
             <ng-container *ngSwitchCase="viewModeEnum.History">
               <ng-container *ngIf="continueWatching; else nothingWatched">
@@ -354,20 +370,35 @@
           </ng-container>
         </ng-template>
       </div>
+      <!-- Drag & drop only rearranges the own order (favorites view, sort
+           "own order"); the tile menu's "move forward/back" does the same by
+           keyboard. -->
       <div
         *ngIf="!gridLoading"
         #tileGrid
         class="tile-grid"
         [class.list-view]="viewFormat === 'list'"
+        [class.reorderable]="customOrderActive()"
         [@fade]="channelsVisible ? 'visible' : 'hidden'"
+        cdkDropList
+        cdkDropListOrientation="mixed"
+        [cdkDropListDisabled]="!customOrderActive()"
+        (cdkDropListDropped)="onTileDropped($event)"
       >
         <app-channel-tile
           [attr.id]="i == 0 ? 'first' : null"
           *ngFor="let channel of channels; let i = index; trackBy: trackByChannel"
+          cdkDrag
+          [cdkDragDisabled]="!customOrderActive()"
           [id]="i"
           [channel]="channel"
           [viewMode]="viewType"
           [format]="viewFormat"
+          [favoriteList]="shownFavoriteList"
+          [reorderable]="customOrderActive()"
+          [first]="i === 0"
+          [last]="i === channels.length - 1 && reachedMax"
+          (move)="moveChannel(i, $event)"
         ></app-channel-tile>
       </div>
 

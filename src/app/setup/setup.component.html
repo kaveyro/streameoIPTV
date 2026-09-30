@@ -12,7 +12,7 @@
   </svg>
 </button>
 <div class="container mt-5">
-  <ng-container *ngIf="!loading">
+  <ng-container *ngIf="!loading && step == 'source'">
     <div class="setup-preferences" *ngIf="!memory.AddingAdditionalSource">
       <div class="setup-preference">
         <label for="setup-language">{{ "SETTINGS.GENERAL.LANGUAGE" | translate }}</label>
@@ -322,9 +322,78 @@
       </div>
     </form>
   </ng-container>
+  <!-- First run only: free TV guides for the imported playlist -->
+  <section
+    *ngIf="step == 'epg'"
+    class="setup-step"
+    aria-labelledby="setup-step-title"
+    [attr.aria-busy]="epgBusy"
+  >
+    <h2 class="text-center" id="setup-step-title" tabindex="-1">
+      {{ "SETUP.EPG_TITLE" | translate }}
+    </h2>
+    <p class="setup-step-intro text-center" id="setup-epg-intro">
+      {{ "SETUP.EPG_INTRO" | translate }}
+    </p>
+    <div
+      class="free-epg-list"
+      role="group"
+      aria-labelledby="setup-step-title"
+      aria-describedby="setup-epg-intro"
+    >
+      <button
+        *ngFor="let src of freeEpgSources"
+        type="button"
+        class="free-epg-chip"
+        [class.free-epg-chip--added]="isEpgSelected(src.url)"
+        [attr.aria-pressed]="isEpgSelected(src.url)"
+        [disabled]="epgBusy"
+        (click)="toggleEpg(src.url)"
+      >
+        <span>{{ src.label }}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            *ngIf="!isEpgSelected(src.url)"
+            fill="currentColor"
+            d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+          />
+          <path
+            *ngIf="isEpgSelected(src.url)"
+            fill="currentColor"
+            d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+          />
+        </svg>
+      </button>
+    </div>
+    <div class="mt-4 d-flex justify-content-center flex-wrap gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="skipEpg()">
+        {{ "SETUP.EPG_SKIP" | translate }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="epgBusy"
+        [attr.aria-busy]="epgBusy"
+        (click)="applyEpg()"
+      >
+        {{ "SETUP.EPG_APPLY" | translate }}
+      </button>
+    </div>
+  </section>
+  <section *ngIf="step == 'done'" class="setup-step" aria-labelledby="setup-step-title">
+    <h2 class="text-center" id="setup-step-title" tabindex="-1">
+      {{ "SETUP.DONE_TITLE" | translate }}
+    </h2>
+    <p class="setup-step-intro text-center">{{ "SETUP.DONE_TEXT" | translate }}</p>
+    <div class="mt-4 d-flex justify-content-center">
+      <button type="button" class="btn btn-primary" (click)="finish()">
+        {{ "SETUP.GO_TO_CHANNELS" | translate }}
+      </button>
+    </div>
+  </section>
   <app-loading *ngIf="loading" [center]="false"></app-loading>
 </div>
-<div class="setup-footer" *ngIf="!memory.AddingAdditionalSource">
+<div class="setup-footer" *ngIf="!memory.AddingAdditionalSource && step == 'source'">
   <button type="button" (click)="nuke()" class="btn btn-link btn-sm reset-link">
     {{ "SETUP.DELETE_ALL_DATA" | translate }}
   </button>

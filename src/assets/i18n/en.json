@@ -103,7 +103,9 @@
     "SORT_CHANNELS": "Sort channels",
     "ALPHABETICAL_ASC": "Alphabetically asc",
     "ALPHABETICAL_DESC": "Alphabetically desc",
-    "PROVIDER": "Provider"
+    "PROVIDER": "Provider",
+    "CUSTOM": "Own order",
+    "NUMBER": "Channel number"
   },
   "SHORTCUT": {
     "SEARCH": "Search",
@@ -221,7 +223,9 @@
       "LANG_PLACEHOLDER": "e.g. de,en",
       "MPV_PARAMS_PLACEHOLDER": "e.g. --hwdec=auto",
       "DEBUG_LOG": "Write a player log",
-      "DEBUG_LOG_DESC": "For troubleshooting only: mpv.log in the log folder records every stream address, including the login data in it. Takes effect the next time the player opens."
+      "DEBUG_LOG_DESC": "For troubleshooting only: mpv.log in the log folder records every stream address, including the login data in it. Takes effect the next time the player opens.",
+      "AUTO_FALLBACK": "Switch to another stream of the channel when one fails",
+      "AUTO_FALLBACK_DESC": "If a live stream fails, the player automatically switches to another quality of the same channel, for example from HD to SD."
     },
     "RECORDING": {
       "PATH": "Recording path",
@@ -280,7 +284,13 @@
       "CLEAR_BTN": "Clear",
       "DELETE_ALL": "Delete everything",
       "DELETE_ALL_DESC": "Remove all sources, channels, favorites and settings. Use this if an upgrade did not fix a bug you are experiencing.",
-      "DELETE_BTN": "Delete"
+      "DELETE_BTN": "Delete",
+      "LOG_FOLDER": "Log files",
+      "LOG_FOLDER_DESC": "Open the folder with the log files of the app and the player.",
+      "LOG_FOLDER_BTN": "Open log folder",
+      "DIAGNOSTICS": "Diagnostics report",
+      "DIAGNOSTICS_DESC": "Contains no passwords or stream addresses, so you can attach it to a bug report.",
+      "DIAGNOSTICS_BTN": "Export diagnostics…"
     },
     "RESTORE_MODAL": {
       "TITLE": "Confirm database restore",
@@ -294,7 +304,9 @@
       "SELECT_BACKUP": "Select a database backup",
       "SQLITE_DATABASE": "SQLite database",
       "SAVE_FAVORITES": "Select where to save the favorites playlist",
-      "M3U_PLAYLIST": "M3U playlist"
+      "M3U_PLAYLIST": "M3U playlist",
+      "SAVE_DIAGNOSTICS": "Select where to save the diagnostics report",
+      "TEXT_FILE": "Text file"
     },
     "PARENTAL": {
       "DESC": "Protect groups with a PIN. Locked groups and their channels stay hidden until the PIN is entered with the lock button on the home page. Lock a group from its context menu in Categories.",
@@ -338,7 +350,14 @@
     "XTREAM_DETECTED_BODY1": "This M3U link contains an Xtream login. Imported as an Xtream source, you get your provider's EPG, catch-up for missed programmes and series sorted by season.",
     "XTREAM_DETECTED_BODY2": "Importing it as Xtream is recommended, but you can also import it as a plain M3U link.",
     "IMPORT_AS_XTREAM": "Import as Xtream (recommended)",
-    "IMPORT_AS_M3U": "Import as M3U link"
+    "IMPORT_AS_M3U": "Import as M3U link",
+    "EPG_TITLE": "TV guide (EPG)",
+    "EPG_INTRO": "Free guides show what is on your channels – pick the ones for your channels' countries (you can change this later in the settings).",
+    "EPG_APPLY": "Apply",
+    "EPG_SKIP": "Skip",
+    "DONE_TITLE": "All set",
+    "DONE_TEXT": "Your source is set up. Enjoy watching!",
+    "GO_TO_CHANNELS": "Go to channels"
   },
   "EPG": {
     "PLAYING_NOW": "Playing now",
@@ -601,7 +620,11 @@
     "SOURCE_CONVERT_FAILED": "Failed to convert the source to Xtream",
     "EPG_MAPPED": "{{name}} now shows the guide of {{id}}",
     "EPG_MAPPING_REMOVED": "{{name}} gets its EPG automatically again",
-    "EPG_MAPPING_FAILED": "Could not assign the EPG"
+    "EPG_MAPPING_FAILED": "Could not assign the EPG",
+    "LOG_FOLDER_FAILED": "Could not open the log folder",
+    "DIAGNOSTICS_EXPORTED": "Diagnostics report saved to {{path}}",
+    "DIAGNOSTICS_EXPORT_FAILED": "Could not export the diagnostics report",
+    "EPG_LOADING": "The TV guide is loading in the background…"
   },
   "UPDATE": {
     "TITLE": "Update available",
@@ -642,7 +665,11 @@
     "REMOVE_PIN_BODY": "All locked groups will be unlocked and shown to everyone.",
     "CONVERT_XTREAM_TITLE": "Convert “{{name}}” to Xtream?",
     "CONVERT_XTREAM_BODY1": "The source is imported again through its Xtream login. Favorites, history, hidden and locked groups and scheduled recordings are kept by channel name.",
-    "CONVERT_XTREAM_BODY2": "This takes about as long as refreshing the source. If it fails, the source stays unchanged."
+    "CONVERT_XTREAM_BODY2": "This takes about as long as refreshing the source. If it fails, the source stays unchanged.",
+    "DELETE_ALERT_TITLE": "Delete automatic rule?",
+    "DELETE_ALERT_REMIND_BODY": "Programmes with \"{{query}}\" in the title will no longer get a reminder automatically.",
+    "DELETE_ALERT_RECORD_BODY": "Programmes with \"{{query}}\" in the title will no longer be recorded automatically.",
+    "DELETE_ALERT_KEEP": "Reminders and recordings already created stay. Remove them individually if you no longer want them."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Back to channels",
@@ -656,7 +683,13 @@
     "MINIMIZE": "Minimize",
     "EXPAND": "Enlarge",
     "CLOSE": "Close",
-    "MINI_PLAYER": "Mini player"
+    "MINI_PLAYER": "Mini player",
+    "ZAP_NUMBER": "Channel {{number}}",
+    "ZAP_UNKNOWN": "No channel {{number}}",
+    "FALLBACK_SWITCHING": "Switching to {{name}} …",
+    "STREAM_INFO": "Stream info",
+    "BITRATE_MBITS": "{{value}} Mbit/s",
+    "FPS_VALUE": "{{value}} fps"
   },
   "GUIDE": {
     "CHANNEL": "Channel",
@@ -673,7 +706,19 @@
     "TODAY": "Today",
     "TOMORROW": "Tomorrow",
     "WATCH": "Watch",
-    "REMIND": "Remind me"
+    "REMIND": "Remind me",
+    "ALERTS_LABEL": "Automatic reminders and recordings for this search",
+    "ALERT_REMIND": "Always remind me of \"{{query}}\"",
+    "ALERT_RECORD": "Always record \"{{query}}\"",
+    "ALERT_REMIND_ACTIVE": "Reminder active for \"{{query}}\"",
+    "ALERT_RECORD_ACTIVE": "Recording active for \"{{query}}\"",
+    "ALERT_REMIND_REMOVE": "Stop the automatic reminder for \"{{query}}\"",
+    "ALERT_RECORD_REMOVE": "Stop the automatic recording for \"{{query}}\"",
+    "ALERT_HINT": "Applies to every programme with this text in its title, including ones added to the guide later.",
+    "ALERT_NEEDS_TRAY": "Reminders need the tray icon (Settings → General).",
+    "ALERT_REMIND_ADDED": "You'll be reminded of every programme with \"{{query}}\" in its title, including ones added to the guide later.",
+    "ALERT_RECORD_ADDED": "Every programme with \"{{query}}\" in its title will be recorded, including ones added to the guide later.",
+    "ALERT_REMOVED": "Stopped the automatic rule for \"{{query}}\". Reminders and recordings already created stay."
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -709,7 +754,21 @@
     "PLAY": "Play",
     "PLAY_ARIA": "Play {{name}}",
     "UNKNOWN_CHANNEL": "Unknown channel",
-    "OPEN_FOLDER": "Open folder"
+    "OPEN_FOLDER": "Open folder",
+    "ALERTS": "Automatic recordings and reminders",
+    "ALERTS_EMPTY": "No automatic recordings or reminders yet",
+    "ALERTS_EMPTY_HINT": "Enter part of a title: every programme of the next 7 days that contains it is recorded or gets a reminder, including programmes added to the guide later. This needs external EPG sources (XMLTV) in Settings → External EPG.",
+    "ALERTS_LOAD_FAILED": "Failed to load the automatic recordings and reminders",
+    "ALERT_QUERY_LABEL": "Title contains",
+    "ALERT_QUERY_PLACEHOLDER": "Part of a programme title",
+    "ALERT_ACTION_LABEL": "Action",
+    "ALERT_ADD": "Add",
+    "ALERT_TOO_SHORT": "Enter at least {{count}} characters.",
+    "ALERT_EXISTS": "This rule already exists.",
+    "ALERT_KIND_REMIND": "Reminder",
+    "ALERT_KIND_RECORD": "Recording",
+    "ALERT_CREATED": "Created: {{date}}",
+    "ALERT_DELETE_ARIA": "Delete the automatic rule for \"{{query}}\""
   },
   "EPG_MAPPING": {
     "TITLE": "Assign EPG",
@@ -724,5 +783,34 @@
     "NO_RESULTS": "No guide channel found.",
     "AUTO": "Assign automatically",
     "XTREAM_NOTE": "A guide assigned here replaces your provider's own guide for this channel, and with it catch-up of past programmes."
+  },
+  "FAV_LISTS": {
+    "LISTS_LABEL": "Favorites lists",
+    "NEW_LIST": "New list",
+    "NEW_LIST_ELLIPSIS": "New list…",
+    "LIST_OPTIONS": "Options for the list “{{name}}”",
+    "CHIP_LABEL": "{{name}}, {{count}} channels",
+    "RENAME": "Rename",
+    "NAME": "Name of the list",
+    "CREATE_TITLE": "New favorites list",
+    "RENAME_TITLE": "Rename list",
+    "CREATE": "Create",
+    "DELETE_TITLE": "Delete list?",
+    "DELETE_BODY": "The list “{{name}}” will be deleted. The channels themselves and your favorites stay.",
+    "DELETED": "Deleted the list “{{name}}”",
+    "CREATE_FAILED": "Failed to create the list",
+    "RENAME_FAILED": "Failed to rename the list",
+    "DELETE_FAILED": "Failed to delete the list",
+    "ADDED": "Added “{{name}}” to “{{list}}”",
+    "REMOVED": "Removed “{{name}}” from “{{list}}”",
+    "UPDATE_FAILED": "Failed to change the list “{{list}}” for “{{name}}”",
+    "EMPTY": "This list is empty",
+    "EMPTY_HINT": "Right-click a channel and choose “Add to list”",
+    "ADD_TO_LIST": "Add to list",
+    "REMOVE_FROM_LIST": "Remove from list",
+    "MOVE_FORWARD": "Move forward",
+    "MOVE_BACK": "Move back",
+    "REORDER_HINT": "Drag tiles to change the order, or use “Move forward/back” in the context menu",
+    "MOVE_FAILED": "Failed to save the new order"
   }
 }

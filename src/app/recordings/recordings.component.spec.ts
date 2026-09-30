@@ -6,6 +6,8 @@ import { PlaybackService } from "../playback.service";
 import { RecordingStatus, ScheduledRecording } from "../models/scheduledRecording";
 import { RecordingFile } from "../models/recordingFile";
 import { MediaType } from "../models/mediaType";
+import { EpgAlert } from "../models/epgAlert";
+import { MemoryService } from "../memory.service";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -52,6 +54,10 @@ describe("RecordingsComponent", () => {
       status: RecordingStatus.Done,
     },
   ];
+  const alerts: EpgAlert[] = [
+    { id: 7, query: "Tatort", action: "record", created: now - 86400 },
+    { id: 8, query: "Formel 1", action: "remind", created: now },
+  ];
   const files: RecordingFile[] = [
     { path: "C:\\Recordings\\show.ts", name: "show.ts", size: 1536 * 1024 * 1024, modified: now },
   ];
@@ -60,6 +66,7 @@ describe("RecordingsComponent", () => {
     calls = mockTauri({
       get_recording_schedule: schedule,
       get_recording_files: files,
+      get_epg_alerts: alerts,
       ...handlers,
     });
     await TestBed.configureTestingModule({
@@ -145,7 +152,7 @@ describe("RecordingsComponent", () => {
 
   it("lists the files with a human readable size", async () => {
     await create();
-    const row = element.querySelectorAll(".rec-section")[1].querySelector(".recording-row")!;
+    const row = element.querySelector('[aria-labelledby="rec-files-title"] .recording-row')!;
     expect(row.querySelector(".recording-title")?.textContent).toContain("show.ts");
     expect(row.querySelector(".recording-time")?.textContent).toContain("GB");
     expect(component.formatSize(512)).toContain("512");
@@ -186,11 +193,113 @@ describe("RecordingsComponent", () => {
   });
 
   it("shows empty states for both sections", async () => {
-    await create({ get_recording_schedule: [], get_recording_files: [] });
+    await create({ get_recording_schedule: [], get_recording_files: [], get_epg_alerts: [] });
     const text = element.textContent ?? "";
     expect(text).toContain("EMPTY.NO_RECORDINGS");
     expect(text).toContain("EMPTY.NO_RECORDING_FILES");
+    expect(text).toContain("RECORDINGS.ALERTS_EMPTY");
+    expect(text).toContain("RECORDINGS.ALERTS_EMPTY_HINT");
     expect(element.querySelectorAll(".recording-row").length).toBe(0);
+  });
+
+  describe("automatic recordings and reminders", () => {
+    const section = () => element.querySelector('[aria-labelledby="rec-alerts-title"]')!;
+    const queryInput = () => section().querySelector("#rec-alert-query") as HTMLInputElement;
+    const actionSelect = () => section().querySelector("#rec-alert-action") as HTMLSelectElement;
+    async function fill(query: string, action?: "remind" | "record") {
+      queryInput().value = query;
+      queryInput().dispatchEvent(new Event("input"));
+      if (action) {
+        actionSelect().value = action;
+        actionSelect().dispatchEvent(new Event("change"));
+      }
+      fixture.detectChanges();
+      await settle();
+    }
+    async function submit() {
+      (section().querySelector("form") as HTMLFormElement).dispatchEvent(new Event("submit"));
+      await settle();
+      fixture.detectChanges();
+    }
+
+    it("lists the alerts with their action and creation date", async () => {
+      await create();
+      const rows = section().querySelectorAll(".recording-row");
+      expect(rows.length).toBe(2);
+      expect(rows[0].querySelector(".recording-title")?.textContent).toContain("Tatort");
+      expect(rows[0].textContent).toContain("RECORDINGS.ALERT_KIND_RECORD");
+      expect(rows[0].textContent).toContain("RECORDINGS.ALERT_CREATED");
+      expect(rows[0].querySelector(".alert-icon--record")).not.toBeNull();
+      expect(rows[1].textContent).toContain("RECORDINGS.ALERT_KIND_REMIND");
+      expect(rows[1].querySelector("button")?.getAttribute("aria-label")).toBe(
+        "RECORDINGS.ALERT_DELETE_ARIA",
+      );
+    });
+
+    it("adds an alert and reloads the schedule it filled", async () => {
+      await create();
+      await fill("  Champions League ");
+      await submit();
+      expect(callsOf(calls, "add_epg_alert").map((c) => c.args)).toEqual([
+        { query: "Champions League", action: "record" },
+      ]);
+      expect(callsOf(calls, "get_recording_schedule").length).toBe(2);
+      expect(callsOf(calls, "get_epg_alerts").length).toBe(2);
+      // The form is emptied for the next one.
+      expect(component.alertQuery).toBe("");
+    });
+
+    it("needs two characters and no duplicate (case-insensitive)", async () => {
+      await create();
+      await fill("T");
+      await submit();
+      expect(callsOf(calls, "add_epg_alert").length).toBe(0);
+      expect(section().querySelector(".alert-error")?.textContent).toContain(
+        "RECORDINGS.ALERT_TOO_SHORT",
+      );
+      expect(queryInput().getAttribute("aria-invalid")).toBe("true");
+
+      await fill("tatort");
+      await submit();
+      expect(callsOf(calls, "add_epg_alert").length).toBe(0);
+      expect(section().querySelector(".alert-error")?.textContent).toContain(
+        "RECORDINGS.ALERT_EXISTS",
+      );
+    });
+
+    it("adds a reminder only with the tray icon enabled", async () => {
+      await create();
+      const memory = TestBed.inject(MemoryService);
+      memory.trayEnabled = false;
+      await fill("Tatort", "remind");
+      await submit();
+      expect(callsOf(calls, "add_epg_alert").length).toBe(0);
+      expect(section().querySelector(".alert-error")?.textContent).toContain(
+        "GUIDE.ALERT_NEEDS_TRAY",
+      );
+      memory.trayEnabled = true;
+      await submit();
+      expect(callsOf(calls, "add_epg_alert").map((c) => c.args)).toEqual([
+        { query: "Tatort", action: "remind" },
+      ]);
+    });
+
+    it("deletes an alert after confirming that created entries stay", async () => {
+      await create();
+      await component.deleteAlert(alerts[0]);
+      expect(confirm).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          messages: ["CONFIRM.DELETE_ALERT_RECORD_BODY", "CONFIRM.DELETE_ALERT_KEEP"],
+          params: { query: "Tatort" },
+        }),
+      );
+      expect(callsOf(calls, "delete_epg_alert").map((c) => c.args)).toEqual([{ id: 7 }]);
+      expect(callsOf(calls, "get_epg_alerts").length).toBe(2);
+
+      confirm.and.resolveTo(false);
+      await component.deleteAlert(alerts[1]);
+      expect(callsOf(calls, "delete_epg_alert").length).toBe(1);
+    });
   });
 
   it("refreshes periodically and stops when destroyed", async () => {

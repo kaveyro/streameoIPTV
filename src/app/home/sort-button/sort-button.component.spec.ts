@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { SortButtonComponent } from "./sort-button.component";
 import { SortItemComponent } from "./sort-item/sort-item.component";
 import { TEST_IMPORTS, mockTauri, resetTauri } from "../../../testing/test-helpers";
+import { SortType } from "../../models/sortType";
 
 describe("SortButtonComponent", () => {
   let component: SortButtonComponent;
@@ -32,5 +33,12 @@ describe("SortButtonComponent", () => {
     component.click(event);
     expect(component.menuTopLeftPosition).toEqual({ x: 40, y: 60 });
     expect(open).toHaveBeenCalled();
+  });
+
+  it("offers the own order only in the favorites view", () => {
+    expect(component.sortTypes).not.toContain(SortType.custom);
+    expect(component.sortTypes).toContain(SortType.number);
+    component.favorites = true;
+    expect(component.sortTypes).toContain(SortType.custom);
   });
 });

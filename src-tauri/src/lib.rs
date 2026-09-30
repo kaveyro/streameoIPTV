@@ -159,6 +159,7 @@ pub fn run() {
             refresh_xmltv,
             has_xmltv_data,
             detect_xtream_login,
+            resolve_channel_url,
             convert_source_to_xtream,
             search_xmltv_channels,
             get_epg_mapping,
@@ -181,7 +182,11 @@ pub fn run() {
             // Move any plaintext source passwords into the OS keychain.
             // Best-effort and off the main thread; on failure passwords
             // simply stay in the database as before.
-            tauri::async_runtime::spawn_blocking(credentials::migrate_passwords_to_keychain);
+            tauri::async_runtime::spawn_blocking(|| {
+                credentials::migrate_passwords_to_keychain();
+                // Then take the login out of the stored stream URLs.
+                xtream::migrate_url_credentials();
+            });
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             if *ENABLE_TRAY_ICON {
                 let _ = build_tray_icon(app);
@@ -615,6 +620,12 @@ async fn refresh_xmltv() -> Result<(), String> {
 #[tauri::command(async)]
 fn has_xmltv_data() -> Result<bool, String> {
     sql::has_xmltv_programmes().map_err(map_err_frontend)
+}
+
+/// The playable URL of a channel, for "copy URL" (it carries the login).
+#[tauri::command(async)]
+fn resolve_channel_url(channel: Channel) -> Result<String, String> {
+    xtream::stream_url(&channel).map_err(map_err_frontend)
 }
 
 #[tauri::command]

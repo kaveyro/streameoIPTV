@@ -367,9 +367,10 @@ fn build_favorites_m3u(channels: &[Channel]) -> Result<String> {
     }
     let mut content = String::from("#EXTM3U\n");
     for channel in channels {
-        let url = match channel.url.as_deref().filter(|u| !u.trim().is_empty()) {
-            Some(url) => url,
-            None => continue,
+        // An export is for other players: it needs the real login.
+        let url = match crate::xtream::stream_url(channel) {
+            Ok(url) if !url.trim().is_empty() => url,
+            _ => continue,
         };
         content.push_str(&format!(
             "#EXTINF:-1 tvg-logo=\"{}\" group-title=\"{}\",{}\n{}\n",

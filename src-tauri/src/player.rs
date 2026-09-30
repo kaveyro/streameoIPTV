@@ -490,7 +490,7 @@ fn build_play_commands(
     headers: Option<ChannelHttpHeaders>,
     settings: &Settings,
 ) -> Result<Vec<Value>> {
-    let url = channel.url.clone().context("no url")?;
+    let url = crate::mpv::channel_stream_url(channel)?;
     let h = headers.unwrap_or_default();
     let mut cmds: Vec<Value> = Vec::new();
 
@@ -562,7 +562,7 @@ fn build_play_commands(
     // Series: queue the following episodes so playback continues automatically,
     // mirroring the playlist the classic path builds in get_play_args.
     if channel.episode_num.is_some() {
-        for ep_url in crate::sql::find_all_episodes_after(channel)? {
+        for ep_url in crate::mpv::episode_urls_after(channel)? {
             cmds.push(json!({ "command": ["loadfile", ep_url, "append"] }));
         }
     }

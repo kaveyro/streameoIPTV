@@ -51,7 +51,7 @@ fn stream_path() -> String {
 }
 
 fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Child> {
-    let url = mpv::checked_stream_url(channel.url.as_deref())?;
+    let url = mpv::channel_stream_url(&channel)?;
     let headers = sql::get_channel_headers_by_id(channel.id.context("no channel id")?)?;
     let source = channel
         .source_id

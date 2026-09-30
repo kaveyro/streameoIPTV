@@ -209,7 +209,7 @@ async fn play_external(
     source: &Option<Source>,
     state: &State<'_, Mutex<AppState>>,
 ) -> Result<()> {
-    let url = checked_stream_url(channel.url.as_deref())?;
+    let url = channel_stream_url(channel)?;
     let args = get_external_play_args(args_template, &url)?;
 
     if let Some(source) = source.as_ref() {
@@ -378,9 +378,9 @@ fn get_play_args(
     let headers = sql::get_channel_headers_by_id(channel.id.context("no channel id?")?)?;
     // URLs go after `--` at the very end, so a playlist entry can never be
     // parsed as an mpv option (a `--script=<remote path>` entry would run code).
-    let mut urls = vec![checked_stream_url(channel.url.as_deref())?];
+    let mut urls = vec![channel_stream_url(channel)?];
     if channel.episode_num.is_some() {
-        urls.extend(sql::find_all_episodes_after(channel)?);
+        urls.extend(episode_urls_after(channel)?);
         args.push(ARG_NO_RESUME_PLAYBACK.to_string());
     }
     if channel.media_type != media_type::LIVESTREAM {
@@ -468,6 +468,24 @@ fn get_play_args(
 
 /// Returns the channel URL, refusing one that the player it is handed to would
 /// read as a command-line option.
+/// The channel's playable URL (Xtream login put in, see
+/// [`crate::xtream::stream_url`]), checked like [`checked_stream_url`].
+pub fn channel_stream_url(channel: &Channel) -> Result<String> {
+    checked_stream_url(Some(&crate::xtream::stream_url(channel)?))
+}
+
+/// The playable URLs of the episodes after `channel`, for continuous play.
+pub fn episode_urls_after(channel: &Channel) -> Result<Vec<String>> {
+    let urls = sql::find_all_episodes_after(channel)?;
+    if !urls.iter().any(|u| crate::xtream::has_tokens(u)) {
+        return Ok(urls);
+    }
+    let source = sql::get_source_from_id(channel.source_id.context("no source")?)?;
+    urls.iter()
+        .map(|u| checked_stream_url(Some(&crate::xtream::resolve_url(u, &source)?)))
+        .collect()
+}
+
 pub fn checked_stream_url(url: Option<&str>) -> Result<String> {
     let url = url
         .map(str::trim)

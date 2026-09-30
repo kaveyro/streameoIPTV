@@ -151,7 +151,7 @@ pub async fn download(
         .user_agent(user_agent)
         .default_headers(headers_map)
         .build()?;
-    let url = channel.url.clone().context("no url provided")?;
+    let url = crate::mpv::channel_stream_url(&channel)?;
     let name = channel.name.clone();
     let result = download_to_file(&client, &url, name, path, &token, &app, download_id).await;
 

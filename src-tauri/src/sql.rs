@@ -2818,6 +2818,16 @@ pub fn get_names_for_countries(source_ids: &[i64], show_locked: bool) -> Result<
     Ok(rows)
 }
 
+
+/// Replaces `from` with `to` in the stream URLs of one source; returns how
+/// many rows changed. Used to take the Xtream login out of stored URLs.
+pub fn replace_in_channel_urls(source_id: i64, from: &str, to: &str) -> Result<usize> {
+    Ok(get_conn()?.execute(
+        "UPDATE channels SET url = replace(url, ?2, ?3) WHERE source_id = ?1 AND instr(url, ?2) > 0",
+        params![source_id, from, to],
+    )?)
+}
+
 #[cfg(test)]
 mod test_sql {
     use super::{country_like_patterns, get_preserve, restore_preserve};

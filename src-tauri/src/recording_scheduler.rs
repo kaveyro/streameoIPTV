@@ -199,7 +199,7 @@ fn reap_finished(current: i64) -> Result<()> {
 /// `ffmpeg -y [header args] -i <url> -t <remaining secs> -c copy <output>.ts`
 fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<Child> {
     let channel = sql::get_channel_by_id(recording.channel_id)?;
-    let url = crate::mpv::checked_stream_url(channel.url.as_deref())?;
+    let url = crate::mpv::channel_stream_url(&channel)?;
     let remaining_secs = recording.end_timestamp - current;
     let output = get_output_path(recording, &channel)?;
     let mut command = Command::new(get_bin(FFMPEG_BIN_NAME));

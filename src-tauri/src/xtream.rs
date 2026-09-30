@@ -417,27 +417,110 @@ fn convert_xtream_live_to_channel(
     })
 }
 
+/// Path segments stored in place of the login in Xtream stream URLs. The
+/// database (and with it backups and exports) never holds the credentials;
+/// [`resolve_url`] puts them in when a stream is actually opened.
+pub const USER_TOKEN: &str = "__streameo_user__";
+pub const PASS_TOKEN: &str = "__streameo_pass__";
+
 fn get_url(
     stream_id: String,
     source: &Source,
     stream_type: u8,
     extension: Option<String>,
 ) -> Result<String> {
-    // Built segment by segment so a password containing `/`, `#` or `?` is
-    // percent-encoded instead of producing a broken stream URL.
     let mut url = Url::parse(source.url_origin.as_deref().context("no origin")?)?;
     url.path_segments_mut()
         .map_err(|_| anyhow!("Can't mutate url"))?
         .pop_if_empty()
         .push(&get_media_type_string(stream_type)?)
-        .push(source.username.as_deref().context("no username")?)
-        .push(source.password.as_deref().context("no password")?)
+        .push(USER_TOKEN)
+        .push(PASS_TOKEN)
         .push(&format!(
             "{}.{}",
             stream_id,
             extension.unwrap_or(LIVE_STREAM_EXTENSION.to_string())
         ));
     Ok(url.to_string())
+}
+
+/// Whether a stored URL still needs the login put in.
+pub fn has_tokens(url: &str) -> bool {
+    url.contains(USER_TOKEN) || url.contains(PASS_TOKEN)
+}
+
+/// One percent-encoded path segment, so a password containing `/`, `#` or
+/// `?` cannot break the stream URL.
+fn path_segment(value: &str) -> Result<String> {
+    let mut url = Url::parse("http://localhost/")?;
+    url.path_segments_mut()
+        .map_err(|_| anyhow!("Can't mutate url"))?
+        .pop_if_empty()
+        .push(value);
+    Ok(url.path().trim_start_matches('/').to_string())
+}
+
+/// The playable URL of a stored stream URL: the login of `source` in place of
+/// [`USER_TOKEN`] / [`PASS_TOKEN`]. URLs without tokens come back unchanged.
+pub fn resolve_url(url: &str, source: &Source) -> Result<String> {
+    if !has_tokens(url) {
+        return Ok(url.to_string());
+    }
+    let user = path_segment(source.username.as_deref().context("no username")?)?;
+    let pass = path_segment(source.password.as_deref().context("no password")?)?;
+    Ok(url
+        .replace(&format!("/{USER_TOKEN}/"), &format!("/{user}/"))
+        .replace(&format!("/{PASS_TOKEN}/"), &format!("/{pass}/")))
+}
+
+/// The playable URL of a channel, with the login of its source put in.
+pub fn stream_url(channel: &Channel) -> Result<String> {
+    let url = channel.url.as_deref().context("no url")?;
+    if !has_tokens(url) {
+        return Ok(url.to_string());
+    }
+    let source = sql::get_source_from_id(channel.source_id.context("no source")?)?;
+    resolve_url(url, &source)
+}
+
+/// Settings key set once the stored Xtream URLs no longer hold the login.
+const URL_CREDENTIALS_MIGRATED: &str = "xtreamUrlTokens";
+
+/// Replaces the login in the stored URLs of Xtream sources imported before
+/// [`USER_TOKEN`] existed. Runs once (after the keychain migration, so the
+/// password is readable either way); a refresh would fix them too.
+pub fn migrate_url_credentials() {
+    let run = || -> Result<()> {
+        if sql::get_settings()?.contains_key(URL_CREDENTIALS_MIGRATED) {
+            return Ok(());
+        }
+        for source in sql::get_sources()? {
+            if source.source_type != source_type::XTREAM {
+                continue;
+            }
+            let (Some(id), Some(user), Some(pass)) = (
+                source.id,
+                source.username.as_deref(),
+                source.password.as_deref(),
+            ) else {
+                continue;
+            };
+            let login = format!("/{}/{}/", path_segment(user)?, path_segment(pass)?);
+            let tokens = format!("/{USER_TOKEN}/{PASS_TOKEN}/");
+            let changed = sql::replace_in_channel_urls(id, &login, &tokens)?;
+            log::info(format!(
+                "Removed the login from {changed} stream URLs of source {id}"
+            ));
+        }
+        sql::update_settings(HashMap::from([(
+            URL_CREDENTIALS_MIGRATED.to_string(),
+            Some("1".to_string()),
+        )]))?;
+        Ok(())
+    };
+    if let Err(e) = run() {
+        log::log(format!("{:?}", e.context("stream URL login migration")));
+    }
 }
 
 fn get_media_type_string(stream_type: u8) -> Result<String> {
@@ -791,6 +874,58 @@ pub async fn get_all_expiries() -> Result<HashMap<i64, i64>> {
         })
         .collect();
     Ok(statuses)
+}
+
+#[cfg(test)]
+mod test_stream_url_tokens {
+    use super::*;
+
+    fn source() -> Source {
+        Source {
+            id: Some(1),
+            name: "s".to_string(),
+            url: Some("http://example.com:8080/player_api.php".to_string()),
+            url_origin: Some("http://example.com:8080".to_string()),
+            username: Some("user".to_string()),
+            password: Some("p/ss#?".to_string()),
+            source_type: source_type::XTREAM,
+            use_tvg_id: None,
+            enabled: true,
+            user_agent: None,
+            max_streams: None,
+            stream_user_agent: None,
+            last_updated: None,
+        }
+    }
+
+    #[test]
+    fn test_stored_url_has_no_login() {
+        let url = get_url("42".to_string(), &source(), media_type::LIVESTREAM, None).unwrap();
+        assert_eq!(
+            url,
+            format!("http://example.com:8080/live/{USER_TOKEN}/{PASS_TOKEN}/42.ts")
+        );
+        assert!(!url.contains("user") || url.contains(USER_TOKEN));
+        assert!(!url.contains("p%2Fss"));
+    }
+
+    #[test]
+    fn test_resolve_puts_the_encoded_login_in() {
+        let stored = get_url(
+            "7".to_string(),
+            &source(),
+            media_type::MOVIE,
+            Some("mkv".into()),
+        )
+        .unwrap();
+        assert_eq!(
+            resolve_url(&stored, &source()).unwrap(),
+            "http://example.com:8080/movie/user/p%2Fss%23%3F/7.mkv"
+        );
+        // Timeshift and custom URLs have no tokens and stay as they are.
+        let plain = "http://example.com/streaming/timeshift.php?username=u&password=p";
+        assert_eq!(resolve_url(plain, &source()).unwrap(), plain);
+    }
 }
 
 #[cfg(test)]

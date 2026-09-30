@@ -22,7 +22,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # Not `npm ci`: npm leaves the optional peers of rolldown's wasm
+      # fallback (@emnapi/*) out of the lockfile and npm ci then refuses.
+      # The lockfile still pins every version.
+      - run: npm install --no-audit --no-fund
       - run: npx ng lint
       - run: npx ng test --watch=false --browsers=ChromeHeadless
       - run: npx ng build

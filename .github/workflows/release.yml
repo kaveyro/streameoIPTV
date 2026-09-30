@@ -51,7 +51,10 @@ jobs:
         shell: pwsh
         run: ./scripts/fetch-deps.ps1
 
-      - run: npm ci
+      # Not `npm ci`: npm leaves the optional peers of rolldown's wasm
+      # fallback (@emnapi/*) out of the lockfile and npm ci then refuses.
+      # The lockfile still pins every version.
+      - run: npm install --no-audit --no-fund
 
       - uses: tauri-apps/tauri-action@v0
         env:

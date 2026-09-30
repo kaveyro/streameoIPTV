@@ -69,8 +69,13 @@ pulls them in.
   [Tauri prerequisites](https://tauri.app/start/prerequisites/))
 - **Windows only**: `mpv.exe`, `ffmpeg.exe` and `yt-dlp.exe` in `src-tauri/deps/`. They
   are copied into the installation folder as declared in
-  `src-tauri/tauri.windows.conf.json`; the folder is git-ignored, so put the binaries
-  there yourself before building.
+  `src-tauri/tauri.windows.conf.json`; the folder is git-ignored. `scripts/fetch-deps.ps1`
+  downloads pinned versions from their official GitHub releases and checks their SHA256
+  digests (`-Force` replaces existing files):
+
+  ```powershell
+  ./scripts/fetch-deps.ps1
+  ```
 - **Linux/macOS**: `mpv`, `ffmpeg` and `yt-dlp` on your `PATH`
 
 ### Setup
@@ -114,6 +119,16 @@ export TAURI_SIGNING_PRIVATE_KEY_PASSWORD="..."
 
 A release needs the installer, its `.sig` file and a `latest.json` pointing at the
 download URL, all attached to the GitHub release the updater endpoint resolves to.
+
+### Continuous integration
+
+- `.github/workflows/ci.yml` runs lint, the frontend tests and build, `cargo clippy` and
+  `cargo test` on every push to `main` and on pull requests.
+- `.github/workflows/release.yml` runs on a pushed `v*` tag and builds signed installers
+  for Windows, macOS (universal) and Linux into a **draft** release, including
+  `latest.json` for the updater. It needs the repository secrets
+  `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Check the draft,
+  then publish it: the updater only sees published releases.
 
 ### Platform-Specific Builds
 

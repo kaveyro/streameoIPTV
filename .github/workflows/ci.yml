@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (lint, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx ng lint
+      - run: npx ng test --watch=false --browsers=ChromeHeadless
+      - run: npx ng build
+
+  backend:
+    name: Backend (clippy, tests)
+    # Windows: the embedded player and the keychain code are Windows-only.
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      # tauri::generate_context! embeds the frontend build output, and the
+      # build script checks that the bundled players exist; tests need
+      # neither for real.
+      - name: Placeholder frontend build and players
+        shell: bash
+        run: |
+          mkdir -p ../dist/streameoIPTV/browser deps
+          echo "<!doctype html>" > ../dist/streameoIPTV/browser/index.html
+          touch deps/mpv.exe deps/ffmpeg.exe deps/yt-dlp.exe
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --lib

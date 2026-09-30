@@ -136,16 +136,81 @@ pub fn build_report(version: &str) -> Result<String> {
     Ok(out)
 }
 
+/// Text that must not leave the machine: every source's username and
+/// password (raw and percent-encoded; M3U links of Xtream servers carry them
+/// in paths `redact` does not recognize) and the user's home folder.
+fn secrets() -> Vec<(String, &'static str)> {
+    let mut out: Vec<(String, &'static str)> = Vec::new();
+    let mut add = |value: &str, mask: &'static str| {
+        let value = value.trim();
+        // Very short values would mask random text.
+        if value.chars().count() >= 3 {
+            out.push((value.to_string(), mask));
+            let encoded: String = url::form_urlencoded::byte_serialize(value.as_bytes()).collect();
+            if encoded != value {
+                out.push((encoded, mask));
+            }
+        }
+    };
+    for source in sql::get_sources().unwrap_or_default() {
+        if let Some(user) = source.username.as_deref() {
+            add(user, "[user]");
+        }
+        if let Some(pass) = source.password.as_deref() {
+            add(pass, "[password]");
+        }
+        // The login inside an M3U link's query.
+        if let Some(login) = source
+            .url
+            .as_deref()
+            .and_then(crate::xtream::login_from_m3u_url)
+        {
+            add(&login.username, "[user]");
+            add(&login.password, "[password]");
+        }
+    }
+    if let Some(home) =
+        directories::UserDirs::new().map(|d| d.home_dir().to_string_lossy().to_string())
+    {
+        add(&home, "~");
+    }
+    // Longest first, so a password containing the username is masked whole.
+    out.sort_by_key(|s| std::cmp::Reverse(s.0.len()));
+    out
+}
+
+fn scrub(report: &str, secrets: &[(String, &'static str)]) -> String {
+    let mut out = report.to_string();
+    for (value, mask) in secrets {
+        out = out.replace(value.as_str(), mask);
+    }
+    out
+}
+
 /// Writes the report to `path` (chosen in a save dialog).
 pub fn export(version: &str, path: &str) -> Result<()> {
-    let report = build_report(version)?;
+    let report = scrub(&build_report(version)?, &secrets());
     std::fs::write(path, report).context("failed to write the diagnostics file")?;
     Ok(())
 }
 
 #[cfg(test)]
 mod test_diagnostics {
-    use super::{host_of, log_files};
+    use super::{host_of, log_files, scrub};
+
+    #[test]
+    fn test_scrub_masks_logins_everywhere() {
+        let secrets = vec![
+            ("p@ss/word".to_string(), "[password]"),
+            ("p%40ss%2Fword".to_string(), "[password]"),
+            ("alice".to_string(), "[user]"),
+        ];
+        let log = "open http://h:80/alice/p@ss/word/123 and /alice/p%40ss%2Fword/1";
+        assert_eq!(
+            scrub(log, &secrets),
+            "open http://h:80/[user]/[password]/123 and /[user]/[password]/1"
+        );
+    }
 
     #[test]
     fn test_host_only() {

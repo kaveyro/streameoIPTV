@@ -74,7 +74,11 @@ export class FavoriteListsService {
   /** Loads the lists with their counts; best effort (the chips stay as they are). */
   async load(): Promise<FavoriteList[]> {
     try {
-      const lists = (await invoke<FavoriteList[]>("get_favorite_lists")) ?? [];
+      // Without the PIN the counts leave locked channels out.
+      const lists =
+        (await invoke<FavoriteList[]>("get_favorite_lists", {
+          showLocked: this.memory.ShowLocked,
+        })) ?? [];
       this.lists.next(lists);
       return lists;
     } catch (e) {

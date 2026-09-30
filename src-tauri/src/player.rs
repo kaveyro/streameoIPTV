@@ -1083,10 +1083,6 @@ mod win {
         unsafe { DestroyWindow(child as HWND) };
     }
 
-    /// mpv attaches its video output as a child of our host window, created
-    /// `WS_DISABLED` (so input flows to the parent). Re-enable it so mpv gets
-    /// mouse/keyboard directly and its OSC/right-click work. Returns false while
-    /// the child does not exist yet (mpv creates it shortly after launch).
     /// Hands a press in mpv's window to the floating host as a caption drag.
     /// Only while the button is still down: a move loop started after a
     /// quick click would follow the mouse until the next click.
@@ -1100,6 +1096,10 @@ mod win {
         }
     }
 
+    /// mpv attaches its video output as a child of our host window, created
+    /// `WS_DISABLED` (so input flows to the parent). Re-enable it so mpv gets
+    /// mouse/keyboard directly and its OSC/right-click work. Returns false while
+    /// the child does not exist yet (mpv creates it shortly after launch).
     pub unsafe fn enable_child_input(host: isize) -> bool {
         let child = unsafe { GetWindow(host as HWND, GW_CHILD) };
         if child.is_null() {
@@ -1139,8 +1139,6 @@ mod test_player {
             .to_string()
     }
 
-    /// The provider only allows so many connections at once, so the running
-    /// stream has to be closed before the next one is opened.
     #[test]
     fn test_stream_info_changes() {
         let mut info = StreamInfo::default();
@@ -1164,6 +1162,8 @@ mod test_player {
         assert_eq!(parse_bounds(""), None);
     }
 
+    /// The provider only allows so many connections at once, so the running
+    /// stream has to be closed before the next one is opened.
     #[test]
     fn test_stops_before_loading_the_next_stream() {
         let cmds = commands(None);

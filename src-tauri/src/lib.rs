@@ -162,6 +162,7 @@ pub fn run() {
             detect_xtream_login,
             resolve_channel_url,
             get_favorite_lists,
+            get_channel_by_number,
             create_favorite_list,
             rename_favorite_list,
             delete_favorite_list,
@@ -638,8 +639,17 @@ fn has_xmltv_data() -> Result<bool, String> {
 }
 
 #[tauri::command(async)]
-fn get_favorite_lists() -> Result<Vec<types::FavoriteList>, String> {
-    sql::get_favorite_lists().map_err(map_err_frontend)
+fn get_favorite_lists(show_locked: Option<bool>) -> Result<Vec<types::FavoriteList>, String> {
+    sql::get_favorite_lists(show_locked.unwrap_or(false)).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_channel_by_number(
+    source_ids: Vec<i64>,
+    number: i64,
+    show_locked: bool,
+) -> Result<Option<Channel>, String> {
+    sql::get_channel_by_number(&source_ids, number, show_locked).map_err(map_err_frontend)
 }
 
 /// A list name as the user typed it; empty names are refused.
@@ -716,8 +726,11 @@ async fn add_epg_alert(app: AppHandle, query: String, action: String) -> Result<
     }
     let id = sql::add_epg_alert(&query, &action, chrono::Utc::now().timestamp())
         .map_err(map_err_frontend)?;
-    // Apply it to the programmes already in the guide right away.
-    epg::process_alerts(&app).await.map_err(map_err_frontend)?;
+    // Apply it to the programmes already in the guide right away. The alert
+    // is saved either way; a failure here is retried by the next run.
+    if let Err(e) = epg::process_alerts(&app).await {
+        log::log(format!("{:?}", e.context("applying a new guide alert")));
+    }
     Ok(id)
 }
 

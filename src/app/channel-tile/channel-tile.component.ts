@@ -212,7 +212,15 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     if (this.nowPlayingRequested || !this.visible || !this.showNowPlayingLine()) return;
     this.nowPlayingRequested = true;
     this.nowPlayingService.getNowPlaying(this.channel!).then((nowPlaying) => {
-      if (!nowPlaying) return;
+      if (!nowPlaying) {
+        // Nothing on air now (a gap in the guide): drop the ended programme.
+        this.nowPlaying = undefined;
+        this.nowPlayingProgress = 0;
+        this.nowPlayingTimes = "";
+        this.nextStart = "";
+        this.nowPlayingSummary = "";
+        return;
+      }
       this.nowPlaying = nowPlaying;
       this.nowPlayingProgress = programmeProgress(nowPlaying);
       const locale = uiLocale(this.translate);

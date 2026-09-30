@@ -503,23 +503,38 @@ pub fn migrate_url_credentials() {
         if sql::get_settings()?.contains_key(URL_CREDENTIALS_MIGRATED) {
             return Ok(());
         }
+        let mut complete = true;
         for source in sql::get_sources()? {
             if source.source_type != source_type::XTREAM {
                 continue;
             }
             let (Some(id), Some(user), Some(pass)) = (
                 source.id,
-                source.username.as_deref(),
-                source.password.as_deref(),
+                source.username.as_deref().filter(|u| !u.is_empty()),
+                source
+                    .password
+                    .as_deref()
+                    .filter(|p| !p.is_empty() && *p != crate::credentials::KEYCHAIN_PLACEHOLDER),
             ) else {
+                // Login not readable now (keychain locked?): try next start.
+                complete = false;
                 continue;
             };
-            let login = format!("/{}/{}/", path_segment(user)?, path_segment(pass)?);
             let tokens = format!("/{USER_TOKEN}/{PASS_TOKEN}/");
-            let changed = sql::replace_in_channel_urls(id, &login, &tokens)?;
+            // Percent-encoded as get_url builds them, and raw as older
+            // versions stored them.
+            let encoded = format!("/{}/{}/", path_segment(user)?, path_segment(pass)?);
+            let raw = format!("/{user}/{pass}/");
+            let mut changed = sql::replace_in_channel_urls(id, &encoded, &tokens)?;
+            if raw != encoded {
+                changed += sql::replace_in_channel_urls(id, &raw, &tokens)?;
+            }
             log::info(format!(
                 "Removed the login from {changed} stream URLs of source {id}"
             ));
+        }
+        if !complete {
+            return Ok(());
         }
         sql::update_settings(HashMap::from([(
             URL_CREDENTIALS_MIGRATED.to_string(),

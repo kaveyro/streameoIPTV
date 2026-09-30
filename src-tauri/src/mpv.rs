@@ -466,8 +466,6 @@ fn get_play_args(
     Ok(args)
 }
 
-/// Returns the channel URL, refusing one that the player it is handed to would
-/// read as a command-line option.
 /// The channel's playable URL (Xtream login put in, see
 /// [`crate::xtream::stream_url`]), checked like [`checked_stream_url`].
 pub fn channel_stream_url(channel: &Channel) -> Result<String> {
@@ -486,6 +484,8 @@ pub fn episode_urls_after(channel: &Channel) -> Result<Vec<String>> {
         .collect()
 }
 
+/// Returns the channel URL, refusing one that the player it is handed to would
+/// read as a command-line option.
 pub fn checked_stream_url(url: Option<&str>) -> Result<String> {
     let url = url
         .map(str::trim)

@@ -340,47 +340,52 @@ pub fn alternatives(channel: &Channel, show_locked: bool) -> Result<Vec<Channel>
 /// for every upcoming programme they find. Runs after each XMLTV refresh
 /// check and when an alert is added. Idempotent: existing reminders are
 /// skipped and the recording schedule refuses duplicates.
+/// One alert run at a time: the 30-minute tick and a newly added alert must
+/// not both schedule the same programme.
+static ALERTS_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 pub async fn process_alerts(app: &AppHandle) -> Result<()> {
+    let _running = ALERTS_LOCK.lock().await;
     let alerts = sql::get_epg_alerts()?;
     if alerts.is_empty() {
         return Ok(());
     }
     let now = chrono::Utc::now().timestamp();
-    let mut reminders: std::collections::HashSet<String> =
-        sql::get_epg_ids()?.into_iter().collect();
+    sql::prune_alert_applied(now)?;
     let mut added_reminder = false;
     for alert in alerts {
         let query = alert.query.clone();
         let hits = tokio::task::spawn_blocking(move || search_programmes(&query, false)).await??;
-        // One programme is often in two guides (SD and HD channel ids).
-        let mut seen = std::collections::HashSet::new();
         for hit in hits {
-            if hit.start_timestamp <= now || !seen.insert((hit.title.clone(), hit.start_timestamp))
-            {
+            // One programme is often in two guides (SD and HD channel ids):
+            // start time and title identify it. Each programme is handled
+            // once, so what the user cancels or removes stays gone.
+            let programme = format!("{}:{}", hit.start_timestamp, hit.title);
+            if hit.start_timestamp <= now || !sql::mark_alert_applied(alert.id, &programme)? {
                 continue;
             }
             match alert.action.as_str() {
                 "record" => {
-                    if let Some(channel_id) = hit.channel.id {
-                        // Already scheduled: the unique index says no.
-                        let _ = crate::recording_scheduler::schedule(
+                    if let Some(channel_id) = hit.channel.id
+                        && let Err(e) = crate::recording_scheduler::schedule(
                             channel_id,
                             Some(hit.title.clone()),
                             hit.start_timestamp,
                             hit.end_timestamp,
-                        );
+                        )
+                    {
+                        // Usually scheduled by hand already.
+                        log::info(format!("guide alert: not scheduled: {e}"));
                     }
                 }
                 _ => {
-                    if reminders.insert(hit.epg_id.clone()) {
-                        sql::add_epg(EPGNotify {
-                            epg_id: hit.epg_id,
-                            title: hit.title,
-                            start_timestamp: hit.start_timestamp,
-                            channel_name: hit.channel.name,
-                        })?;
-                        added_reminder = true;
-                    }
+                    let reminder = EPGNotify {
+                        epg_id: hit.epg_id,
+                        title: hit.title,
+                        start_timestamp: hit.start_timestamp,
+                        channel_name: hit.channel.name,
+                    };
+                    added_reminder |= sql::add_epg_if_missing(&reminder)?;
                 }
             }
         }

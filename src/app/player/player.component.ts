@@ -698,12 +698,16 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Switches to the channel with the typed number, if there is one. */
-  private commitZap() {
+  private async commitZap() {
     const digits = this.zapDigits;
     this.cancelZap();
     if (!digits || !this.active) return;
     const number = parseInt(digits, 10);
-    const channel = this.channelByNumber(number);
+    const generation = this.openGeneration;
+    const seq = this.switchSeq;
+    const channel = this.channelByNumber(number) ?? (await this.lookUpNumber(number));
+    // The user moved on (or closed the player) while the backend answered.
+    if (this.isStale(generation) || seq !== this.switchSeq || !this.active) return;
     if (!channel) {
       this.osd(this.translate.instant("PLAYER.ZAP_UNKNOWN", { number }));
       return;
@@ -721,6 +725,27 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
    * The channel of the player's list with that number. A list without any
    * numbers (most M3U playlists) is numbered by its order, starting at 1.
    */
+  /**
+   * The numbered channel from the backend, for a number beyond the channels
+   * the page has loaded so far (it loads them page by page). Only when the
+   * list is numbered: otherwise the number is a position in it.
+   */
+  private async lookUpNumber(number: number): Promise<Channel | undefined> {
+    if (!this.channels.some((c) => channelNumber(c) !== undefined)) return undefined;
+    try {
+      return (
+        (await invoke<Channel | null>("get_channel_by_number", {
+          sourceIds: Array.from(this.memory.Sources.keys()),
+          number,
+          showLocked: this.memory.ShowLocked,
+        })) ?? undefined
+      );
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
+  }
+
   private channelByNumber(number: number): Channel | undefined {
     const list = this.channels;
     if (list.some((c) => channelNumber(c) !== undefined)) {

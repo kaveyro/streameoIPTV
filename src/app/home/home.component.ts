@@ -972,6 +972,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (await this.parental.toggleShowLocked()) {
       await this.load();
       this.loadCountries();
+      this.favoriteLists.load();
     }
   }
 

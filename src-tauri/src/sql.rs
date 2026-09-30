@@ -347,6 +347,15 @@ fn apply_migrations() -> Result<()> {
               );
             "#,
         ),
+        M::up(
+            r#"
+              CREATE TABLE IF NOT EXISTS "epg_alert_applied" (
+                "alert_id" INTEGER NOT NULL,
+                "programme" TEXT NOT NULL,
+                PRIMARY KEY (alert_id, programme)
+              );
+            "#,
+        ),
     ]);
     migrations.to_latest(&mut sql)?;
     Ok(())
@@ -2897,17 +2906,28 @@ pub fn replace_in_channel_urls(source_id: i64, from: &str, to: &str) -> Result<u
     )?)
 }
 
-/// The favorites lists with the number of channels in each.
-pub fn get_favorite_lists() -> Result<Vec<crate::types::FavoriteList>> {
+/// The favorites lists with the number of channels each shows: channels that
+/// exist in an enabled source and, without `show_locked`, are not in a
+/// locked group (the count must not give locked channels away).
+pub fn get_favorite_lists(show_locked: bool) -> Result<Vec<crate::types::FavoriteList>> {
     let conn = get_conn()?;
+    let lock = if show_locked {
+        ""
+    } else {
+        "AND (c.group_id IS NULL OR c.group_id NOT IN (SELECT id FROM groups WHERE locked = 1))"
+    };
     let rows = conn
-        .prepare(
+        .prepare(&format!(
             r#"
             SELECT l.id, l.name, l.position,
-                   (SELECT COUNT(*) FROM favorite_list_items i WHERE i.list_id = l.id)
+                   (SELECT COUNT(*) FROM favorite_list_items i
+                    JOIN channels c ON c.source_id = i.source_id AND c.name = i.channel_name
+                    WHERE i.list_id = l.id AND c.hidden = 0 AND c.url IS NOT NULL
+                    AND c.source_id IN (SELECT id FROM sources WHERE enabled = 1)
+                    {lock})
             FROM favorite_lists l ORDER BY l.position, l.id
-            "#,
-        )?
+            "#
+        ))?
         .query_map([], |row| {
             Ok(crate::types::FavoriteList {
                 id: row.get(0)?,
@@ -3115,8 +3135,42 @@ pub fn add_epg_alert(query: &str, action: &str, created: i64) -> Result<i64> {
 }
 
 pub fn delete_epg_alert(id: i64) -> Result<()> {
-    get_conn()?.execute("DELETE FROM epg_alerts WHERE id = ?", params![id])?;
+    do_tx(|tx| {
+        tx.execute(
+            "DELETE FROM epg_alert_applied WHERE alert_id = ?",
+            params![id],
+        )?;
+        tx.execute("DELETE FROM epg_alerts WHERE id = ?", params![id])?;
+        Ok(())
+    })
+}
+
+/// Marks a programme as handled by an alert. False when it already was: an
+/// alert acts once per programme, so a reminder or recording the user
+/// removed afterwards is not brought back.
+pub fn mark_alert_applied(alert_id: i64, programme: &str) -> Result<bool> {
+    Ok(get_conn()?.execute(
+        "INSERT OR IGNORE INTO epg_alert_applied (alert_id, programme) VALUES (?, ?)",
+        params![alert_id, programme],
+    )? == 1)
+}
+
+/// Forgets handled programmes that have ended (their key starts with the
+/// start time, so this keeps the table from growing forever).
+pub fn prune_alert_applied(before: i64) -> Result<()> {
+    get_conn()?.execute(
+        "DELETE FROM epg_alert_applied WHERE CAST(substr(programme, 1, instr(programme, ':') - 1) AS INTEGER) < ?",
+        params![before],
+    )?;
     Ok(())
+}
+
+/// Adds a reminder unless one for the same programme exists already.
+pub fn add_epg_if_missing(epg: &EPGNotify) -> Result<bool> {
+    Ok(get_conn()?.execute(
+        "INSERT OR IGNORE INTO epg (epg_id, channel_name, title, start_timestamp) VALUES (?,?,?,?)",
+        params![epg.epg_id, epg.channel_name, epg.title, epg.start_timestamp],
+    )? == 1)
 }
 
 /// Live channels of one source, for the fallback to another feed.
@@ -3203,6 +3257,34 @@ pub fn restore_backup_extras(
         )?;
     }
     Ok(())
+}
+
+/// The live channel with this number among the given sources, for zapping
+/// to a channel the page has not loaded yet.
+pub fn get_channel_by_number(
+    source_ids: &[i64],
+    number: i64,
+    show_locked: bool,
+) -> Result<Option<Channel>> {
+    if source_ids.is_empty() {
+        return Ok(None);
+    }
+    let conn = get_conn()?;
+    let mut query = format!(
+        "SELECT * FROM channels WHERE number = ? AND media_type = {} AND hidden = 0 AND url IS NOT NULL AND source_id IN ({})",
+        media_type::LIVESTREAM,
+        generate_placeholders(source_ids.len())
+    );
+    if !show_locked {
+        query += NOT_IN_LOCKED_GROUP;
+    }
+    query += "\nORDER BY source_id, name LIMIT 1";
+    let mut params: Vec<&dyn rusqlite::ToSql> = vec![&number];
+    params.extend(to_to_sql(source_ids));
+    Ok(conn
+        .prepare(&query)?
+        .query_row(params_from_iter(params), row_to_channel)
+        .optional()?)
 }
 
 #[cfg(test)]

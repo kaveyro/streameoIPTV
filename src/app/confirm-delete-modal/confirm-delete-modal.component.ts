@@ -28,9 +28,11 @@ export class ConfirmDeleteModalComponent {
   @Input() cancelLabel = "MODAL.CANCEL";
   /// Danger styling for the confirm button.
   @Input() danger = true;
+  /// Trash icon on the confirm button: only for actions that delete data.
+  @Input() trashIcon = true;
   @Input() params: Record<string, unknown> = {};
   /// Both buttons are real choices (e.g. "import as Xtream" / "as M3U"): the
-  /// confirm button gets the focus and Cancel loses its cross icon. Closing
+  /// confirm button gets the focus instead of Cancel. Closing
   /// the dialog (cross, Escape, backdrop) is then the only way to back out.
   @Input() choice = false;
 

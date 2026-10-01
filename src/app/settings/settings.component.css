@@ -162,6 +162,15 @@ button:hover .refresh {
   margin-top: 0.125rem;
 }
 
+/* When a setting takes effect ("next channel", "after a restart") */
+.setting-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  font-style: italic;
+  opacity: 0.85;
+  margin-top: 0.125rem;
+}
+
 .setting-control {
   flex-shrink: 0;
   display: flex;
@@ -204,9 +213,23 @@ button:hover .refresh {
 }
 
 .volume-value {
-  min-width: 2rem;
+  min-width: 2.75rem;
   text-align: end;
   font-variant-numeric: tabular-nums;
+}
+
+/* Inputs with an inline error below them */
+.port-control,
+.pin-control {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.port-control .invalid-feedback,
+.pin-control .invalid-feedback {
+  width: 12rem;
+  margin-top: 0;
 }
 
 /* Source tiles in the Sources pane */

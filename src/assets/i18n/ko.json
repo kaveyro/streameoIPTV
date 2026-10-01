@@ -39,7 +39,6 @@
       "CATEGORIES": "카테고리",
       "FAVORITES": "즐겨찾기",
       "HISTORY": "기록",
-      "HIDDEN": "숨김",
       "RECORDINGS": "녹화",
       "SETTINGS": "설정",
       "GUIDE": "TV 편성표",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "라이브 스트림",
       "MOVIES_VODS": "영화/VOD",
       "MOVIES_VODS_SERIES": "영화/VOD/시리즈",
-      "SERIES": "시리즈"
+      "SERIES": "시리즈",
+      "KEEP_ONE": "미디어 유형을 하나 이상 선택해 두어야 합니다"
     },
     "COLLAPSE_SIDEBAR": "사이드바 접기",
     "EXPAND_SIDEBAR": "사이드바 펼치기",
     "COUNTRY_FILTER": "국가별 필터",
-    "ALL_COUNTRIES": "모든 국가"
+    "ALL_COUNTRIES": "모든 국가",
+    "VIEWING": "보는 중: {{path}}",
+    "SEARCH_LABEL": "채널, 영화 및 시리즈 검색",
+    "CLEAR_SEARCH": "검색 지우기"
   },
   "MENU": {
     "REMOVE": "제거",
     "FAVORITE": "즐겨찾기",
     "UNFAVORITE": "즐겨찾기 해제",
-    "HIDE": "숨기기",
-    "UNHIDE": "숨김 해제",
     "RECORD": "녹화",
     "DOWNLOAD": "다운로드",
     "CANCEL_DOWNLOAD": "다운로드 취소",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "아직 즐겨찾기가 없습니다",
     "NO_FAVORITES_HINT": "채널을 마우스 오른쪽 버튼으로 클릭하여 추가하세요",
     "NOTHING_WATCHED": "아직 시청 기록이 없습니다",
-    "NO_HIDDEN": "숨겨진 채널이 없습니다",
     "NO_RECORDINGS": "예약 녹화가 없습니다",
     "NO_RECORDINGS_HINT": "채널의 TV 편성표에서 예약하세요",
     "NO_GUIDE": "아직 편성표 데이터가 없습니다",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "아직 이어서 볼 항목이 없습니다",
     "NOTHING_TO_CONTINUE_HINT": "시작한 영화와 에피소드가 여기에 표시되며 중단한 위치부터 이어서 재생됩니다",
     "NO_RECORDING_FILES": "아직 녹화된 파일이 없습니다",
-    "NO_RECORDING_FILES_HINT": "녹화와 다운로드는 녹화 폴더에 저장됩니다(설정 → 녹화)"
+    "NO_RECORDING_FILES_HINT": "녹화와 다운로드는 녹화 폴더에 저장됩니다(설정 → 녹화)",
+    "LOAD_FAILED": "이 보기를 불러올 수 없습니다",
+    "LOAD_FAILED_HINT": "소스 연결을 확인한 후 다시 시도하세요",
+    "RETRY": "다시 시도"
   },
   "RECORDING": {
     "SCHEDULED": "예약 녹화",
@@ -172,7 +175,8 @@
       "APP_VERSION": "버전",
       "APP_VERSION_DESC": "현재 버전은 {{version}}입니다",
       "CHECK_UPDATES": "지금 확인",
-      "CHECKING": "확인 중..."
+      "CHECKING": "확인 중...",
+      "RESTART_REQUIRED": "다시 시작해야 합니다"
     },
     "APPEARANCE": {
       "THEME": "테마",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "플레이어 로그 기록",
       "DEBUG_LOG_DESC": "문제 해결 전용: 로그 폴더의 mpv.log에 포함된 로그인 정보를 비롯해 모든 스트림 주소가 기록됩니다. 다음에 플레이어를 열 때 적용됩니다.",
       "AUTO_FALLBACK": "스트림이 끊기면 채널의 다른 스트림으로 전환",
-      "AUTO_FALLBACK_DESC": "라이브 스트림이 끊기면 플레이어가 같은 채널의 다른 화질(예: HD에서 SD)로 자동 전환합니다."
+      "AUTO_FALLBACK_DESC": "라이브 스트림이 끊기면 플레이어가 같은 채널의 다른 화질(예: HD에서 SD)로 자동 전환합니다.",
+      "APPLIES_NEXT_CHANNEL": "다음 채널부터 적용됩니다"
     },
     "RECORDING": {
       "PATH": "녹화 경로",
       "PATH_DESC": "녹화된 라이브 스트림이 저장되는 폴더입니다.",
       "ALWAYS_ASK": "다운로드 저장 위치를 항상 묻기",
-      "ALWAYS_ASK_DESC": "모든 다운로드와 녹화에 대해 파일 대화 상자를 엽니다. 녹화 경로보다 우선합니다."
+      "ALWAYS_ASK_DESC": "모든 다운로드와 녹화에 대해 파일 대화 상자를 엽니다. 녹화 경로보다 우선합니다.",
+      "RESET_DEFAULT": "기본값",
+      "RESET_DEFAULT_TOOLTIP": "녹화를 다시 기본 폴더에 저장합니다"
     },
     "NETWORK": {
       "RESTREAM_PORT": "재스트리밍 포트",
-      "RESTREAM_PORT_DESC": "채널을 다른 기기로 재스트리밍할 때 사용하는 로컬 포트입니다."
+      "RESTREAM_PORT_DESC": "채널을 다른 기기로 재스트리밍할 때 사용하는 로컬 포트입니다.",
+      "RESTREAM_PORT_INVALID": "{{min}}~{{max}} 사이의 포트를 입력하거나 기본값을 쓰려면 비워 두세요."
     },
     "SOURCES": {
       "ADD_SOURCE": "소스 추가",
@@ -286,7 +294,6 @@
       "TITLE": "외부 EPG",
       "INTRO": "채널에 제공자의 편성표 데이터가 없으면 streameo가 이 XMLTV 소스에서 채웁니다. tvg-id로 연결하고, 없으면 채널 이름으로, 또는 직접 지정한 대로 연결합니다. 어떤 XMLTV URL이든 사용할 수 있으며(예: IPTV-EPG.org 내보내기) .xml과 .xml.gz를 모두 지원합니다.",
       "SOURCES_LABEL": "XMLTV 소스",
-      "SOURCES_DESC": "한 줄에 하나의 XMLTV URL.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "지금 새로 고침",
       "REFRESH_DESC": "최신 편성표 데이터를 내려받습니다. 소스 자동 새로 고침 일정에 따라 자동으로도 진행되며, 일정이 꺼져 있으면 하루에 한 번 진행됩니다.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "건너뛰기",
     "DONE_TITLE": "완료",
     "DONE_TEXT": "소스 설정이 완료되었습니다. 즐겁게 시청하세요!",
-    "GO_TO_CHANNELS": "채널로 이동"
+    "GO_TO_CHANNELS": "채널로 이동",
+    "IMPORT_FAILED": "파일을 가져올 수 없습니다",
+    "ADD_CUSTOM_FAILED": "사용자 지정 소스를 만들 수 없습니다",
+    "FETCH_FAILED": "목록을 불러올 수 없습니다. 링크와 인터넷 연결을 확인하세요.",
+    "REQUIRED_FIELD": "필수 항목",
+    "SOURCE_TYPE": "소스 유형",
+    "XTREAM_TOOLTIP": "제공업체의 서버 주소, 사용자 이름, 비밀번호로 로그인합니다. 제공업체의 EPG, 다시보기, 시즌별 시리즈를 이용할 수 있습니다.",
+    "CUSTOM_TOOLTIP": "채널과 카테고리를 직접 추가하는 빈 소스입니다.",
+    "CUSTOM_IMPORT_TOOLTIP": "streameoIPTV에서 내보낸 사용자 지정 소스(.siptvp 파일)를 가져옵니다."
   },
   "EPG": {
     "PLAYING_NOW": "지금 재생 중",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "보관본에서 시청",
     "DOWNLOAD_CATCHUP": "보관본에서 다운로드",
     "NOTIFY_ON": "시작하면 알림",
-    "NOTIFY_OFF": "알림 끄기"
+    "NOTIFY_OFF": "알림 끄기",
+    "NOTIFY_NEEDS_TRAY": "알림을 사용하려면 트레이 아이콘이 필요합니다(설정 → 일반)"
   },
   "RESTREAM": {
     "TITLE": "재스트리밍: {{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "모든 사용자 데이터 삭제 확인",
     "BODY1": "이 작업은 모든 소스의 채널, 카테고리, 즐겨찾기를 포함한 모든 사용자 데이터를 삭제합니다.",
-    "BODY2": "버전 업그레이드로 인한 이상한 버그가 발생하는 경우 이 옵션을 사용하는 것이 좋습니다."
+    "BODY2": "버전 업그레이드로 인한 이상한 버그가 발생하는 경우 이 옵션을 사용하는 것이 좋습니다.",
+    "APP_CLOSES": "그 후 앱이 종료됩니다. 다시 실행하면 처음부터 설정할 수 있습니다.",
+    "CONFIRM_ALL": "모두 삭제"
   },
   "CONFIRM_URL": {
     "TITLE": "이 URL이 맞습니까?",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "오류",
     "OCCURRED": "다음 오류가 발생했습니다. <a target=\"_blank\" href=\"{{link}}\">여기에서 신고할 수 있습니다</a>",
-    "LOGS_INTRO": "오류의 원인이 되었을 수 있는 자세한 로그는 $XDG_CACHE_HOME에서도 확인할 수 있습니다. 해당 경로는 다음과 같습니다:",
     "ATTACH_LOGS": "해당 로그(있는 경우)와 아래 오류를 버그 요청에 첨부해 주세요. 감사합니다!",
-    "PERSISTENT": "이상하거나 지속적인 오류가 발생하면 설정의 \"모두 삭제\" 버튼 또는 화면 오른쪽 하단(있는 경우)의 작은 폭탄 버튼을 사용해 보세요",
-    "COPY": "복사"
-  },
-  "WHATS_NEW": {
-    "TITLE": "v{{version}}의 새로운 기능",
-    "CHANGES": "변경 사항",
-    "CHANGE_1": "다시보기 다운로드/재생 오류 수정",
-    "CHANGE_2": "새 사용자 지정 채널 생성 오류 수정",
-    "CHANGE_3": "즐겨찾기가 숨김 보기에 표시되지 않던 문제 수정",
-    "CHANGE_4": "Linux 지원 개선",
-    "CHANGE_5": "태그 검색 아이콘 수정",
-    "CHANGE_6": "숨겨진 카테고리가 새로 고침 시 유지되지 않던 문제 수정",
-    "CHANGE_7": "검색 창에 일괄 작업 추가",
-    "UPCOMING": "예정된 개선 사항",
-    "UPCOMING_1": "녹화 예약",
-    "UPCOMING_2": "여기에 여러분의 아이디어를!",
-    "DONT_SHOW": "다시 표시 안 함"
+    "COPY": "복사",
+    "LOGS_FOLDER_HINT": "로그 파일과 진단 보고서가 원인을 찾는 데 도움이 됩니다:",
+    "PERSISTENT_DIAGNOSTICS": "오류가 계속 발생하면 진단 보고서를 내보내 신고에 첨부하세요. 비밀번호나 스트림 주소는 포함되지 않습니다."
   },
   "SOURCE": {
     "REFRESHED": "새로 고침:",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "연결에 실패했습니다",
     "XTREAM_HINT": "이 링크에는 Xtream 로그인이 포함되어 있습니다. Xtream 소스로 사용하면 제공업체의 EPG, 놓친 프로그램 다시보기, 시즌별 시리즈를 이용할 수 있습니다.",
     "CONVERT_TO_XTREAM": "Xtream으로 변환",
-    "CONVERTING": "변환 중…"
+    "CONVERTING": "변환 중…",
+    "MAX_STREAMS_INVALID": "1 이상의 정수를 입력하세요"
   },
   "DIALOG": {
     "SAVE_RECORDING": "녹화를 저장할 위치 선택",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "기록을 성공적으로 지웠습니다",
     "HISTORY_CLEAR_FAILED": "기록 지우기에 실패했습니다",
     "RECORDINGS_LOAD_FAILED": "예약 녹화 불러오기에 실패했습니다",
-    "RECORDING_ENTRY_REMOVED": "녹화 항목을 제거했습니다",
     "RECORDING_CANCELLED": "예약 녹화를 취소했습니다",
     "RECORDING_CANCEL_FAILED": "예약 녹화 취소에 실패했습니다",
     "RECORDING_SCHEDULED": "녹화를 성공적으로 예약했습니다",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "\"{{name}}\"의 즐겨찾기 추가/제거에 실패했습니다",
     "HISTORY_REMOVED": "\"{{name}}\"을(를) 기록에서 제거했습니다",
     "HISTORY_REMOVE_FAILED": "\"{{name}}\"의 기록 제거에 실패했습니다",
-    "CHANNEL_HIDDEN": "\"{{name}}\"을(를) 숨겼습니다(새로 고침 시 반영)",
-    "CHANNEL_UNHIDDEN": "\"{{name}}\"의 숨김을 해제했습니다(새로 고침 시 반영)",
-    "GROUP_HIDDEN": "그룹 \"{{name}}\"을(를) 숨겼습니다(새로 고침 시 반영)",
-    "GROUP_UNHIDDEN": "그룹 \"{{name}}\"의 숨김을 해제했습니다(새로 고침 시 반영)",
-    "HIDE_FAILED": "\"{{name}}\"의 숨기기/숨김 해제에 실패했습니다",
     "NO_EPG": "이 채널의 EPG 데이터가 없습니다",
     "EPG_MISSING_STREAM_ID": "스트림 ID가 없습니다. EPG 기능을 사용하려면 소스를 새로 고치세요(설정 -> 모두 새로 고침)",
     "CATEGORY_EXPORTED": "카테고리를 {{path}}에 성공적으로 내보냈습니다",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "로그 폴더를 열 수 없습니다",
     "DIAGNOSTICS_EXPORTED": "진단 보고서를 {{path}}에 저장했습니다",
     "DIAGNOSTICS_EXPORT_FAILED": "진단 보고서를 내보낼 수 없습니다",
-    "EPG_LOADING": "편성표를 백그라운드에서 불러오는 중…"
+    "EPG_LOADING": "편성표를 백그라운드에서 불러오는 중…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’을(를) 즐겨찾기에서 제거했습니다. ‘{{list}}’에는 그대로 남아 있습니다"
   },
   "UPDATE": {
     "TITLE": "업데이트 있음",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "자동 규칙을 삭제할까요?",
     "DELETE_ALERT_REMIND_BODY": "제목에 \"{{query}}\"이(가) 포함된 프로그램에 더 이상 자동 알림이 전송되지 않습니다.",
     "DELETE_ALERT_RECORD_BODY": "제목에 \"{{query}}\"이(가) 포함된 프로그램이 더 이상 자동으로 녹화되지 않습니다.",
-    "DELETE_ALERT_KEEP": "이미 만든 알림과 녹화는 그대로 유지됩니다. 더 이상 필요 없으면 하나씩 삭제하세요."
+    "DELETE_ALERT_KEEP": "이미 만든 알림과 녹화는 그대로 유지됩니다. 더 이상 필요 없으면 하나씩 삭제하세요.",
+    "CLEAR_FINISHED_TITLE": "완료된 항목을 제거할까요?",
+    "CLEAR_FINISHED_FAILED_BODY": "실패한 녹화 포함: {{count}}개. 이 항목들은 녹화가 실패했다는 유일한 표시입니다. 녹화된 파일은 폴더에 남습니다."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "채널로 돌아가기",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "{{minutes}}분 남음",
     "RESUMED_AT": "{{time}}부터 이어서 재생",
     "RESTART_HINT": "Home: 처음부터",
-    "RESTARTED": "처음부터 재생"
+    "RESTARTED": "처음부터 재생",
+    "CONNECTING": "연결 중…",
+    "BUFFERING": "버퍼링 중…",
+    "ERR_LOADING": "스트림을 열 수 없습니다(서버에 연결할 수 없거나 링크가 잘못됨)",
+    "ERR_FORMAT": "스트림 형식을 인식할 수 없습니다",
+    "ERR_NO_DATA": "스트림에서 영상이나 소리가 전달되지 않았습니다",
+    "ERR_AUDIO_OUTPUT": "오디오 출력을 시작할 수 없습니다",
+    "ERR_VIDEO_OUTPUT": "비디오 출력을 시작할 수 없습니다(그래픽 드라이버를 확인하세요)",
+    "ERR_UNSUPPORTED": "스트림이 플레이어가 지원하지 않는 형식을 사용합니다",
+    "ERR_NETWORK": "서버에 연결하지 못했습니다",
+    "CLOSE_PLAYER": "플레이어 닫기",
+    "CLOSE_PLAYER_HINT": "플레이어 닫기 (Esc)",
+    "FULLSCREEN_HINT": "Esc: 전체 화면 종료"
   },
   "GUIDE": {
     "CHANNEL": "채널",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "알림을 받으려면 트레이 아이콘이 필요합니다(설정 → 일반).",
     "ALERT_REMIND_ADDED": "제목에 \"{{query}}\"이(가) 포함된 모든 프로그램을 알려 드립니다. 나중에 편성표에 추가되는 프로그램도 포함됩니다.",
     "ALERT_RECORD_ADDED": "제목에 \"{{query}}\"이(가) 포함된 모든 프로그램이 녹화됩니다. 나중에 편성표에 추가되는 프로그램도 포함됩니다.",
-    "ALERT_REMOVED": "\"{{query}}\" 자동 규칙을 중지했습니다. 이미 만든 알림과 녹화는 그대로 유지됩니다."
+    "ALERT_REMOVED": "\"{{query}}\" 자동 규칙을 중지했습니다. 이미 만든 알림과 녹화는 그대로 유지됩니다.",
+    "TIME_NAV": "편성표 시간대",
+    "NOW": "지금",
+    "NOW_HINT": "현재 시간으로 돌아가기",
+    "CATCHUP_AVAILABLE": "아카이브에서 시청 가능",
+    "NOW_MENU_HINT": "마우스 오른쪽 버튼으로 지금부터 녹화",
+    "RECORD_FROM_NOW": "지금부터 녹화",
+    "NO_PROGRAMMES_IN_WINDOW": "이 시간대에 프로그램이 없습니다",
+    "EPG_FAILED": "편성 정보를 불러오지 못했습니다",
+    "EPG_RETRY": "다시 시도",
+    "EPG_RETRY_ARIA": "{{name}} 편성 정보 다시 불러오기"
   },
   "PARENTAL": {
     "CONFIRM": "확인",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "\"{{name}}\" 잠금",
     "UNLOCK_GROUP_TITLE": "\"{{name}}\" 잠금 해제",
     "GROUP_LOCKED": "\"{{name}}\"을(를) 잠갔습니다",
-    "GROUP_UNLOCKED": "\"{{name}}\"의 잠금을 해제했습니다"
+    "GROUP_UNLOCKED": "\"{{name}}\"의 잠금을 해제했습니다",
+    "PIN_FORMAT_INVALID": "PIN은 4~8자리 숫자여야 합니다"
   },
   "RECORDINGS": {
     "CANCEL": "녹화 취소",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "알림",
     "ALERT_KIND_RECORD": "녹화",
     "ALERT_CREATED": "만든 날짜: {{date}}",
-    "ALERT_DELETE_ARIA": "\"{{query}}\" 자동 규칙 삭제"
+    "ALERT_DELETE_ARIA": "\"{{query}}\" 자동 규칙 삭제",
+    "FILE_RECORDING": "녹화 중",
+    "FILE_RECORDING_HINT": "아직 녹화 중입니다. 삭제하려면 위의 녹화를 취소하세요."
   },
   "EPG_MAPPING": {
     "TITLE": "EPG 지정",

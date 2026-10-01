@@ -55,6 +55,9 @@ export interface GuideRow {
   /// idle: not requested yet; queued: waiting for a free request slot.
   state: "idle" | "queued" | "loading" | "done" | "error";
   blocks: GuideBlock[];
+  /// Programmes the channel has in all (also outside the time window): an
+  /// empty row then says "nothing in this time" instead of "no EPG".
+  epgCount?: number;
 }
 
 export interface GuideSlot {
@@ -83,13 +86,20 @@ export interface GuideSearchDay {
  * TV guide: live channels as rows, time (now - 1 h .. now + 6 h, 30 minute
  * slots) as columns. EPG data is fetched lazily for the rows near the
  * viewport, at most {@link MAX_IN_FLIGHT} at a time, and cached per channel
- * for the session.
+ * for the session. A channel's EPG holds all its programmes, so moving the
+ * time window (it follows the clock, and goes a day back or ahead) only lays
+ * the cached programmes out again.
  */
 @Component({
   imports: [CommonModule, FormsModule, TranslatePipe, MatMenuModule, CountryNamePipe],
   selector: "app-tv-guide",
   templateUrl: "./tv-guide.component.html",
-  styleUrls: ["./tv-guide.component.css", "./tv-guide-search.css", "./tv-guide-alerts.css"],
+  styleUrls: [
+    "./tv-guide.component.css",
+    "./tv-guide-search.css",
+    "./tv-guide-alerts.css",
+    "./tv-guide-extras.css",
+  ],
 })
 export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   static readonly PAGE_SIZE = 36;
@@ -101,6 +111,12 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   static readonly SEARCH_DEBOUNCE_MS = 300;
   /// The backend answers shorter queries with nothing.
   static readonly SEARCH_MIN_LENGTH = 2;
+  static readonly DAY_SECONDS = 24 * 3600;
+  /// How many days the window goes back or ahead (catch-up archives and
+  /// provider EPG rarely reach further).
+  static readonly MAX_DAY_OFFSET = 7;
+  /// Once now is this far into the window, it moves on with the clock.
+  static readonly WINDOW_ADVANCE_SECONDS = 2 * 3600;
 
   /// Restricts the rows to one group (the one open in the library).
   @Input() group?: { id: number; name: string };
@@ -110,6 +126,10 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   slots: GuideSlot[] = [];
   windowStart = 0;
   windowEnd = 0;
+  /// Days the window is moved from today (0: around now).
+  dayOffset = 0;
+  /// "Today", "Tomorrow" or the date the window shows.
+  dayTitle = "";
   timelineWidth = 0;
   nowOffset = 0;
   loading = false;
@@ -158,6 +178,8 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   private dayFormat?: Intl.DateTimeFormat;
   /// Bumped on every query change, so answers to older queries are dropped.
   private searchSeq = 0;
+  /// The channel list this guide last gave the player, see playChannel.
+  private playerList?: Channel[];
   private searchTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
@@ -222,15 +244,63 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   private computeWindow() {
     const now = Math.floor(Date.now() / 1000);
     const slot = TvGuideComponent.SLOT_SECONDS;
-    this.windowStart = Math.floor((now - 3600) / slot) * slot;
-    const count = Math.ceil((now + 6 * 3600 - this.windowStart) / slot);
+    // The same time of day on another day: the window moves by whole days.
+    const base = now + this.dayOffset * TvGuideComponent.DAY_SECONDS;
+    this.windowStart = Math.floor((base - 3600) / slot) * slot;
+    const count = Math.ceil((base + 6 * 3600 - this.windowStart) / slot);
     this.windowEnd = this.windowStart + count * slot;
     this.timelineWidth = count * TvGuideComponent.SLOT_WIDTH;
     this.slots = Array.from({ length: count }, (_, i) => {
       const timestamp = this.windowStart + i * slot;
       return { timestamp, label: this.formatTime(timestamp) };
     });
+    this.dayTitle = this.dayLabel(new Date(base * 1000));
     this.updateNow(now);
+  }
+
+  /**
+   * Lays the window out again (after it moved) and keeps the view where it
+   * was: "keep-time" holds the same time in view (the window followed the
+   * clock), "keep-position" the same place (a day back or ahead: the same
+   * time of day), "now" brings the now line in.
+   */
+  private moveWindow(scroll: "keep-time" | "keep-position" | "now") {
+    const oldStart = this.windowStart;
+    this.computeWindow();
+    for (const row of this.rows) {
+      if (row.state !== "done" || row.channel.id === undefined) continue;
+      const cached = this.cache.entries.get(row.channel.id);
+      if (cached) this.applyEpg(row, cached);
+    }
+    const el = this.scroller?.nativeElement;
+    if (!el) return;
+    // scrollLeft runs negative from the start edge in right-to-left layouts.
+    const sign = getComputedStyle(this.host.nativeElement).direction === "rtl" ? -1 : 1;
+    const px = TvGuideComponent.PX_PER_SECOND;
+    if (scroll === "keep-time") {
+      const offset = sign * el.scrollLeft - (this.windowStart - oldStart) * px;
+      el.scrollLeft = sign * Math.max(0, offset);
+    } else if (scroll === "now") {
+      // One slot of what already ran stays in view before the now line.
+      el.scrollLeft = sign * Math.max(0, this.nowOffset - TvGuideComponent.SLOT_WIDTH);
+    }
+  }
+
+  /** "Now": back to today, with the now line in view. */
+  goToNow() {
+    this.dayOffset = 0;
+    this.moveWindow("now");
+  }
+
+  /** A day back (-1) or ahead (+1), at the same time of day. */
+  shiftDay(days: number) {
+    if (!this.canShiftDay(days)) return;
+    this.dayOffset += days;
+    this.moveWindow("keep-position");
+  }
+
+  canShiftDay(days: number): boolean {
+    return Math.abs(this.dayOffset + days) <= TvGuideComponent.MAX_DAY_OFFSET;
   }
 
   private updateNow(now: number) {
@@ -243,6 +313,11 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private tick() {
     const now = Date.now() / 1000;
+    // Left open for hours, the guide would otherwise end up showing only
+    // the past. A window moved to another day stays where the user put it.
+    if (this.dayOffset === 0 && now > this.windowStart + TvGuideComponent.WINDOW_ADVANCE_SECONDS) {
+      this.moveWindow("keep-time");
+    }
     this.updateNow(now);
     for (const row of this.rows) {
       for (const block of row.blocks) block.state = this.stateOf(block.epg, now);
@@ -325,8 +400,10 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       this.rows = more ? this.rows.concat(rows) : rows;
       this.reachedMax = channels.length < TvGuideComponent.PAGE_SIZE;
       this.loadFailed = false;
-      // The embedded player's side list offers the guide's channels.
-      this.memory.PlayerChannelList = this.rows.map((r) => r.channel);
+      // A player started from here gets the rows loaded since as well.
+      if (this.playerList && this.memory.PlayerChannelList === this.playerList) {
+        this.publishPlayerList();
+      }
     } catch (e) {
       if (seq !== this.loadSeq) return;
       this.loadFailed = true;
@@ -376,6 +453,13 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** A row whose EPG request failed: try it again. */
+  retry(row: GuideRow) {
+    if (row.state !== "error") return;
+    row.state = "idle";
+    this.request(row);
+  }
+
   /** Queues the EPG request of a row (no-op when loaded or already queued). */
   request(row: GuideRow) {
     if (row.state !== "idle") return;
@@ -401,6 +485,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       this.applyEpg(row, epg);
     } catch (e) {
       console.error(e);
+      // Shown apart from "no EPG", with a retry: the channel may well have one.
       row.state = "error";
     } finally {
       this.inFlight--;
@@ -411,6 +496,9 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   private applyEpg(row: GuideRow, epg: EPG[]) {
     const px = TvGuideComponent.PX_PER_SECOND;
     const now = Date.now() / 1000;
+    const catchUp = this.translate.instant("GUIDE.CATCHUP_AVAILABLE");
+    const recordNow = this.translate.instant("GUIDE.NOW_MENU_HINT");
+    row.epgCount = epg.length;
     row.blocks = epg
       .filter((e) => e.end_timestamp > this.windowStart && e.start_timestamp < this.windowEnd)
       .sort((a, b) => a.start_timestamp - b.start_timestamp)
@@ -418,13 +506,17 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
         const start = Math.max(e.start_timestamp, this.windowStart);
         const end = Math.min(e.end_timestamp, this.windowEnd);
         const time = this.timeRange(e);
+        const state = this.stateOf(e, now);
+        // How to reach what a click does not: the archive of a past
+        // programme, the recording of a running one (context menu).
+        const hint = e.timeshift_url ? catchUp : state === "now" ? recordNow : "";
         return {
           epg: e,
           offset: (start - this.windowStart) * px,
           width: Math.max(4, (end - start) * px),
-          state: this.stateOf(e, now),
-          label: `${e.title}, ${time}`,
-          tooltip: [e.title, time, e.description].filter((x) => !!x).join("\n"),
+          state,
+          label: e.timeshift_url ? `${e.title}, ${time}. ${catchUp}` : `${e.title}, ${time}`,
+          tooltip: [e.title, time, e.description, hint].filter((x) => !!x).join("\n"),
         };
       });
     row.state = "done";
@@ -553,11 +645,24 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async playChannel(channel: Channel) {
     try {
-      await this.playback.play(channel);
+      await this.playback.play(channel, this.publishPlayerList());
       await this.playback.addToHistory(channel);
     } catch (e) {
       this.error.handleError(e);
     }
+  }
+
+  /**
+   * The rows loaded so far, for the player's side list and channel keys.
+   * The guide loads its channels page by page as it is scrolled (like the
+   * library grid), so the list grows with it while the player still uses it;
+   * loading every channel of a large playlist up front just for zapping
+   * would cost more than it gives.
+   */
+  private publishPlayerList(): Channel[] {
+    this.playerList = this.rows.map((r) => r.channel);
+    this.memory.PlayerChannelList = this.playerList;
+    return this.playerList;
   }
 
   /** Enter / click on a programme block. */
@@ -573,7 +678,12 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /** Catch-up, played the way the EPG modal does. */
+  /**
+   * Catch-up, played the way the EPG modal does: through the shared
+   * playback path, so it opens in the embedded player instead of a second
+   * mpv window (and a second provider connection). Nothing to zap to from
+   * an archived programme.
+   */
   private async timeshift(row: GuideRow, epg: EPG) {
     const channel: Channel = {
       id: -1,
@@ -584,10 +694,30 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       source_id: row.channel.source_id,
     };
     try {
-      await invoke("play", { channel, record: false });
+      await this.playback.play(channel, []);
     } catch (e) {
       this.error.handleError(e);
     }
+  }
+
+  /**
+   * Context menu (right click, menu key) on a programme: the running one
+   * can be recorded from now on there, its click plays the channel.
+   */
+  onBlockContextMenu(row: GuideRow, block: GuideBlock, event: MouseEvent) {
+    event.preventDefault();
+    if (this.stateOf(block.epg) === "past") return;
+    this.openFutureMenu(row, block, event);
+  }
+
+  /** The menu is for the running programme (record from now, watch). */
+  menuIsNow(): boolean {
+    return !!this.menuBlock && this.stateOf(this.menuBlock.epg) === "now";
+  }
+
+  /** Plays the channel of the programme the menu was opened for. */
+  async watchMenuChannel() {
+    if (this.menuRow) await this.playChannel(this.menuRow.channel);
   }
 
   private openFutureMenu(row: GuideRow, block: GuideBlock, event?: Event) {
@@ -599,8 +729,11 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     this.menuPosition = mouse
       ? { x: mouse.clientX, y: mouse.clientY }
       : { x: rect ? rect.left + 8 : 0, y: rect ? rect.bottom : 0 };
-    // Let the hidden trigger move to the new position before the menu opens.
-    setTimeout(() => this.menuTrigger?.openMenu(), 0);
+    // Let the hidden trigger move to the new position before the menu opens
+    // (unless the guide was left meanwhile: the menu's injector is gone).
+    setTimeout(() => {
+      if (!this.destroyed) this.menuTrigger?.openMenu();
+    }, 0);
   }
 
   private scheduleKey(channelId: number | undefined, start: number) {

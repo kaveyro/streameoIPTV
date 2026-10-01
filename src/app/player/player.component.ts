@@ -20,12 +20,48 @@ import { ErrorService } from "../error.service";
 import { NowPlaying, NowPlayingService, programmeProgress } from "../now-playing.service";
 import { splitCountryPrefix } from "../country-prefix";
 import { WatchProgressService } from "../watch-progress.service";
+import { PlaybackService } from "../playback.service";
 
 /// Keys the backend forwards while mpv (not the WebView) has keyboard focus,
 /// see the `player-key` event. The digits (top row and numpad) come as
 /// `digit-0` … `digit-9`, for the channel number entry. "info" shows the
-/// channel banner again, "restart" starts a movie over.
-type PlayerKey = "next" | "prev" | "back" | "last" | "info" | "restart" | `digit-${number}`;
+/// channel banner again, "restart" starts a movie over, "commit" (Enter)
+/// takes a typed channel number at once.
+export type PlayerKey =
+  "next" | "prev" | "back" | "last" | "info" | "restart" | "commit" | `digit-${number}`;
+
+/// What mpv is doing with the stream (`player-status`): opening it, waiting
+/// for data in the middle of it, or showing pictures.
+export type PlayerStatus = "connecting" | "buffering" | "playing";
+
+/// mpv's error texts (mpv_error_string: the `file_error` of a failed file or
+/// the error of a rejected loadfile) and the explanation shown instead. The
+/// raw English text is only shown for errors not listed here.
+const PLAYBACK_ERRORS: [RegExp, string][] = [
+  [/^loading failed$|could not play/i, "PLAYER.ERR_LOADING"],
+  [/unrecognized file format/i, "PLAYER.ERR_FORMAT"],
+  [/no audio or video data played|nothing to play/i, "PLAYER.ERR_NO_DATA"],
+  [/audio output initiali[sz]ation failed/i, "PLAYER.ERR_AUDIO_OUTPUT"],
+  [/video output initiali[sz]ation failed/i, "PLAYER.ERR_VIDEO_OUTPUT"],
+  [/not supported|unsupported|not implemented/i, "PLAYER.ERR_UNSUPPORTED"],
+  [
+    /network|connection|timed? ?out|refused|unreachable|http|\b(?:4\d\d|5\d\d)\b/i,
+    "PLAYER.ERR_NETWORK",
+  ],
+];
+
+/** The translation key explaining an mpv playback error, if it is a known one. */
+export function playbackErrorKey(message: string): string | undefined {
+  const text = message.trim();
+  return PLAYBACK_ERRORS.find(([pattern]) => pattern.test(text))?.[1];
+}
+
+/// Whether `a` and `b` are the same thing to play. Pseudo channels (catch-up,
+/// recordings) all have a negative id: for them the URL tells them apart.
+export function sameChannel(a?: Channel, b?: Channel): boolean {
+  if (!a || !b || a.id !== b.id) return false;
+  return a.id === undefined || a.id < 0 ? a.url === b.url : true;
+}
 
 /// The channel banner mpv draws over the video (`player_osd_banner`).
 interface OsdBanner {
@@ -133,6 +169,17 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private static readonly ZAP_TIMEOUT_MS = 1500;
   /// A number this long is taken right away (no provider numbers beyond it).
   private static readonly ZAP_MAX_DIGITS = 5;
+  /// How long opening a stream may take before "Connecting…" shows over the
+  /// video, and how long a stall in a running one before "Buffering…". Most
+  /// streams start (or recover) sooner; a status flashing up for those would
+  /// only be noise.
+  static readonly CONNECTING_STATUS_MS = 1500;
+  static readonly BUFFERING_STATUS_MS = 700;
+  /// An error that arrived before mpv started the new stream may still be
+  /// the previous stream's. It counts for the new one only when no new file
+  /// start follows within this time after the play went out (a rejected
+  /// loadfile starts nothing).
+  static readonly STALE_ERROR_GRACE_MS = 1500;
   active = false;
   /// Playing on in the small corner window while the rest of the app is used.
   mini = false;
@@ -176,6 +223,20 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   /// The last attempt to play {@link current} failed: selecting it again
   /// must retry instead of being ignored as "already playing".
   private currentFailed = false;
+  /// switchSeq of the latest switch whose player_play went out.
+  private playedSeq = 0;
+  /// switchSeq for which mpv reported starting a file after its play went
+  /// out: from then on its errors are the current stream's.
+  private startedSeq = 0;
+  /// An error that may belong to the previous stream, see onPlayerError.
+  private deferredError?: {
+    seq: number;
+    message: string;
+    timer?: ReturnType<typeof setTimeout>;
+  };
+  /// "Connecting…" / "Buffering…" is waiting to show, or shown, over the video.
+  private statusTimer?: ReturnType<typeof setTimeout>;
+  private statusShown = false;
   private embeddedUnavailable = false;
   private resizeObserver?: ResizeObserver;
   private subscriptions: Subscription[] = [];
@@ -197,6 +258,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     private modal: NgbModal,
     private host: ElementRef<HTMLElement>,
     private watchProgress: WatchProgressService,
+    private playback: PlaybackService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -239,9 +301,11 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     // mpv failed to open or read the stream. Without this the video area would
     // just stay black: mpv's output is not captured anywhere else.
     listen<string>("player-error", (event) => {
-      // Selecting the failed channel again must retry it.
-      this.currentFailed = true;
-      this.ngZone.run(() => this.onPlaybackError(event.payload));
+      this.ngZone.run(() => this.onPlayerError(event.payload));
+    }).then((unlisten) => this.unlistens.push(unlisten));
+    // Opening the stream / waiting for data / playing, for the status text.
+    listen<string>("player-status", (event) => {
+      this.ngZone.run(() => this.onPlayerStatus(event.payload as PlayerStatus));
     }).then((unlisten) => this.unlistens.push(unlisten));
     // mpv died or its IPC pipe broke and the backend tore the player down; the
     // next play has to build a new one.
@@ -249,6 +313,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       this.ngZone.run(() => {
         this.initialized = false;
         this.currentFailed = true;
+        this.dropDeferredError();
+        this.resetStatus();
         this.error.info(this.translate.instant("TOAST.PLAYER_CRASHED"));
         // Nothing left to show in the corner. The full player stays open, so
         // the next channel picked from its list rebuilds mpv.
@@ -291,7 +357,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   async open(channel: Channel) {
     // The channel already playing in the mini player: just grow back, a new
     // player_play would restart the stream.
-    if (this.active && this.mini && channel.id === this.current?.id && !this.currentFailed) {
+    if (this.active && this.mini && sameChannel(channel, this.current) && !this.currentFailed) {
       this.expand();
       return;
     }
@@ -300,6 +366,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       await this.fallback(channel);
       return;
     }
+    // A spawn setting changed while the mini player played: the player is
+    // rebuilt now, before the next channel, instead of cutting that one off.
+    await this.rebuildIfPending();
+    if (this.isStale(generation)) return;
     try {
       await this.ensureInitialized();
     } catch (e) {
@@ -328,6 +398,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.clearStreamInfo();
     this.cancelZap();
     this.resetFallback();
+    this.clearStatus();
     this.active = true;
     this.applyMode();
     const switchSeq = ++this.switchSeq;
@@ -343,7 +414,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         await this.undoIfClosed();
         return;
       }
-      if (switchSeq === this.switchSeq) this.streamInfoReady = true;
+      if (switchSeq === this.switchSeq) {
+        this.streamInfoReady = true;
+        this.playSent(switchSeq);
+      }
     } catch (e) {
       if (this.isStale(generation)) return;
       if (switchSeq === this.switchSeq) this.currentFailed = true;
@@ -457,17 +531,149 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Reports a playback failure. While the player is open a toast is useless:
-   * the native video window composites above the WebView, so anything the DOM
-   * paints over the video area is invisible. mpv's own OSD is drawn inside
-   * that window and is the only surface the user can actually see.
+   * Reports a playback failure, explained where mpv's text is a known one.
+   * While the video is shown a toast is useless: the native video window
+   * composites above the WebView, so anything the DOM paints over the video
+   * area is invisible. mpv's own OSD is drawn inside that window and is the
+   * only surface the user can actually see there. Only while a dialog hides
+   * the video does the toast take over; never both.
    */
   private reportPlaybackError(message: string) {
-    const text = `${this.translate.instant("TOAST.PLAYER_ERROR")}: ${message}`;
-    if (this.active) {
-      invoke("player_osd", { message: text }).catch(() => undefined);
+    const key = playbackErrorKey(message);
+    const reason = key ? this.translate.instant(key) : message;
+    const text = `${this.translate.instant("TOAST.PLAYER_ERROR")}: ${reason}`;
+    const videoShown = this.active && (this.mini || !this.modal.hasOpenModals());
+    if (videoShown) {
+      console.error(message);
+      this.osd(text);
+    } else {
+      this.error.handleError(message, text);
     }
-    this.error.handleError(message, this.translate.instant("TOAST.PLAYER_ERROR"));
+  }
+
+  /**
+   * A `player-error`. The event does not say which stream failed, so the
+   * order of mpv's events decides: an error after mpv started a file for the
+   * current switch is the current stream's. One before that may still come
+   * from the stream being replaced; it is held back and dropped as soon as a
+   * new file starts. Without such a start (a rejected loadfile) it counts
+   * once {@link STALE_ERROR_GRACE_MS} passed after the play went out.
+   * Counting an old stream's error would make the next pick of the working
+   * channel restart it (currentFailed).
+   */
+  onPlayerError(message: string) {
+    if (!this.active) return;
+    const seq = this.switchSeq;
+    if (this.startedSeq === seq) {
+      this.dropDeferredError();
+      this.acceptPlaybackError(message);
+      return;
+    }
+    this.dropDeferredError();
+    this.deferredError = { seq, message };
+    if (this.playedSeq === seq) this.armDeferredError();
+  }
+
+  /** The error is the current stream's: retry on the next pick, report it. */
+  private acceptPlaybackError(message: string) {
+    // Selecting the failed channel again must retry it.
+    this.currentFailed = true;
+    this.clearStatus();
+    this.onPlaybackError(message);
+  }
+
+  private armDeferredError() {
+    const deferred = this.deferredError;
+    if (!deferred || deferred.timer !== undefined) return;
+    deferred.timer = setTimeout(() => {
+      if (this.deferredError !== deferred) return;
+      this.deferredError = undefined;
+      if (deferred.seq === this.switchSeq && this.active) {
+        this.acceptPlaybackError(deferred.message);
+      }
+    }, PlayerComponent.STALE_ERROR_GRACE_MS);
+  }
+
+  private dropDeferredError() {
+    if (this.deferredError?.timer !== undefined) clearTimeout(this.deferredError.timer);
+    this.deferredError = undefined;
+  }
+
+  /** The play of switch `seq` went out to mpv. */
+  private playSent(seq: number) {
+    this.playedSeq = seq;
+    if (this.deferredError?.seq === seq) this.armDeferredError();
+  }
+
+  /**
+   * A `player-status`. "Connecting…" / "Buffering…" show over the video only
+   * when opening or refilling takes a while, and go once pictures come.
+   * A file start also tells onPlayerError that a held-back error belonged to
+   * a file that is over.
+   */
+  onPlayerStatus(status: PlayerStatus) {
+    if (!this.active) return;
+    if (status === "playing") {
+      this.clearStatus();
+      return;
+    }
+    if (status === "connecting") {
+      this.dropDeferredError();
+      if (this.playedSeq === this.switchSeq) this.startedSeq = this.switchSeq;
+    } else if (status !== "buffering") {
+      return;
+    }
+    const key = status === "connecting" ? "PLAYER.CONNECTING" : "PLAYER.BUFFERING";
+    if (this.statusTimer !== undefined) clearTimeout(this.statusTimer);
+    this.statusTimer = undefined;
+    // Already up: only the text changes.
+    if (this.statusShown) {
+      this.showStatus(key);
+      return;
+    }
+    const delay =
+      status === "connecting"
+        ? PlayerComponent.CONNECTING_STATUS_MS
+        : PlayerComponent.BUFFERING_STATUS_MS;
+    this.statusTimer = setTimeout(() => {
+      this.statusTimer = undefined;
+      this.showStatus(key);
+    }, delay);
+  }
+
+  private showStatus(key: string) {
+    if (!this.active) return;
+    this.statusShown = true;
+    invoke("player_status", { text: this.translate.instant(key) }).catch(() => undefined);
+  }
+
+  /** Cancels a pending status and removes the one shown. */
+  private clearStatus() {
+    const shown = this.statusShown;
+    this.resetStatus();
+    if (shown) invoke("player_status", { text: null }).catch(() => undefined);
+  }
+
+  /** Forgets the status without telling mpv (player_stop removes it there). */
+  private resetStatus() {
+    if (this.statusTimer !== undefined) clearTimeout(this.statusTimer);
+    this.statusTimer = undefined;
+    this.statusShown = false;
+  }
+
+  /**
+   * Rebuilds mpv when a spawn setting changed while the mini player played
+   * (the settings page only marks it then, see PlayerRebuildPending).
+   */
+  private async rebuildIfPending() {
+    if (!this.memory.PlayerRebuildPending) return;
+    this.memory.PlayerRebuildPending = false;
+    try {
+      await invoke("player_destroy");
+    } catch (e) {
+      console.error(e);
+    }
+    this.initialized = false;
   }
 
   /**
@@ -553,7 +759,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
    */
   async switch(channel: Channel, fallback = false) {
     if (!this.active) return;
-    if (channel.id === this.current?.id && !this.currentFailed) {
+    if (sameChannel(channel, this.current) && !this.currentFailed) {
       this.scrollActiveIntoView(false);
       return;
     }
@@ -565,6 +771,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.currentFailed = false;
     this.nowPlaying = undefined;
     this.clearStreamInfo();
+    this.clearStatus();
     this.scrollActiveIntoView(focusInList);
     try {
       const resumed = await this.playChannel(channel);
@@ -572,8 +779,12 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         await this.undoIfClosed();
         return;
       }
-      if (seq === this.switchSeq) this.streamInfoReady = true;
-      invoke("add_last_watched", { id: channel.id }).catch(() => undefined);
+      if (seq === this.switchSeq) {
+        this.streamInfoReady = true;
+        this.playSent(seq);
+      }
+      // Pseudo channels (catch-up, recordings) are skipped there.
+      this.playback.addToHistory(channel).catch(() => undefined);
       if (seq === this.switchSeq) this.announce(channel, !fallback, resumed);
     } catch (e) {
       if (this.isStale(generation)) return;
@@ -614,7 +825,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     return visible.length > 0 ? visible : this.channels;
   }
 
-  private handlePlayerKey(key: PlayerKey) {
+  handlePlayerKey(key: PlayerKey) {
     if (key.startsWith("digit-")) {
       this.typeDigit(key.slice("digit-".length));
       return;
@@ -640,6 +851,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       case "restart":
         this.restart();
         break;
+      case "commit":
+        // Enter only means something while a channel number is typed.
+        if (this.zapDigits) this.commitZap();
+        break;
     }
   }
 
@@ -663,7 +878,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     try {
       await invoke("player_restart");
       this.osd(this.translate.instant("PLAYER.RESTARTED"));
-      await this.watchProgress.clear(channel);
+      // Pseudo channels (catch-up, recordings) keep no progress to forget.
+      if (channel.id !== undefined && channel.id >= 0) await this.watchProgress.clear(channel);
     } catch (e) {
       console.error(e);
     }
@@ -719,19 +935,49 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         event.stopImmediatePropagation();
         return;
       }
+      // The same key as inside mpv (`f`, rebound to the app's fullscreen).
+      if (event.key === "f" || event.key === "F") {
+        this.toggleFullscreen();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      // Pause and mute like inside mpv. Space on a focused button (the bar,
+      // the side list's entries) stays that button's own.
+      const onButton = target instanceof HTMLButtonElement;
+      if ((event.key === " " && !onButton) || event.key === "m" || event.key === "M") {
+        const command = event.key === " " ? "toggle_pause" : "toggle_mute";
+        invoke("player_command", { command }).catch(() => undefined);
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
     }
+    const inFilter = target === this.filterInput();
     switch (event.key) {
+      case "F11":
+        this.toggleFullscreen();
+        break;
       case "Escape":
       case "BrowserBack":
         if (inTextInput && this.filterText) this.filterText = "";
         else this.escape();
         break;
       case "PageDown":
-      case "ArrowDown":
         this.next();
         break;
+      case "ArrowDown":
+        // From the filter field into its results, like a search box; zapping
+        // from there would play whatever happens to be next.
+        if (inFilter) this.focusFirstResult();
+        else this.next();
+        break;
       case "PageUp":
+        this.prev();
+        break;
       case "ArrowUp":
+        // The caret's own key in the field: nothing to zap.
+        if (inFilter) return;
         this.prev();
         break;
       case "Backspace":
@@ -784,7 +1030,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       this.osd(this.translate.instant("PLAYER.ZAP_UNKNOWN", { number }));
       return;
     }
-    if (channel.id === this.current?.id && !this.currentFailed) {
+    if (sameChannel(channel, this.current) && !this.currentFailed) {
       // Already on it: replace the typed number with the banner.
       this.showInfo();
       this.scrollActiveIntoView(false);
@@ -865,10 +1111,23 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   private setCurrent(channel: Channel) {
-    if (this.current && this.current.id !== channel.id) this.previous = this.current;
+    if (this.current && !sameChannel(this.current, channel)) this.previous = this.current;
     this.current = channel;
     // mpv keys switch channels in the floating window too: keep its title.
     if (this.active && this.mini) this.setPopout(true);
+  }
+
+  private filterInput(): HTMLInputElement | null {
+    return (
+      this.playerList?.nativeElement.querySelector<HTMLInputElement>(".player-list-search") ?? null
+    );
+  }
+
+  /** ArrowDown in the filter field: on to the first channel it left. */
+  private focusFirstResult() {
+    this.playerList?.nativeElement
+      .querySelector<HTMLElement>(".player-list-item")
+      ?.focus({ preventScroll: false });
   }
 
   private isFocusInList(): boolean {
@@ -1048,6 +1307,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.clearStreamInfo();
     this.cancelZap();
     this.resetFallback();
+    this.dropDeferredError();
+    this.resetStatus();
     this.stopBoundsSync();
     this.stopEpgTimer();
     try {
@@ -1059,6 +1320,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     } catch {
       // best effort
     }
+    // Playback ended: now a spawn setting changed meanwhile can apply.
+    await this.rebuildIfPending();
   }
 
   async toggleFullscreen() {
@@ -1069,6 +1332,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     try {
       await getCurrentWindow().setFullscreen(value);
       this.fullscreen = value;
+      // Nothing in the picture says how to get out again.
+      if (value) this.osd(this.translate.instant("PLAYER.FULLSCREEN_HINT"));
     } catch (e) {
       // Keep the previous state if the OS window couldn't switch, so the layout
       // doesn't pretend to be fullscreen when it isn't.
@@ -1127,6 +1392,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.cancelZap();
+    this.dropDeferredError();
+    this.resetStatus();
     this.stopBoundsSync();
     this.stopEpgTimer();
     this.unlistens.forEach((unlisten) => unlisten());

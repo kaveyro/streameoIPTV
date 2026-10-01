@@ -1,0 +1,74 @@
+/* The time window navigation, catch-up marks, failed rows and the hints
+   for disabled reminders (a separate sheet to keep each under the
+   component style budget). */
+
+/* A day back / ahead and "Now", between the title and the search. */
+.guide-time-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-inline-start: auto;
+}
+
+.guide-time-nav[hidden] {
+  display: none;
+}
+
+.guide-day-label {
+  min-width: 7rem;
+  font-size: var(--fs-sm);
+  text-align: center;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.guide-now-btn {
+  margin-inline-start: 0.25rem;
+}
+
+/* Past programmes in the archive: full text colour and a replay mark, so
+   they stand apart from past ones that cannot be watched any more. */
+.guide-block.is-past.has-catchup {
+  color: var(--text-primary);
+}
+
+.guide-catchup-icon {
+  width: 0.95em;
+  height: 0.95em;
+  margin-inline-end: 0.25rem;
+  vertical-align: -0.12em;
+  fill: var(--accent);
+}
+
+.guide-block.is-past:not(.has-catchup) {
+  cursor: default;
+}
+
+/* Rows whose EPG request failed (not the same as a channel without EPG). */
+.guide-epg-failed {
+  color: var(--color-danger);
+}
+
+.guide-retry {
+  padding: 0 0.25rem;
+  vertical-align: baseline;
+  font-size: var(--fs-sm);
+}
+
+.guide-menu-hint {
+  max-width: 280px;
+  padding: 0 1rem 0.5rem;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  white-space: normal;
+}
+
+/* Wraps a reminder button that is disabled without the tray icon: its own
+   tooltip does not show while disabled, the wrapper's does. */
+.guide-tray-hint {
+  display: inline-flex;
+}
+
+.guide-tray-hint .btn:disabled {
+  pointer-events: none;
+}

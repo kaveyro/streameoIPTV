@@ -60,10 +60,12 @@ const ARG_OSC_OFF: &str = "--osc=no";
 ///   embedded child cannot do; the app's fullscreen (double-click, F) stays.
 /// - Movies resume where the app saved them (`watch_progress`), not from
 ///   mpv's own watch-later files.
-const EMBEDDED_ARGS: [&str; 5] = [
+const EMBEDDED_ARGS: [&str; 7] = [
     "--window-dragging=no",
     "--script-opts-append=tethys-showPictureInPictureButton=no",
     "--script-opts-append=tethys-showFullscreenButton=no",
+    "--script-opts-append=tethys-zapButtons=yes",
+    "--script-opts-append=osc-idlescreen=no",
     "--resume-playback=no",
     "--save-position-on-quit=no",
 ];
@@ -537,6 +539,10 @@ fn get_player_ui_args(player_ui: Option<&str>, tethys_script: Option<&str>) -> V
             format!("{ARG_SCRIPT_OPTS_APPEND}tethys-showShortcutTooltip=no"),
             // No playback speed toggle: it is of no use for live TV.
             format!("{ARG_SCRIPT_OPTS_APPEND}tethys-showSpeedButton=no"),
+            // The seekbar thumbnails need worker scripts the app does not ship;
+            // without them tethys flashes "No thumbnail workers found" on
+            // every video under an hour.
+            format!("{ARG_SCRIPT_OPTS_APPEND}mpv_thumbnail_script-autogenerate=no"),
         ],
         None => MODERN_UI_OSC_OPTS
             .iter()
@@ -606,6 +612,9 @@ mod test_mpv {
                 args.contains(&"--script-opts-append=tethys-showShortcutTooltip=no".to_string())
             );
             assert!(args.contains(&"--script-opts-append=tethys-showSpeedButton=no".to_string()));
+            assert!(args.contains(
+                &"--script-opts-append=mpv_thumbnail_script-autogenerate=no".to_string()
+            ));
             assert!(args.contains(&"--osd-bar-w=45".to_string()));
             assert!(args.contains(&"--osd-border-size=1".to_string()));
         }

@@ -4,9 +4,11 @@ import {
   Input,
   NgZone,
   OnDestroy,
+  Optional,
   Output,
   AfterViewInit,
 } from "@angular/core";
+import { NgbActiveModal } from "@ng-bootstrap/ng-bootstrap";
 import { EPG } from "../../models/epg";
 import { MemoryService } from "../../memory.service";
 import { invoke } from "@tauri-apps/api/core";
@@ -20,6 +22,7 @@ import { Download } from "../../models/download";
 import { save } from "@tauri-apps/plugin-dialog";
 import { getDateFormatted, getExtension, sanitizeFileName } from "../../utils";
 import { TranslateService } from "@ngx-translate/core";
+import { PlaybackService } from "../../playback.service";
 
 @Component({
   selector: "app-epg-modal-item",
@@ -37,6 +40,9 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
     private download: DownloadService,
     private ngZone: NgZone,
     private translate: TranslateService,
+    private playback: PlaybackService,
+    /// The EPG dialog this item is in (absent when used elsewhere).
+    @Optional() private activeModal?: NgbActiveModal,
   ) {}
   @Input()
   epg?: EPG;
@@ -140,6 +146,11 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
     }
   }
 
+  /**
+   * Catch-up, through the shared playback path: the embedded player (or the
+   * user's external one), never a second mpv window with a second provider
+   * connection beside the embedded player.
+   */
   async timeshift() {
     if (this.playing) return;
     this.playing = true;
@@ -153,10 +164,10 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
       source_id: this.sourceId,
     };
     try {
-      await invoke("play", {
-        channel: channel,
-        record: false,
-      });
+      // The native video window would cover this dialog: close it first.
+      if (!this.memory.UseExternalPlayer) this.activeModal?.close();
+      // A recorded programme has no channels to zap to.
+      await this.playback.play(channel, []);
     } catch (e) {
       console.error(e);
       this.error.handleError(e);

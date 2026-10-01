@@ -39,7 +39,6 @@
       "CATEGORIES": "Kategorie",
       "FAVORITES": "Ulubione",
       "HISTORY": "Historia",
-      "HIDDEN": "Ukryte",
       "RECORDINGS": "Nagrania",
       "SETTINGS": "Ustawienia",
       "GUIDE": "Program TV",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "Transmisje na żywo",
       "MOVIES_VODS": "Filmy/VOD",
       "MOVIES_VODS_SERIES": "Filmy/VOD/Seriale",
-      "SERIES": "Seriale"
+      "SERIES": "Seriale",
+      "KEEP_ONE": "Co najmniej jeden typ multimediów musi pozostać zaznaczony"
     },
     "COLLAPSE_SIDEBAR": "Zwiń pasek boczny",
     "EXPAND_SIDEBAR": "Rozwiń pasek boczny",
     "COUNTRY_FILTER": "Filtruj według kraju",
-    "ALL_COUNTRIES": "Wszystkie kraje"
+    "ALL_COUNTRIES": "Wszystkie kraje",
+    "VIEWING": "Przeglądasz: {{path}}",
+    "SEARCH_LABEL": "Szukaj kanałów, filmów i seriali",
+    "CLEAR_SEARCH": "Wyczyść wyszukiwanie"
   },
   "MENU": {
     "REMOVE": "Usuń",
     "FAVORITE": "Dodaj do ulubionych",
     "UNFAVORITE": "Usuń z ulubionych",
-    "HIDE": "Ukryj",
-    "UNHIDE": "Pokaż",
     "RECORD": "Nagraj",
     "DOWNLOAD": "Pobierz",
     "CANCEL_DOWNLOAD": "Anuluj pobieranie",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "Brak ulubionych",
     "NO_FAVORITES_HINT": "Kliknij kanał prawym przyciskiem, aby dodać",
     "NOTHING_WATCHED": "Nic jeszcze nie obejrzano",
-    "NO_HIDDEN": "Brak ukrytych kanałów",
     "NO_RECORDINGS": "Brak zaplanowanych nagrań",
     "NO_RECORDINGS_HINT": "Zaplanuj nagranie z programu TV kanału",
     "NO_GUIDE": "Brak danych programu",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "Nie ma jeszcze nic do kontynuowania",
     "NOTHING_TO_CONTINUE_HINT": "Rozpoczęte filmy i odcinki pojawią się tutaj i zostaną wznowione tam, gdzie je przerwano",
     "NO_RECORDING_FILES": "Brak nagranych plików",
-    "NO_RECORDING_FILES_HINT": "Nagrania i pobrane pliki są zapisywane w folderze nagrań (Ustawienia → Nagrywanie)"
+    "NO_RECORDING_FILES_HINT": "Nagrania i pobrane pliki są zapisywane w folderze nagrań (Ustawienia → Nagrywanie)",
+    "LOAD_FAILED": "Nie udało się wczytać tego widoku",
+    "LOAD_FAILED_HINT": "Sprawdź połączenie ze źródłem i spróbuj ponownie",
+    "RETRY": "Spróbuj ponownie"
   },
   "RECORDING": {
     "SCHEDULED": "Zaplanowane nagranie",
@@ -172,7 +175,8 @@
       "APP_VERSION": "Wersja",
       "APP_VERSION_DESC": "Używasz wersji {{version}}",
       "CHECK_UPDATES": "Sprawdź teraz",
-      "CHECKING": "Sprawdzanie..."
+      "CHECKING": "Sprawdzanie...",
+      "RESTART_REQUIRED": "Wymaga ponownego uruchomienia"
     },
     "APPEARANCE": {
       "THEME": "Motyw",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "Zapisuj dziennik odtwarzacza",
       "DEBUG_LOG_DESC": "Tylko do diagnozowania problemów: mpv.log w folderze dzienników zapisuje każdy adres strumienia wraz z zawartymi w nim danymi logowania. Działa przy następnym otwarciu odtwarzacza.",
       "AUTO_FALLBACK": "Przełącz na inny strumień kanału w razie awarii",
-      "AUTO_FALLBACK_DESC": "Gdy strumień na żywo przestanie działać, odtwarzacz automatycznie przełączy się na inną jakość tego samego kanału, np. z HD na SD."
+      "AUTO_FALLBACK_DESC": "Gdy strumień na żywo przestanie działać, odtwarzacz automatycznie przełączy się na inną jakość tego samego kanału, np. z HD na SD.",
+      "APPLIES_NEXT_CHANNEL": "Działa od następnego kanału"
     },
     "RECORDING": {
       "PATH": "Ścieżka nagrań",
       "PATH_DESC": "Folder, w którym zapisywane są nagrane transmisje na żywo.",
       "ALWAYS_ASK": "Zawsze pytaj, gdzie zapisać pobrane pliki",
-      "ALWAYS_ASK_DESC": "Otwieraj okno dialogowe dla każdego pobierania i nagrania. Zastępuje ścieżkę nagrań."
+      "ALWAYS_ASK_DESC": "Otwieraj okno dialogowe dla każdego pobierania i nagrania. Zastępuje ścieżkę nagrań.",
+      "RESET_DEFAULT": "Domyślny",
+      "RESET_DEFAULT_TOOLTIP": "Zapisuj nagrania ponownie w folderze domyślnym"
     },
     "NETWORK": {
       "RESTREAM_PORT": "Port re-streamu",
-      "RESTREAM_PORT_DESC": "Lokalny port używany podczas re-streamu kanału na inne urządzenia."
+      "RESTREAM_PORT_DESC": "Lokalny port używany podczas re-streamu kanału na inne urządzenia.",
+      "RESTREAM_PORT_INVALID": "Wpisz port od {{min}} do {{max}} lub zostaw pole puste, aby użyć domyślnego."
     },
     "SOURCES": {
       "ADD_SOURCE": "Dodaj źródło",
@@ -286,7 +294,6 @@
       "TITLE": "Zewnętrzny EPG",
       "INTRO": "Gdy kanał nie ma danych programu od dostawcy, streameo uzupełnia je z tych źródeł XMLTV: dopasowanych po tvg-id, w przeciwnym razie po nazwie kanału albo tak, jak przypiszesz je ręcznie. Działa każdy adres XMLTV (np. eksport z IPTV-EPG.org); obsługiwane są .xml i .xml.gz.",
       "SOURCES_LABEL": "Źródła XMLTV",
-      "SOURCES_DESC": "Jeden adres URL XMLTV w wierszu.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Odśwież teraz",
       "REFRESH_DESC": "Pobierz najnowsze dane programu. Dzieje się to też automatycznie zgodnie z harmonogramem automatycznego odświeżania źródeł, a gdy jest wyłączony, raz dziennie.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "Pomiń",
     "DONE_TITLE": "Gotowe",
     "DONE_TEXT": "Twoje źródło jest skonfigurowane. Miłego oglądania!",
-    "GO_TO_CHANNELS": "Przejdź do kanałów"
+    "GO_TO_CHANNELS": "Przejdź do kanałów",
+    "IMPORT_FAILED": "Nie udało się zaimportować pliku",
+    "ADD_CUSTOM_FAILED": "Nie udało się utworzyć niestandardowego źródła",
+    "FETCH_FAILED": "Nie udało się wczytać listy. Sprawdź link i połączenie z internetem.",
+    "REQUIRED_FIELD": "Pole wymagane",
+    "SOURCE_TYPE": "Typ źródła",
+    "XTREAM_TOOLTIP": "Zaloguj się adresem serwera, nazwą użytkownika i hasłem od dostawcy. Otrzymasz EPG dostawcy, catch-up i seriale według sezonów.",
+    "CUSTOM_TOOLTIP": "Puste źródło, do którego samodzielnie dodajesz kanały i kategorie.",
+    "CUSTOM_IMPORT_TOOLTIP": "Importuje niestandardowe źródło wyeksportowane ze streameoIPTV (plik .siptvp)."
   },
   "EPG": {
     "PLAYING_NOW": "Teraz odtwarzane",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "Oglądaj z archiwum",
     "DOWNLOAD_CATCHUP": "Pobierz z archiwum",
     "NOTIFY_ON": "Powiadom mnie, gdy się zacznie",
-    "NOTIFY_OFF": "Wyłącz powiadomienie"
+    "NOTIFY_OFF": "Wyłącz powiadomienie",
+    "NOTIFY_NEEDS_TRAY": "Przypomnienia wymagają ikony w zasobniku (Ustawienia → Ogólne)"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "Potwierdź usunięcie wszystkich danych użytkownika",
     "BODY1": "Ta akcja usunie wszystkie dane użytkownika, w tym kanały, kategorie i ulubione dla wszystkich źródeł.",
-    "BODY2": "Zaleca się użycie tej opcji, jeśli napotykasz dziwne błędy, które mogą wynikać z aktualizacji wersji."
+    "BODY2": "Zaleca się użycie tej opcji, jeśli napotykasz dziwne błędy, które mogą wynikać z aktualizacji wersji.",
+    "APP_CLOSES": "Następnie aplikacja zostanie zamknięta. Uruchom ją ponownie, aby skonfigurować ją od nowa.",
+    "CONFIRM_ALL": "Usuń wszystko"
   },
   "CONFIRM_URL": {
     "TITLE": "Czy to właściwy adres URL?",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "Błąd",
     "OCCURRED": "Wystąpił następujący błąd, <a target=\"_blank\" href=\"{{link}}\">możesz go tutaj zgłosić</a>",
-    "LOGS_INTRO": "Szczegółowe dzienniki tego, co mogło spowodować błędy, znajdziesz również w $XDG_CACHE_HOME. Odpowiada to:",
     "ATTACH_LOGS": "Dołącz te dzienniki (jeśli istnieją) oraz poniższy błąd do swojego zgłoszenia. Dziękujemy!",
-    "PERSISTENT": "Jeśli napotykasz dziwne/uporczywe błędy, spróbuj użyć przycisku \"Usuń wszystko\" w ustawieniach lub małego przycisku nuke w prawym dolnym rogu ekranu, gdzie jest dostępny",
-    "COPY": "Kopiuj"
-  },
-  "WHATS_NEW": {
-    "TITLE": "Nowości w v{{version}}",
-    "CHANGES": "Zmiany",
-    "CHANGE_1": "Naprawiono błąd pobierania/odtwarzania catchup",
-    "CHANGE_2": "Naprawiono błąd tworzenia nowych kanałów niestandardowych",
-    "CHANGE_3": "Naprawiono niewyświetlanie ulubionych w widoku ukrytych",
-    "CHANGE_4": "Ulepszono wsparcie dla systemu Linux",
-    "CHANGE_5": "Naprawiono ikonę wyszukiwania tagów",
-    "CHANGE_6": "Naprawiono nietrwałość ukrytych kategorii po odświeżeniu",
-    "CHANGE_7": "Dodano operacje zbiorcze na pasku wyszukiwania",
-    "UPCOMING": "Nadchodzące ulepszenia",
-    "UPCOMING_1": "Planowanie nagrań",
-    "UPCOMING_2": "Tutaj Twój pomysł!",
-    "DONT_SHOW": "Nie pokazuj ponownie"
+    "COPY": "Kopiuj",
+    "LOGS_FOLDER_HINT": "Pliki dziennika i raport diagnostyczny pomagają znaleźć przyczynę:",
+    "PERSISTENT_DIAGNOSTICS": "Jeśli błąd się powtarza, wyeksportuj raport diagnostyczny i dołącz go do zgłoszenia. Nie zawiera haseł ani adresów strumieni."
   },
   "SOURCE": {
     "REFRESHED": "Odświeżono:",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "Połączenie nieudane",
     "XTREAM_HINT": "Ten link zawiera login Xtream. Jako źródło Xtream otrzymasz EPG dostawcy, catch-up dla przegapionych programów i seriale podzielone na sezony.",
     "CONVERT_TO_XTREAM": "Przekształć w Xtream",
-    "CONVERTING": "Przekształcanie…"
+    "CONVERTING": "Przekształcanie…",
+    "MAX_STREAMS_INVALID": "Wpisz liczbę całkowitą równą co najmniej 1"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Wybierz miejsce zapisu nagrania",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "Pomyślnie wyczyszczono historię",
     "HISTORY_CLEAR_FAILED": "Nie udało się wyczyścić historii",
     "RECORDINGS_LOAD_FAILED": "Nie udało się wczytać zaplanowanych nagrań",
-    "RECORDING_ENTRY_REMOVED": "Usunięto wpis nagrania",
     "RECORDING_CANCELLED": "Anulowano zaplanowane nagranie",
     "RECORDING_CANCEL_FAILED": "Nie udało się anulować zaplanowanego nagrania",
     "RECORDING_SCHEDULED": "Pomyślnie zaplanowano nagranie",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "Nie udało się dodać/usunąć \"{{name}}\" do/z ulubionych",
     "HISTORY_REMOVED": "Usunięto \"{{name}}\" z historii",
     "HISTORY_REMOVE_FAILED": "Nie udało się usunąć \"{{name}}\" z historii",
-    "CHANNEL_HIDDEN": "Ukryto \"{{name}}\" (aktualizacja po ponownym wczytaniu)",
-    "CHANNEL_UNHIDDEN": "Odkryto \"{{name}}\" (aktualizacja po ponownym wczytaniu)",
-    "GROUP_HIDDEN": "Ukryto grupę \"{{name}}\" (aktualizacja po ponownym wczytaniu)",
-    "GROUP_UNHIDDEN": "Odkryto grupę \"{{name}}\" (aktualizacja po ponownym wczytaniu)",
-    "HIDE_FAILED": "Nie udało się ukryć/odkryć \"{{name}}\"",
     "NO_EPG": "Brak danych EPG dla tego kanału",
     "EPG_MISSING_STREAM_ID": "Brak identyfikatora strumienia. Odśwież źródła (Ustawienia -> Odśwież wszystkie), aby włączyć funkcję EPG",
     "CATEGORY_EXPORTED": "Pomyślnie wyeksportowano kategorię do {{path}}",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "Nie udało się otworzyć folderu dziennika",
     "DIAGNOSTICS_EXPORTED": "Raport diagnostyczny zapisano w {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Nie udało się wyeksportować raportu diagnostycznego",
-    "EPG_LOADING": "Program TV wczytuje się w tle…"
+    "EPG_LOADING": "Program TV wczytuje się w tle…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "Usunięto „{{name}}” z ulubionych; pozostaje na liście „{{list}}”"
   },
   "UPDATE": {
     "TITLE": "Dostępna aktualizacja",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "Usunąć automatyczną regułę?",
     "DELETE_ALERT_REMIND_BODY": "Programy z „{{query}}” w tytule nie będą już automatycznie przypominane.",
     "DELETE_ALERT_RECORD_BODY": "Programy z „{{query}}” w tytule nie będą już automatycznie nagrywane.",
-    "DELETE_ALERT_KEEP": "Utworzone już przypomnienia i nagrania pozostają. Usuń je pojedynczo, jeśli już ich nie chcesz."
+    "DELETE_ALERT_KEEP": "Utworzone już przypomnienia i nagrania pozostają. Usuń je pojedynczo, jeśli już ich nie chcesz.",
+    "CLEAR_FINISHED_TITLE": "Usunąć zakończone wpisy?",
+    "CLEAR_FINISHED_FAILED_BODY": "W tym nieudane nagrania: {{count}}. Ich wpisy to jedyny ślad, że te nagrania się nie powiodły. Nagrane pliki pozostaną w folderze."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Wróć do kanałów",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "jeszcze {{minutes}} min",
     "RESUMED_AT": "Wznowiono od {{time}}",
     "RESTART_HINT": "Home: od początku",
-    "RESTARTED": "Od początku"
+    "RESTARTED": "Od początku",
+    "CONNECTING": "Łączenie…",
+    "BUFFERING": "Buforowanie…",
+    "ERR_LOADING": "nie udało się otworzyć strumienia (serwer nieosiągalny lub nieprawidłowy link)",
+    "ERR_FORMAT": "nie rozpoznano formatu strumienia",
+    "ERR_NO_DATA": "strumień nie dostarczył obrazu ani dźwięku",
+    "ERR_AUDIO_OUTPUT": "nie udało się uruchomić wyjścia audio",
+    "ERR_VIDEO_OUTPUT": "nie udało się uruchomić wyjścia wideo (sprawdź sterownik grafiki)",
+    "ERR_UNSUPPORTED": "strumień używa formatu nieobsługiwanego przez odtwarzacz",
+    "ERR_NETWORK": "połączenie z serwerem nie powiodło się",
+    "CLOSE_PLAYER": "Zamknij odtwarzacz",
+    "CLOSE_PLAYER_HINT": "Zamknij odtwarzacz (Esc)",
+    "FULLSCREEN_HINT": "Esc: zamknij pełny ekran"
   },
   "GUIDE": {
     "CHANNEL": "Kanał",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "Przypomnienia wymagają ikony w zasobniku (Ustawienia → Ogólne).",
     "ALERT_REMIND_ADDED": "Dostaniesz przypomnienie o każdym programie z „{{query}}” w tytule, także o programach dodanych później do przewodnika.",
     "ALERT_RECORD_ADDED": "Każdy program z „{{query}}” w tytule zostanie nagrany, także programy dodane później do przewodnika.",
-    "ALERT_REMOVED": "Wyłączono automatyczną regułę dla „{{query}}”. Utworzone już przypomnienia i nagrania pozostają."
+    "ALERT_REMOVED": "Wyłączono automatyczną regułę dla „{{query}}”. Utworzone już przypomnienia i nagrania pozostają.",
+    "TIME_NAV": "Zakres czasu w przewodniku",
+    "NOW": "Teraz",
+    "NOW_HINT": "Wróć do bieżącej godziny",
+    "CATCHUP_AVAILABLE": "Dostępne w archiwum",
+    "NOW_MENU_HINT": "Kliknij prawym przyciskiem, aby nagrywać od teraz",
+    "RECORD_FROM_NOW": "Nagrywaj od teraz",
+    "NO_PROGRAMMES_IN_WINDOW": "Brak programów w tym okresie",
+    "EPG_FAILED": "Nie udało się wczytać danych programu",
+    "EPG_RETRY": "Spróbuj ponownie",
+    "EPG_RETRY_ARIA": "Wczytaj ponownie program {{name}}"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "Zablokuj „{{name}}”",
     "UNLOCK_GROUP_TITLE": "Odblokuj „{{name}}”",
     "GROUP_LOCKED": "Zablokowano „{{name}}”",
-    "GROUP_UNLOCKED": "Odblokowano „{{name}}”"
+    "GROUP_UNLOCKED": "Odblokowano „{{name}}”",
+    "PIN_FORMAT_INVALID": "PIN musi mieć od 4 do 8 cyfr"
   },
   "RECORDINGS": {
     "CANCEL": "Anuluj nagranie",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "Przypomnienie",
     "ALERT_KIND_RECORD": "Nagranie",
     "ALERT_CREATED": "Utworzono: {{date}}",
-    "ALERT_DELETE_ARIA": "Usuń automatyczną regułę dla „{{query}}”"
+    "ALERT_DELETE_ARIA": "Usuń automatyczną regułę dla „{{query}}”",
+    "FILE_RECORDING": "Trwa",
+    "FILE_RECORDING_HINT": "Nagrywanie trwa. Anuluj nagranie powyżej, aby usunąć plik."
   },
   "EPG_MAPPING": {
     "TITLE": "Przypisz EPG",

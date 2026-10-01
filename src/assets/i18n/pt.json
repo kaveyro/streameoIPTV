@@ -39,7 +39,6 @@
       "CATEGORIES": "Categorias",
       "FAVORITES": "Favoritos",
       "HISTORY": "Histórico",
-      "HIDDEN": "Ocultos",
       "RECORDINGS": "Gravações",
       "SETTINGS": "Definições",
       "GUIDE": "Guia de TV",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "Livestreams",
       "MOVIES_VODS": "Filmes/Vods",
       "MOVIES_VODS_SERIES": "Filmes/Vods/Séries",
-      "SERIES": "Séries"
+      "SERIES": "Séries",
+      "KEEP_ONE": "Pelo menos um tipo de conteúdo tem de ficar selecionado"
     },
     "COLLAPSE_SIDEBAR": "Recolher barra lateral",
     "EXPAND_SIDEBAR": "Expandir barra lateral",
     "COUNTRY_FILTER": "Filtrar por país",
-    "ALL_COUNTRIES": "Todos os países"
+    "ALL_COUNTRIES": "Todos os países",
+    "VIEWING": "A ver: {{path}}",
+    "SEARCH_LABEL": "Pesquisar canais, filmes e séries",
+    "CLEAR_SEARCH": "Limpar pesquisa"
   },
   "MENU": {
     "REMOVE": "Remover",
     "FAVORITE": "Adicionar aos favoritos",
     "UNFAVORITE": "Remover dos favoritos",
-    "HIDE": "Ocultar",
-    "UNHIDE": "Mostrar",
     "RECORD": "Gravar",
     "DOWNLOAD": "Transferir",
     "CANCEL_DOWNLOAD": "Cancelar transferência",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "Ainda sem favoritos",
     "NO_FAVORITES_HINT": "Clique com o botão direito num canal para adicionar um",
     "NOTHING_WATCHED": "Ainda nada visto",
-    "NO_HIDDEN": "Nenhum canal oculto",
     "NO_RECORDINGS": "Nenhuma gravação agendada",
     "NO_RECORDINGS_HINT": "Agende uma a partir do guia de TV de um canal",
     "NO_GUIDE": "Ainda sem dados de guia",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "Nada para continuar ainda",
     "NOTHING_TO_CONTINUE_HINT": "Filmes e episódios iniciados aparecem aqui e continuam de onde você parou",
     "NO_RECORDING_FILES": "Nenhum arquivo gravado ainda",
-    "NO_RECORDING_FILES_HINT": "Gravações e downloads são salvos na pasta de gravação (Configurações → Gravação)"
+    "NO_RECORDING_FILES_HINT": "Gravações e downloads são salvos na pasta de gravação (Configurações → Gravação)",
+    "LOAD_FAILED": "Não foi possível carregar esta vista",
+    "LOAD_FAILED_HINT": "Verifique a ligação à sua fonte e tente novamente",
+    "RETRY": "Tentar novamente"
   },
   "RECORDING": {
     "SCHEDULED": "Gravação agendada",
@@ -172,7 +175,8 @@
       "APP_VERSION": "Versão",
       "APP_VERSION_DESC": "Estás a usar a versão {{version}}",
       "CHECK_UPDATES": "Procurar agora",
-      "CHECKING": "A procurar..."
+      "CHECKING": "A procurar...",
+      "RESTART_REQUIRED": "Requer reinício"
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "Gravar um registo do leitor",
       "DEBUG_LOG_DESC": "Apenas para diagnóstico: o mpv.log na pasta de registos guarda cada endereço de stream, incluindo os dados de acesso que contém. Aplica-se na próxima vez que o leitor abrir.",
       "AUTO_FALLBACK": "Mudar para outro stream do canal se um falhar",
-      "AUTO_FALLBACK_DESC": "Se um stream ao vivo falhar, o player muda automaticamente para outra qualidade do mesmo canal, por exemplo de HD para SD."
+      "AUTO_FALLBACK_DESC": "Se um stream ao vivo falhar, o player muda automaticamente para outra qualidade do mesmo canal, por exemplo de HD para SD.",
+      "APPLIES_NEXT_CHANNEL": "Aplica-se no próximo canal"
     },
     "RECORDING": {
       "PATH": "Caminho de gravação",
       "PATH_DESC": "Pasta onde os livestreams gravados são guardados.",
       "ALWAYS_ASK": "Perguntar sempre onde guardar as transferências",
-      "ALWAYS_ASK_DESC": "Abre uma caixa de diálogo de ficheiro para cada transferência e gravação. Substitui o caminho de gravação."
+      "ALWAYS_ASK_DESC": "Abre uma caixa de diálogo de ficheiro para cada transferência e gravação. Substitui o caminho de gravação.",
+      "RESET_DEFAULT": "Predefinida",
+      "RESET_DEFAULT_TOOLTIP": "Voltar a guardar as gravações na pasta predefinida"
     },
     "NETWORK": {
       "RESTREAM_PORT": "Porta de re-stream",
-      "RESTREAM_PORT_DESC": "Porta local usada ao re-transmitir um canal para outros dispositivos."
+      "RESTREAM_PORT_DESC": "Porta local usada ao re-transmitir um canal para outros dispositivos.",
+      "RESTREAM_PORT_INVALID": "Introduza uma porta entre {{min}} e {{max}} ou deixe o campo vazio para usar a predefinida."
     },
     "SOURCES": {
       "ADD_SOURCE": "Adicionar fonte",
@@ -286,7 +294,6 @@
       "TITLE": "EPG externo",
       "INTRO": "Quando um canal não tem dados de programação do fornecedor, o streameo completa-os a partir destas fontes XMLTV: associados pelo tvg-id, senão pelo nome do canal, ou como os atribuíres à mão. Funciona qualquer URL XMLTV (por exemplo, uma exportação do IPTV-EPG.org); .xml e .xml.gz são suportados.",
       "SOURCES_LABEL": "Fontes XMLTV",
-      "SOURCES_DESC": "Um URL de XMLTV por linha.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Atualizar agora",
       "REFRESH_DESC": "Transferir os dados de programação mais recentes. Isto também acontece automaticamente segundo o teu agendamento de atualização automática das fontes ou, se estiver desligado, uma vez por dia.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "Pular",
     "DONE_TITLE": "Tudo pronto",
     "DONE_TEXT": "Sua fonte está configurada. Bom divertimento!",
-    "GO_TO_CHANNELS": "Ir para os canais"
+    "GO_TO_CHANNELS": "Ir para os canais",
+    "IMPORT_FAILED": "Não foi possível importar o ficheiro",
+    "ADD_CUSTOM_FAILED": "Não foi possível criar a fonte personalizada",
+    "FETCH_FAILED": "Não foi possível carregar a lista. Verifique o link e a sua ligação à Internet.",
+    "REQUIRED_FIELD": "Campo obrigatório",
+    "SOURCE_TYPE": "Tipo de fonte",
+    "XTREAM_TOOLTIP": "Inicie sessão com o endereço do servidor, o utilizador e a palavra-passe do seu fornecedor. Obtém o EPG do fornecedor, catch-up e séries por temporada.",
+    "CUSTOM_TOOLTIP": "Uma fonte vazia à qual adiciona canais e categorias por si próprio.",
+    "CUSTOM_IMPORT_TOOLTIP": "Importa uma fonte personalizada exportada do streameoIPTV (ficheiro .siptvp)."
   },
   "EPG": {
     "PLAYING_NOW": "Em exibição agora",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "Assistir do arquivo",
     "DOWNLOAD_CATCHUP": "Baixar do arquivo",
     "NOTIFY_ON": "Avisar-me quando começar",
-    "NOTIFY_OFF": "Desativar notificação"
+    "NOTIFY_OFF": "Desativar notificação",
+    "NOTIFY_NEEDS_TRAY": "Os lembretes precisam do ícone na área de notificação (Definições → Geral)"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "Confirmar eliminação de todos os dados do utilizador",
     "BODY1": "Esta ação irá eliminar todos os dados do utilizador, incluindo canais, categorias e favoritos de todas as fontes.",
-    "BODY2": "Recomenda-se usar esta opção se estiver a encontrar erros estranhos que possam dever-se a uma atualização de versão."
+    "BODY2": "Recomenda-se usar esta opção se estiver a encontrar erros estranhos que possam dever-se a uma atualização de versão.",
+    "APP_CLOSES": "Em seguida, a app é fechada. Inicie-a novamente para a configurar de raiz.",
+    "CONFIRM_ALL": "Eliminar tudo"
   },
   "CONFIRM_URL": {
     "TITLE": "É este o URL correto?",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "Erro",
     "OCCURRED": "Ocorreu o seguinte erro, <a target=\"_blank\" href=\"{{link}}\">pode reportá-lo aqui</a>",
-    "LOGS_INTRO": "Também pode encontrar registos detalhados sobre o que poderá ter causado os erros em $XDG_CACHE_HOME. Isso corresponde a:",
     "ATTACH_LOGS": "Por favor, anexe esses registos (se existirem) e o erro abaixo ao seu pedido de reporte de erro. Obrigado!",
-    "PERSISTENT": "Se encontrar erros estranhos/persistentes, tente usar o botão \"Eliminar tudo\" nas definições ou o pequeno botão nuke no canto inferior direito do ecrã, onde estiver presente",
-    "COPY": "Copiar"
-  },
-  "WHATS_NEW": {
-    "TITLE": "Novidades na v{{version}}",
-    "CHANGES": "Alterações",
-    "CHANGE_1": "Corrigido o erro ao transferir/reproduzir catchup",
-    "CHANGE_2": "Corrigido o erro ao criar novos canais personalizados",
-    "CHANGE_3": "Corrigido os favoritos que não apareciam na vista de ocultos",
-    "CHANGE_4": "Melhorado o suporte para Linux",
-    "CHANGE_5": "Corrigido o ícone de pesquisa por etiqueta",
-    "CHANGE_6": "Corrigido as categorias ocultas que não persistiam ao atualizar",
-    "CHANGE_7": "Adicionadas operações em massa na barra de pesquisa",
-    "UPCOMING": "Melhorias futuras",
-    "UPCOMING_1": "Agendamento de gravações",
-    "UPCOMING_2": "A sua ideia aqui!",
-    "DONT_SHOW": "Não mostrar novamente"
+    "COPY": "Copiar",
+    "LOGS_FOLDER_HINT": "Os ficheiros de registo e um relatório de diagnóstico ajudam a encontrar a causa:",
+    "PERSISTENT_DIAGNOSTICS": "Se o erro persistir, exporte o relatório de diagnóstico e anexe-o à sua comunicação. Não contém palavras-passe nem endereços de streams."
   },
   "SOURCE": {
     "REFRESHED": "Atualizado:",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "Falha na conexão",
     "XTREAM_HINT": "Este link contém um login Xtream. Como fonte Xtream, você obtém o EPG do seu provedor, catch-up para programas perdidos e séries por temporada.",
     "CONVERT_TO_XTREAM": "Converter para Xtream",
-    "CONVERTING": "Convertendo…"
+    "CONVERTING": "Convertendo…",
+    "MAX_STREAMS_INVALID": "Introduza um número inteiro igual ou superior a 1"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecione onde guardar a gravação",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "Histórico limpo com sucesso",
     "HISTORY_CLEAR_FAILED": "Falha ao limpar o histórico",
     "RECORDINGS_LOAD_FAILED": "Falha ao carregar as gravações agendadas",
-    "RECORDING_ENTRY_REMOVED": "Entrada de gravação removida",
     "RECORDING_CANCELLED": "Gravação agendada cancelada",
     "RECORDING_CANCEL_FAILED": "Falha ao cancelar a gravação agendada",
     "RECORDING_SCHEDULED": "Gravação agendada com sucesso",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "Falha ao adicionar/remover \"{{name}}\" aos/dos favoritos",
     "HISTORY_REMOVED": "\"{{name}}\" removido do histórico",
     "HISTORY_REMOVE_FAILED": "Falha ao remover \"{{name}}\" do histórico",
-    "CHANNEL_HIDDEN": "\"{{name}}\" ocultado (atualiza ao recarregar)",
-    "CHANNEL_UNHIDDEN": "\"{{name}}\" mostrado (atualiza ao recarregar)",
-    "GROUP_HIDDEN": "Grupo \"{{name}}\" ocultado (atualiza ao recarregar)",
-    "GROUP_UNHIDDEN": "Grupo \"{{name}}\" mostrado (atualiza ao recarregar)",
-    "HIDE_FAILED": "Falha ao ocultar/mostrar \"{{name}}\"",
     "NO_EPG": "Sem dados EPG para este canal",
     "EPG_MISSING_STREAM_ID": "Id do stream em falta. Atualize as suas fontes (Definições -> Atualizar tudo) para ativar a funcionalidade EPG",
     "CATEGORY_EXPORTED": "Categoria exportada com sucesso para {{path}}",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "Não foi possível abrir a pasta de logs",
     "DIAGNOSTICS_EXPORTED": "Relatório de diagnóstico salvo em {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Não foi possível exportar o relatório de diagnóstico",
-    "EPG_LOADING": "O guia de programação está carregando em segundo plano…"
+    "EPG_LOADING": "O guia de programação está carregando em segundo plano…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "«{{name}}» removido dos favoritos; continua em «{{list}}»"
   },
   "UPDATE": {
     "TITLE": "Atualização disponível",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "Eliminar a regra automática?",
     "DELETE_ALERT_REMIND_BODY": "Os programas com \"{{query}}\" no título deixam de receber um lembrete automático.",
     "DELETE_ALERT_RECORD_BODY": "Os programas com \"{{query}}\" no título deixam de ser gravados automaticamente.",
-    "DELETE_ALERT_KEEP": "Os lembretes e gravações já criados mantêm-se. Remove-os um a um se já não os quiseres."
+    "DELETE_ALERT_KEEP": "Os lembretes e gravações já criados mantêm-se. Remove-os um a um se já não os quiseres.",
+    "CLEAR_FINISHED_TITLE": "Remover as entradas concluídas?",
+    "CLEAR_FINISHED_FAILED_BODY": "Entre elas, gravações falhadas: {{count}}. As suas entradas são o único sinal de que essas gravações não funcionaram. Os ficheiros gravados ficam na pasta."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Voltar aos canais",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "faltam {{minutes}} min",
     "RESUMED_AT": "Retomado em {{time}}",
     "RESTART_HINT": "Home: desde o início",
-    "RESTARTED": "Desde o início"
+    "RESTARTED": "Desde o início",
+    "CONNECTING": "A ligar…",
+    "BUFFERING": "A carregar…",
+    "ERR_LOADING": "não foi possível abrir a transmissão (servidor inacessível ou ligação inválida)",
+    "ERR_FORMAT": "o formato da transmissão não é reconhecido",
+    "ERR_NO_DATA": "a transmissão não enviou imagem nem som",
+    "ERR_AUDIO_OUTPUT": "não foi possível iniciar a saída de áudio",
+    "ERR_VIDEO_OUTPUT": "não foi possível iniciar a saída de vídeo (verifique o controlador gráfico)",
+    "ERR_UNSUPPORTED": "a transmissão usa um formato que o leitor não suporta",
+    "ERR_NETWORK": "a ligação ao servidor falhou",
+    "CLOSE_PLAYER": "Fechar leitor",
+    "CLOSE_PLAYER_HINT": "Fechar leitor (Esc)",
+    "FULLSCREEN_HINT": "Esc: sair do ecrã inteiro"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "Os lembretes precisam do ícone na bandeja (Definições → Geral).",
     "ALERT_REMIND_ADDED": "Vais receber um lembrete para cada programa com \"{{query}}\" no título, incluindo os que forem adicionados ao guia mais tarde.",
     "ALERT_RECORD_ADDED": "Cada programa com \"{{query}}\" no título será gravado, incluindo os que forem adicionados ao guia mais tarde.",
-    "ALERT_REMOVED": "Regra automática para \"{{query}}\" parada. Os lembretes e gravações já criados mantêm-se."
+    "ALERT_REMOVED": "Regra automática para \"{{query}}\" parada. Os lembretes e gravações já criados mantêm-se.",
+    "TIME_NAV": "Período do guia",
+    "NOW": "Agora",
+    "NOW_HINT": "Voltar à hora atual",
+    "CATCHUP_AVAILABLE": "Disponível no arquivo",
+    "NOW_MENU_HINT": "Clique com o botão direito para gravar a partir de agora",
+    "RECORD_FROM_NOW": "Gravar a partir de agora",
+    "NO_PROGRAMMES_IN_WINDOW": "Sem programas neste período",
+    "EPG_FAILED": "Não foi possível carregar os dados da programação",
+    "EPG_RETRY": "Tentar novamente",
+    "EPG_RETRY_ARIA": "Voltar a carregar a programação de {{name}}"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "Bloquear \"{{name}}\"",
     "UNLOCK_GROUP_TITLE": "Desbloquear \"{{name}}\"",
     "GROUP_LOCKED": "\"{{name}}\" bloqueado",
-    "GROUP_UNLOCKED": "\"{{name}}\" desbloqueado"
+    "GROUP_UNLOCKED": "\"{{name}}\" desbloqueado",
+    "PIN_FORMAT_INVALID": "O PIN tem de ter 4 a 8 dígitos"
   },
   "RECORDINGS": {
     "CANCEL": "Cancelar gravação",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "Lembrete",
     "ALERT_KIND_RECORD": "Gravação",
     "ALERT_CREATED": "Criada: {{date}}",
-    "ALERT_DELETE_ARIA": "Eliminar a regra automática para \"{{query}}\""
+    "ALERT_DELETE_ARIA": "Eliminar a regra automática para \"{{query}}\"",
+    "FILE_RECORDING": "A gravar",
+    "FILE_RECORDING_HINT": "Ainda a gravar. Cancele a gravação acima para o eliminar."
   },
   "EPG_MAPPING": {
     "TITLE": "Atribuir EPG",

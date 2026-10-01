@@ -182,6 +182,9 @@
     {{ "EDIT_CHANNEL.ALREADY_EXISTS" | translate }}
   </p>
   <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="activeModal.close('Cross click')">
+      {{ "MODAL.CANCEL" | translate }}
+    </button>
     <button
       [disabled]="!form.valid || loading || channelExists"
       class="btn btn-primary d-inline-flex align-items-center"

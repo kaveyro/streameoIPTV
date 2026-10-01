@@ -13,6 +13,7 @@ import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
 import { Subject } from "rxjs";
 import { FavoriteListsService } from "../favorite-lists/favorite-lists.service";
 import { WatchProgressService } from "../watch-progress.service";
+import { ToastrService } from "ngx-toastr";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -536,6 +537,117 @@ describe("ChannelTileComponent", () => {
         { listId: 4, channel: live },
       ]);
       expect(refresh).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe("context menu", () => {
+    const serie: Channel = {
+      id: 7,
+      name: "Show",
+      media_type: MediaType.serie,
+      source_id: 1,
+      url: "123",
+      favorite: false,
+    };
+
+    /// Opens the menu (as by the ContextMenu key) and returns its items.
+    async function openMenu(
+      channel: Channel,
+      viewMode = ViewMode.All,
+      setup: () => void = () => undefined,
+    ): Promise<HTMLElement[]> {
+      await create(channel, viewMode, { get_epg: [] }, setup);
+      component.openContextMenuFromKeyboard();
+      await settle();
+      fixture.detectChanges();
+      return items();
+    }
+
+    function items(): HTMLElement[] {
+      return Array.from(
+        document.querySelectorAll<HTMLElement>(".mat-mdc-menu-panel .mat-mdc-menu-item"),
+      );
+    }
+
+    function labels(): string[] {
+      return items().map((item) => item.textContent?.trim() ?? "");
+    }
+
+    it("leaves out the actions that do not apply instead of hiding them", async () => {
+      await openMenu(live);
+      // Hidden items would still take the keyboard focus: they must not exist.
+      expect(labels()).toContain("MENU.RECORD");
+      expect(labels()).toContain("MENU.COPY_URL");
+      expect(labels()).not.toContain("MENU.REMOVE");
+      expect(labels()).not.toContain("MENU.DOWNLOAD");
+      expect(labels()).not.toContain("MENU.DELETE");
+      expect(labels()).not.toContain("MENU.LOCK_GROUP");
+      expect(items().every((item) => !item.hidden)).toBeTrue();
+    });
+
+    it("separates the groups with dividers", async () => {
+      await openMenu(live);
+      expect(document.querySelectorAll(".mat-mdc-menu-panel mat-divider").length).toBeGreaterThan(
+        0,
+      );
+    });
+
+    it("offers no URL to copy for a series", async () => {
+      await openMenu(serie);
+      expect(labels()).not.toContain("MENU.COPY_URL");
+      expect(labels()).toContain("MENU.FAVORITE");
+    });
+
+    it("offers no group lock without a parental PIN", async () => {
+      await openMenu(group, ViewMode.Categories);
+      expect(labels()).not.toContain("MENU.LOCK_GROUP");
+    });
+
+    it("offers the group lock once a parental PIN is set", async () => {
+      await openMenu(group, ViewMode.Categories, () => {
+        TestBed.inject(MemoryService).HasParentalPin = true;
+      });
+      expect(labels()).toContain("MENU.LOCK_GROUP");
+    });
+
+    it("marks deleting a custom channel as dangerous", async () => {
+      await openMenu(live, ViewMode.All, () => {
+        TestBed.inject(MemoryService).CustomSourceIds.add(1);
+      });
+      const remove = items().find((item) => item.textContent?.trim() === "MENU.DELETE");
+      expect(remove?.classList).toContain("menu-item-danger");
+    });
+
+    it("gives the focus back to the tile when the menu closes", async () => {
+      await openMenu(live);
+      expect(document.activeElement).not.toBe(tile());
+      component.matMenuTrigger.closeMenu();
+      expect(document.activeElement).toBe(tile());
+    });
+  });
+
+  describe("unfavoriting", () => {
+    const favorite: Channel = { ...live, favorite: true };
+
+    it("fades the tile in the favorites view", async () => {
+      await create({ ...favorite }, ViewMode.Favorites, { get_epg: [], unfavorite_channel: null });
+      await component.favorite();
+      expect(component.fade).toBeTrue();
+    });
+
+    it("keeps the tile in a favorites list, which is kept apart", async () => {
+      await create({ ...favorite }, ViewMode.Favorites, {
+        get_epg: [],
+        unfavorite_channel: null,
+        get_favorite_lists: [{ id: 4, name: "Sport", position: 1, count: 1 }],
+      });
+      await TestBed.inject(FavoriteListsService).load();
+      component.favoriteList = 4;
+      const toast = spyOn(TestBed.inject(ToastrService), "success");
+      await component.favorite();
+      expect(component.fade).toBeFalse();
+      expect(component.channel?.favorite).toBeFalse();
+      expect(toast).toHaveBeenCalledWith("TOAST.FAVORITE_REMOVED_STAYS_IN_LIST");
     });
   });
 

@@ -30,16 +30,15 @@
     "LIST_VIEW": "List view",
     "LOAD_MORE": "Load more",
     "SCROLL_TOP": "Scroll to top",
-    "CHANNELS_SHOWN": "{{count}} channels shown",
+    "CHANNELS_SHOWN": "{{count}} items shown",
     "RECORDINGS_SHOWN": "{{count}} scheduled recordings shown",
     "CANCEL_RECORDING_ARIA": "Cancel recording {{title}}",
     "DELETE_RECORDING_ARIA": "Delete recording {{title}}",
     "NAV": {
-      "ALL_CHANNELS": "All channels",
+      "ALL_CHANNELS": "All items",
       "CATEGORIES": "Categories",
       "FAVORITES": "Favorites",
       "HISTORY": "History",
-      "HIDDEN": "Hidden",
       "RECORDINGS": "Recordings",
       "SETTINGS": "Settings",
       "GUIDE": "TV Guide",
@@ -47,27 +46,29 @@
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
-      "MOVIES_VODS": "Movies/Vods",
-      "MOVIES_VODS_SERIES": "Movies/Vods/Series",
-      "SERIES": "Series"
+      "MOVIES_VODS": "Movies/VODs",
+      "MOVIES_VODS_SERIES": "Movies/VODs/Series",
+      "SERIES": "Series",
+      "KEEP_ONE": "At least one media type has to stay selected"
     },
     "COLLAPSE_SIDEBAR": "Collapse sidebar",
     "EXPAND_SIDEBAR": "Expand sidebar",
     "COUNTRY_FILTER": "Filter by country",
-    "ALL_COUNTRIES": "All countries"
+    "ALL_COUNTRIES": "All countries",
+    "VIEWING": "Viewing: {{path}}",
+    "SEARCH_LABEL": "Search channels, movies and series",
+    "CLEAR_SEARCH": "Clear search"
   },
   "MENU": {
     "REMOVE": "Remove",
     "FAVORITE": "Favorite",
     "UNFAVORITE": "Unfavorite",
-    "HIDE": "Hide",
-    "UNHIDE": "Unhide",
     "RECORD": "Record",
     "DOWNLOAD": "Download",
     "CANCEL_DOWNLOAD": "Cancel download",
     "EPG": "EPG",
     "EDIT": "Edit",
-    "SHARE": "Share",
+    "SHARE": "Export…",
     "RESTREAM": "Re-stream",
     "COPY_URL": "Copy URL",
     "DELETE": "Delete",
@@ -78,12 +79,11 @@
     "MARK_UNWATCHED": "Mark as unwatched"
   },
   "EMPTY": {
-    "NO_CHANNELS_FOUND": "No channels found",
+    "NO_CHANNELS_FOUND": "No items found",
     "TRY_DIFFERENT_SEARCH": "Try a different search term",
     "NO_FAVORITES": "No favorites yet",
-    "NO_FAVORITES_HINT": "Right-click a channel to add one",
+    "NO_FAVORITES_HINT": "Right-click an item to add it",
     "NOTHING_WATCHED": "Nothing watched yet",
-    "NO_HIDDEN": "No hidden channels",
     "NO_RECORDINGS": "No scheduled recordings",
     "NO_RECORDINGS_HINT": "Schedule one from a channel's TV guide",
     "NO_GUIDE": "No guide data yet",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "Nothing to continue yet",
     "NOTHING_TO_CONTINUE_HINT": "Movies and episodes you started show up here and resume where you left off",
     "NO_RECORDING_FILES": "No recorded files yet",
-    "NO_RECORDING_FILES_HINT": "Recordings and downloads are saved in the recording folder (Settings → Recording)"
+    "NO_RECORDING_FILES_HINT": "Recordings and downloads are saved in the recording folder (Settings → Recording)",
+    "LOAD_FAILED": "This view could not be loaded",
+    "LOAD_FAILED_HINT": "Check the connection to your source and try again",
+    "RETRY": "Try again"
   },
   "RECORDING": {
     "SCHEDULED": "Scheduled recording",
@@ -102,7 +105,7 @@
   },
   "SORT": {
     "SORT": "Sort",
-    "SORT_CHANNELS": "Sort channels",
+    "SORT_CHANNELS": "Sort items",
     "ALPHABETICAL_ASC": "Alphabetically asc",
     "ALPHABETICAL_DESC": "Alphabetically desc",
     "PROVIDER": "Provider",
@@ -113,7 +116,7 @@
     "SEARCH": "Search",
     "GO_TO_SEARCH": "Go to search",
     "SWITCHING_MODES": "Switching modes",
-    "SELECT_ALL": "Selects the all channels view",
+    "SELECT_ALL": "Selects the all items view",
     "SELECT_CATEGORIES": "Selects the categories view",
     "SELECT_HISTORY": "Selects the history view",
     "SELECT_FAVORITES": "Selects the favorites view",
@@ -126,9 +129,9 @@
     "GO_RIGHT": "Go right",
     "GO_UP": "Go up",
     "GO_DOWN": "Go down",
-    "TILE_ACTIONS": "Channel actions",
-    "TOGGLE_FAVORITE": "Add/remove the focused channel to/from favorites",
-    "OPEN_CONTEXT_MENU": "Open the focused channel's menu (also the Menu key)"
+    "TILE_ACTIONS": "Item actions",
+    "TOGGLE_FAVORITE": "Add/remove the focused item to/from favorites",
+    "OPEN_CONTEXT_MENU": "Open the focused item's menu (also the Menu key)"
   },
   "SETTINGS": {
     "TITLE": "Settings",
@@ -166,13 +169,14 @@
       "UI_ZOOM": "UI zoom",
       "UI_ZOOM_DESC": "Scale of the entire interface, in percent.",
       "TRAY_ICON": "Enable tray icon",
-      "TRAY_ICON_DESC": "Keep the app running in the system tray. Disabling this also disables EPG notifications.",
+      "TRAY_ICON_DESC": "Keep the app running in the system tray. Disabling this also disables programme reminders.",
       "AUTO_UPDATE": "Check for updates automatically",
       "AUTO_UPDATE_DESC": "Look for a new version at startup and offer to install it",
       "APP_VERSION": "Version",
       "APP_VERSION_DESC": "You are running version {{version}}",
       "CHECK_UPDATES": "Check now",
-      "CHECKING": "Checking..."
+      "CHECKING": "Checking...",
+      "RESTART_REQUIRED": "Requires a restart"
     },
     "APPEARANCE": {
       "THEME": "Theme",
@@ -183,8 +187,8 @@
       "THEME_OLED": "OLED (pure black)",
       "ACCENT": "Accent color",
       "ACCENT_DESC": "Highlight color used for buttons and interactive controls.",
-      "SHOW_SOURCE": "Show playlist name on channels",
-      "SHOW_SOURCE_DESC": "Display the source/playlist name under each channel and programme title.",
+      "SHOW_SOURCE": "Show source name",
+      "SHOW_SOURCE_DESC": "Display the source name under each channel and programme title.",
       "ACCENT_BLUE": "Blue",
       "ACCENT_PURPLE": "Purple",
       "ACCENT_TEAL": "Teal",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "Write a player log",
       "DEBUG_LOG_DESC": "For troubleshooting only: mpv.log in the log folder records every stream address, including the login data in it. Takes effect the next time the player opens.",
       "AUTO_FALLBACK": "Switch to another stream of the channel when one fails",
-      "AUTO_FALLBACK_DESC": "If a live stream fails, the player automatically switches to another quality of the same channel, for example from HD to SD."
+      "AUTO_FALLBACK_DESC": "If a live stream fails, the player automatically switches to another quality of the same channel, for example from HD to SD.",
+      "APPLIES_NEXT_CHANNEL": "Takes effect with the next channel"
     },
     "RECORDING": {
       "PATH": "Recording path",
-      "PATH_DESC": "Folder where recorded livestreams are saved.",
-      "ALWAYS_ASK": "Always ask where to save downloads",
-      "ALWAYS_ASK_DESC": "Open a file dialog for every download and recording. Overrides the recording path."
+      "PATH_DESC": "Folder where recordings and downloads are saved.",
+      "ALWAYS_ASK": "Always ask where to save",
+      "ALWAYS_ASK_DESC": "Open a file dialog for every download and recording. Overrides the recording path.",
+      "RESET_DEFAULT": "Default",
+      "RESET_DEFAULT_TOOLTIP": "Save recordings in the default folder again"
     },
     "NETWORK": {
       "RESTREAM_PORT": "Re-stream port",
-      "RESTREAM_PORT_DESC": "Local port used when re-streaming a channel to other devices."
+      "RESTREAM_PORT_DESC": "Local port used when re-streaming a channel to other devices.",
+      "RESTREAM_PORT_INVALID": "Enter a port from {{min}} to {{max}}, or leave the field empty for the default."
     },
     "SOURCES": {
       "ADD_SOURCE": "Add source",
@@ -247,7 +255,6 @@
       "TITLE": "External EPG",
       "INTRO": "When a channel has no guide data from its provider, streameo fills it in from these XMLTV sources: matched by tvg-id, otherwise by channel name, or as you assign it by hand. Any XMLTV URL works (for example an IPTV-EPG.org export); .xml and .xml.gz are both supported.",
       "SOURCES_LABEL": "XMLTV sources",
-      "SOURCES_DESC": "One XMLTV guide URL per line.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Refresh now",
       "REFRESH_DESC": "Download the latest guide data. This also happens automatically on your source auto-refresh schedule, or once a day when that is off.",
@@ -282,7 +289,7 @@
       "EXPORT_FAVORITES_DESC": "Save your favorite channels as an M3U playlist usable in any player.",
       "EXPORT_BTN": "Export",
       "CLEAR_HISTORY": "Clear history",
-      "CLEAR_HISTORY_DESC": "Remove all channels from the recently watched list.",
+      "CLEAR_HISTORY_DESC": "Remove all items from the recently watched list.",
       "CLEAR_BTN": "Clear",
       "DELETE_ALL": "Delete everything",
       "DELETE_ALL_DESC": "Remove all sources, channels, favorites and settings. Use this if an upgrade did not fix a bug you are experiencing.",
@@ -326,9 +333,9 @@
     "FIRST_SOURCE": "Let's add your first source",
     "ANOTHER_SOURCE": "Let's add another source",
     "M3U_FILE": "M3U File",
-    "M3U_FILE_TOOLTIP": "Use this option if you only have an M3U file. If the file was obtained through an URL given to you by your IPTV provider, the M3U URL option is better",
+    "M3U_FILE_TOOLTIP": "Use this option if you only have an M3U file. If the file was obtained through a URL given to you by your IPTV provider, the M3U URL option is better",
     "M3U_URL": "M3U URL",
-    "M3U_URL_TOOLTIP": "If you want to have the option to automatically refresh your channels list with new channels that gets added by your IPTV Provider, this option is recommended over the M3U File",
+    "M3U_URL_TOOLTIP": "If you want your channel list to refresh automatically with new channels added by your IPTV provider, this option is recommended over the M3U file",
     "CUSTOM": "Custom",
     "CUSTOM_IMPORT": "Custom Import",
     "NICKNAME": "Nickname for this source",
@@ -347,7 +354,7 @@
     "URL": "URL",
     "XTREAM_URL_HINT": "Server address in the form http://host:port",
     "INVALID_URL": "\"{{url}}\" is not a valid URL. Check it for spaces or typos.",
-    "URL_PLACEHOLDER": "URL",
+    "URL_PLACEHOLDER": "e.g. http://host:port",
     "XTREAM_DETECTED_TITLE": "Xtream login detected",
     "XTREAM_DETECTED_BODY1": "This M3U link contains an Xtream login. Imported as an Xtream source, you get your provider's EPG, catch-up for missed programmes and series sorted by season.",
     "XTREAM_DETECTED_BODY2": "Importing it as Xtream is recommended, but you can also import it as a plain M3U link.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "Skip",
     "DONE_TITLE": "All set",
     "DONE_TEXT": "Your source is set up. Enjoy watching!",
-    "GO_TO_CHANNELS": "Go to channels"
+    "GO_TO_CHANNELS": "Go to channels",
+    "IMPORT_FAILED": "The file could not be imported",
+    "ADD_CUSTOM_FAILED": "The custom source could not be created",
+    "FETCH_FAILED": "The list could not be loaded. Check the link and your internet connection.",
+    "REQUIRED_FIELD": "Required",
+    "SOURCE_TYPE": "Source type",
+    "XTREAM_TOOLTIP": "Log in with the server address, username and password from your provider. Gives you the provider's EPG, catch-up and series sorted by season.",
+    "CUSTOM_TOOLTIP": "An empty source to which you add channels and categories yourself.",
+    "CUSTOM_IMPORT_TOOLTIP": "Imports a custom source exported from streameoIPTV (.siptvp file)."
   },
   "EPG": {
     "PLAYING_NOW": "Playing now",
@@ -370,8 +385,9 @@
     "NO_PROGRAMMES": "No programmes for this day",
     "WATCH_CATCHUP": "Watch from archive",
     "DOWNLOAD_CATCHUP": "Download from archive",
-    "NOTIFY_ON": "Notify me when it starts",
-    "NOTIFY_OFF": "Turn off notification"
+    "NOTIFY_ON": "Remind me when it starts",
+    "NOTIFY_OFF": "Remove reminder",
+    "NOTIFY_NEEDS_TRAY": "Reminders need the tray icon (Settings → General)"
   },
   "RESTREAM": {
     "TITLE": "Re-streaming: {{name}}",
@@ -380,12 +396,12 @@
     "RUNNING": "Running and accessible from the following ips...",
     "LOCAL_IPS": "Local ips:",
     "WAN_ADDRESS": "WAN address:",
-    "SHARE_INFO1": "Select an IP and press the share button below to generate a .siptv file. You will be able to share this file with your friends so they can import it in streameoIPTV and watch your re-streamed content.",
+    "SHARE_INFO1": "Select an IP and press the Export… button below to generate a .siptv file. You can share this file with your friends so they can import it in streameoIPTV and watch your re-streamed content.",
     "SHARE_INFO2": "You can import .siptv files in streameoIPTV by having or creating a custom source. Make sure to select the right IP for the right context; sharing a .siptv file with one of your local IPs will not work for someone outside your LAN.",
     "SELECT_IP": "Select IP to share",
     "START": "Start",
     "WATCH": "Watch",
-    "SHARE": "Share",
+    "SHARE": "Export…",
     "STOP": "Stop",
     "NETWORK_UNAVAILABLE": "Network information is unavailable, so re-streaming cannot be started."
   },
@@ -419,7 +435,7 @@
     "NAME_PLACEHOLDER": "My cool channel",
     "IMAGE": "Image (link)",
     "URL": "Url",
-    "URL_PLACEHOLDER": "Youtube, Twitch, anything",
+    "URL_PLACEHOLDER": "YouTube, Twitch, anything",
     "MEDIA_TYPE": "Media type",
     "LIVESTREAM": "Livestream",
     "MOVIE": "Movie",
@@ -446,11 +462,13 @@
   "CONFIRM_DELETE": {
     "TITLE": "Confirm deletion of all user data",
     "BODY1": "This action will delete all user data including channels, categories and favorites for all sources.",
-    "BODY2": "It is recommended to use this option if you're encountering weird bugs that may be due to a version upgrade."
+    "BODY2": "It is recommended to use this option if you're encountering weird bugs that may be due to a version upgrade.",
+    "APP_CLOSES": "The app closes afterwards. Start it again to set it up from scratch.",
+    "CONFIRM_ALL": "Delete everything"
   },
   "CONFIRM_URL": {
     "TITLE": "Is this the right URL?",
-    "BODY1": "It seems your URL is not pointing to an Xtream API server. You can proceed anyway, but if you get an error we can correct the URL for you automatically on your next attempt.",
+    "BODY1": "Your URL does not seem to point to an Xtream API server. You can proceed anyway; if you then get an error, choose “Correct URL automatically” on your next attempt.",
     "BODY2": "If the automatic URL correction still fails, please contact your provider to obtain its proper Xtream API URL or proper credentials.",
     "PROCEED": "Proceed anyway",
     "CORRECT": "Correct URL automatically"
@@ -464,26 +482,11 @@
   },
   "ERROR": {
     "TITLE": "Error",
-    "OCCURRED": "The following error has occured, <a target=\"_blank\" href=\"{{link}}\">you may report it here</a>",
-    "LOGS_INTRO": "You may also find detailed logs of what could have caused the errors in $XDG_CACHE_HOME. That corresponds to:",
-    "ATTACH_LOGS": "Please attach those logs (if they exist) and the error below to your bug request. Thank you!",
-    "PERSISTENT": "If you encounter weird/persistent errors, please try using the \"Delete everything\" button in settings or the small nuke button at the bottom right of the screen where present",
-    "COPY": "Copy"
-  },
-  "WHATS_NEW": {
-    "TITLE": "What's new in v{{version}}",
-    "CHANGES": "Changes",
-    "CHANGE_1": "Fixed catchup download/play erroring out",
-    "CHANGE_2": "Fixed creating new custom channels erroring out",
-    "CHANGE_3": "Fixed favorites not showing up in hidden view",
-    "CHANGE_4": "Improved linux support",
-    "CHANGE_5": "Fixed tag search icon",
-    "CHANGE_6": "Fixed hidden categories not persisting on refresh",
-    "CHANGE_7": "Added bulk operations in search bar",
-    "UPCOMING": "Upcoming improvements",
-    "UPCOMING_1": "Recording scheduling",
-    "UPCOMING_2": "Your idea here!",
-    "DONT_SHOW": "Don't show again"
+    "OCCURRED": "The following error has occurred, <a target=\"_blank\" href=\"{{link}}\">you may report it here</a>",
+    "ATTACH_LOGS": "Please attach those logs (if they exist) and the error below to your bug report. Thank you!",
+    "COPY": "Copy",
+    "LOGS_FOLDER_HINT": "The log files and a diagnostics report help to find the cause:",
+    "PERSISTENT_DIAGNOSTICS": "If the error keeps coming back, export the diagnostics report and attach it to your report. It contains no passwords or stream addresses."
   },
   "SOURCE": {
     "REFRESHED": "Refreshed:",
@@ -503,7 +506,7 @@
     "RESTORE_FAVS": "Restore favs",
     "ADD_CHANNEL": "Add channel",
     "ADD_GROUP": "Add group",
-    "SHARE": "Share",
+    "SHARE": "Export…",
     "IMPORT_CHANNEL_GROUP": "Import channel/group",
     "EXPIRES": "Expires {{date}}",
     "EXPIRED": "Expired {{date}}",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "Connection failed",
     "XTREAM_HINT": "This link contains an Xtream login. As an Xtream source you get your provider's EPG, catch-up for missed programmes and series sorted by season.",
     "CONVERT_TO_XTREAM": "Convert to Xtream",
-    "CONVERTING": "Converting…"
+    "CONVERTING": "Converting…",
+    "MAX_STREAMS_INVALID": "Enter a whole number of at least 1"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Select where to save recording",
@@ -526,7 +530,7 @@
     "EXPORT_GROUP": "Select where to export group",
     "EXPORT_SOURCE": "Select where to export custom source",
     "EXPORT_RESTREAM": "Select where to export re-stream",
-    "SAVE_CATCHBACK": "Select where to save catchback",
+    "SAVE_CATCHBACK": "Select where to save the programme from the archive",
     "SAVE_FAVORITES": "Select where to save favorites",
     "SELECT_FAVS_BACKUP": "Select a favorites backup",
     "SELECT_M3U": "Select a new m3u file for source",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "History cleared successfully",
     "HISTORY_CLEAR_FAILED": "Failed to clear history",
     "RECORDINGS_LOAD_FAILED": "Failed to load scheduled recordings",
-    "RECORDING_ENTRY_REMOVED": "Removed recording entry",
     "RECORDING_CANCELLED": "Cancelled scheduled recording",
     "RECORDING_CANCEL_FAILED": "Failed to cancel scheduled recording",
     "RECORDING_SCHEDULED": "Scheduled recording successfully",
@@ -559,26 +562,21 @@
     "FAVORITE_FAILED": "Failed to add/remove \"{{name}}\" to/from favorites",
     "HISTORY_REMOVED": "Removed \"{{name}}\" from history",
     "HISTORY_REMOVE_FAILED": "Failed to remove \"{{name}}\" from history",
-    "CHANNEL_HIDDEN": "Hidden \"{{name}}\" (updates on reload)",
-    "CHANNEL_UNHIDDEN": "Unhidden \"{{name}}\" (updates on reload)",
-    "GROUP_HIDDEN": "Hidden group \"{{name}}\" (updates on reload)",
-    "GROUP_UNHIDDEN": "Unhidden group \"{{name}}\" (updates on reload)",
-    "HIDE_FAILED": "Failed to hide/unhide \"{{name}}\"",
     "NO_EPG": "No EPG data for this channel",
     "EPG_MISSING_STREAM_ID": "Missing stream id. Please refresh your sources (Settings -> Refresh All) to enable the EPG feature",
     "CATEGORY_EXPORTED": "Successfully exported category to {{path}}",
     "CHANNEL_EXPORTED": "Successfully exported channel to {{path}}",
-    "EXPORT_FAILED": "Failed to export channel",
+    "EXPORT_FAILED": "Export failed",
     "CATEGORY_DELETED": "Successfully deleted category",
     "CHANNEL_DELETED": "Successfully deleted channel",
     "CHANNEL_DELETE_FAILED": "Failed to delete channel",
-    "URL_COPIED": "Copied channel URL",
+    "URL_COPIED": "Copied URL",
     "CHANNEL_UPDATED": "Successfully updated channel",
     "CHANNEL_ADDED": "Successfully added channel",
     "CATEGORY_UPDATED": "Successfully updated category",
     "CATEGORY_ADDED": "Successfully added category",
-    "NOTIFICATION_ADDED": "Added notification successfully",
-    "NOTIFICATION_REMOVED": "Removed notification successfully",
+    "NOTIFICATION_ADDED": "Reminder set",
+    "NOTIFICATION_REMOVED": "Reminder removed",
     "SOURCE_ADDED": "\"{{name}}\" successfully added",
     "PARSE_FILE_FAILED": "Could not parse selected file",
     "INVALID_CREDENTIALS": "Invalid URL or credentials. Please try again",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "Could not open the log folder",
     "DIAGNOSTICS_EXPORTED": "Diagnostics report saved to {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Could not export the diagnostics report",
-    "EPG_LOADING": "The TV guide is loading in the background…"
+    "EPG_LOADING": "The TV guide is loading in the background…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "Removed “{{name}}” from favorites; it stays in “{{list}}”"
   },
   "UPDATE": {
     "TITLE": "Update available",
@@ -655,7 +654,7 @@
     "DELETE_SOURCE_TITLE": "Delete source?",
     "DELETE_SOURCE_BODY": "The source \"{{name}}\" will be removed together with all of its channels, categories, favorites and history. This cannot be undone.",
     "CLEAR_HISTORY_TITLE": "Clear history?",
-    "CLEAR_HISTORY_BODY": "All channels will be removed from the recently watched list. This cannot be undone.",
+    "CLEAR_HISTORY_BODY": "All items will be removed from the recently watched list. This cannot be undone.",
     "DELETE_CHANNEL_TITLE": "Delete channel?",
     "DELETE_CHANNEL_BODY": "The channel \"{{name}}\" will be deleted permanently.",
     "DELETE_CATEGORY_TITLE": "Delete category?",
@@ -673,17 +672,19 @@
     "DELETE_ALERT_TITLE": "Delete automatic rule?",
     "DELETE_ALERT_REMIND_BODY": "Programmes with \"{{query}}\" in the title will no longer get a reminder automatically.",
     "DELETE_ALERT_RECORD_BODY": "Programmes with \"{{query}}\" in the title will no longer be recorded automatically.",
-    "DELETE_ALERT_KEEP": "Reminders and recordings already created stay. Remove them individually if you no longer want them."
+    "DELETE_ALERT_KEEP": "Reminders and recordings already created stay. Remove them individually if you no longer want them.",
+    "CLEAR_FINISHED_TITLE": "Remove finished entries?",
+    "CLEAR_FINISHED_FAILED_BODY": "Failed recordings among them: {{count}}. Their entries are the only sign that these recordings did not work. The recorded files stay in the folder."
   },
   "PLAYER": {
-    "BACK_TO_CHANNELS": "Back to channels",
-    "CHANNELS": "Channels",
+    "BACK_TO_CHANNELS": "Back to overview",
+    "CHANNELS": "Overview",
     "FULLSCREEN": "Fullscreen",
     "EXIT_FULLSCREEN": "Exit fullscreen",
     "NEXT": "Next",
     "PROGRAMME_PROGRESS": "Programme progress",
-    "FILTER_PLACEHOLDER": "Filter channels...",
-    "FILTER_CHANNELS": "Filter the channel list",
+    "FILTER_PLACEHOLDER": "Filter…",
+    "FILTER_CHANNELS": "Filter the list",
     "MINIMIZE": "Minimize",
     "EXPAND": "Enlarge",
     "CLOSE": "Close",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "{{minutes}} min left",
     "RESUMED_AT": "Resumed at {{time}}",
     "RESTART_HINT": "Home: start over",
-    "RESTARTED": "Starting over"
+    "RESTARTED": "Starting over",
+    "CONNECTING": "Connecting…",
+    "BUFFERING": "Buffering…",
+    "ERR_LOADING": "the stream could not be opened (server not reachable or link invalid)",
+    "ERR_FORMAT": "the stream format is not recognized",
+    "ERR_NO_DATA": "the stream delivered no picture or sound",
+    "ERR_AUDIO_OUTPUT": "the audio output could not be started",
+    "ERR_VIDEO_OUTPUT": "the video output could not be started (check the graphics driver)",
+    "ERR_UNSUPPORTED": "the stream uses a format the player does not support",
+    "ERR_NETWORK": "the connection to the server failed",
+    "CLOSE_PLAYER": "Close player",
+    "CLOSE_PLAYER_HINT": "Close player (Esc)",
+    "FULLSCREEN_HINT": "Esc: exit full screen"
   },
   "GUIDE": {
     "CHANNEL": "Channel",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "Reminders need the tray icon (Settings → General).",
     "ALERT_REMIND_ADDED": "You'll be reminded of every programme with \"{{query}}\" in its title, including ones added to the guide later.",
     "ALERT_RECORD_ADDED": "Every programme with \"{{query}}\" in its title will be recorded, including ones added to the guide later.",
-    "ALERT_REMOVED": "Stopped the automatic rule for \"{{query}}\". Reminders and recordings already created stay."
+    "ALERT_REMOVED": "Stopped the automatic rule for \"{{query}}\". Reminders and recordings already created stay.",
+    "TIME_NAV": "Time in the guide",
+    "NOW": "Now",
+    "NOW_HINT": "Back to the current time",
+    "CATCHUP_AVAILABLE": "Available in the archive",
+    "NOW_MENU_HINT": "Right-click to record from now",
+    "RECORD_FROM_NOW": "Record from now",
+    "NO_PROGRAMMES_IN_WINDOW": "No programmes in this period",
+    "EPG_FAILED": "Programme data could not be loaded",
+    "EPG_RETRY": "Try again",
+    "EPG_RETRY_ARIA": "Load the programme data of {{name}} again"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "Lock \"{{name}}\"",
     "UNLOCK_GROUP_TITLE": "Unlock \"{{name}}\"",
     "GROUP_LOCKED": "Locked \"{{name}}\"",
-    "GROUP_UNLOCKED": "Unlocked \"{{name}}\""
+    "GROUP_UNLOCKED": "Unlocked \"{{name}}\"",
+    "PIN_FORMAT_INVALID": "The PIN must be 4 to 8 digits"
   },
   "RECORDINGS": {
     "CANCEL": "Cancel recording",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "Reminder",
     "ALERT_KIND_RECORD": "Recording",
     "ALERT_CREATED": "Created: {{date}}",
-    "ALERT_DELETE_ARIA": "Delete the automatic rule for \"{{query}}\""
+    "ALERT_DELETE_ARIA": "Delete the automatic rule for \"{{query}}\"",
+    "FILE_RECORDING": "Recording",
+    "FILE_RECORDING_HINT": "Still being recorded. Cancel the recording above to delete it."
   },
   "EPG_MAPPING": {
     "TITLE": "Assign EPG",
@@ -797,14 +823,14 @@
     "NEW_LIST": "New list",
     "NEW_LIST_ELLIPSIS": "New list…",
     "LIST_OPTIONS": "Options for the list “{{name}}”",
-    "CHIP_LABEL": "{{name}}, {{count}} channels",
+    "CHIP_LABEL": "{{name}}, {{count}} items",
     "RENAME": "Rename",
     "NAME": "Name of the list",
     "CREATE_TITLE": "New favorites list",
     "RENAME_TITLE": "Rename list",
     "CREATE": "Create",
     "DELETE_TITLE": "Delete list?",
-    "DELETE_BODY": "The list “{{name}}” will be deleted. The channels themselves and your favorites stay.",
+    "DELETE_BODY": "The list “{{name}}” will be deleted. The items themselves and your favorites stay.",
     "DELETED": "Deleted the list “{{name}}”",
     "CREATE_FAILED": "Failed to create the list",
     "RENAME_FAILED": "Failed to rename the list",
@@ -813,7 +839,7 @@
     "REMOVED": "Removed “{{name}}” from “{{list}}”",
     "UPDATE_FAILED": "Failed to change the list “{{list}}” for “{{name}}”",
     "EMPTY": "This list is empty",
-    "EMPTY_HINT": "Right-click a channel and choose “Add to list”",
+    "EMPTY_HINT": "Right-click an item and choose “Add to list”",
     "ADD_TO_LIST": "Add to list",
     "REMOVE_FROM_LIST": "Remove from list",
     "MOVE_FORWARD": "Move forward",

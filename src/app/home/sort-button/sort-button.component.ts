@@ -1,14 +1,15 @@
-import { Component, Input, ViewChild } from "@angular/core";
+import { Component, ElementRef, Input, ViewChild } from "@angular/core";
 import { MemoryService } from "../../memory.service";
 import { MatMenuTrigger, MatMenuModule } from "@angular/material/menu";
 import { SORT_TYPES, SortType } from "../../models/sortType";
 import { CommonModule } from "@angular/common";
 import { TranslatePipe } from "@ngx-translate/core";
+import { NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { SortItemComponent } from "./sort-item/sort-item.component";
 
 @Component({
   selector: "app-sort-button",
-  imports: [CommonModule, TranslatePipe, MatMenuModule, SortItemComponent],
+  imports: [CommonModule, TranslatePipe, NgbTooltipModule, MatMenuModule, SortItemComponent],
   templateUrl: "./sort-button.component.html",
   styleUrl: "./sort-button.component.css",
 })
@@ -20,6 +21,7 @@ export class SortButtonComponent {
   private readonly allSortTypes = SORT_TYPES;
   private readonly withoutCustom = SORT_TYPES.filter((x) => x !== SortType.custom);
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
+  @ViewChild("button", { static: true }) button?: ElementRef<HTMLButtonElement>;
 
   get sortTypes(): SortType[] {
     return this.favorites ? this.allSortTypes : this.withoutCustom;
@@ -31,7 +33,9 @@ export class SortButtonComponent {
       this.menuTopLeftPosition.x = event.clientX;
       this.menuTopLeftPosition.y = event.clientY;
     } else {
-      const rect = (event.target as HTMLElement)?.getBoundingClientRect();
+      // Enter/Space: below the button (the target may be its icon).
+      const target = (event.currentTarget ?? event.target) as HTMLElement | null;
+      const rect = target?.getBoundingClientRect?.();
       if (rect) {
         this.menuTopLeftPosition.x = rect.left;
         this.menuTopLeftPosition.y = rect.bottom;
@@ -40,5 +44,12 @@ export class SortButtonComponent {
     if (this.memory.currentContextMenu?.menuOpen) this.memory.currentContextMenu.closeMenu();
     this.memory.currentContextMenu = this.matMenuTrigger;
     this.matMenuTrigger.openMenu();
+  }
+
+  /// The menu's trigger is an invisible helper that cannot take the focus
+  /// back: hand it to the button instead of leaving it on <body>.
+  menuClosed() {
+    const active = document.activeElement;
+    if (!active || active === document.body) this.button?.nativeElement.focus();
   }
 }

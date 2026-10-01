@@ -2,6 +2,7 @@
   type="button"
   *ngIf="memory.AddingAdditionalSource"
   (click)="goBack()"
+  [disabled]="loading"
   class="arrow icon-btn"
   [attr.aria-label]="'COMMON.GO_BACK' | translate"
 >
@@ -48,51 +49,37 @@
     <h2 class="text-center" *ngIf="memory.AddingAdditionalSource">
       {{ "SETUP.ANOTHER_SOURCE" | translate }}
     </h2>
-    <div class="btn-group mx-auto mb-4 mt-4" style="width: fit-content; display: block">
+    <div
+      class="btn-group source-type-picker mx-auto mb-4 mt-4"
+      role="radiogroup"
+      [attr.aria-label]="'SETUP.SOURCE_TYPE' | translate"
+    >
       <button
-        (click)="switchMode(sourceTypeEnum.M3U)"
+        *ngFor="let type of sourceTypes"
+        type="button"
+        role="radio"
         class="btn btn-secondary"
-        [ngbTooltip]="'SETUP.M3U_FILE_TOOLTIP' | translate"
-        triggers="hover"
-        [ngClass]="{ active: source.source_type === sourceTypeEnum.M3U }"
+        [class.active]="source.source_type === type.type"
+        [attr.aria-checked]="source.source_type === type.type"
+        [ngbTooltip]="type.tooltip | translate"
+        triggers="hover focus"
+        (click)="switchMode(type.type)"
       >
-        {{ "SETUP.M3U_FILE" | translate }}
-      </button>
-      <button
-        (click)="switchMode(sourceTypeEnum.M3ULink)"
-        class="btn btn-secondary"
-        [ngbTooltip]="'SETUP.M3U_URL_TOOLTIP' | translate"
-        triggers="hover"
-        [ngClass]="{ active: source.source_type === sourceTypeEnum.M3ULink }"
-      >
-        {{ "SETUP.M3U_URL" | translate }}
-      </button>
-      <button
-        (click)="switchMode(sourceTypeEnum.Xtream)"
-        class="btn btn-secondary"
-        [ngClass]="{ active: source.source_type === sourceTypeEnum.Xtream }"
-      >
-        Xtream
-      </button>
-      <button
-        class="btn btn-secondary"
-        (click)="switchMode(sourceTypeEnum.Custom)"
-        [ngClass]="{ active: source.source_type === sourceTypeEnum.Custom }"
-      >
-        {{ "SETUP.CUSTOM" | translate }}
-      </button>
-      <button
-        class="btn btn-secondary"
-        (click)="switchMode(sourceTypeEnum.CustomImport)"
-        [ngClass]="{ active: source.source_type === sourceTypeEnum.CustomImport }"
-      >
-        {{ "SETUP.CUSTOM_IMPORT" | translate }}
+        {{ type.label | translate }}
       </button>
     </div>
     <form name="setupForm" #form="ngForm" (ngSubmit)="submit()">
       <div class="row mt-2 justify-content-center">
         <div class="col-lg-6 col-md-8">
-          <label class="form-label" for="setup-name">{{ "SETUP.NICKNAME" | translate }}</label>
+          <label class="form-label" for="setup-name"
+            >{{ "SETUP.NICKNAME" | translate }}
+            <span
+              *ngIf="source.source_type !== sourceTypeEnum.CustomImport"
+              class="text-danger"
+              aria-hidden="true"
+              >*</span
+            ></label
+          >
           <input
             id="setup-name"
             tabindex="0"
@@ -103,15 +90,21 @@
             name="name"
             empty
             class="form-control"
-            [class.is-invalid]="name.errors?.['sourceNameExists']"
+            [class.is-invalid]="name.errors?.['sourceNameExists'] || showRequired(name)"
+            [attr.aria-required]="source.source_type !== sourceTypeEnum.CustomImport"
+            [attr.aria-invalid]="!!name.errors?.['sourceNameExists'] || showRequired(name)"
+            aria-describedby="setup-name-error"
             [(ngModel)]="source.name"
             [placeholder]="'SETUP.NICKNAME' | translate"
           />
-        </div>
-      </div>
-      <div *ngIf="name.errors?.['sourceNameExists']" class="row mt-1 ps-3">
-        <div class="col-lg-6 col-md-8 text-danger text-center">
-          {{ "SETUP.SOURCE_NAME_TAKEN" | translate }}
+          <div id="setup-name-error">
+            <div *ngIf="name.errors?.['sourceNameExists']" class="invalid-feedback d-block">
+              {{ "SETUP.SOURCE_NAME_TAKEN" | translate }}
+            </div>
+            <div *ngIf="showRequired(name)" class="invalid-feedback d-block">
+              {{ "SETUP.REQUIRED_FIELD" | translate }}
+            </div>
+          </div>
         </div>
       </div>
       <div
@@ -123,20 +116,28 @@
       >
         <div class="row justify-content-center mt-2">
           <div class="col-lg-6 col-md-8">
-            <label class="form-label" for="setup-url">{{ "SETUP.URL" | translate }}</label>
+            <label class="form-label" for="setup-url"
+              >{{ "SETUP.URL" | translate }}
+              <span class="text-danger" aria-hidden="true">*</span></label
+            >
             <input
               id="setup-url"
+              #url="ngModel"
               autocomplete="off"
               name="url"
               empty
+              aria-required="true"
               class="form-control"
               [(ngModel)]="source.url"
               (ngModelChange)="urlError = undefined"
-              [class.is-invalid]="!!urlError"
-              [attr.aria-invalid]="!!urlError"
+              [class.is-invalid]="!!urlError || showRequired(url)"
+              [attr.aria-invalid]="!!urlError || showRequired(url)"
               aria-describedby="setup-url-hint setup-url-error"
               [placeholder]="'SETUP.URL_PLACEHOLDER' | translate"
             />
+            <div *ngIf="showRequired(url)" class="invalid-feedback d-block">
+              {{ "SETUP.REQUIRED_FIELD" | translate }}
+            </div>
             <div
               id="setup-url-hint"
               class="form-text"
@@ -198,34 +199,47 @@
       <div *ngIf="source.source_type === sourceTypeEnum.Xtream">
         <div class="row mt-2 justify-content-center">
           <div class="col-lg-6 col-md-8">
-            <label class="form-label" for="setup-username">{{
-              "SETUP.USERNAME" | translate
-            }}</label>
+            <label class="form-label" for="setup-username"
+              >{{ "SETUP.USERNAME" | translate }}
+              <span class="text-danger" aria-hidden="true">*</span></label
+            >
             <input
               id="setup-username"
+              #username="ngModel"
               autocomplete="off"
               name="username"
               empty
+              aria-required="true"
               class="form-control"
+              [class.is-invalid]="showRequired(username)"
+              [attr.aria-invalid]="showRequired(username)"
               [(ngModel)]="source.username"
               [placeholder]="'SETUP.USERNAME' | translate"
             />
+            <div *ngIf="showRequired(username)" class="invalid-feedback d-block">
+              {{ "SETUP.REQUIRED_FIELD" | translate }}
+            </div>
           </div>
         </div>
         <div class="row mt-2 justify-content-center">
           <div class="col-lg-6 col-md-8">
-            <label class="form-label" for="setup-password">{{
-              "SETUP.PASSWORD" | translate
-            }}</label>
+            <label class="form-label" for="setup-password"
+              >{{ "SETUP.PASSWORD" | translate }}
+              <span class="text-danger" aria-hidden="true">*</span></label
+            >
             <div class="input-group">
               <input
                 #pwd
+                #password="ngModel"
                 id="setup-password"
                 type="password"
                 autocomplete="off"
                 name="password"
                 empty
+                aria-required="true"
                 class="form-control"
+                [class.is-invalid]="showRequired(password)"
+                [attr.aria-invalid]="showRequired(password)"
                 [(ngModel)]="source.password"
                 [placeholder]="'SETUP.PASSWORD' | translate"
               />
@@ -261,6 +275,9 @@
                 </svg>
               </button>
             </div>
+            <div *ngIf="showRequired(password)" class="invalid-feedback d-block">
+              {{ "SETUP.REQUIRED_FIELD" | translate }}
+            </div>
           </div>
         </div>
       </div>
@@ -269,7 +286,7 @@
           *ngIf="canCheck()"
           type="button"
           class="btn btn-outline-secondary"
-          [disabled]="checking || !source.url"
+          [disabled]="checking || !canTestConnection()"
           [attr.aria-busy]="checking"
           (click)="testConnection()"
         >

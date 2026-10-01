@@ -39,7 +39,6 @@
       "CATEGORIES": "Categorii",
       "FAVORITES": "Favorite",
       "HISTORY": "Istoric",
-      "HIDDEN": "Ascunse",
       "RECORDINGS": "Înregistrări",
       "SETTINGS": "Setări",
       "GUIDE": "Ghid TV",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "Transmisiuni live",
       "MOVIES_VODS": "Filme/VOD",
       "MOVIES_VODS_SERIES": "Filme/VOD/Seriale",
-      "SERIES": "Seriale"
+      "SERIES": "Seriale",
+      "KEEP_ONE": "Cel puțin un tip de conținut trebuie să rămână selectat"
     },
     "COLLAPSE_SIDEBAR": "Restrânge bara laterală",
     "EXPAND_SIDEBAR": "Extinde bara laterală",
     "COUNTRY_FILTER": "Filtrează după țară",
-    "ALL_COUNTRIES": "Toate țările"
+    "ALL_COUNTRIES": "Toate țările",
+    "VIEWING": "Vizualizare: {{path}}",
+    "SEARCH_LABEL": "Caută canale, filme și seriale",
+    "CLEAR_SEARCH": "Șterge căutarea"
   },
   "MENU": {
     "REMOVE": "Elimină",
     "FAVORITE": "Adaugă la favorite",
     "UNFAVORITE": "Elimină din favorite",
-    "HIDE": "Ascunde",
-    "UNHIDE": "Afișează",
     "RECORD": "Înregistrează",
     "DOWNLOAD": "Descarcă",
     "CANCEL_DOWNLOAD": "Anulează descărcarea",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "Niciun favorit încă",
     "NO_FAVORITES_HINT": "Fă clic dreapta pe un canal pentru a adăuga unul",
     "NOTHING_WATCHED": "Nu s-a vizionat nimic încă",
-    "NO_HIDDEN": "Niciun canal ascuns",
     "NO_RECORDINGS": "Nicio înregistrare programată",
     "NO_RECORDINGS_HINT": "Programează una din ghidul TV al unui canal",
     "NO_GUIDE": "Încă nu există date de ghid",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "Nimic de continuat încă",
     "NOTHING_TO_CONTINUE_HINT": "Filmele și episoadele începute apar aici și continuă de unde ai rămas",
     "NO_RECORDING_FILES": "Încă nu există fișiere înregistrate",
-    "NO_RECORDING_FILES_HINT": "Înregistrările și descărcările sunt salvate în folderul de înregistrări (Setări → Înregistrare)"
+    "NO_RECORDING_FILES_HINT": "Înregistrările și descărcările sunt salvate în folderul de înregistrări (Setări → Înregistrare)",
+    "LOAD_FAILED": "Această vizualizare nu a putut fi încărcată",
+    "LOAD_FAILED_HINT": "Verifică conexiunea la sursă și încearcă din nou",
+    "RETRY": "Încearcă din nou"
   },
   "RECORDING": {
     "SCHEDULED": "Înregistrare programată",
@@ -172,7 +175,8 @@
       "APP_VERSION": "Versiune",
       "APP_VERSION_DESC": "Folosești versiunea {{version}}",
       "CHECK_UPDATES": "Caută acum",
-      "CHECKING": "Se caută..."
+      "CHECKING": "Se caută...",
+      "RESTART_REQUIRED": "Necesită repornire"
     },
     "APPEARANCE": {
       "THEME": "Temă",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "Scrie un jurnal al playerului",
       "DEBUG_LOG_DESC": "Doar pentru depanare: mpv.log din folderul de jurnale înregistrează fiecare adresă de stream, inclusiv datele de autentificare din ea. Se aplică la următoarea deschidere a playerului.",
       "AUTO_FALLBACK": "Comută pe alt stream al canalului când unul cade",
-      "AUTO_FALLBACK_DESC": "Dacă un stream live cade, playerul comută automat pe altă calitate a aceluiași canal, de exemplu de la HD la SD."
+      "AUTO_FALLBACK_DESC": "Dacă un stream live cade, playerul comută automat pe altă calitate a aceluiași canal, de exemplu de la HD la SD.",
+      "APPLIES_NEXT_CHANNEL": "Se aplică de la următorul canal"
     },
     "RECORDING": {
       "PATH": "Cale înregistrări",
       "PATH_DESC": "Folderul în care sunt salvate transmisiunile live înregistrate.",
       "ALWAYS_ASK": "Întreabă întotdeauna unde se salvează descărcările",
-      "ALWAYS_ASK_DESC": "Deschide o fereastră de dialog pentru fiecare descărcare și înregistrare. Suprascrie calea înregistrărilor."
+      "ALWAYS_ASK_DESC": "Deschide o fereastră de dialog pentru fiecare descărcare și înregistrare. Suprascrie calea înregistrărilor.",
+      "RESET_DEFAULT": "Implicit",
+      "RESET_DEFAULT_TOOLTIP": "Salvează din nou înregistrările în folderul implicit"
     },
     "NETWORK": {
       "RESTREAM_PORT": "Port re-stream",
-      "RESTREAM_PORT_DESC": "Portul local folosit la re-streamul unui canal către alte dispozitive."
+      "RESTREAM_PORT_DESC": "Portul local folosit la re-streamul unui canal către alte dispozitive.",
+      "RESTREAM_PORT_INVALID": "Introduceți un port între {{min}} și {{max}} sau lăsați câmpul gol pentru valoarea implicită."
     },
     "SOURCES": {
       "ADD_SOURCE": "Adaugă sursă",
@@ -286,7 +294,6 @@
       "TITLE": "EPG extern",
       "INTRO": "Când un canal nu are date de ghid de la furnizor, streameo le completează din aceste surse XMLTV: potrivite după tvg-id, altfel după numele canalului sau așa cum le atribui manual. Funcționează orice URL XMLTV (de exemplu un export IPTV-EPG.org); sunt acceptate .xml și .xml.gz.",
       "SOURCES_LABEL": "Surse XMLTV",
-      "SOURCES_DESC": "Un URL XMLTV pe linie.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Reîmprospătează acum",
       "REFRESH_DESC": "Descarcă cele mai noi date de ghid. Acest lucru se face și automat conform programului de reîmprospătare automată a surselor sau, dacă este oprit, o dată pe zi.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "Omite",
     "DONE_TITLE": "Gata",
     "DONE_TEXT": "Sursa ta este configurată. Vizionare plăcută!",
-    "GO_TO_CHANNELS": "Mergi la canale"
+    "GO_TO_CHANNELS": "Mergi la canale",
+    "IMPORT_FAILED": "Fișierul nu a putut fi importat",
+    "ADD_CUSTOM_FAILED": "Sursa personalizată nu a putut fi creată",
+    "FETCH_FAILED": "Lista nu a putut fi încărcată. Verificați linkul și conexiunea la internet.",
+    "REQUIRED_FIELD": "Câmp obligatoriu",
+    "SOURCE_TYPE": "Tipul sursei",
+    "XTREAM_TOOLTIP": "Autentificare cu adresa serverului, numele de utilizator și parola de la furnizor. Primiți EPG-ul furnizorului, catch-up și seriale pe sezoane.",
+    "CUSTOM_TOOLTIP": "O sursă goală în care adăugați singuri canale și categorii.",
+    "CUSTOM_IMPORT_TOOLTIP": "Importă o sursă personalizată exportată din streameoIPTV (fișier .siptvp)."
   },
   "EPG": {
     "PLAYING_NOW": "Acum se redă",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "Vizionează din arhivă",
     "DOWNLOAD_CATCHUP": "Descarcă din arhivă",
     "NOTIFY_ON": "Anunță-mă când începe",
-    "NOTIFY_OFF": "Dezactivează notificarea"
+    "NOTIFY_OFF": "Dezactivează notificarea",
+    "NOTIFY_NEEDS_TRAY": "Mementourile au nevoie de pictograma din bara de sistem (Setări → General)"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "Confirmă ștergerea tuturor datelor utilizatorului",
     "BODY1": "Această acțiune va șterge toate datele utilizatorului, inclusiv canalele, categoriile și favoritele pentru toate sursele.",
-    "BODY2": "Este recomandat să folosești această opțiune dacă întâmpini erori ciudate care ar putea fi cauzate de o actualizare de versiune."
+    "BODY2": "Este recomandat să folosești această opțiune dacă întâmpini erori ciudate care ar putea fi cauzate de o actualizare de versiune.",
+    "APP_CLOSES": "Apoi aplicația se închide. Porniți-o din nou pentru a o configura de la zero.",
+    "CONFIRM_ALL": "Șterge tot"
   },
   "CONFIRM_URL": {
     "TITLE": "Acesta este URL-ul corect?",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "Eroare",
     "OCCURRED": "A apărut următoarea eroare, <a target=\"_blank\" href=\"{{link}}\">o poți raporta aici</a>",
-    "LOGS_INTRO": "Poți găsi și jurnale detaliate despre ce ar fi putut cauza erorile în $XDG_CACHE_HOME. Acesta corespunde cu:",
     "ATTACH_LOGS": "Te rugăm să atașezi acele jurnale (dacă există) și eroarea de mai jos la solicitarea ta de raportare a erorii. Mulțumim!",
-    "PERSISTENT": "Dacă întâmpini erori ciudate/persistente, te rugăm să încerci butonul \"Șterge tot\" din setări sau micul buton nuke din colțul din dreapta jos al ecranului, acolo unde există",
-    "COPY": "Copiază"
-  },
-  "WHATS_NEW": {
-    "TITLE": "Noutăți în v{{version}}",
-    "CHANGES": "Modificări",
-    "CHANGE_1": "S-a remediat eroarea la descărcarea/redarea catchup",
-    "CHANGE_2": "S-a remediat eroarea la crearea de canale personalizate noi",
-    "CHANGE_3": "S-a remediat neafișarea favoritelor în vizualizarea ascunse",
-    "CHANGE_4": "S-a îmbunătățit suportul pentru Linux",
-    "CHANGE_5": "S-a remediat pictograma de căutare după etichete",
-    "CHANGE_6": "S-a remediat nepăstrarea categoriilor ascunse la reîmprospătare",
-    "CHANGE_7": "S-au adăugat operațiuni în masă în bara de căutare",
-    "UPCOMING": "Îmbunătățiri viitoare",
-    "UPCOMING_1": "Programarea înregistrărilor",
-    "UPCOMING_2": "Ideea ta aici!",
-    "DONT_SHOW": "Nu mai afișa"
+    "COPY": "Copiază",
+    "LOGS_FOLDER_HINT": "Fișierele jurnal și un raport de diagnosticare ajută la găsirea cauzei:",
+    "PERSISTENT_DIAGNOSTICS": "Dacă eroarea revine, exportați raportul de diagnosticare și atașați-l la raportul dumneavoastră. Nu conține parole sau adrese de stream."
   },
   "SOURCE": {
     "REFRESHED": "Reîmprospătat:",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "Conexiune eșuată",
     "XTREAM_HINT": "Acest link conține o autentificare Xtream. Ca sursă Xtream primești EPG-ul furnizorului, catch-up pentru emisiunile ratate și seriale pe sezoane.",
     "CONVERT_TO_XTREAM": "Convertește în Xtream",
-    "CONVERTING": "Se convertește…"
+    "CONVERTING": "Se convertește…",
+    "MAX_STREAMS_INVALID": "Introduceți un număr întreg de cel puțin 1"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selectează unde se salvează înregistrarea",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "Istoricul a fost șters cu succes",
     "HISTORY_CLEAR_FAILED": "Ștergerea istoricului a eșuat",
     "RECORDINGS_LOAD_FAILED": "Încărcarea înregistrărilor programate a eșuat",
-    "RECORDING_ENTRY_REMOVED": "Intrarea de înregistrare a fost eliminată",
     "RECORDING_CANCELLED": "Înregistrarea programată a fost anulată",
     "RECORDING_CANCEL_FAILED": "Anularea înregistrării programate a eșuat",
     "RECORDING_SCHEDULED": "Înregistrarea a fost programată cu succes",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "Adăugarea/eliminarea \"{{name}}\" la/din favorite a eșuat",
     "HISTORY_REMOVED": "\"{{name}}\" a fost eliminat din istoric",
     "HISTORY_REMOVE_FAILED": "Eliminarea \"{{name}}\" din istoric a eșuat",
-    "CHANNEL_HIDDEN": "\"{{name}}\" a fost ascuns (se actualizează la reîncărcare)",
-    "CHANNEL_UNHIDDEN": "\"{{name}}\" a fost afișat (se actualizează la reîncărcare)",
-    "GROUP_HIDDEN": "Grupul \"{{name}}\" a fost ascuns (se actualizează la reîncărcare)",
-    "GROUP_UNHIDDEN": "Grupul \"{{name}}\" a fost afișat (se actualizează la reîncărcare)",
-    "HIDE_FAILED": "Ascunderea/afișarea \"{{name}}\" a eșuat",
     "NO_EPG": "Nu există date EPG pentru acest canal",
     "EPG_MISSING_STREAM_ID": "Lipsește ID-ul fluxului. Te rugăm să reîmprospătezi sursele (Setări -> Reîmprospătează tot) pentru a activa funcția EPG",
     "CATEGORY_EXPORTED": "Categoria a fost exportată cu succes în {{path}}",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "Folderul jurnal nu a putut fi deschis",
     "DIAGNOSTICS_EXPORTED": "Raportul de diagnosticare a fost salvat în {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Raportul de diagnosticare nu a putut fi exportat",
-    "EPG_LOADING": "Ghidul TV se încarcă în fundal…"
+    "EPG_LOADING": "Ghidul TV se încarcă în fundal…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "„{{name}}” a fost eliminat din favorite; rămâne în „{{list}}”"
   },
   "UPDATE": {
     "TITLE": "Actualizare disponibilă",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "Ștergi regula automată?",
     "DELETE_ALERT_REMIND_BODY": "Emisiunile cu „{{query}}” în titlu nu vor mai primi automat un memento.",
     "DELETE_ALERT_RECORD_BODY": "Emisiunile cu „{{query}}” în titlu nu vor mai fi înregistrate automat.",
-    "DELETE_ALERT_KEEP": "Mementourile și înregistrările deja create rămân. Șterge-le pe rând dacă nu le mai vrei."
+    "DELETE_ALERT_KEEP": "Mementourile și înregistrările deja create rămân. Șterge-le pe rând dacă nu le mai vrei.",
+    "CLEAR_FINISHED_TITLE": "Elimini intrările încheiate?",
+    "CLEAR_FINISHED_FAILED_BODY": "Printre ele, înregistrări eșuate: {{count}}. Intrările lor sunt singurul semn că aceste înregistrări nu au reușit. Fișierele înregistrate rămân în dosar."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Înapoi la canale",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "încă {{minutes}} min",
     "RESUMED_AT": "Reluat de la {{time}}",
     "RESTART_HINT": "Home: de la început",
-    "RESTARTED": "De la început"
+    "RESTARTED": "De la început",
+    "CONNECTING": "Se conectează…",
+    "BUFFERING": "Se încarcă bufferul…",
+    "ERR_LOADING": "fluxul nu a putut fi deschis (server inaccesibil sau link nevalid)",
+    "ERR_FORMAT": "formatul fluxului nu este recunoscut",
+    "ERR_NO_DATA": "fluxul nu a livrat nici imagine, nici sunet",
+    "ERR_AUDIO_OUTPUT": "ieșirea audio nu a putut fi pornită",
+    "ERR_VIDEO_OUTPUT": "ieșirea video nu a putut fi pornită (verifică driverul plăcii grafice)",
+    "ERR_UNSUPPORTED": "fluxul folosește un format pe care playerul nu îl acceptă",
+    "ERR_NETWORK": "conexiunea la server a eșuat",
+    "CLOSE_PLAYER": "Închide playerul",
+    "CLOSE_PLAYER_HINT": "Închide playerul (Esc)",
+    "FULLSCREEN_HINT": "Esc: ieși din ecran complet"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "Mementourile au nevoie de pictograma din bara de sistem (Setări → General).",
     "ALERT_REMIND_ADDED": "Vei primi un memento pentru fiecare emisiune cu „{{query}}” în titlu, inclusiv pentru cele adăugate mai târziu în ghid.",
     "ALERT_RECORD_ADDED": "Fiecare emisiune cu „{{query}}” în titlu va fi înregistrată, inclusiv cele adăugate mai târziu în ghid.",
-    "ALERT_REMOVED": "Regula automată pentru „{{query}}” a fost oprită. Mementourile și înregistrările deja create rămân."
+    "ALERT_REMOVED": "Regula automată pentru „{{query}}” a fost oprită. Mementourile și înregistrările deja create rămân.",
+    "TIME_NAV": "Interval în ghid",
+    "NOW": "Acum",
+    "NOW_HINT": "Înapoi la ora curentă",
+    "CATCHUP_AVAILABLE": "Disponibil în arhivă",
+    "NOW_MENU_HINT": "Clic dreapta pentru a înregistra de acum",
+    "RECORD_FROM_NOW": "Înregistrează de acum",
+    "NO_PROGRAMMES_IN_WINDOW": "Nicio emisiune în acest interval",
+    "EPG_FAILED": "Datele programului nu au putut fi încărcate",
+    "EPG_RETRY": "Încearcă din nou",
+    "EPG_RETRY_ARIA": "Reîncarcă programul pentru {{name}}"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "Blochează „{{name}}”",
     "UNLOCK_GROUP_TITLE": "Deblochează „{{name}}”",
     "GROUP_LOCKED": "„{{name}}” a fost blocat",
-    "GROUP_UNLOCKED": "„{{name}}” a fost deblocat"
+    "GROUP_UNLOCKED": "„{{name}}” a fost deblocat",
+    "PIN_FORMAT_INVALID": "PIN-ul trebuie să aibă între 4 și 8 cifre"
   },
   "RECORDINGS": {
     "CANCEL": "Anulează înregistrarea",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "Memento",
     "ALERT_KIND_RECORD": "Înregistrare",
     "ALERT_CREATED": "Creată: {{date}}",
-    "ALERT_DELETE_ARIA": "Șterge regula automată pentru „{{query}}”"
+    "ALERT_DELETE_ARIA": "Șterge regula automată pentru „{{query}}”",
+    "FILE_RECORDING": "În curs",
+    "FILE_RECORDING_HINT": "Încă se înregistrează. Anulează înregistrarea de mai sus pentru a-l șterge."
   },
   "EPG_MAPPING": {
     "TITLE": "Atribuie EPG",

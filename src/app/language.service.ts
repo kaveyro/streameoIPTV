@@ -22,7 +22,7 @@ export class LanguageService {
     "hi",
     "el",
     "ro",
-  ]; // keep in sync with the options in settings.component.html and the i18n files
+  ]; // keep in sync with OPTIONS below and the i18n files
   private static readonly RTL = ["ar"];
   /// Native names for language pickers (settings, first-run setup).
   static readonly OPTIONS: { code: string; name: string }[] = [
@@ -69,25 +69,32 @@ export class LanguageService {
   /// Language of the most recent apply() call; the one that must win.
   private requested?: string;
 
-  apply(setting?: string) {
+  /// Resolves once the language is in use (also when its file failed to
+  /// load), e.g. to show a confirmation in the new language.
+  apply(setting?: string): Promise<void> {
     const lang = this.resolve(setting);
     this.requested = lang;
-    // use() may load the language file asynchronously; force a change-detection
-    // pass once it resolves so every translated string refreshes on the first
-    // switch (otherwise the view only updates on the next user interaction).
-    this.translate.use(lang).subscribe({
-      next: () => {
-        const latest = this.requested ?? lang;
-        if (lang !== latest) {
-          // An older request finished after a newer one (its file loaded
-          // slower) and switched the language back: re-assert the latest.
-          if (this.translate.getCurrentLang() !== latest) this.translate.use(latest);
-          return;
-        }
-        document.documentElement.dir = this.isRtl(lang) ? "rtl" : "ltr";
-        this.appRef.tick();
-      },
-      error: () => undefined,
+    return new Promise<void>((resolve) => {
+      // use() may load the language file asynchronously; force a change-detection
+      // pass once it resolves so every translated string refreshes on the first
+      // switch (otherwise the view only updates on the next user interaction).
+      this.translate.use(lang).subscribe({
+        next: () => {
+          const latest = this.requested ?? lang;
+          if (lang !== latest) {
+            // An older request finished after a newer one (its file loaded
+            // slower) and switched the language back: re-assert the latest.
+            if (this.translate.getCurrentLang() !== latest) this.translate.use(latest);
+            resolve();
+            return;
+          }
+          document.documentElement.dir = this.isRtl(lang) ? "rtl" : "ltr";
+          this.appRef.tick();
+          resolve();
+        },
+        error: () => resolve(),
+        complete: () => resolve(),
+      });
     });
   }
 }

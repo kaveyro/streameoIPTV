@@ -9,7 +9,7 @@ import { EditGroupModalComponent } from "../../edit-group-modal/edit-group-modal
 import { ImportModalComponent } from "../../import-modal/import-modal.component";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { FAVS_BACKUP, FAVS_BACKUP_EXTENSIONS, PLAYLIST_EXTENSION } from "../../models/extensions";
-import { sanitizeFileName } from "../../utils";
+import { sanitizeFileName, uiLocale } from "../../utils";
 import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ConfirmService } from "../../confirm.service";
 import { ToastrService } from "ngx-toastr";
@@ -19,6 +19,15 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatMenuModule } from "@angular/material/menu";
 import { TimeAgoPipe } from "../../pipes/time-ago.pipe";
+
+/// Labels of the setup's source type picker.
+export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
+  [SourceType.M3U]: "SETUP.M3U_FILE",
+  [SourceType.M3ULink]: "SETUP.M3U_URL",
+  [SourceType.Xtream]: "Xtream",
+  [SourceType.Custom]: "SETUP.CUSTOM",
+  [SourceType.CustomImport]: "SETUP.CUSTOM_IMPORT",
+};
 
 @Component({
   selector: "app-source-tile",
@@ -59,14 +68,18 @@ export class SourceTileComponent {
     private toastr: ToastrService,
   ) {}
 
-  get_source_type_name() {
-    if (!this.source) return null;
-    return SourceType[this.source.source_type!];
+  /// Translation key (or fixed name) of the source type, as the setup's
+  /// type picker labels it; never the raw enum name ("M3ULink").
+  get_source_type_name(): string | null {
+    const type = this.source?.source_type;
+    if (type === undefined) return null;
+    return SOURCE_TYPE_LABELS[type] ?? null;
   }
 
   get expiryLabel(): string | undefined {
     if (this.source?.source_type != SourceType.Xtream || !this.expiry) return undefined;
-    const date = new Date(this.expiry * 1000).toLocaleDateString();
+    // In the app's language, not the system locale.
+    const date = new Date(this.expiry * 1000).toLocaleDateString(uiLocale(this.translate));
     return this.translate.instant(this.expiryExpired ? "SOURCE.EXPIRED" : "SOURCE.EXPIRES", {
       date,
     });
@@ -210,7 +223,16 @@ export class SourceTileComponent {
     this.editing = true;
   }
 
+  /// Max streams: empty means the default (1), anything else must be a
+  /// whole number of at least 1.
+  get maxStreamsValid(): boolean {
+    const value = this.editableSource.max_streams;
+    if (value === undefined || value === null || (value as unknown) === "") return true;
+    return Number.isInteger(value) && value >= 1;
+  }
+
   async save() {
+    if (!this.maxStreamsValid) return;
     await this.memory.tryIPC(
       this.translate.instant("TOAST.CHANGES_SAVED"),
       this.translate.instant("TOAST.CHANGES_SAVE_FAILED"),
@@ -220,6 +242,8 @@ export class SourceTileComponent {
         if (this.editableSource.user_agent == "") this.editableSource.user_agent = undefined;
         if (this.editableSource.stream_user_agent == "")
           this.editableSource.stream_user_agent = undefined;
+        if ((this.editableSource.max_streams as unknown) === null)
+          this.editableSource.max_streams = undefined;
         await invoke("update_source", { source: this.editableSource });
         this.source = this.editableSource;
         this.editing = false;

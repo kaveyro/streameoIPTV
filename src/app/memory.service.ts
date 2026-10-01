@@ -81,6 +81,10 @@ export class MemoryService {
   /// Emits after settings that only apply when mpv spawns were changed and the
   /// embedded player was torn down; the PlayerComponent re-inits on next open.
   public PlayerReset: Subject<void> = new Subject();
+  /// Such a setting changed while the mini player was playing: the player is
+  /// rebuilt once that playback ends (the PlayerComponent checks this when it
+  /// closes or opens the next channel) instead of cutting the stream off.
+  public PlayerRebuildPending = false;
   /// Parental lock: whether a PIN is set (refreshed by the home page and the
   /// settings), and whether the PIN was entered in this session so locked
   /// groups are listed. Every `search` sends ShowLocked as `show_locked`.

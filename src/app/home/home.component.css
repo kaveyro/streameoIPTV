@@ -65,34 +65,71 @@
   min-width: 200px;
 }
 
+/* Room for the magnifier at the start and the clear button at the end. */
+.search-input {
+  width: 100%;
+  padding-inline: 2.25rem;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 0.7rem;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.search-clear {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 0.45rem;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.search-clear:hover {
+  color: var(--text-primary);
+}
+
+.search-clear > svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.toolbar-icon {
-  width: var(--icon-size-md);
-  height: var(--icon-size-md);
+/* Toolbar icon buttons (reload; the sort button has its own copy): a bit
+   larger and quieter than a plain .icon-btn. */
+.toolbar-btn {
   color: var(--text-secondary);
-  cursor: pointer;
-  transition:
-    transform var(--transition-slow),
-    color var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
-.toolbar-icon:hover {
+.toolbar-btn:hover {
   color: var(--text-primary);
 }
 
-.toolbar-icon:focus-visible {
-  outline: none;
-  border-radius: var(--radius-control);
-  box-shadow: 0 0 0 0.2rem var(--focus-ring);
+.toolbar-btn > svg {
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
+  transition: transform var(--transition-slow);
 }
 
-.reload-icon:hover {
-  transform: rotate(360deg) scale(1.1);
+.reload-btn:hover > svg {
+  transform: rotate(360deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reload-btn:hover > svg {
+    transform: none;
+  }
 }
 
 /* --------------------------- Media type pills -------------------------- */
@@ -237,8 +274,10 @@
   min-width: 0;
 }
 
-/* Own order (favorites, sort "own order"): tiles can be dragged. The preview
-   is a clone of the tile appended to <body>, so no .tile-grid ancestor. */
+/* Own order (favorites, sort "own order"): tiles can be dragged. The tile
+   itself sets the cursor over its surface (channel-tile.component.css); this
+   covers the rest of the host. The preview is a clone of the tile appended to
+   <body>, so no .tile-grid ancestor. */
 .tile-grid.reorderable > app-channel-tile {
   cursor: grab;
 }
@@ -255,26 +294,39 @@
 }
 
 /* ------------------------------- Misc ---------------------------------- */
-.clickable {
-  cursor: pointer;
+.go-back-btn {
+  color: var(--text-primary);
 }
 
-.go-back-arrow {
+.go-back-btn > svg.go-back-arrow {
   height: var(--icon-size-lg);
   width: var(--icon-size-lg);
   transition: transform var(--transition-fast);
 }
 
-.go-back-arrow:hover {
-  transform: scale(1.25);
+.go-back-btn:hover > svg.go-back-arrow {
+  transform: scale(1.15);
 }
 
-:host-context([dir="rtl"]) .go-back-arrow {
+/* The button's hover fill would square off the round arrow. */
+.go-back-btn:hover:not(:disabled) {
+  background-color: transparent;
+}
+
+:host-context([dir="rtl"]) .go-back-btn > svg.go-back-arrow {
   transform: scaleX(-1);
 }
 
-:host-context([dir="rtl"]) .go-back-arrow:hover {
-  transform: scaleX(-1) scale(1.25);
+:host-context([dir="rtl"]) .go-back-btn:hover > svg.go-back-arrow {
+  transform: scaleX(-1) scale(1.15);
+}
+
+/* "Series › Season 2": long paths are cut, the full one is in the text. */
+.node-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ------------------------ Collapsible sidebar -------------------------- */

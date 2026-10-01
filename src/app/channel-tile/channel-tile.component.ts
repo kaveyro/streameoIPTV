@@ -14,6 +14,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { MatMenuTrigger, MatMenuModule } from "@angular/material/menu";
+import { MatDividerModule } from "@angular/material/divider";
 import { Channel } from "../models/channel";
 import { MemoryService } from "../memory.service";
 import { MediaType } from "../models/mediaType";
@@ -79,7 +80,14 @@ function formatClock(timestamp: number, locale?: string): string {
 
 @Component({
   selector: "app-channel-tile",
-  imports: [CommonModule, TranslatePipe, NgbTooltipModule, MatMenuModule, CountryNamePipe],
+  imports: [
+    CommonModule,
+    TranslatePipe,
+    NgbTooltipModule,
+    MatMenuModule,
+    MatDividerModule,
+    CountryNamePipe,
+  ],
   templateUrl: "./channel-tile.component.html",
   styleUrl: "./channel-tile.component.css",
 })
@@ -156,6 +164,8 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /// A series/category is being opened (get_episodes can take a while); a
   /// second click meanwhile must not push the same level twice.
   private opening = false;
+  /// The open context menu came from the ContextMenu key / Shift+F10.
+  private menuFromKeyboard = false;
 
   ngOnInit(): void {
     const image = this.channel?.image;
@@ -415,9 +425,27 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /** Opens the context menu anchored to the tile (ContextMenu key, Shift+F10). */
   openContextMenuFromKeyboard() {
     if (this.channel?.media_type == MediaType.season) return;
-    const element = this.el.nativeElement.querySelector(`#tile-${this.id}`) as HTMLElement | null;
-    const rect = (element ?? (this.el.nativeElement as HTMLElement)).getBoundingClientRect();
+    const element = this.tileElement() ?? (this.el.nativeElement as HTMLElement);
+    const rect = element.getBoundingClientRect();
     this.openMenuAt(rect.left + Math.min(rect.width / 2, 48), rect.top + rect.height / 2);
+    this.menuFromKeyboard = true;
+  }
+
+  private tileElement(): HTMLElement | null {
+    return this.el.nativeElement.querySelector(`#tile-${this.id}`) as HTMLElement | null;
+  }
+
+  /// The menu's trigger is an invisible helper that cannot take the focus
+  /// back, so it would end up on <body>. A menu opened by keyboard returns
+  /// it to the tile; otherwise only a focus that is already lost is put back.
+  /// While the menu animates out, its focused item is still in the DOM.
+  onMenuClosed() {
+    const fromKeyboard = this.menuFromKeyboard;
+    this.menuFromKeyboard = false;
+    const active = document.activeElement;
+    const lost = !active || active === document.body;
+    const inMenu = active?.closest(".mat-mdc-menu-panel") != null;
+    if (lost || (fromKeyboard && inMenu)) this.tileElement()?.focus({ preventScroll: true });
   }
 
   private isMenuOpen(): boolean {
@@ -425,6 +453,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   private openMenuAt(x: number, y: number) {
+    this.menuFromKeyboard = false;
     this.alreadyExistsInFav = this.channel!.favorite!;
     this.downloading = this.isDownloading();
     this.loadListMembership();
@@ -519,7 +548,19 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     try {
       await invoke(call, { channelId: this.channel!.id });
       this.channel!.favorite = !wasFavorite;
-      if (wasFavorite) {
+      // A favorites list is kept apart from the favorite flag: the tile
+      // stays in the list shown, only its star goes.
+      const list = this.shownList();
+      if (wasFavorite && this.favoriteList !== undefined) {
+        this.toastr.success(
+          list
+            ? this.translate.instant("TOAST.FAVORITE_REMOVED_STAYS_IN_LIST", {
+                name,
+                list: list.name,
+              })
+            : this.translate.instant("TOAST.FAVORITE_REMOVED", { name }),
+        );
+      } else if (wasFavorite) {
         if (this.viewMode == ViewMode.Favorites) this.fade = true;
         this.toastr.success(this.translate.instant("TOAST.FAVORITE_REMOVED", { name }));
       } else {
@@ -531,8 +572,20 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     }
   }
 
+  /// The favorites list the home page shows, if one (not the favorites).
+  private shownList(): FavoriteList | undefined {
+    if (this.favoriteList === undefined) return undefined;
+    return this.favoriteLists.current().find((l) => l.id === this.favoriteList);
+  }
+
   isGroup(): boolean {
     return this.channel?.media_type == MediaType.group;
+  }
+
+  /// Locking needs a parental PIN; a group locked before the PIN was removed
+  /// can still be unlocked.
+  canLockGroup(): boolean {
+    return this.isGroup() && (this.memory.HasParentalPin || this.isLockedGroup());
   }
 
   /** A locked group, shown because the PIN was entered in this session. */

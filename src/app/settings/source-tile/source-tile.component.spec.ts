@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ToastrService } from "ngx-toastr";
 
-import { SourceTileComponent } from "./source-tile.component";
+import { SOURCE_TYPE_LABELS, SourceTileComponent } from "./source-tile.component";
 import { Source } from "../../models/source";
 import { SourceType } from "../../models/sourceType";
 import { ConfirmService } from "../../confirm.service";
@@ -141,6 +141,35 @@ describe("SourceTileComponent", () => {
     await create(xtream);
     await settle();
     expect(callsOf(calls, "detect_xtream_login").length).toBe(0);
+  });
+
+  it("labels the source type like the setup does", async () => {
+    await create(link);
+    const type = element.querySelector(".source-details dd")?.textContent?.trim();
+    expect(type).toBe("SETUP.M3U_URL");
+    expect(component.get_source_type_name()).toBe(SOURCE_TYPE_LABELS[SourceType.M3ULink]);
+    resetTauri();
+    await create({ ...xtream, source_type: SourceType.CustomImport });
+    expect(component.get_source_type_name()).toBe("SETUP.CUSTOM_IMPORT");
+  });
+
+  it("shows a dash for an unset stream user agent", async () => {
+    await create(xtream);
+    expect(element.textContent).toContain("—");
+  });
+
+  it("rejects fewer than one max stream", async () => {
+    await create(xtream);
+    component.edit();
+    component.editableSource.max_streams = 0;
+    fixture.detectChanges();
+    expect(component.maxStreamsValid).toBeFalse();
+    expect(element.querySelector("input[name=streams]")?.classList).toContain("is-invalid");
+    await component.save();
+    expect(callsOf(calls, "update_source").length).toBe(0);
+    component.editableSource.max_streams = 2;
+    await component.save();
+    expect(callsOf(calls, "update_source").length).toBe(1);
   });
 
   it("has no test for local M3U files", async () => {

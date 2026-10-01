@@ -14,6 +14,9 @@ export interface ConfirmOptions {
   params?: Record<string, unknown>;
   /// Danger (red) confirm button; defaults to true.
   danger?: boolean;
+  /// Trash icon on the confirm button; defaults to `danger`. Only for actions
+  /// that delete something (not e.g. restoring a backup or removing the PIN).
+  trashIcon?: boolean;
   /// Render the messages as sanitized HTML (static translations only).
   html?: boolean;
 }
@@ -40,6 +43,7 @@ export class ConfirmService {
     instance.confirmLabel = options.confirmLabel;
     instance.params = options.params ?? {};
     instance.danger = options.danger ?? true;
+    instance.trashIcon = options.trashIcon ?? instance.danger;
     instance.html = options.html ?? false;
     const result = ref.result.then(
       (value) => value === true,

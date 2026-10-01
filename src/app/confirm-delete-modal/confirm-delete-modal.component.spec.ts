@@ -26,6 +26,21 @@ describe("ConfirmDeleteModalComponent", () => {
     expect(component).toBeTruthy();
   });
 
+  it("puts Cancel left of the action and the trash icon only on deletes", () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(element.querySelectorAll(".modal-footer button"));
+    expect(buttons.map((b) => b.textContent?.trim())).toEqual([
+      "MODAL.CANCEL",
+      "MODAL.CONFIRM_DELETE",
+    ]);
+    expect(buttons[0].querySelector("svg")).toBeNull();
+    expect(buttons[1].querySelector("svg")).not.toBeNull();
+    component.trashIcon = false;
+    fixture.detectChanges();
+    expect(buttons[1].querySelector("svg")).toBeNull();
+    expect(buttons[1].classList).toContain("btn-danger");
+  });
+
   it("closes with true only on confirm", () => {
     component.confirm();
     expect(activeModal.close).toHaveBeenCalledWith(true);

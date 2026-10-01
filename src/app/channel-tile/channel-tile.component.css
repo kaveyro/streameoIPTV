@@ -82,6 +82,12 @@
   cursor: pointer;
 }
 
+/* Own order on the home page: the host is a cdkDrag that is not disabled,
+   and the tile shows that it can be dragged rather than the pointer above. */
+:host(.cdk-drag:not(.cdk-drag-disabled)) .channel:hover {
+  cursor: grab;
+}
+
 .faded {
   opacity: 0.5;
 }
@@ -111,7 +117,8 @@
 .playing .now-time,
 .playing .next-line,
 .playing .country-badge,
-.playing .favorite-icon {
+.playing .favorite-icon,
+.playing .lock-icon {
   color: var(--on-accent);
 }
 
@@ -125,17 +132,19 @@
   box-shadow: inset 0 0 0 2px var(--color-danger);
 }
 
+/* Opacity only: a scaled tile overflowed its cell (list rows span the whole
+   width), and box-shadow is taken by the hover and focus outlines. */
 @keyframes pulse {
   from {
-    transform: scale3d(1, 1, 1);
+    opacity: 1;
   }
 
   50% {
-    transform: scale3d(1.05, 1.05, 1.05);
+    opacity: 0.72;
   }
 
   to {
-    transform: scale3d(1, 1, 1);
+    opacity: 1;
   }
 }
 

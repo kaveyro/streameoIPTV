@@ -39,7 +39,6 @@
       "CATEGORIES": "分类",
       "FAVORITES": "收藏",
       "HISTORY": "历史记录",
-      "HIDDEN": "已隐藏",
       "RECORDINGS": "录制",
       "SETTINGS": "设置",
       "GUIDE": "电视指南",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "直播",
       "MOVIES_VODS": "电影/点播",
       "MOVIES_VODS_SERIES": "电影/点播/剧集",
-      "SERIES": "剧集"
+      "SERIES": "剧集",
+      "KEEP_ONE": "至少需要保留一种媒体类型"
     },
     "COLLAPSE_SIDEBAR": "收起侧边栏",
     "EXPAND_SIDEBAR": "展开侧边栏",
     "COUNTRY_FILTER": "按国家/地区筛选",
-    "ALL_COUNTRIES": "所有国家/地区"
+    "ALL_COUNTRIES": "所有国家/地区",
+    "VIEWING": "正在查看：{{path}}",
+    "SEARCH_LABEL": "搜索频道、电影和剧集",
+    "CLEAR_SEARCH": "清除搜索"
   },
   "MENU": {
     "REMOVE": "移除",
     "FAVORITE": "收藏",
     "UNFAVORITE": "取消收藏",
-    "HIDE": "隐藏",
-    "UNHIDE": "取消隐藏",
     "RECORD": "录制",
     "DOWNLOAD": "下载",
     "CANCEL_DOWNLOAD": "取消下载",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "暂无收藏",
     "NO_FAVORITES_HINT": "右键点击频道即可添加",
     "NOTHING_WATCHED": "暂无观看记录",
-    "NO_HIDDEN": "没有已隐藏的频道",
     "NO_RECORDINGS": "没有计划录制",
     "NO_RECORDINGS_HINT": "从频道的电视指南中安排一个",
     "NO_GUIDE": "暂无指南数据",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "暂无可继续观看的内容",
     "NOTHING_TO_CONTINUE_HINT": "已开始观看的电影和剧集会显示在这里，并从上次停止的位置继续播放",
     "NO_RECORDING_FILES": "暂无录制文件",
-    "NO_RECORDING_FILES_HINT": "录制和下载的文件保存在录制文件夹中（设置 → 录制）"
+    "NO_RECORDING_FILES_HINT": "录制和下载的文件保存在录制文件夹中（设置 → 录制）",
+    "LOAD_FAILED": "无法加载此视图",
+    "LOAD_FAILED_HINT": "请检查与来源的连接后重试",
+    "RETRY": "重试"
   },
   "RECORDING": {
     "SCHEDULED": "计划录制",
@@ -172,7 +175,8 @@
       "APP_VERSION": "版本",
       "APP_VERSION_DESC": "当前版本 {{version}}",
       "CHECK_UPDATES": "立即检查",
-      "CHECKING": "正在检查..."
+      "CHECKING": "正在检查...",
+      "RESTART_REQUIRED": "需要重启"
     },
     "APPEARANCE": {
       "THEME": "主题",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "写入播放器日志",
       "DEBUG_LOG_DESC": "仅用于排查问题：日志文件夹中的 mpv.log 会记录每个流地址，包括其中的登录信息。下次打开播放器时生效。",
       "AUTO_FALLBACK": "直播流失败时切换到该频道的其他流",
-      "AUTO_FALLBACK_DESC": "直播流失败时，播放器会自动切换到同一频道的其他画质，例如从 HD 切换到 SD。"
+      "AUTO_FALLBACK_DESC": "直播流失败时，播放器会自动切换到同一频道的其他画质，例如从 HD 切换到 SD。",
+      "APPLIES_NEXT_CHANNEL": "从下一个频道起生效"
     },
     "RECORDING": {
       "PATH": "录制路径",
       "PATH_DESC": "保存录制直播的文件夹。",
       "ALWAYS_ASK": "始终询问下载保存位置",
-      "ALWAYS_ASK_DESC": "为每次下载和录制打开文件对话框。此项会覆盖录制路径。"
+      "ALWAYS_ASK_DESC": "为每次下载和录制打开文件对话框。此项会覆盖录制路径。",
+      "RESET_DEFAULT": "默认",
+      "RESET_DEFAULT_TOOLTIP": "重新将录制保存到默认文件夹"
     },
     "NETWORK": {
       "RESTREAM_PORT": "转推流端口",
-      "RESTREAM_PORT_DESC": "将频道转推流到其他设备时使用的本地端口。"
+      "RESTREAM_PORT_DESC": "将频道转推流到其他设备时使用的本地端口。",
+      "RESTREAM_PORT_INVALID": "请输入 {{min}} 到 {{max}} 之间的端口，或留空以使用默认值。"
     },
     "SOURCES": {
       "ADD_SOURCE": "添加来源",
@@ -286,7 +294,6 @@
       "TITLE": "外部 EPG",
       "INTRO": "当频道没有来自提供商的节目单数据时，streameo 会从这些 XMLTV 来源补充：按 tvg-id 匹配，否则按频道名称，或按你的手动指定。任何 XMLTV 网址都可以（例如 IPTV-EPG.org 的导出）；支持 .xml 和 .xml.gz。",
       "SOURCES_LABEL": "XMLTV 源",
-      "SOURCES_DESC": "每行一个 XMLTV 网址。",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "立即刷新",
       "REFRESH_DESC": "下载最新的节目单数据。它也会按照你的来源自动刷新计划自动进行；若该计划已关闭，则每天一次。",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "跳过",
     "DONE_TITLE": "完成",
     "DONE_TEXT": "你的来源已设置完成。祝观看愉快！",
-    "GO_TO_CHANNELS": "前往频道"
+    "GO_TO_CHANNELS": "前往频道",
+    "IMPORT_FAILED": "无法导入该文件",
+    "ADD_CUSTOM_FAILED": "无法创建自定义来源",
+    "FETCH_FAILED": "无法加载列表。请检查链接和网络连接。",
+    "REQUIRED_FIELD": "必填项",
+    "SOURCE_TYPE": "来源类型",
+    "XTREAM_TOOLTIP": "使用提供商提供的服务器地址、用户名和密码登录。可获得提供商的 EPG、回看以及按季排列的剧集。",
+    "CUSTOM_TOOLTIP": "一个空白来源，由你自行添加频道和分类。",
+    "CUSTOM_IMPORT_TOOLTIP": "导入从 streameoIPTV 导出的自定义来源（.siptvp 文件）。"
   },
   "EPG": {
     "PLAYING_NOW": "正在播放",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "从回看观看",
     "DOWNLOAD_CATCHUP": "从回看下载",
     "NOTIFY_ON": "开始时提醒我",
-    "NOTIFY_OFF": "关闭提醒"
+    "NOTIFY_OFF": "关闭提醒",
+    "NOTIFY_NEEDS_TRAY": "提醒需要启用托盘图标（设置 → 常规）"
   },
   "RESTREAM": {
     "TITLE": "转推流：{{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "确认删除所有用户数据",
     "BODY1": "此操作将删除所有用户数据，包括所有来源的频道、分类和收藏。",
-    "BODY2": "如果您遇到可能因版本升级导致的奇怪错误，建议使用此选项。"
+    "BODY2": "如果您遇到可能因版本升级导致的奇怪错误，建议使用此选项。",
+    "APP_CLOSES": "之后应用将关闭。重新启动即可从头设置。",
+    "CONFIRM_ALL": "全部删除"
   },
   "CONFIRM_URL": {
     "TITLE": "这是正确的 URL 吗？",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "错误",
     "OCCURRED": "发生了以下错误，<a target=\"_blank\" href=\"{{link}}\">您可以在此报告</a>",
-    "LOGS_INTRO": "您还可以在 $XDG_CACHE_HOME 中找到可能导致错误的详细日志。该路径对应于：",
     "ATTACH_LOGS": "请将这些日志（如果存在）和下面的错误附加到您的错误报告中。谢谢！",
-    "PERSISTENT": "如果您遇到奇怪/持续的错误，请尝试使用设置中的“删除全部”按钮，或屏幕右下角（如果存在）的小核弹按钮",
-    "COPY": "复制"
-  },
-  "WHATS_NEW": {
-    "TITLE": "v{{version}} 新功能",
-    "CHANGES": "更改",
-    "CHANGE_1": "修复了回看下载/播放报错的问题",
-    "CHANGE_2": "修复了创建新自定义频道报错的问题",
-    "CHANGE_3": "修复了收藏未在隐藏视图中显示的问题",
-    "CHANGE_4": "改进了 Linux 支持",
-    "CHANGE_5": "修复了标签搜索图标",
-    "CHANGE_6": "修复了已隐藏分类在刷新后不保留的问题",
-    "CHANGE_7": "在搜索栏中添加了批量操作",
-    "UPCOMING": "即将推出的改进",
-    "UPCOMING_1": "录制排程",
-    "UPCOMING_2": "期待您的建议！",
-    "DONT_SHOW": "不再显示"
+    "COPY": "复制",
+    "LOGS_FOLDER_HINT": "日志文件和诊断报告有助于查找原因：",
+    "PERSISTENT_DIAGNOSTICS": "如果错误反复出现，请导出诊断报告并附在你的反馈中。报告不含密码或流地址。"
   },
   "SOURCE": {
     "REFRESHED": "已刷新：",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "连接失败",
     "XTREAM_HINT": "此链接包含 Xtream 登录信息。作为 Xtream 源，你可以获得提供商的 EPG、错过节目的回看以及按季排列的剧集。",
     "CONVERT_TO_XTREAM": "转换为 Xtream",
-    "CONVERTING": "正在转换…"
+    "CONVERTING": "正在转换…",
+    "MAX_STREAMS_INVALID": "请输入不小于 1 的整数"
   },
   "DIALOG": {
     "SAVE_RECORDING": "选择录制的保存位置",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "已成功清除历史记录",
     "HISTORY_CLEAR_FAILED": "清除历史记录失败",
     "RECORDINGS_LOAD_FAILED": "加载计划录制失败",
-    "RECORDING_ENTRY_REMOVED": "已移除录制条目",
     "RECORDING_CANCELLED": "已取消计划录制",
     "RECORDING_CANCEL_FAILED": "取消计划录制失败",
     "RECORDING_SCHEDULED": "已成功安排录制",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "将 \"{{name}}\" 加入/移出收藏失败",
     "HISTORY_REMOVED": "已从历史记录中移除 \"{{name}}\"",
     "HISTORY_REMOVE_FAILED": "从历史记录中移除 \"{{name}}\" 失败",
-    "CHANNEL_HIDDEN": "已隐藏 \"{{name}}\"（重新加载时更新）",
-    "CHANNEL_UNHIDDEN": "已取消隐藏 \"{{name}}\"（重新加载时更新）",
-    "GROUP_HIDDEN": "已隐藏分组 \"{{name}}\"（重新加载时更新）",
-    "GROUP_UNHIDDEN": "已取消隐藏分组 \"{{name}}\"（重新加载时更新）",
-    "HIDE_FAILED": "隐藏/取消隐藏 \"{{name}}\" 失败",
     "NO_EPG": "此频道没有 EPG 数据",
     "EPG_MISSING_STREAM_ID": "缺少流 ID。请刷新您的来源（设置 -> 刷新全部）以启用 EPG 功能",
     "CATEGORY_EXPORTED": "已成功将分类导出到 {{path}}",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "无法打开日志文件夹",
     "DIAGNOSTICS_EXPORTED": "诊断报告已保存到 {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "无法导出诊断报告",
-    "EPG_LOADING": "节目指南正在后台加载…"
+    "EPG_LOADING": "节目指南正在后台加载…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "已将“{{name}}”从收藏中移除，它仍保留在“{{list}}”中"
   },
   "UPDATE": {
     "TITLE": "有可用更新",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "删除自动规则？",
     "DELETE_ALERT_REMIND_BODY": "标题包含“{{query}}”的节目将不再自动提醒。",
     "DELETE_ALERT_RECORD_BODY": "标题包含“{{query}}”的节目将不再自动录制。",
-    "DELETE_ALERT_KEEP": "已创建的提醒和录制会保留。如果不再需要，请逐个删除。"
+    "DELETE_ALERT_KEEP": "已创建的提醒和录制会保留。如果不再需要，请逐个删除。",
+    "CLEAR_FINISHED_TITLE": "移除已结束的条目？",
+    "CLEAR_FINISHED_FAILED_BODY": "其中失败的录制：{{count}} 个。这些条目是录制未成功的唯一提示。已录制的文件会保留在文件夹中。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "返回频道",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "剩余 {{minutes}} 分钟",
     "RESUMED_AT": "从 {{time}} 继续播放",
     "RESTART_HINT": "Home：从头播放",
-    "RESTARTED": "从头播放"
+    "RESTARTED": "从头播放",
+    "CONNECTING": "正在连接…",
+    "BUFFERING": "正在缓冲…",
+    "ERR_LOADING": "无法打开流（服务器无法访问或链接无效）",
+    "ERR_FORMAT": "无法识别流格式",
+    "ERR_NO_DATA": "流没有提供画面或声音",
+    "ERR_AUDIO_OUTPUT": "无法启动音频输出",
+    "ERR_VIDEO_OUTPUT": "无法启动视频输出（请检查显卡驱动）",
+    "ERR_UNSUPPORTED": "该流使用了播放器不支持的格式",
+    "ERR_NETWORK": "连接服务器失败",
+    "CLOSE_PLAYER": "关闭播放器",
+    "CLOSE_PLAYER_HINT": "关闭播放器 (Esc)",
+    "FULLSCREEN_HINT": "Esc：退出全屏"
   },
   "GUIDE": {
     "CHANNEL": "频道",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "提醒需要启用托盘图标（设置 → 常规）。",
     "ALERT_REMIND_ADDED": "标题包含“{{query}}”的每个节目都会提醒你，包括之后加入节目指南的节目。",
     "ALERT_RECORD_ADDED": "标题包含“{{query}}”的每个节目都会被录制，包括之后加入节目指南的节目。",
-    "ALERT_REMOVED": "已停止“{{query}}”的自动规则。已创建的提醒和录制会保留。"
+    "ALERT_REMOVED": "已停止“{{query}}”的自动规则。已创建的提醒和录制会保留。",
+    "TIME_NAV": "节目指南时间段",
+    "NOW": "现在",
+    "NOW_HINT": "回到当前时间",
+    "CATCHUP_AVAILABLE": "可在回看中观看",
+    "NOW_MENU_HINT": "右键单击可从现在开始录制",
+    "RECORD_FROM_NOW": "从现在开始录制",
+    "NO_PROGRAMMES_IN_WINDOW": "此时间段内没有节目",
+    "EPG_FAILED": "无法加载节目数据",
+    "EPG_RETRY": "重试",
+    "EPG_RETRY_ARIA": "重新加载 {{name}} 的节目数据"
   },
   "PARENTAL": {
     "CONFIRM": "确定",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "锁定“{{name}}”",
     "UNLOCK_GROUP_TITLE": "解锁“{{name}}”",
     "GROUP_LOCKED": "已锁定“{{name}}”",
-    "GROUP_UNLOCKED": "已解锁“{{name}}”"
+    "GROUP_UNLOCKED": "已解锁“{{name}}”",
+    "PIN_FORMAT_INVALID": "PIN 必须为 4 到 8 位数字"
   },
   "RECORDINGS": {
     "CANCEL": "取消录制",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "提醒",
     "ALERT_KIND_RECORD": "录制",
     "ALERT_CREATED": "创建于：{{date}}",
-    "ALERT_DELETE_ARIA": "删除“{{query}}”的自动规则"
+    "ALERT_DELETE_ARIA": "删除“{{query}}”的自动规则",
+    "FILE_RECORDING": "录制中",
+    "FILE_RECORDING_HINT": "仍在录制中。请先取消上方的录制再删除。"
   },
   "EPG_MAPPING": {
     "TITLE": "分配 EPG",

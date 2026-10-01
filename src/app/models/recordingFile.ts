@@ -6,4 +6,6 @@ export interface RecordingFile {
   size: number;
   /// Unix seconds.
   modified: number;
+  /// Still being written by a scheduled recording: it cannot be deleted yet.
+  recording?: boolean;
 }

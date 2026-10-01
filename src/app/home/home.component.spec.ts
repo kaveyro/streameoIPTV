@@ -13,6 +13,7 @@ import { Filters } from "../models/filters";
 import { MediaType } from "../models/mediaType";
 import { SourceType } from "../models/sourceType";
 import { ViewMode } from "../models/viewMode";
+import { NodeType } from "../models/nodeType";
 import { SortType } from "../models/sortType";
 import { Channel } from "../models/channel";
 import { CdkDragDrop } from "@angular/cdk/drag-drop";
@@ -183,6 +184,181 @@ describe("HomeComponent", () => {
   it("takes the country prefix display mode from the settings", async () => {
     await create({ get_settings: { country_prefix: "badge" } });
     expect(TestBed.inject(MemoryService).CountryPrefixMode).toBe("badge");
+  });
+
+  describe("navigation levels", () => {
+    const tiles = (count: number): Channel[] =>
+      Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        name: `Channel ${i + 1}`,
+        media_type: MediaType.livestream,
+        source_id: 1,
+        favorite: false,
+      }));
+
+    it("shows the whole path of the opened levels", async () => {
+      await create();
+      const memory = TestBed.inject(MemoryService);
+      memory.SetNode.next({ id: 5, name: "Show", type: NodeType.Series, sourceId: 1 });
+      await settle();
+      memory.SetNode.next({ id: 2, name: "Season 2", type: NodeType.Season });
+      await settle();
+      fixture.detectChanges();
+      expect(component.nodeStack.get()?.pathLabel()).toBe("Show › Season 2");
+      expect(element.querySelector(".node-path")?.textContent).toContain("HOME.VIEWING");
+      expect(element.querySelector("button.go-back-btn")?.getAttribute("aria-label")).toBe(
+        "COMMON.GO_BACK",
+      );
+    });
+
+    it("loads the pages of the level again and scrolls back on the way back", async () => {
+      await create({ search: tiles(36) });
+      await component.switchMode(ViewMode.Categories);
+      await component.loadMore(true);
+      expect(component.filters?.page).toBe(2);
+      const memory = TestBed.inject(MemoryService);
+      memory.SetNode.next({ id: 9, name: "Kids", type: NodeType.Category });
+      await settle();
+      expect(lastSearch().group_id).toBe(9);
+      const scroll = spyOn(window, "scrollTo");
+      const searches = callsOf(calls, "search").length;
+      await component.goBack();
+      // Page 1 and 2 of the categories again.
+      expect(callsOf(calls, "search").length).toBe(searches + 2);
+      expect(lastSearch().group_id).toBeUndefined();
+      expect(lastSearch().page).toBe(2);
+      expect(component.channels.length).toBe(72);
+      expect(scroll).toHaveBeenCalled();
+    });
+  });
+
+  describe("load errors", () => {
+    it("shows an error with a retry instead of the empty state", async () => {
+      let fail = true;
+      await create({
+        search: () => {
+          if (fail) throw "offline";
+          return [];
+        },
+      });
+      expect(component.loadFailed).toBeTrue();
+      expect(element.querySelector(".empty-state")?.textContent).toContain("EMPTY.LOAD_FAILED");
+      expect(element.textContent).not.toContain("EMPTY.NO_CHANNELS_FOUND");
+
+      fail = false;
+      const retry = element.querySelector(".empty-state button") as HTMLButtonElement;
+      expect(retry.textContent).toContain("EMPTY.RETRY");
+      retry.click();
+      await settle();
+      fixture.detectChanges();
+      expect(component.loadFailed).toBeFalse();
+      expect(element.querySelector(".empty-state")?.textContent).toContain(
+        "EMPTY.NO_CHANNELS_FOUND",
+      );
+    });
+  });
+
+  describe("media type pills", () => {
+    it("keeps the last active one on (shortcut path)", async () => {
+      await create();
+      component.chkLiveStream = false;
+      component.updateMediaTypes(MediaType.livestream);
+      await settle();
+      const searches = callsOf(calls, "search").length;
+      component.chkMovie = false;
+      component.updateMediaTypes(MediaType.movie);
+      await settle();
+      expect(component.chkMovie).toBeTrue();
+      expect(component.filters?.media_types).toContain(MediaType.movie);
+      expect(callsOf(calls, "search").length).toBe(searches);
+    });
+
+    it("does not let a click switch off the last active one", async () => {
+      await create();
+      component.chkLiveStream = false;
+      component.updateMediaTypes(MediaType.livestream);
+      await settle();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const searches = callsOf(calls, "search").length;
+      const movies = element.querySelector("#filter-1") as HTMLInputElement;
+      movies.click();
+      await settle();
+      expect(movies.checked).toBeTrue();
+      expect(component.chkMovie).toBeTrue();
+      expect(callsOf(calls, "search").length).toBe(searches);
+    });
+  });
+
+  it("hides the sort button where the order is fixed", async () => {
+    await create();
+    expect(element.querySelector("app-sort-button")).not.toBeNull();
+    await component.switchMode(ViewMode.History);
+    fixture.detectChanges();
+    expect(element.querySelector("app-sort-button")).toBeNull();
+    await component.switchMode(ViewMode.History, true);
+    fixture.detectChanges();
+    expect(element.querySelector("app-sort-button")).toBeNull();
+    await component.switchMode(ViewMode.All);
+    fixture.detectChanges();
+    expect(element.querySelector("app-sort-button")).not.toBeNull();
+  });
+
+  describe("search box", () => {
+    function input(): HTMLInputElement {
+      return element.querySelector("#search") as HTMLInputElement;
+    }
+
+    function type(value: string) {
+      input().value = value;
+      input().dispatchEvent(new Event("input"));
+      fixture.detectChanges();
+    }
+
+    it("has a label and a clear button while text is in it", async () => {
+      await create();
+      expect(input().getAttribute("aria-label")).toBe("HOME.SEARCH_LABEL");
+      expect(input().getAttribute("style")).toBeNull();
+      expect(element.querySelector(".search-clear")).toBeNull();
+      type("news");
+      const clear = element.querySelector(".search-clear") as HTMLButtonElement;
+      expect(clear.getAttribute("aria-label")).toBe("HOME.CLEAR_SEARCH");
+      clear.click();
+      await settle();
+      fixture.detectChanges();
+      expect(input().value).toBe("");
+      expect(lastSearch().query).toBe("");
+      expect(element.querySelector(".search-clear")).toBeNull();
+    });
+
+    it("empties the box on Escape without leaving it", async () => {
+      await create();
+      type("news");
+      input().focus();
+      const searches = callsOf(calls, "search").length;
+      const escape = new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      });
+      input().dispatchEvent(escape);
+      await settle();
+      expect(escape.defaultPrevented).toBeTrue();
+      expect(input().value).toBe("");
+      expect(component.filters?.query).toBe("");
+      expect(callsOf(calls, "search").length).toBe(searches + 1);
+      expect(document.activeElement).toBe(input());
+    });
+  });
+
+  it("gives the icon-only toolbar actions real buttons", async () => {
+    await create();
+    const reload = element.querySelector("button.reload-btn") as HTMLButtonElement;
+    expect(reload.getAttribute("aria-label")).toBe("HOME.RELOAD_VIEW");
+    const searches = callsOf(calls, "search").length;
+    reload.click();
+    await settle();
+    expect(callsOf(calls, "search").length).toBe(searches + 1);
   });
 
   describe("country filter", () => {

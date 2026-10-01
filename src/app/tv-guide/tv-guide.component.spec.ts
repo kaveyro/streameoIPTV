@@ -162,15 +162,128 @@ describe("TvGuideComponent", () => {
     await settle();
     const play = spyOn(TestBed.inject(PlaybackService), "play").and.resolveTo();
     await component.activate(row, row.blocks[1]);
-    expect(play).toHaveBeenCalledOnceWith(row.channel);
+    // The player's channel keys get the guide's rows.
+    expect(play).toHaveBeenCalledOnceWith(
+      row.channel,
+      component.rows.map((r) => r.channel),
+    );
     expect(callsOf(calls, "add_last_watched").map((c) => c.args)).toEqual([{ id: 1 }]);
 
+    // Catch-up goes the same way (the embedded player, not a second mpv
+    // window), with nothing to zap to.
+    play.calls.reset();
     await component.activate(row, row.blocks[0]);
-    const catchup = callsOf(calls, "play");
-    expect(catchup.length).toBe(1);
-    expect(catchup[0].args["channel"]).toEqual(
+    expect(callsOf(calls, "play").length).toBe(0);
+    expect(play).toHaveBeenCalledOnceWith(
       jasmine.objectContaining({ id: -1, url: "http://example.test/Past.ts", source_id: 1 }),
+      [],
     );
+    expect(callsOf(calls, "add_last_watched").length).toBe(1);
+  });
+
+  it("marks past programmes that are in the archive", async () => {
+    await create();
+    component.request(component.rows[0]);
+    await settle();
+    fixture.detectChanges();
+    const blocks = element.querySelectorAll<HTMLElement>(".guide-block");
+    expect(blocks[0].classList).toContain("has-catchup");
+    expect(blocks[0].querySelector(".guide-catchup-icon")).not.toBeNull();
+    expect(blocks[0].title).toContain("GUIDE.CATCHUP_AVAILABLE");
+    expect(blocks[1].classList).not.toContain("has-catchup");
+  });
+
+  it("records the running programme from now on through its menu", async () => {
+    await create();
+    const row = component.rows[0];
+    component.request(row);
+    await settle();
+    const event = new MouseEvent("contextmenu", { cancelable: true });
+    component.onBlockContextMenu(row, row.blocks[1], event);
+    expect(event.defaultPrevented).toBeTrue();
+    expect(component.menuIsNow()).toBeTrue();
+    await component.toggleRecording();
+    expect(callsOf(calls, "schedule_recording").map((c) => c.args)).toEqual([
+      { channelId: 1, title: "Now", startTimestamp: now - 600, endTimestamp: now + 1200 },
+    ]);
+    // Past programmes have no menu.
+    component.menuBlock = undefined;
+    component.onBlockContextMenu(row, row.blocks[0], new MouseEvent("contextmenu"));
+    expect(component.menuBlock).toBeUndefined();
+  });
+
+  it("goes a day back or ahead and back to now", async () => {
+    await create();
+    const row = component.rows[0];
+    component.request(row);
+    await settle();
+    const start = component.windowStart;
+    component.shiftDay(1);
+    // Whole days (the clock may cross a slot boundary while the test runs).
+    const near = (a: number, b: number) =>
+      expect(Math.abs(a - b)).toBeLessThanOrEqual(TvGuideComponent.SLOT_SECONDS);
+    near(component.windowStart, start + TvGuideComponent.DAY_SECONDS);
+    expect(component.dayTitle).toBe("GUIDE.TOMORROW");
+    // Laid out again from the cache: the far future programme is not in it.
+    expect(row.blocks.length).toBe(0);
+    fixture.detectChanges();
+    expect(element.querySelector(".guide-row")?.textContent).toContain(
+      "GUIDE.NO_PROGRAMMES_IN_WINDOW",
+    );
+    for (let i = 0; i < 10; i++) component.shiftDay(-1);
+    expect(component.dayOffset).toBe(-TvGuideComponent.MAX_DAY_OFFSET);
+    expect(component.canShiftDay(-1)).toBeFalse();
+    component.goToNow();
+    near(component.windowStart, start);
+    expect(component.dayTitle).toBe("GUIDE.TODAY");
+    expect(row.blocks.map((b) => b.epg.title)).toEqual(["Past", "Now", "Later"]);
+  });
+
+  it("tells a failed EPG request from a channel without EPG and retries it", async () => {
+    let fail = true;
+    await create({
+      get_epg: () => {
+        if (fail) throw new Error("timeout");
+        return epg;
+      },
+    });
+    const row = component.rows[0];
+    component.request(row);
+    await settle();
+    fixture.detectChanges();
+    expect(row.state).toBe("error");
+    const cell = element.querySelector(".guide-row .guide-epg-failed");
+    expect(cell?.textContent).toContain("GUIDE.EPG_FAILED");
+    fail = false;
+    cell?.querySelector<HTMLButtonElement>(".guide-retry")?.click();
+    await settle();
+    expect(row.state).toBe("done");
+    expect(row.blocks.length).toBe(3);
+  });
+
+  it("keeps the player's list in step with the rows loaded after playing", async () => {
+    const page = (offset: number): Channel[] =>
+      Array.from({ length: TvGuideComponent.PAGE_SIZE }, (_, i) => ({
+        id: offset + i,
+        name: `C${offset + i}`,
+        media_type: MediaType.livestream,
+        favorite: false,
+      }));
+    await create({
+      search: (args: Record<string, unknown>) => {
+        const filters = args["filters"] as Filters;
+        return filters.page === 1 ? page(100) : page(200).slice(0, 3);
+      },
+    });
+    const memory = TestBed.inject(MemoryService);
+    // Loading the guide alone does not touch what the player zaps through.
+    expect(memory.PlayerChannelList).toEqual([]);
+    spyOn(TestBed.inject(PlaybackService), "play").and.callThrough();
+    await component.playChannel(component.rows[0].channel);
+    expect(memory.PlayerChannelList.length).toBe(TvGuideComponent.PAGE_SIZE);
+    component.loadMore();
+    await settle();
+    expect(memory.PlayerChannelList.length).toBe(TvGuideComponent.PAGE_SIZE + 3);
   });
 
   it("schedules a recording of a future programme", async () => {
@@ -331,11 +444,13 @@ describe("TvGuideComponent", () => {
       const items = element.querySelectorAll(".guide-hit");
       const buttons = (i: number) =>
         Array.from(items[i].querySelectorAll<HTMLButtonElement>(".guide-hit-actions button"));
-      expect(buttons(0).length).toBe(1);
+      // A running programme: watch it, or record it from now on.
+      expect(buttons(0).length).toBe(2);
       expect(buttons(0)[0].getAttribute("aria-label")).toBe("GUIDE.WATCH: Tatort live");
+      expect(buttons(0)[1].getAttribute("aria-label")).toBe("GUIDE.RECORD_FROM_NOW: Tatort live");
       buttons(0)[0].click();
       await settle();
-      expect(play).toHaveBeenCalledOnceWith(channels[0]);
+      expect(play).toHaveBeenCalledOnceWith(channels[0], jasmine.any(Array));
 
       const [remind, record] = buttons(1);
       expect(remind.getAttribute("aria-pressed")).toBe("false");

@@ -193,3 +193,12 @@
 .alert-icon--record {
   fill: var(--color-danger);
 }
+
+/* Keeps the tooltip of a disabled button (it gets no pointer events). */
+.rec-action-wrap {
+  display: inline-flex;
+}
+
+.rec-action-wrap .icon-btn:disabled {
+  pointer-events: none;
+}

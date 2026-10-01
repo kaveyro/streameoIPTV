@@ -3,6 +3,46 @@
     {{ "HOME.NAV.GUIDE" | translate }}
     <span *ngIf="group" class="guide-group">· {{ group.name }}</span>
   </h2>
+  <div
+    class="guide-time-nav"
+    role="group"
+    [attr.aria-label]="'GUIDE.TIME_NAV' | translate"
+    [hidden]="searchActive()"
+  >
+    <button
+      type="button"
+      class="icon-btn"
+      [disabled]="!canShiftDay(-1)"
+      (click)="shiftDay(-1)"
+      [title]="'EPG.PREV_DAY' | translate"
+      [attr.aria-label]="'EPG.PREV_DAY' | translate"
+    >
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
+      </svg>
+    </button>
+    <span class="guide-day-label" aria-live="polite">{{ dayTitle }}</span>
+    <button
+      type="button"
+      class="icon-btn"
+      [disabled]="!canShiftDay(1)"
+      (click)="shiftDay(1)"
+      [title]="'EPG.NEXT_DAY' | translate"
+      [attr.aria-label]="'EPG.NEXT_DAY' | translate"
+    >
+      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary guide-now-btn"
+      (click)="goToNow()"
+      [title]="'GUIDE.NOW_HINT' | translate"
+    >
+      {{ "GUIDE.NOW" | translate }}
+    </button>
+  </div>
   <input
     type="search"
     class="form-control form-control-sm guide-search"
@@ -206,25 +246,54 @@
             </svg>
             {{ "GUIDE.WATCH" | translate }}
           </button>
+          <button
+            *ngIf="item.state === 'now'"
+            type="button"
+            class="btn btn-sm btn-outline-primary"
+            [class.guide-rec-on]="scheduledFor(item.hit.channel, item.hit) !== undefined"
+            [disabled]="scheduling"
+            [attr.aria-pressed]="scheduledFor(item.hit.channel, item.hit) !== undefined"
+            [title]="
+              (scheduledFor(item.hit.channel, item.hit) === undefined
+                ? 'GUIDE.RECORD_FROM_NOW'
+                : 'EPG.CANCEL_SCHEDULED'
+              ) | translate
+            "
+            [attr.aria-label]="('GUIDE.RECORD_FROM_NOW' | translate) + ': ' + item.hit.title"
+            (click)="toggleSchedule(item.hit.channel, item.hit)"
+          >
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path
+                d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"
+              />
+            </svg>
+            {{ "MENU.RECORD" | translate }}
+          </button>
           <ng-container *ngIf="item.state === 'future'">
-            <button
-              type="button"
-              class="btn btn-sm"
-              [class.btn-primary]="reminderOn(item.hit)"
-              [class.btn-outline-primary]="!reminderOn(item.hit)"
-              [disabled]="memory.LoadingNotification || !memory.trayEnabled"
-              [attr.aria-pressed]="reminderOn(item.hit)"
-              [title]="(reminderOn(item.hit) ? 'EPG.NOTIFY_OFF' : 'EPG.NOTIFY_ON') | translate"
-              [attr.aria-label]="('GUIDE.REMIND' | translate) + ': ' + item.hit.title"
-              (click)="toggleReminder(item.hit.channel, item.hit)"
+            <!-- A disabled button shows no tooltip: the wrapper says why. -->
+            <span
+              class="guide-tray-hint"
+              [title]="memory.trayEnabled ? '' : ('EPG.NOTIFY_NEEDS_TRAY' | translate)"
             >
-              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                  d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
-                />
-              </svg>
-              {{ "GUIDE.REMIND" | translate }}
-            </button>
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-primary]="reminderOn(item.hit)"
+                [class.btn-outline-primary]="!reminderOn(item.hit)"
+                [disabled]="memory.LoadingNotification || !memory.trayEnabled"
+                [attr.aria-pressed]="reminderOn(item.hit)"
+                [title]="(reminderOn(item.hit) ? 'EPG.NOTIFY_OFF' : 'EPG.NOTIFY_ON') | translate"
+                [attr.aria-label]="('GUIDE.REMIND' | translate) + ': ' + item.hit.title"
+                (click)="toggleReminder(item.hit.channel, item.hit)"
+              >
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                  <path
+                    d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+                  />
+                </svg>
+                {{ "GUIDE.REMIND" | translate }}
+              </button>
+            </span>
             <button
               type="button"
               class="btn btn-sm btn-outline-primary"
@@ -309,6 +378,7 @@
               [class.is-past]="block.state === 'past'"
               [class.is-now]="block.state === 'now'"
               [class.is-future]="block.state === 'future'"
+              [class.has-catchup]="!!block.epg.timeshift_url"
               [class.is-scheduled]="scheduledId(row, block) !== undefined"
               [id]="cellId(r, b + 1)"
               [tabindex]="tabIndex(r, b + 1)"
@@ -318,14 +388,37 @@
               [attr.aria-label]="block.label"
               (focus)="onFocusCell(r, b + 1)"
               (click)="activate(row, block, $event)"
+              (contextmenu)="onBlockContextMenu(row, block, $event)"
             >
+              <!-- Replay mark: this one can be watched from the archive. -->
+              <svg
+                *ngIf="block.epg.timeshift_url"
+                class="guide-catchup-icon"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12.5,8H11V13L15.28,15.54L16,14.33L12.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3"
+                />
+              </svg>
               {{ block.epg.title }}
             </button>
             <span *ngIf="row.blocks.length === 0" class="guide-no-epg">{{
-              "GUIDE.NO_EPG" | translate
+              (row.epgCount ? "GUIDE.NO_PROGRAMMES_IN_WINDOW" : "GUIDE.NO_EPG") | translate
             }}</span>
           </ng-container>
-          <span *ngSwitchCase="'error'" class="guide-no-epg">{{ "GUIDE.NO_EPG" | translate }}</span>
+          <span *ngSwitchCase="'error'" class="guide-no-epg guide-epg-failed">
+            {{ "GUIDE.EPG_FAILED" | translate }}
+            <button
+              type="button"
+              class="btn btn-link btn-sm guide-retry"
+              [attr.aria-label]="'GUIDE.EPG_RETRY_ARIA' | translate: { name: row.channel.name }"
+              (click)="retry(row)"
+            >
+              {{ "GUIDE.EPG_RETRY" | translate }}
+            </button>
+          </span>
           <div *ngSwitchDefault class="guide-loading skeleton" aria-hidden="true"></div>
         </ng-container>
       </div>
@@ -356,21 +449,41 @@
 <mat-menu #futureMenu="matMenu">
   <ng-template matMenuContent>
     <div class="guide-menu-title" *ngIf="menuBlock">{{ menuBlock.label }}</div>
-    <button
-      mat-menu-item
-      type="button"
-      [disabled]="memory.LoadingNotification || !memory.trayEnabled"
-      (click)="toggleNotification()"
-    >
-      {{ (notificationOn(menuBlock) ? "EPG.NOTIFY_OFF" : "EPG.NOTIFY_ON") | translate }}
-    </button>
-    <button mat-menu-item type="button" [disabled]="scheduling" (click)="toggleRecording()">
-      {{
-        (scheduledId(menuRow, menuBlock) === undefined
-          ? "EPG.SCHEDULE_RECORDING"
-          : "EPG.CANCEL_SCHEDULED"
-        ) | translate
-      }}
-    </button>
+    <ng-container *ngIf="menuIsNow(); else futureItems">
+      <button mat-menu-item type="button" (click)="watchMenuChannel()">
+        {{ "GUIDE.WATCH" | translate }}
+      </button>
+      <!-- Recorded from now to the programme's end (the scheduler starts a
+           recording whose start has passed right away). -->
+      <button mat-menu-item type="button" [disabled]="scheduling" (click)="toggleRecording()">
+        {{
+          (scheduledId(menuRow, menuBlock) === undefined
+            ? "GUIDE.RECORD_FROM_NOW"
+            : "EPG.CANCEL_SCHEDULED"
+          ) | translate
+        }}
+      </button>
+    </ng-container>
+    <ng-template #futureItems>
+      <button
+        mat-menu-item
+        type="button"
+        [disabled]="memory.LoadingNotification || !memory.trayEnabled"
+        (click)="toggleNotification()"
+      >
+        {{ (notificationOn(menuBlock) ? "EPG.NOTIFY_OFF" : "EPG.NOTIFY_ON") | translate }}
+      </button>
+      <div class="guide-menu-hint" *ngIf="!memory.trayEnabled">
+        {{ "EPG.NOTIFY_NEEDS_TRAY" | translate }}
+      </div>
+      <button mat-menu-item type="button" [disabled]="scheduling" (click)="toggleRecording()">
+        {{
+          (scheduledId(menuRow, menuBlock) === undefined
+            ? "EPG.SCHEDULE_RECORDING"
+            : "EPG.CANCEL_SCHEDULED"
+          ) | translate
+        }}
+      </button>
+    </ng-template>
   </ng-template>
 </mat-menu>

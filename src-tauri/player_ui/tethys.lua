@@ -10,6 +10,7 @@ local tethys = {
     showPictureInPictureButton = true,
     showSpeedButton = true,
     showFullscreenButton = true,
+    zapButtons = false, -- streameo: on live TV the playlist buttons switch channels
     showShortcutTooltip = true, -- Show name and shortcut of buttons on hover
     showChapterTooltip = true, -- Show chapter above timestamp in seekbar tooltip
     skipBy = 5, -- skipback/skipfrwd amount in seconds
@@ -4347,6 +4348,11 @@ function osc_init()
     ne.enabled = (pl_pos > 1) or (loop ~= "no")
     ne.eventresponder["mbtn_left_up"] =
         function ()
+            -- streameo: a live channel loops over itself, the app zaps instead
+            if tethys.zapButtons and loop == "inf" then
+                mp.commandv("script-message", "streameo-key", "prev")
+                return
+            end
             mp.commandv("playlist-prev", "weak")
             if user_opts.playlist_osd then
                 show_message(get_playlist(), 3)
@@ -4364,6 +4370,10 @@ function osc_init()
     ne.enabled = (have_pl and (pl_pos < pl_count)) or (loop ~= "no")
     ne.eventresponder["mbtn_left_up"] =
         function ()
+            if tethys.zapButtons and loop == "inf" then
+                mp.commandv("script-message", "streameo-key", "next")
+                return
+            end
             mp.commandv("playlist-next", "weak")
             if user_opts.playlist_osd then
                 show_message(get_playlist(), 3)

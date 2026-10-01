@@ -283,7 +283,9 @@
   box-shadow: 0 0 0 0.25rem var(--focus-ring);
 }
 
-/* Borderless, focusable icon button (EPG actions, eye toggles, ...). */
+/* Borderless, focusable icon button (EPG actions, eye toggles, the home
+   toolbar, ...): a real <button>, so Enter and Space work and it gets the
+   focus ring below. Give it an aria-label (and a tooltip) for its icon. */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -549,6 +551,15 @@ body[data-theme="light"] .btn-close-white {
 .mat-mdc-menu-item.menu-item-danger,
 .mat-mdc-menu-item.menu-item-danger .mat-mdc-menu-item-text {
   color: var(--color-danger) !important;
+}
+
+/* Separators between the groups of a context menu (mat-divider). */
+.mat-mdc-menu-panel {
+  --mat-divider-color: var(--border-subtle);
+}
+
+.mat-mdc-menu-panel .mat-divider {
+  margin-block: 0.25rem;
 }
 
 .mat-mdc-menu-item > svg {
@@ -886,6 +897,8 @@ main:focus {
 /* Home "scroll to top" button, bottom inline-end corner. It moves beside the
    download manager while that is shown (--scroll-top-inline-end above). */
 .scroll-to-top {
+  border: none;
+  padding: 0;
   position: fixed;
   bottom: 2rem;
   inset-inline-end: var(--scroll-top-inline-end, 2rem);

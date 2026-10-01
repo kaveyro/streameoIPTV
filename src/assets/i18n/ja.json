@@ -39,7 +39,6 @@
       "CATEGORIES": "カテゴリ",
       "FAVORITES": "お気に入り",
       "HISTORY": "履歴",
-      "HIDDEN": "非表示",
       "RECORDINGS": "録画",
       "SETTINGS": "設定",
       "GUIDE": "番組表",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "ライブ配信",
       "MOVIES_VODS": "映画/VOD",
       "MOVIES_VODS_SERIES": "映画/VOD/シリーズ",
-      "SERIES": "シリーズ"
+      "SERIES": "シリーズ",
+      "KEEP_ONE": "メディアの種類は少なくとも 1 つ選択したままにする必要があります"
     },
     "COLLAPSE_SIDEBAR": "サイドバーを折りたたむ",
     "EXPAND_SIDEBAR": "サイドバーを展開する",
     "COUNTRY_FILTER": "国で絞り込む",
-    "ALL_COUNTRIES": "すべての国"
+    "ALL_COUNTRIES": "すべての国",
+    "VIEWING": "表示中: {{path}}",
+    "SEARCH_LABEL": "チャンネル・映画・シリーズを検索",
+    "CLEAR_SEARCH": "検索をクリア"
   },
   "MENU": {
     "REMOVE": "削除",
     "FAVORITE": "お気に入りに追加",
     "UNFAVORITE": "お気に入りから削除",
-    "HIDE": "非表示",
-    "UNHIDE": "再表示",
     "RECORD": "録画",
     "DOWNLOAD": "ダウンロード",
     "CANCEL_DOWNLOAD": "ダウンロードをキャンセル",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "お気に入りはまだありません",
     "NO_FAVORITES_HINT": "チャンネルを右クリックして追加してください",
     "NOTHING_WATCHED": "まだ視聴していません",
-    "NO_HIDDEN": "非表示のチャンネルはありません",
     "NO_RECORDINGS": "予約録画はありません",
     "NO_RECORDINGS_HINT": "チャンネルの番組表から予約してください",
     "NO_GUIDE": "番組表データがありません",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "続きから視聴できるものはまだありません",
     "NOTHING_TO_CONTINUE_HINT": "視聴を始めた映画やエピソードがここに表示され、中断した位置から再開されます",
     "NO_RECORDING_FILES": "録画ファイルはまだありません",
-    "NO_RECORDING_FILES_HINT": "録画とダウンロードは録画フォルダーに保存されます（設定 → 録画）"
+    "NO_RECORDING_FILES_HINT": "録画とダウンロードは録画フォルダーに保存されます（設定 → 録画）",
+    "LOAD_FAILED": "この表示を読み込めませんでした",
+    "LOAD_FAILED_HINT": "ソースへの接続を確認して、もう一度お試しください",
+    "RETRY": "再試行"
   },
   "RECORDING": {
     "SCHEDULED": "予約録画",
@@ -172,7 +175,8 @@
       "APP_VERSION": "バージョン",
       "APP_VERSION_DESC": "現在のバージョンは {{version}} です",
       "CHECK_UPDATES": "今すぐ確認",
-      "CHECKING": "確認中..."
+      "CHECKING": "確認中...",
+      "RESTART_REQUIRED": "再起動が必要です"
     },
     "APPEARANCE": {
       "THEME": "テーマ",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "プレーヤーのログを書き込む",
       "DEBUG_LOG_DESC": "トラブルシューティング専用：ログフォルダーの mpv.log に、含まれるログイン情報も含めてすべてのストリームアドレスが記録されます。次にプレーヤーを開いたときに有効になります。",
       "AUTO_FALLBACK": "ストリームが途切れたらチャンネルの別のストリームに切り替える",
-      "AUTO_FALLBACK_DESC": "ライブストリームが途切れると、プレーヤーは同じチャンネルの別の画質（例: HD から SD）に自動で切り替えます。"
+      "AUTO_FALLBACK_DESC": "ライブストリームが途切れると、プレーヤーは同じチャンネルの別の画質（例: HD から SD）に自動で切り替えます。",
+      "APPLIES_NEXT_CHANNEL": "次のチャンネルから反映されます"
     },
     "RECORDING": {
       "PATH": "録画パス",
       "PATH_DESC": "録画したライブ配信を保存するフォルダー。",
       "ALWAYS_ASK": "ダウンロードの保存先を常に確認",
-      "ALWAYS_ASK_DESC": "ダウンロードと録画のたびにファイルダイアログを開きます。録画パスより優先されます。"
+      "ALWAYS_ASK_DESC": "ダウンロードと録画のたびにファイルダイアログを開きます。録画パスより優先されます。",
+      "RESET_DEFAULT": "既定",
+      "RESET_DEFAULT_TOOLTIP": "録画を既定のフォルダーに保存し直します"
     },
     "NETWORK": {
       "RESTREAM_PORT": "再ストリーミングポート",
-      "RESTREAM_PORT_DESC": "チャンネルを他のデバイスに再ストリーミングする際に使用するローカルポート。"
+      "RESTREAM_PORT_DESC": "チャンネルを他のデバイスに再ストリーミングする際に使用するローカルポート。",
+      "RESTREAM_PORT_INVALID": "{{min}}～{{max}} のポートを入力するか、既定値を使う場合は空欄のままにしてください。"
     },
     "SOURCES": {
       "ADD_SOURCE": "ソースを追加",
@@ -286,7 +294,6 @@
       "TITLE": "外部 EPG",
       "INTRO": "チャンネルにプロバイダーの番組表データがない場合、streameo はこれらの XMLTV ソースから補います。tvg-id で照合し、なければチャンネル名で、または手動で割り当てたとおりに照合します。どの XMLTV URL でも使えます（例: IPTV-EPG.org のエクスポート）。.xml と .xml.gz の両方に対応しています。",
       "SOURCES_LABEL": "XMLTV ソース",
-      "SOURCES_DESC": "1 行につき 1 つの XMLTV URL。",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "今すぐ更新",
       "REFRESH_DESC": "最新の番組表データをダウンロードします。ソースの自動更新スケジュールに従って自動でも行われ、それがオフの場合は1日1回行われます。",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "スキップ",
     "DONE_TITLE": "準備完了",
     "DONE_TEXT": "ソースの設定が完了しました。お楽しみください！",
-    "GO_TO_CHANNELS": "チャンネルへ"
+    "GO_TO_CHANNELS": "チャンネルへ",
+    "IMPORT_FAILED": "ファイルをインポートできませんでした",
+    "ADD_CUSTOM_FAILED": "カスタムソースを作成できませんでした",
+    "FETCH_FAILED": "リストを読み込めませんでした。リンクとインターネット接続を確認してください。",
+    "REQUIRED_FIELD": "必須項目",
+    "SOURCE_TYPE": "ソースの種類",
+    "XTREAM_TOOLTIP": "プロバイダーのサーバーアドレス、ユーザー名、パスワードでログインします。プロバイダーの EPG、見逃し配信、シーズン別のシリーズが利用できます。",
+    "CUSTOM_TOOLTIP": "チャンネルとカテゴリを自分で追加する空のソースです。",
+    "CUSTOM_IMPORT_TOOLTIP": "streameoIPTV からエクスポートしたカスタムソース（.siptvp ファイル）をインポートします。"
   },
   "EPG": {
     "PLAYING_NOW": "再生中",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "アーカイブから視聴",
     "DOWNLOAD_CATCHUP": "アーカイブからダウンロード",
     "NOTIFY_ON": "開始時に通知",
-    "NOTIFY_OFF": "通知をオフにする"
+    "NOTIFY_OFF": "通知をオフにする",
+    "NOTIFY_NEEDS_TRAY": "リマインダーにはトレイアイコンが必要です（設定 → 一般）"
   },
   "RESTREAM": {
     "TITLE": "再ストリーミング：{{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "すべてのユーザーデータ削除の確認",
     "BODY1": "この操作は、すべてのソースのチャンネル、カテゴリ、お気に入りを含むすべてのユーザーデータを削除します。",
-    "BODY2": "バージョンアップグレードが原因と思われる奇妙な不具合が発生している場合は、このオプションの使用を推奨します。"
+    "BODY2": "バージョンアップグレードが原因と思われる奇妙な不具合が発生している場合は、このオプションの使用を推奨します。",
+    "APP_CLOSES": "その後アプリは終了します。もう一度起動すると最初から設定できます。",
+    "CONFIRM_ALL": "すべて削除"
   },
   "CONFIRM_URL": {
     "TITLE": "この URL で正しいですか？",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "エラー",
     "OCCURRED": "次のエラーが発生しました。<a target=\"_blank\" href=\"{{link}}\">こちらから報告できます</a>",
-    "LOGS_INTRO": "エラーの原因となった可能性のある詳細なログは $XDG_CACHE_HOME でも確認できます。これは次に対応します：",
     "ATTACH_LOGS": "それらのログ（存在する場合）と下記のエラーをバグ報告に添付してください。ありがとうございます！",
-    "PERSISTENT": "奇妙な／持続的なエラーが発生する場合は、設定内の「すべて削除」ボタン、または画面右下（ある場合）の小さな核ボタンをお試しください",
-    "COPY": "コピー"
-  },
-  "WHATS_NEW": {
-    "TITLE": "v{{version}} の新機能",
-    "CHANGES": "変更点",
-    "CHANGE_1": "キャッチアップのダウンロード／再生時のエラーを修正",
-    "CHANGE_2": "新しいカスタムチャンネル作成時のエラーを修正",
-    "CHANGE_3": "お気に入りが非表示ビューに表示されない問題を修正",
-    "CHANGE_4": "Linux サポートを改善",
-    "CHANGE_5": "タグ検索アイコンを修正",
-    "CHANGE_6": "非表示カテゴリが更新時に保持されない問題を修正",
-    "CHANGE_7": "検索バーに一括操作を追加",
-    "UPCOMING": "今後の改善予定",
-    "UPCOMING_1": "録画スケジュール",
-    "UPCOMING_2": "あなたのアイデアをここに！",
-    "DONT_SHOW": "今後表示しない"
+    "COPY": "コピー",
+    "LOGS_FOLDER_HINT": "ログファイルと診断レポートが原因の特定に役立ちます:",
+    "PERSISTENT_DIAGNOSTICS": "エラーが繰り返し起きる場合は、診断レポートをエクスポートして報告に添付してください。パスワードやストリームのアドレスは含まれません。"
   },
   "SOURCE": {
     "REFRESHED": "更新日時：",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "接続に失敗しました",
     "XTREAM_HINT": "このリンクには Xtream のログイン情報が含まれています。Xtream ソースにすると、プロバイダーの EPG、見逃した番組のキャッチアップ、シーズン別のシリーズが利用できます。",
     "CONVERT_TO_XTREAM": "Xtream に変換",
-    "CONVERTING": "変換中…"
+    "CONVERTING": "変換中…",
+    "MAX_STREAMS_INVALID": "1 以上の整数を入力してください"
   },
   "DIALOG": {
     "SAVE_RECORDING": "録画の保存先を選択",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "履歴を正常に消去しました",
     "HISTORY_CLEAR_FAILED": "履歴の消去に失敗しました",
     "RECORDINGS_LOAD_FAILED": "予約録画の読み込みに失敗しました",
-    "RECORDING_ENTRY_REMOVED": "録画エントリを削除しました",
     "RECORDING_CANCELLED": "予約録画をキャンセルしました",
     "RECORDING_CANCEL_FAILED": "予約録画のキャンセルに失敗しました",
     "RECORDING_SCHEDULED": "録画を正常に予約しました",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "\"{{name}}\" のお気に入りへの追加／削除に失敗しました",
     "HISTORY_REMOVED": "\"{{name}}\" を履歴から削除しました",
     "HISTORY_REMOVE_FAILED": "\"{{name}}\" の履歴からの削除に失敗しました",
-    "CHANNEL_HIDDEN": "\"{{name}}\" を非表示にしました（再読み込み時に反映）",
-    "CHANNEL_UNHIDDEN": "\"{{name}}\" を再表示しました（再読み込み時に反映）",
-    "GROUP_HIDDEN": "グループ \"{{name}}\" を非表示にしました（再読み込み時に反映）",
-    "GROUP_UNHIDDEN": "グループ \"{{name}}\" を再表示しました（再読み込み時に反映）",
-    "HIDE_FAILED": "\"{{name}}\" の非表示／再表示に失敗しました",
     "NO_EPG": "このチャンネルの EPG データがありません",
     "EPG_MISSING_STREAM_ID": "ストリーム ID がありません。EPG 機能を有効にするには、ソースを更新してください（設定 -> すべて更新）",
     "CATEGORY_EXPORTED": "カテゴリを {{path}} に正常にエクスポートしました",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "ログフォルダーを開けませんでした",
     "DIAGNOSTICS_EXPORTED": "診断レポートを {{path}} に保存しました",
     "DIAGNOSTICS_EXPORT_FAILED": "診断レポートをエクスポートできませんでした",
-    "EPG_LOADING": "番組表をバックグラウンドで読み込んでいます…"
+    "EPG_LOADING": "番組表をバックグラウンドで読み込んでいます…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "「{{name}}」をお気に入りから削除しました（「{{list}}」には残ります）"
   },
   "UPDATE": {
     "TITLE": "更新があります",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "自動ルールを削除しますか？",
     "DELETE_ALERT_REMIND_BODY": "タイトルに「{{query}}」を含む番組は、今後自動でリマインドされなくなります。",
     "DELETE_ALERT_RECORD_BODY": "タイトルに「{{query}}」を含む番組は、今後自動で録画されなくなります。",
-    "DELETE_ALERT_KEEP": "作成済みのリマインドと録画はそのまま残ります。不要な場合は個別に削除してください。"
+    "DELETE_ALERT_KEEP": "作成済みのリマインドと録画はそのまま残ります。不要な場合は個別に削除してください。",
+    "CLEAR_FINISHED_TITLE": "終了した項目を削除しますか？",
+    "CLEAR_FINISHED_FAILED_BODY": "失敗した録画が含まれています：{{count}} 件。これらの項目は録画が失敗したことを示す唯一の手がかりです。録画済みのファイルはフォルダーに残ります。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "チャンネルに戻る",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "残り {{minutes}} 分",
     "RESUMED_AT": "{{time}} から再開",
     "RESTART_HINT": "Home：最初から",
-    "RESTARTED": "最初から再生"
+    "RESTARTED": "最初から再生",
+    "CONNECTING": "接続中…",
+    "BUFFERING": "バッファリング中…",
+    "ERR_LOADING": "ストリームを開けませんでした（サーバーに接続できないか、リンクが無効です）",
+    "ERR_FORMAT": "ストリームの形式を認識できません",
+    "ERR_NO_DATA": "ストリームから映像も音声も届きませんでした",
+    "ERR_AUDIO_OUTPUT": "音声出力を開始できませんでした",
+    "ERR_VIDEO_OUTPUT": "映像出力を開始できませんでした（グラフィックドライバーを確認してください）",
+    "ERR_UNSUPPORTED": "ストリームはプレーヤーが対応していない形式です",
+    "ERR_NETWORK": "サーバーへの接続に失敗しました",
+    "CLOSE_PLAYER": "プレーヤーを閉じる",
+    "CLOSE_PLAYER_HINT": "プレーヤーを閉じる (Esc)",
+    "FULLSCREEN_HINT": "Esc：全画面表示を終了"
   },
   "GUIDE": {
     "CHANNEL": "チャンネル",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "リマインドにはトレイアイコンが必要です（設定 → 一般）。",
     "ALERT_REMIND_ADDED": "タイトルに「{{query}}」を含むすべての番組をリマインドします。後から番組表に追加された番組も含みます。",
     "ALERT_RECORD_ADDED": "タイトルに「{{query}}」を含むすべての番組を録画します。後から番組表に追加された番組も含みます。",
-    "ALERT_REMOVED": "「{{query}}」の自動ルールを停止しました。作成済みのリマインドと録画はそのまま残ります。"
+    "ALERT_REMOVED": "「{{query}}」の自動ルールを停止しました。作成済みのリマインドと録画はそのまま残ります。",
+    "TIME_NAV": "番組表の時間帯",
+    "NOW": "現在",
+    "NOW_HINT": "現在時刻に戻る",
+    "CATCHUP_AVAILABLE": "アーカイブで視聴可能",
+    "NOW_MENU_HINT": "右クリックで今から録画",
+    "RECORD_FROM_NOW": "今から録画",
+    "NO_PROGRAMMES_IN_WINDOW": "この時間帯に番組はありません",
+    "EPG_FAILED": "番組データを読み込めませんでした",
+    "EPG_RETRY": "再試行",
+    "EPG_RETRY_ARIA": "{{name}} の番組データを再読み込み"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "「{{name}}」をロック",
     "UNLOCK_GROUP_TITLE": "「{{name}}」のロックを解除",
     "GROUP_LOCKED": "「{{name}}」をロックしました",
-    "GROUP_UNLOCKED": "「{{name}}」のロックを解除しました"
+    "GROUP_UNLOCKED": "「{{name}}」のロックを解除しました",
+    "PIN_FORMAT_INVALID": "PIN は 4～8 桁の数字にしてください"
   },
   "RECORDINGS": {
     "CANCEL": "録画をキャンセル",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "リマインド",
     "ALERT_KIND_RECORD": "録画",
     "ALERT_CREATED": "作成日時: {{date}}",
-    "ALERT_DELETE_ARIA": "「{{query}}」の自動ルールを削除"
+    "ALERT_DELETE_ARIA": "「{{query}}」の自動ルールを削除",
+    "FILE_RECORDING": "録画中",
+    "FILE_RECORDING_HINT": "録画中です。削除するには上の録画をキャンセルしてください。"
   },
   "EPG_MAPPING": {
     "TITLE": "EPG の割り当て",

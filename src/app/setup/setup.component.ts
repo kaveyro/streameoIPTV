@@ -21,7 +21,7 @@ import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-del
 import { NowPlayingService } from "../now-playing.service";
 import { FREE_EPG_SOURCES, freeEpgSourcesFor, topCountries } from "../epg-free-sources";
 import { CommonModule } from "@angular/common";
-import { FormsModule } from "@angular/forms";
+import { FormsModule, NgModel } from "@angular/forms";
 import { LoadingComponent } from "../loading/loading.component";
 import { NotEmptyValidatorDirective } from "./validators/not-empty-validator.directive";
 import { SourceNameExistsValidator } from "./validators/source-name-exists-validator.directive";
@@ -76,6 +76,18 @@ export class SetupComponent implements OnInit {
     { id: "oled", label: "SETTINGS.APPEARANCE.THEME_OLED" },
   ];
   sourceTypeEnum = SourceType;
+  /// The source type picker; the tooltips explain when to pick which.
+  readonly sourceTypes = [
+    { type: SourceType.M3U, label: "SETUP.M3U_FILE", tooltip: "SETUP.M3U_FILE_TOOLTIP" },
+    { type: SourceType.M3ULink, label: "SETUP.M3U_URL", tooltip: "SETUP.M3U_URL_TOOLTIP" },
+    { type: SourceType.Xtream, label: "Xtream", tooltip: "SETUP.XTREAM_TOOLTIP" },
+    { type: SourceType.Custom, label: "SETUP.CUSTOM", tooltip: "SETUP.CUSTOM_TOOLTIP" },
+    {
+      type: SourceType.CustomImport,
+      label: "SETUP.CUSTOM_IMPORT",
+      tooltip: "SETUP.CUSTOM_IMPORT_TOOLTIP",
+    },
+  ];
   source: Source = {
     source_type: SourceType.M3U,
     enabled: true,
@@ -94,6 +106,9 @@ export class SetupComponent implements OnInit {
   onKeyDown(event: KeyboardEvent) {
     // A modal (URL confirmation, delete confirmation, error) owns the key.
     if (this.modalService.hasOpenModals()) return;
+    // Leaving would not stop the running import, whose success() then
+    // navigates home anyway: stay until it finished.
+    if (this.loading) return;
     if (
       (event.key == "Escape" || event.key == "Backspace") &&
       this.memory.AddingAdditionalSource &&
@@ -102,6 +117,12 @@ export class SetupComponent implements OnInit {
       this.goBack();
       event.preventDefault();
     }
+  }
+
+  /// "Required" under a field once it was left empty (not before the user
+  /// got to it).
+  showRequired(control: NgModel): boolean {
+    return !!control.errors?.["empty"] && !!(control.touched || control.dirty);
   }
 
   isInputFocused(): boolean {
@@ -150,9 +171,16 @@ export class SetupComponent implements OnInit {
     return canCheckSource(this.source.source_type);
   }
 
+  /// The fields the connection test needs: Xtream also logs in.
+  canTestConnection(): boolean {
+    if (!this.source.url?.trim()) return false;
+    if (this.source.source_type !== SourceType.Xtream) return true;
+    return !!this.source.username?.trim() && !!this.source.password;
+  }
+
   /** Checks that the source can be reached and logged into, without importing. */
   async testConnection() {
-    if (this.checking || !this.canCheck()) return;
+    if (this.checking || !this.canCheck() || !this.canTestConnection()) return;
     this.checking = true;
     try {
       await invoke("check_source", { source: sourceForCheck(this.source) });
@@ -170,6 +198,7 @@ export class SetupComponent implements OnInit {
   }
 
   goBack() {
+    if (this.loading) return;
     this.nav.navigateByUrl("settings");
   }
 
@@ -337,11 +366,14 @@ export class SetupComponent implements OnInit {
     }
     let nameOverride = this.source.name?.trim();
     if (nameOverride == "") nameOverride = undefined;
+    this.loading = true;
     try {
       await invoke("import", { path: file, nameOverride: nameOverride });
       this.success();
     } catch (e) {
-      this.error.handleError(e, this.translate.instant("TOAST.INVALID_CREDENTIALS"));
+      this.error.handleError(e, this.translate.instant("SETUP.IMPORT_FAILED"));
+    } finally {
+      this.loading = false;
     }
   }
 
@@ -351,9 +383,10 @@ export class SetupComponent implements OnInit {
       await invoke("add_custom_source", { name: this.source.name });
       this.success();
     } catch (e) {
-      this.error.handleError(e, this.translate.instant("TOAST.INVALID_CREDENTIALS"));
+      this.error.handleError(e, this.translate.instant("SETUP.ADD_CUSTOM_FAILED"));
+    } finally {
+      this.loading = false;
     }
-    this.loading = false;
   }
 
   async getM3ULink() {
@@ -380,9 +413,10 @@ export class SetupComponent implements OnInit {
       await invoke("get_m3u8_from_link", { source: this.source });
       this.success();
     } catch (e) {
-      this.error.handleError(e, this.translate.instant("TOAST.INVALID_CREDENTIALS"));
+      this.error.handleError(e, this.translate.instant("SETUP.FETCH_FAILED"));
+    } finally {
+      this.loading = false;
     }
-    this.loading = false;
   }
 
   /// The Xtream login inside an M3U link (`.../get.php?username=..`), if any.
@@ -424,7 +458,7 @@ export class SetupComponent implements OnInit {
     this.source.use_tvg_id = undefined;
     this.source.url = this.source.url?.trim();
     this.source.username = this.source.username?.trim();
-    this.source.password = this.source.password?.trim();
+    // Not trimmed: spaces can be part of a password.
     if (!this.source?.url?.startsWith("http://") && !this.source?.url?.startsWith("https://")) {
       this.source.url = `http://${this.source.url}`;
       this.toastr.info(this.translate.instant("TOAST.HTTP_ASSUMED"));
@@ -465,10 +499,11 @@ export class SetupComponent implements OnInit {
   }
 
   async nuke() {
+    // Says up front that the app quits afterwards (the backend exits it).
     const confirmed = await this.confirmService.confirm({
       title: "CONFIRM_DELETE.TITLE",
-      messages: ["CONFIRM_DELETE.BODY1", "CONFIRM_DELETE.BODY2"],
-      confirmLabel: "MODAL.CONFIRM_DELETE",
+      messages: ["CONFIRM_DELETE.BODY1", "CONFIRM_DELETE.APP_CLOSES"],
+      confirmLabel: "CONFIRM_DELETE.CONFIRM_ALL",
     });
     if (!confirmed) return;
     try {

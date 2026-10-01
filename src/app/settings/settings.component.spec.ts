@@ -1,8 +1,11 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ToastrService } from "ngx-toastr";
 
-import { SettingsComponent } from "./settings.component";
+import { Router } from "@angular/router";
+import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
+import { SettingsComponent, isValidRestreamPort } from "./settings.component";
 import { ConfirmService } from "../confirm.service";
+import { LanguageService } from "../language.service";
 import { MemoryService } from "../memory.service";
 import { SourceType } from "../models/sourceType";
 import { Settings } from "../models/settings";
@@ -250,6 +253,150 @@ describe("SettingsComponent", () => {
     await create({ "plugin:dialog|save": null });
     await component.exportDiagnostics();
     expect(callsOf(calls, "export_diagnostics").length).toBe(0);
+  });
+
+  function lastSaved(): Settings {
+    const saves = callsOf(calls, "update_settings");
+    return saves[saves.length - 1].args["settings"] as Settings;
+  }
+
+  it("applies the volume to the running player without rebuilding it", async () => {
+    await create();
+    const memory = TestBed.inject(MemoryService);
+    const reset = spyOn(memory.PlayerReset, "next");
+    component.settings.volume = 40;
+    component.onVolumeChange();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await settle();
+    expect(callsOf(calls, "player_set_volume").map((c) => c.args)).toEqual([{ volume: 40 }]);
+    expect(lastSaved().volume).toBe(40);
+    expect(callsOf(calls, "player_destroy").length).toBe(0);
+    expect(reset).not.toHaveBeenCalled();
+  });
+
+  it("rebuilds the player for spawn settings, later while the mini player plays", async () => {
+    await create();
+    const memory = TestBed.inject(MemoryService);
+    const reset = spyOn(memory.PlayerReset, "next");
+    memory.PlayerMini = true;
+    component.settings.enable_hwdec = false;
+    await component.updateSettings();
+    expect(memory.PlayerRebuildPending).toBeTrue();
+    expect(callsOf(calls, "player_destroy").length).toBe(0);
+    expect(reset).not.toHaveBeenCalled();
+
+    memory.PlayerMini = false;
+    memory.PlayerRebuildPending = false;
+    component.settings.enable_gpu = true;
+    await component.updateSettings();
+    expect(memory.PlayerRebuildPending).toBeFalse();
+    expect(callsOf(calls, "player_destroy").length).toBe(1);
+    expect(reset).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores whitespace-only changes of the mpv parameters", async () => {
+    await create({ get_settings: { mpv_params: "--hwdec=auto" } });
+    component.settings.mpv_params = "--hwdec=auto ";
+    await component.updateSettings();
+    // Typed value kept as is (the space before the next option), sent trimmed.
+    expect(component.settings.mpv_params).toBe("--hwdec=auto ");
+    expect(lastSaved().mpv_params).toBe("--hwdec=auto");
+    expect(callsOf(calls, "player_destroy").length).toBe(0);
+  });
+
+  it("never saves an invalid re-stream port", async () => {
+    await create({ get_settings: { restream_port: 4000 } });
+    component.settings.restream_port = 70000;
+    component.onRestreamPortChange();
+    expect(component.restreamPortValid).toBeFalse();
+    fixture.detectChanges();
+    component.setCategory("network");
+    fixture.detectChanges();
+    expect(element.querySelector("#set-restream-port")?.classList).toContain("is-invalid");
+    expect(element.querySelector("#set-restream-port-error")).not.toBeNull();
+    // Other settings still save, with the last valid port.
+    await component.updateSettings();
+    expect(lastSaved().restream_port).toBe(4000);
+    component.settings.restream_port = 8080;
+    component.onRestreamPortChange();
+    await component.updateSettings();
+    expect(lastSaved().restream_port).toBe(8080);
+  });
+
+  it("accepts re-stream ports from 1024 to 65535 or none", () => {
+    expect(isValidRestreamPort(undefined)).toBeTrue();
+    expect(isValidRestreamPort(null)).toBeTrue();
+    expect(isValidRestreamPort(1024)).toBeTrue();
+    expect(isValidRestreamPort(65535)).toBeTrue();
+    expect(isValidRestreamPort(1023)).toBeFalse();
+    expect(isValidRestreamPort(65536)).toBeFalse();
+    expect(isValidRestreamPort(3000.5)).toBeFalse();
+  });
+
+  it("leaves a modal opened without Escape support open on Escape", async () => {
+    await create();
+    const memory = TestBed.inject(MemoryService);
+    const ref = jasmine.createSpyObj<NgbModalRef>("NgbModalRef", ["close", "dismiss"]);
+    memory.ModalRef = ref;
+    spyOn(TestBed.inject(NgbModal), "hasOpenModals").and.returnValue(true);
+    const navigate = spyOn(TestBed.inject(Router), "navigateByUrl").and.resolveTo(true);
+    component.onKeyDown(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(ref.close).not.toHaveBeenCalled();
+    expect(ref.dismiss).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    memory.ModalRef = undefined;
+  });
+
+  it("writes the clamped zoom back into the field", async () => {
+    await create({ get_settings: { zoom: 300 } });
+    const input = document.createElement("input");
+    input.type = "number";
+    input.value = "900";
+    component.onZoomChange(input);
+    expect(input.value).toBe("300");
+    expect(component.settings.zoom).toBe(300);
+    input.value = "";
+    component.onZoomChange(input);
+    expect(input.value).toBe("300");
+  });
+
+  it("shows the real default recording folder and resets to it", async () => {
+    await create({
+      get_settings: { recording_path: "D:/Rec" },
+      get_default_recording_folder: "C:\\Users\\me\\Videos\\streameoIPTV",
+    });
+    await component.resetRecordingFolder();
+    expect(lastSaved().recording_path).toBeUndefined();
+    component.setCategory("recording");
+    fixture.detectChanges();
+    expect(element.querySelector("#default-path")?.textContent).toContain(
+      "C:\\Users\\me\\Videos\\streameoIPTV",
+    );
+  });
+
+  it("says that deleting everything closes the app", async () => {
+    await create();
+    const confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(false);
+    await component.nuke();
+    expect(confirm.calls.mostRecent().args[0].messages).toContain("CONFIRM_DELETE.APP_CLOSES");
+    expect(confirm.calls.mostRecent().args[0].confirmLabel).toBe("CONFIRM_DELETE.CONFIRM_ALL");
+    expect(callsOf(calls, "delete_database").length).toBe(0);
+  });
+
+  it("flags a malformed new PIN inline", async () => {
+    await create();
+    expect(component.pinFormatError("12", false)).toBeFalse();
+    expect(component.pinFormatError("12", true)).toBeTrue();
+    expect(component.pinFormatError("12a", false)).toBeTrue();
+    expect(component.pinFormatError("1234", true)).toBeFalse();
+  });
+
+  it("lists the languages of the language service", async () => {
+    await create();
+    const options = Array.from(element.querySelectorAll("#set-language option")).map((o) =>
+      o.textContent?.trim(),
+    );
+    expect(options.slice(1)).toEqual(LanguageService.OPTIONS.map((o) => o.name));
   });
 
   it("removes the PIN after confirming", async () => {

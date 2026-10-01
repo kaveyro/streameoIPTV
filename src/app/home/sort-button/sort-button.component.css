@@ -1,15 +1,20 @@
-.sort-icon {
+/* Like the home toolbar's reload button (.toolbar-btn in home.component.css). */
+.sort-btn {
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.sort-btn:hover {
+  color: var(--text-primary);
+}
+
+.sort-btn > svg {
   display: block;
   height: var(--icon-size-md);
   width: var(--icon-size-md);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition:
-    transform var(--transition-slow),
-    color var(--transition-fast);
+  transition: transform var(--transition-slow);
 }
 
-.sort-icon:hover {
-  color: var(--text-primary);
+.sort-btn:hover > svg {
   transform: scale(1.1);
 }

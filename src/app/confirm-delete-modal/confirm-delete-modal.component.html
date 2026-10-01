@@ -16,6 +16,15 @@
   </ng-container>
 </div>
 <div class="modal-footer">
+  <!-- Cancel left, the action right (the same order in every dialog) -->
+  <button
+    type="button"
+    [attr.ngbAutofocus]="choice ? null : ''"
+    (click)="cancel()"
+    class="btn btn-secondary"
+  >
+    {{ cancelLabel | translate }}
+  </button>
   <button
     type="button"
     (click)="confirm()"
@@ -26,7 +35,7 @@
   >
     <span>{{ confirmLabel | translate: params }}</span>
     <svg
-      *ngIf="danger"
+      *ngIf="danger && trashIcon"
       class="nuke ms-1"
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
@@ -35,26 +44,6 @@
       <path
         fill="currentColor"
         d="M 9,4 H 4 v 2 h 1 v 13 c 0,1.105 0.895,2 2,2 h 10 c 1.105,0 2,-0.895 2,-2 V 6 h 1 V 4 H 15 M 7,6 H 17 V 19 H 7 V 6 m 2,2 v 9 h 2 V 8 H 9 m 4,0 v 9 h 2 V 8 Z"
-      />
-    </svg>
-  </button>
-  <button
-    type="button"
-    [attr.ngbAutofocus]="choice ? null : ''"
-    (click)="cancel()"
-    class="btn btn-secondary d-inline-flex align-items-center"
-  >
-    <span>{{ cancelLabel | translate }}</span>
-    <svg
-      *ngIf="!choice"
-      class="nuke ms-1"
-      aria-hidden="true"
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
       />
     </svg>
   </button>

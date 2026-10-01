@@ -6,7 +6,8 @@ export const canCheckSource = (type?: SourceType): boolean =>
   type === SourceType.Xtream || type === SourceType.M3ULink;
 
 /**
- * The source as `check_source` expects it: trimmed, a name (the backend
+ * The source as `check_source` expects it: trimmed (but the password, like
+ * the login keeps it), a name (the backend
  * requires one), http:// assumed for a bare Xtream host and the Xtream API
  * path added to a bare origin, like the login does after asking.
  */
@@ -16,7 +17,7 @@ export const sourceForCheck = (source: Source): Source => {
     name: source.name?.trim() || "check",
     url: source.url?.trim(),
     username: source.username?.trim(),
-    password: source.password?.trim(),
+    password: source.password,
     user_agent: source.user_agent?.trim() || undefined,
     enabled: source.enabled ?? true,
   };

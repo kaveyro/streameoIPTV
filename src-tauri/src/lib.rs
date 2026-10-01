@@ -140,6 +140,7 @@ pub fn run() {
             get_recording_files,
             delete_recording_file,
             get_recording_folder,
+            get_default_recording_folder,
             open_recording_folder,
             has_parental_pin,
             verify_parental_pin,
@@ -152,6 +153,9 @@ pub fn run() {
             player_stop,
             player_osd,
             player_osd_banner,
+            player_status,
+            player_set_volume,
+            player_command,
             player_restart,
             clear_watch_progress,
             player_set_bounds,
@@ -358,6 +362,33 @@ async fn player_osd_banner(
     banner: player::OsdBanner,
 ) -> Result<(), String> {
     player::show_banner(state, banner)
+        .await
+        .map_err(map_err_frontend)
+}
+
+/// The status in the middle of the picture ("Connecting…"); `None` removes it.
+#[tauri::command]
+async fn player_status(
+    state: State<'_, Mutex<AppState>>,
+    text: Option<String>,
+) -> Result<(), String> {
+    player::show_status(state, text)
+        .await
+        .map_err(map_err_frontend)
+}
+
+/// The volume of the running player, while the setting is dragged.
+#[tauri::command]
+async fn player_set_volume(state: State<'_, Mutex<AppState>>, volume: u8) -> Result<(), String> {
+    player::set_volume(state, volume)
+        .await
+        .map_err(map_err_frontend)
+}
+
+/// "toggle_pause" / "toggle_mute" from the player's keys.
+#[tauri::command]
+async fn player_command(state: State<'_, Mutex<AppState>>, command: String) -> Result<(), String> {
+    player::command(state, &command)
         .await
         .map_err(map_err_frontend)
 }
@@ -1032,6 +1063,12 @@ fn delete_recording_file(path: String) -> Result<(), String> {
 #[tauri::command(async)]
 fn get_recording_folder() -> Result<String, String> {
     recordings::folder().map_err(map_err_frontend)
+}
+
+/// Where recordings go when no path is set (shown in the settings).
+#[tauri::command(async)]
+fn get_default_recording_folder() -> Result<String, String> {
+    settings::get_default_record_path().map_err(map_err_frontend)
 }
 
 #[tauri::command(async)]

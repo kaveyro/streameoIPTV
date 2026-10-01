@@ -221,7 +221,7 @@
       <small>{{ "EMPTY.NO_RECORDING_FILES_HINT" | translate }}</small>
     </div>
     <ul class="rec-list" *ngIf="files.length > 0">
-      <li class="recording-row" *ngFor="let file of files; trackBy: trackFile">
+      <li class="recording-row" *ngFor="let file of files; let i = index; trackBy: trackFile">
         <button
           type="button"
           class="icon-btn row-action"
@@ -241,20 +241,35 @@
             {{ formatSize(file.size) }} · {{ formatDate(file.modified) }}
           </div>
         </div>
-        <button
-          type="button"
-          class="icon-btn row-action row-action--danger"
-          [disabled]="busy.has('f' + file.path)"
-          (click)="deleteFile(file)"
-          [attr.aria-label]="'HOME.DELETE_RECORDING_ARIA' | translate: { title: file.name }"
-          [ngbTooltip]="'MODAL.DELETE' | translate"
+        <span *ngIf="file.recording" class="recording-status status-{{ statusEnum.Recording }}">
+          <span class="rec-dot" aria-hidden="true"></span>
+          {{ "RECORDINGS.FILE_RECORDING" | translate }}
+        </span>
+        <!-- A disabled button shows no tooltip: the wrapper says why. -->
+        <span
+          class="rec-action-wrap"
+          [ngbTooltip]="
+            (file.recording ? 'RECORDINGS.FILE_RECORDING_HINT' : 'MODAL.DELETE') | translate
+          "
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"
-            />
-          </svg>
-        </button>
+          <button
+            type="button"
+            class="icon-btn row-action row-action--danger"
+            [disabled]="busy.has('f' + file.path) || file.recording"
+            (click)="deleteFile(file)"
+            [attr.aria-label]="'HOME.DELETE_RECORDING_ARIA' | translate: { title: file.name }"
+            [attr.aria-describedby]="file.recording ? 'rec-file-hint-' + i : null"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"
+              />
+            </svg>
+          </button>
+        </span>
+        <span *ngIf="file.recording" class="visually-hidden" [id]="'rec-file-hint-' + i">{{
+          "RECORDINGS.FILE_RECORDING_HINT" | translate
+        }}</span>
       </li>
     </ul>
   </section>

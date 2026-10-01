@@ -18,6 +18,9 @@ pub struct RecordingFile {
     pub size: u64,
     /// Unix seconds.
     pub modified: i64,
+    /// A scheduled recording is still writing it: not finished, and not to
+    /// be deleted.
+    pub recording: bool,
 }
 
 fn recording_dir() -> Result<PathBuf> {
@@ -40,6 +43,7 @@ pub fn list_files() -> Result<Vec<RecordingFile>> {
     if !dir.exists() {
         return Ok(Vec::new());
     }
+    let active = crate::recording_scheduler::active_outputs();
     let mut files: Vec<RecordingFile> = std::fs::read_dir(&dir)
         .with_context(|| format!("cannot read the recording folder {}", dir.display()))?
         .filter_map(|e| e.ok())
@@ -57,6 +61,7 @@ pub fn list_files() -> Result<Vec<RecordingFile>> {
                 .unwrap_or(0);
             Some(RecordingFile {
                 name: path.file_name()?.to_string_lossy().to_string(),
+                recording: crate::recording_scheduler::is_active_output(&path, &active),
                 path: path.to_string_lossy().to_string(),
                 size: meta.len(),
                 modified,
@@ -74,6 +79,12 @@ pub fn delete_file(path: &str) -> Result<()> {
     let dir = std::fs::canonicalize(recording_dir()?).context("recording folder not found")?;
     if file.parent() != Some(dir.as_path()) || !is_media(&file) {
         bail!("only recordings inside the recording folder can be deleted");
+    }
+    if crate::recording_scheduler::is_active_output(
+        &file,
+        &crate::recording_scheduler::active_outputs(),
+    ) {
+        bail!("this recording is still running; cancel it first");
     }
     std::fs::remove_file(&file).context("failed to delete the recording")?;
     Ok(())

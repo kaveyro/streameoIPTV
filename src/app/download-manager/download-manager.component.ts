@@ -64,6 +64,7 @@ export class DownloadManagerComponent {
       messages: ["CONFIRM.CANCEL_DOWNLOADS_BODY"],
       confirmLabel: "DOWNLOAD.CANCEL_ALL",
       params: { count },
+      trashIcon: false,
     });
     if (!confirmed) return;
     await this.downloadService.abortAll();

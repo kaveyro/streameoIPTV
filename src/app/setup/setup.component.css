@@ -17,9 +17,15 @@
   height: var(--icon-size-lg);
 }
 
-.arrow:hover {
+.arrow:hover:not(:disabled) {
   transform: scale(1.15);
   background: transparent !important;
+}
+
+/* Blocked while an import runs */
+.arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 :host-context([dir="rtl"]) .arrow svg {
@@ -51,6 +57,12 @@
 .setup-preference .form-select {
   width: auto;
   min-width: 9rem;
+}
+
+/* Source type picker: one centered row of buttons */
+.source-type-picker {
+  display: block;
+  width: fit-content;
 }
 
 /* Form fields: visible labels above the controls */

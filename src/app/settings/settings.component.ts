@@ -1,13 +1,5 @@
-import {
-  Component,
-  ElementRef,
-  HostListener,
-  ViewChild,
-  OnInit,
-  AfterViewInit,
-  OnDestroy,
-} from "@angular/core";
-import { debounceTime, distinctUntilChanged, fromEvent, map, Subject, Subscription } from "rxjs";
+import { Component, HostListener, OnInit, OnDestroy } from "@angular/core";
+import { debounceTime, Subject, Subscription } from "rxjs";
 import { Settings } from "../models/settings";
 import { invoke } from "@tauri-apps/api/core";
 import { Router } from "@angular/router";
@@ -43,11 +35,11 @@ import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 
 /// Settings that are passed to mpv as launch arguments (see
 /// get_global_mpv_args in src-tauri/src/mpv.rs): changing one only takes effect
-/// once the embedded player is rebuilt.
+/// once the embedded player is rebuilt. The volume is not among them: it is
+/// applied to the running player directly (player_set_volume).
 const PLAYER_SPAWN_SETTINGS = [
   "enable_hwdec",
   "enable_gpu",
-  "volume",
   "preferred_subtitle_language",
   "preferred_audio_language",
   "player_ui",
@@ -64,6 +56,17 @@ const SAVED_TOAST_INTERVAL_MS = 2000;
 /// Channel name the country prefix preview is rendered with.
 const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
 
+/// Re-stream ports the settings accept: the backend stores a u16 (a larger
+/// value fails the whole save), and ports below 1024 need admin rights.
+export const RESTREAM_PORT_MIN = 1024;
+export const RESTREAM_PORT_MAX = 65535;
+
+/// Empty means "use the default port".
+export function isValidRestreamPort(port: number | null | undefined): boolean {
+  if (port === null || port === undefined || (port as unknown) === "") return true;
+  return Number.isInteger(port) && port >= RESTREAM_PORT_MIN && port <= RESTREAM_PORT_MAX;
+}
+
 @Component({
   selector: "app-settings",
   imports: [
@@ -77,7 +80,7 @@ const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
   templateUrl: "./settings.component.html",
   styleUrl: "./settings.component.css",
 })
-export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
+export class SettingsComponent implements OnInit, OnDestroy {
   subscriptions: Subscription[] = [];
   settings: Settings = {
     use_stream_caching: true,
@@ -141,8 +144,20 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
   countryPrefixSampleFull = COUNTRY_PREFIX_SAMPLE;
   countryPrefixSample = splitCountryPrefix(COUNTRY_PREFIX_SAMPLE);
   activeCategory = "general";
-  @ViewChild("mpvParams") mpvParams!: ElementRef;
+  readonly languageOptions = LanguageService.OPTIONS;
+  readonly restreamPortMin = RESTREAM_PORT_MIN;
+  readonly restreamPortMax = RESTREAM_PORT_MAX;
+  /// The tray icon is hidden on Linux (no reliable tray support there). There
+  /// is no OS plugin in the frontend; the WebKitGTK user agent names Linux.
+  readonly isLinux = navigator.userAgent.includes("Linux");
+  /// Folder recordings go to without a custom path (from the backend, so
+  /// the page shows the real path of this OS and user).
+  defaultRecordingFolder?: string;
   private saveTimer?: ReturnType<typeof setTimeout>;
+  private volumeTimer?: ReturnType<typeof setTimeout>;
+  /// Last re-stream port that passed validation: saved instead of an invalid
+  /// one still in the field, so other settings keep saving meanwhile.
+  private validRestreamPort?: number;
   private savedToast = new Subject<void>();
   private lastSavedToastAt = 0;
   /// Player launch settings as last saved, to detect when mpv must be rebuilt.
@@ -202,11 +217,10 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       (event.key == "Backspace" && !this.isInputFocused())
     ) {
       // Any open modal (also untracked ones like the error or confirm dialog)
-      // owns the key: never leave the settings behind it.
-      if (this.modal.hasOpenModals()) {
-        if (this.memory.ModalRef && event.key != "Backspace") this.memory.ModalRef.close("close");
-        return;
-      }
+      // owns the key: never leave the settings behind it. NgbModal itself
+      // closes modals that allow Escape; the ones opened with keyboard: false
+      // (add channel/group, import) must stay open, or typed input is lost.
+      if (this.modal.hasOpenModals()) return;
       this.goBack();
       event.preventDefault();
     }
@@ -225,10 +239,18 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       }),
     );
+    this.subscriptions.push(
+      this.memory.RefreshSources.subscribe((_) => {
+        this.getSources();
+      }),
+    );
     this.getSettings();
     this.getSources();
     this.getXmltvSources();
     this.refreshParental();
+    invoke<string>("get_default_recording_folder")
+      .then((folder) => (this.defaultRecordingFolder = folder || undefined))
+      .catch((e) => console.error(e));
     getVersion()
       .then((version) => (this.appVersion = version))
       .catch(() => (this.appVersion = "?"));
@@ -402,6 +424,9 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.settings.auto_fallback == undefined) this.settings.auto_fallback = true;
         this.settings.country_prefix = toCountryPrefixMode(this.settings.country_prefix);
         this.settings.language = this.settings.language ?? "system";
+        this.validRestreamPort = isValidRestreamPort(this.settings.restream_port)
+          ? this.settings.restream_port
+          : 3000;
         this.playerSnapshot = this.playerSettingsSnapshot();
       })
       .catch((e) => this.error.handleError(e));
@@ -409,7 +434,12 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private playerSettingsSnapshot(): string {
     const settings = this.settings as unknown as Record<string, unknown>;
-    return JSON.stringify(PLAYER_SPAWN_SETTINGS.map((key) => settings[key] ?? null));
+    return JSON.stringify(
+      PLAYER_SPAWN_SETTINGS.map((key) =>
+        // Saved trimmed: a trailing space typed into it changes nothing.
+        key === "mpv_params" ? this.settings.mpv_params?.trim() || null : (settings[key] ?? null),
+      ),
+    );
   }
 
   /// Saves after the input settled (slider drags, number fields).
@@ -428,12 +458,42 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
     return true;
   }
 
+  /// The volume also changes a stream playing in the mini player at once
+  /// (debounced like the save), instead of rebuilding the player for it.
+  onVolumeChange() {
+    this.scheduleSave();
+    if (this.volumeTimer !== undefined) clearTimeout(this.volumeTimer);
+    this.volumeTimer = setTimeout(() => {
+      this.volumeTimer = undefined;
+      // A no-op without a running player; nothing to report either way.
+      invoke("player_set_volume", { volume: this.settings.volume ?? 100 }).catch(() => undefined);
+    }, SAVE_DEBOUNCE_MS);
+  }
+
+  get restreamPortValid(): boolean {
+    return isValidRestreamPort(this.settings.restream_port);
+  }
+
+  /// An invalid port is only flagged at the field; it is never saved.
+  onRestreamPortChange() {
+    if (!this.restreamPortValid) return;
+    this.validRestreamPort = this.settings.restream_port ?? undefined;
+    this.scheduleSave();
+  }
+
   /// Applies the UI zoom right away, the save itself is debounced.
   /// Applied on `change` (blur, Enter, spinner), not per keystroke: typing
   /// "120" would otherwise shrink the whole UI to 12% on the way.
-  onZoomChange(zoom: number | null) {
-    if (zoom == null || !Number.isFinite(zoom)) return;
-    zoom = Math.min(300, Math.max(50, Math.round(zoom)));
+  onZoomChange(input: HTMLInputElement) {
+    const typed = input.valueAsNumber;
+    // The field is bound one-way ([ngModel]): when the clamped value equals
+    // the stored one, Angular sees no change and would leave e.g. "900" in
+    // the field. Write the effective value back by hand.
+    const zoom = Number.isFinite(typed)
+      ? Math.min(300, Math.max(50, Math.round(typed)))
+      : (this.settings.zoom ?? 100);
+    input.value = String(zoom);
+    if (zoom === this.settings.zoom) return;
     this.settings.zoom = zoom;
     getCurrentWebview()
       .setZoom(Math.trunc(zoom * 100) / 10000)
@@ -466,7 +526,11 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async updateLanguage(language?: string) {
     if (language !== undefined) this.settings.language = language;
-    this.language.apply(this.settings.language === "system" ? undefined : this.settings.language);
+    // Wait for the new translations, so the "Saved" toast is already shown
+    // in the chosen language.
+    await this.language.apply(
+      this.settings.language === "system" ? undefined : this.settings.language,
+    );
     await this.updateSettings();
   }
 
@@ -519,27 +583,6 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       .catch(() => undefined);
   }
 
-  ngAfterViewInit(): void {
-    this.subscriptions.push(
-      fromEvent<KeyboardEvent>(this.mpvParams.nativeElement, "keyup")
-        .pipe(
-          map((event: KeyboardEvent) => {
-            return (event.target as HTMLInputElement).value;
-          }),
-          debounceTime(500),
-          distinctUntilChanged(),
-        )
-        .subscribe(async () => {
-          await this.updateSettings();
-        }),
-    );
-    this.subscriptions.push(
-      this.memory.RefreshSources.subscribe((_) => {
-        this.getSources();
-      }),
-    );
-  }
-
   addSource() {
     this.memory.AddingAdditionalSource = true;
     this.nav.navigateByUrl("setup");
@@ -566,8 +609,6 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /// Saves the settings. Returns false (after showing an error) on failure.
   async updateSettings(): Promise<boolean> {
-    this.settings.mpv_params = this.settings.mpv_params?.trim();
-    if (this.settings.mpv_params == "") this.settings.mpv_params = undefined;
     this.settings.preferred_subtitle_language = this.settings.preferred_subtitle_language?.trim();
     if (this.settings.preferred_subtitle_language == "")
       this.settings.preferred_subtitle_language = undefined;
@@ -576,8 +617,17 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.settings.preferred_audio_language = undefined;
     this.settings.external_player_args = this.settings.external_player_args?.trim();
     if (this.settings.external_player_args == "") this.settings.external_player_args = undefined;
+    // The mpv parameters save while they are typed: trim only what is sent,
+    // trimming the bound value would eat the space before the next option.
+    const settings: Settings = {
+      ...this.settings,
+      mpv_params: this.settings.mpv_params?.trim() || undefined,
+      restream_port: this.restreamPortValid
+        ? (this.settings.restream_port ?? undefined)
+        : this.validRestreamPort,
+    };
     try {
-      await invoke("update_settings", { settings: this.settings });
+      await invoke("update_settings", { settings });
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.SETTINGS_SAVE_FAILED"));
       return false;
@@ -587,8 +637,8 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
     return true;
   }
 
-  /// mpv reads hwdec/gpu/volume/UI/... only when it is spawned: tear the
-  /// embedded player down so the next channel opens with the new settings.
+  /// mpv reads hwdec/gpu/UI/... only when it is spawned: tear the embedded
+  /// player down so the next channel opens with the new settings.
   private resetPlayerIfNeeded() {
     const snapshot = this.playerSettingsSnapshot();
     if (this.playerSnapshot === undefined || snapshot === this.playerSnapshot) {
@@ -596,6 +646,16 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.playerSnapshot = snapshot;
+    this.rebuildPlayer();
+  }
+
+  /// A stream playing on in the mini player is not cut off: the player
+  /// component rebuilds mpv once that playback ends.
+  private rebuildPlayer() {
+    if (this.memory.PlayerMini) {
+      this.memory.PlayerRebuildPending = true;
+      return;
+    }
     this.memory.PlayerReset.next();
     invoke("player_destroy").catch(() => undefined);
   }
@@ -606,6 +666,13 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   pinValid(pin: string): boolean {
     return /^\d{4,8}$/.test(pin);
+  }
+
+  /// Inline hint at the new PIN: right away for a non-digit, for a too short
+  /// PIN only once the field was left (not while the first digits are typed).
+  pinFormatError(pin: string, touched: boolean): boolean {
+    if (!pin || this.pinValid(pin)) return false;
+    return touched || /\D/.test(pin);
   }
 
   /** Sets the first PIN or changes the existing one. */
@@ -645,6 +712,7 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       title: "CONFIRM.REMOVE_PIN_TITLE",
       messages: ["CONFIRM.REMOVE_PIN_BODY"],
       confirmLabel: "SETTINGS.PARENTAL.REMOVE_BTN",
+      trashIcon: false,
     });
     if (!confirmed) return;
     this.pinBusy = true;
@@ -673,6 +741,13 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /// Back to the default recording folder (no custom path stored).
+  async resetRecordingFolder() {
+    if (!this.settings.recording_path) return;
+    this.settings.recording_path = undefined;
+    await this.updateSettings();
+  }
+
   async selectExternalPlayer() {
     const file = await open({
       multiple: false,
@@ -686,10 +761,11 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async nuke() {
+    // Says up front that the app quits afterwards (the backend exits it).
     const confirmed = await this.confirmService.confirm({
       title: "CONFIRM_DELETE.TITLE",
-      messages: ["CONFIRM_DELETE.BODY1", "CONFIRM_DELETE.BODY2"],
-      confirmLabel: "MODAL.CONFIRM_DELETE",
+      messages: ["CONFIRM_DELETE.BODY1", "CONFIRM_DELETE.APP_CLOSES"],
+      confirmLabel: "CONFIRM_DELETE.CONFIRM_ALL",
     });
     if (!confirmed) return;
     try {
@@ -733,6 +809,8 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       messages: ["SETTINGS.RESTORE_MODAL.BODY1", "SETTINGS.RESTORE_MODAL.BODY2"],
       confirmLabel: "SETTINGS.RESTORE_MODAL.CONFIRM",
       html: true,
+      // Replaces all current data, but deletes nothing outright: no trash.
+      trashIcon: false,
     });
     if (!confirmed) return;
     const error = await this.memory.tryIPC(
@@ -745,8 +823,7 @@ export class SettingsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.applyLoadedAppearance();
       this.memory.RefreshSources.next(true);
       // The restored settings may change how mpv is launched.
-      this.memory.PlayerReset.next();
-      invoke("player_destroy").catch(() => undefined);
+      this.rebuildPlayer();
     }
   }
 

@@ -6,6 +6,7 @@ import { SetupComponent } from "./setup.component";
 import { Source } from "../models/source";
 import { SourceType } from "../models/sourceType";
 import { MemoryService } from "../memory.service";
+import { ErrorService } from "../error.service";
 import { FREE_EPG_SOURCES, freeEpgSourcesFor, topCountries } from "../epg-free-sources";
 import {
   IpcCall,
@@ -135,6 +136,92 @@ describe("SetupComponent", () => {
       "The link does not point to an M3U playlist",
       "SOURCE.CHECK_FAILED",
     );
+  });
+
+  it("needs username and password before testing an Xtream login", async () => {
+    await create();
+    component.switchMode(SourceType.Xtream);
+    component.source.url = "example.test:8080";
+    fixture.detectChanges();
+    expect(component.canTestConnection()).toBeFalse();
+    expect(testButton()?.disabled).toBeTrue();
+    await component.testConnection();
+    expect(callsOf(calls, "check_source").length).toBe(0);
+    component.source.username = "user";
+    component.source.password = "pass";
+    expect(component.canTestConnection()).toBeTrue();
+  });
+
+  it("keeps spaces in an Xtream password", async () => {
+    await create();
+    component.switchMode(SourceType.Xtream);
+    component.source.name = "Provider";
+    component.source.url = "http://example.test:8080/player_api.php";
+    component.source.username = " user ";
+    component.source.password = " pa ss ";
+    await component.getXtream();
+    const imported = callsOf(calls, "get_xtream")[0].args["source"] as Source;
+    expect(imported.username).toBe("user");
+    expect(imported.password).toBe(" pa ss ");
+  });
+
+  it("reports a failed custom import with its own message while blocking leaving", async () => {
+    let fail!: (e: string) => void;
+    await create({
+      "plugin:dialog|open": "C:/export.siptvp",
+      import: () => new Promise((_, reject) => (fail = reject)),
+    });
+    TestBed.inject(MemoryService).AddingAdditionalSource = true;
+    const navigate = spyOn(TestBed.inject(Router), "navigateByUrl").and.resolveTo(true);
+    const handle = spyOn(TestBed.inject(ErrorService), "handleError");
+    component.switchMode(SourceType.CustomImport);
+    const pending = component.submit();
+    await settle();
+    expect(component.loading).toBeTrue();
+    fixture.detectChanges();
+    expect((element.querySelector(".arrow") as HTMLButtonElement).disabled).toBeTrue();
+    component.goBack();
+    component.onKeyDown(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(navigate).not.toHaveBeenCalled();
+    fail("broken file");
+    await pending;
+    expect(component.loading).toBeFalse();
+    expect(handle).toHaveBeenCalledWith("broken file", "SETUP.IMPORT_FAILED");
+  });
+
+  it("reports a failed M3U link with its own message", async () => {
+    await create({ get_m3u8_from_link: () => Promise.reject("404") });
+    const handle = spyOn(TestBed.inject(ErrorService), "handleError");
+    component.switchMode(SourceType.M3ULink);
+    component.source.name = "List";
+    component.source.url = "http://example.test/list.m3u";
+    await component.submit();
+    expect(handle).toHaveBeenCalledWith("404", "SETUP.FETCH_FAILED");
+  });
+
+  it("marks the source types as a radio group", async () => {
+    await create();
+    const group = element.querySelector("[role=radiogroup]");
+    const radios = Array.from(group?.querySelectorAll("[role=radio]") ?? []);
+    expect(radios.length).toBe(5);
+    expect(radios.map((r) => r.getAttribute("aria-checked"))).toEqual([
+      "true",
+      "false",
+      "false",
+      "false",
+      "false",
+    ]);
+  });
+
+  it("shows the required hint once a field was left empty", async () => {
+    await create();
+    await fixture.whenStable();
+    const name = element.querySelector("#setup-name") as HTMLInputElement;
+    expect(element.textContent).not.toContain("SETUP.REQUIRED_FIELD");
+    name.dispatchEvent(new Event("blur"));
+    fixture.detectChanges();
+    expect(element.textContent).toContain("SETUP.REQUIRED_FIELD");
+    expect(name.classList).toContain("is-invalid");
   });
 
   describe("first-run EPG step", () => {

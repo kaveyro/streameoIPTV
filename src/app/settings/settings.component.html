@@ -53,24 +53,9 @@
                 <option [ngValue]="'system'">
                   {{ "SETTINGS.GENERAL.LANGUAGE_SYSTEM" | translate }}
                 </option>
-                <option [ngValue]="'en'">English</option>
-                <option [ngValue]="'de'">Deutsch</option>
-                <option [ngValue]="'es'">Español</option>
-                <option [ngValue]="'fr'">Français</option>
-                <option [ngValue]="'it'">Italiano</option>
-                <option [ngValue]="'pt'">Português</option>
-                <option [ngValue]="'nl'">Nederlands</option>
-                <option [ngValue]="'pl'">Polski</option>
-                <option [ngValue]="'ro'">Română</option>
-                <option [ngValue]="'el'">Ελληνικά</option>
-                <option [ngValue]="'ru'">Русский</option>
-                <option [ngValue]="'uk'">Українська</option>
-                <option [ngValue]="'tr'">Türkçe</option>
-                <option [ngValue]="'ar'">العربية</option>
-                <option [ngValue]="'hi'">हिन्दी</option>
-                <option [ngValue]="'zh'">中文</option>
-                <option [ngValue]="'ja'">日本語</option>
-                <option [ngValue]="'ko'">한국어</option>
+                <option *ngFor="let lang of languageOptions" [ngValue]="lang.code">
+                  {{ lang.name }}
+                </option>
               </select>
             </div>
           </div>
@@ -238,9 +223,9 @@
                 min="0"
                 max="100"
                 [(ngModel)]="settings.volume"
-                (ngModelChange)="scheduleSave()"
+                (ngModelChange)="onVolumeChange()"
               />
-              <span class="volume-value">{{ settings.volume }}</span>
+              <span class="volume-value">{{ settings.volume }}%</span>
             </div>
           </div>
 
@@ -261,19 +246,20 @@
                   max="300"
                   type="number"
                   [ngModel]="settings.zoom"
-                  (change)="onZoomChange($any($event.target).valueAsNumber)"
+                  (change)="onZoomChange($any($event.target))"
                 />
                 <span class="input-group-text">%</span>
               </div>
             </div>
           </div>
 
-          <div class="setting-row">
+          <div class="setting-row" *ngIf="!isLinux">
             <div class="setting-info">
               <label class="setting-title" for="set-tray">{{
                 "SETTINGS.GENERAL.TRAY_ICON" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.GENERAL.TRAY_ICON_DESC" | translate }}</div>
+              <div class="setting-hint">{{ "SETTINGS.GENERAL.RESTART_REQUIRED" | translate }}</div>
             </div>
             <div class="setting-control">
               <div class="form-check form-switch form-switch-standalone">
@@ -473,6 +459,9 @@
                 "SETTINGS.PLAYBACK.HWDEC" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.HWDEC_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <div class="form-check form-switch form-switch-standalone">
@@ -494,6 +483,9 @@
                 "SETTINGS.PLAYBACK.GPU" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.GPU_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <div class="form-check form-switch form-switch-standalone">
@@ -515,6 +507,9 @@
                 "SETTINGS.PLAYBACK.PLAYER_UI" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.PLAYER_UI_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <select
@@ -539,6 +534,9 @@
                 "SETTINGS.PLAYBACK.NORMALIZE" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.NORMALIZE_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <div class="form-check form-switch form-switch-standalone">
@@ -660,6 +658,9 @@
                 "SETTINGS.PLAYBACK.SUB_LANG" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.LANG_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <input
@@ -679,6 +680,9 @@
                 "SETTINGS.PLAYBACK.AUDIO_LANG" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.LANG_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <input
@@ -698,12 +702,15 @@
                 "SETTINGS.PLAYBACK.MPV_PARAMS" | translate
               }}</label>
               <div class="setting-desc">{{ "SETTINGS.PLAYBACK.MPV_PARAMS_DESC" | translate }}</div>
+              <div class="setting-hint">
+                {{ "SETTINGS.PLAYBACK.APPLIES_NEXT_CHANNEL" | translate }}
+              </div>
             </div>
             <div class="setting-control">
               <textarea
-                #mpvParams
                 id="mpvParams"
                 [(ngModel)]="settings.mpv_params"
+                (ngModelChange)="scheduleSave(500)"
                 [placeholder]="'SETTINGS.PLAYBACK.MPV_PARAMS_PLACEHOLDER' | translate"
                 class="form-control"
               ></textarea>
@@ -730,8 +737,8 @@
                 class="selectable path-text"
                 *ngIf="!settings.recording_path"
                 id="default-path"
-                title="~/Home/Videos"
-                >~/Home/Videos</span
+                [title]="defaultRecordingFolder ?? ''"
+                >{{ defaultRecordingFolder ?? "—" }}</span
               >
               <span
                 class="selectable path-text"
@@ -740,6 +747,16 @@
                 >{{ settings.recording_path }}</span
               >
               <button
+                type="button"
+                *ngIf="settings.recording_path"
+                (click)="resetRecordingFolder()"
+                class="btn btn-outline-secondary btn-sm"
+                [ngbTooltip]="'SETTINGS.RECORDING.RESET_DEFAULT_TOOLTIP' | translate"
+              >
+                {{ "SETTINGS.RECORDING.RESET_DEFAULT" | translate }}
+              </button>
+              <button
+                type="button"
                 (click)="selectFolder()"
                 class="btn btn-primary btn-sm d-inline-flex align-items-center"
               >
@@ -793,16 +810,32 @@
                 {{ "SETTINGS.NETWORK.RESTREAM_PORT_DESC" | translate }}
               </div>
             </div>
-            <div class="setting-control">
+            <div class="setting-control port-control">
               <input
                 id="set-restream-port"
                 class="form-control control-input"
                 type="number"
-                min="1"
-                max="65535"
+                step="1"
+                [min]="restreamPortMin"
+                [max]="restreamPortMax"
+                placeholder="3000"
+                [class.is-invalid]="!restreamPortValid"
+                [attr.aria-invalid]="!restreamPortValid"
+                aria-describedby="set-restream-port-error"
                 [(ngModel)]="settings.restream_port"
-                (ngModelChange)="scheduleSave()"
+                (ngModelChange)="onRestreamPortChange()"
               />
+              <div
+                id="set-restream-port-error"
+                class="invalid-feedback d-block"
+                *ngIf="!restreamPortValid"
+                role="alert"
+              >
+                {{
+                  "SETTINGS.NETWORK.RESTREAM_PORT_INVALID"
+                    | translate: { min: restreamPortMin, max: restreamPortMax }
+                }}
+              </div>
             </div>
           </div>
         </div>
@@ -1292,8 +1325,9 @@
                 "SETTINGS.PARENTAL.NEW_PIN" | translate
               }}</label>
             </div>
-            <div class="setting-control">
+            <div class="setting-control pin-control">
               <input
+                #pinNew="ngModel"
                 id="pin-new"
                 name="pin-new"
                 class="form-control control-input"
@@ -1301,9 +1335,19 @@
                 inputmode="numeric"
                 maxlength="8"
                 autocomplete="new-password"
-                [class.is-invalid]="!!pinForm.next && !pinValid(pinForm.next)"
+                aria-describedby="pin-new-error"
+                [class.is-invalid]="pinFormatError(pinForm.next, !!pinNew.touched)"
+                [attr.aria-invalid]="pinFormatError(pinForm.next, !!pinNew.touched)"
                 [(ngModel)]="pinForm.next"
               />
+              <div
+                id="pin-new-error"
+                class="invalid-feedback d-block"
+                *ngIf="pinFormatError(pinForm.next, !!pinNew.touched)"
+                role="alert"
+              >
+                {{ "PARENTAL.PIN_FORMAT_INVALID" | translate }}
+              </div>
             </div>
           </div>
           <div class="setting-row">

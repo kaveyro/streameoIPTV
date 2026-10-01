@@ -117,3 +117,12 @@
     animation: none;
   }
 }
+
+/* Keeps the tooltip of a disabled button (it gets no pointer events). */
+.epg-action-wrap {
+  display: inline-flex;
+}
+
+.epg-action-wrap .epg-action:disabled {
+  pointer-events: none;
+}

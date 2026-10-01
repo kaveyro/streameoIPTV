@@ -28,7 +28,7 @@
 
   <dl class="source-details">
     <dt>{{ "SOURCE.TYPE" | translate }}</dt>
-    <dd>{{ get_source_type_name() }}</dd>
+    <dd>{{ get_source_type_name() ?? "" | translate }}</dd>
 
     <ng-container *ngIf="source?.source_type !== sourceTypeEnum.Custom">
       <dt>{{ "SOURCE.URL" | translate }}</dt>
@@ -87,7 +87,8 @@
     <dt [ngbTooltip]="'SOURCE.STREAM_USER_AGENT_TOOLTIP' | translate">
       {{ "SOURCE.STREAM_USER_AGENT" | translate }}
     </dt>
-    <dd *ngIf="!editing" class="wrap-text selectable">{{ source?.stream_user_agent }}</dd>
+    <!-- Unset: mpv's own default; a dash instead of an empty row -->
+    <dd *ngIf="!editing" class="wrap-text selectable">{{ source?.stream_user_agent || "—" }}</dd>
     <dd *ngIf="editing">
       <input
         class="form-control form-control-sm"
@@ -112,10 +113,17 @@
           class="form-control form-control-sm field-narrow"
           type="number"
           name="streams"
+          min="1"
+          step="1"
           [attr.aria-label]="'SOURCE.MAX_STREAMS' | translate"
+          [attr.aria-invalid]="!maxStreamsValid"
+          [class.is-invalid]="!maxStreamsValid"
           [(ngModel)]="editableSource.max_streams"
           [placeholder]="1"
         />
+        <div class="invalid-feedback d-block" *ngIf="!maxStreamsValid" role="alert">
+          {{ "SOURCE.MAX_STREAMS_INVALID" | translate }}
+        </div>
       </dd>
     </ng-container>
 
@@ -250,7 +258,7 @@
         type="button"
         (click)="save()"
         class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1"
-        [disabled]="memory.Loading"
+        [disabled]="memory.Loading || !maxStreamsValid"
       >
         <svg class="btn-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path

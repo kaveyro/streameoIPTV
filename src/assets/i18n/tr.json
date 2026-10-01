@@ -39,7 +39,6 @@
       "CATEGORIES": "Kategoriler",
       "FAVORITES": "Favoriler",
       "HISTORY": "Geçmiş",
-      "HIDDEN": "Gizli",
       "RECORDINGS": "Kayıtlar",
       "SETTINGS": "Ayarlar",
       "GUIDE": "TV Rehberi",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "Canlı yayınlar",
       "MOVIES_VODS": "Filmler/Vod'lar",
       "MOVIES_VODS_SERIES": "Filmler/Vod'lar/Diziler",
-      "SERIES": "Diziler"
+      "SERIES": "Diziler",
+      "KEEP_ONE": "En az bir medya türü seçili kalmalı"
     },
     "COLLAPSE_SIDEBAR": "Kenar çubuğunu daralt",
     "EXPAND_SIDEBAR": "Kenar çubuğunu genişlet",
     "COUNTRY_FILTER": "Ülkeye göre filtrele",
-    "ALL_COUNTRIES": "Tüm ülkeler"
+    "ALL_COUNTRIES": "Tüm ülkeler",
+    "VIEWING": "Görüntülenen: {{path}}",
+    "SEARCH_LABEL": "Kanal, film ve dizi ara",
+    "CLEAR_SEARCH": "Aramayı temizle"
   },
   "MENU": {
     "REMOVE": "Kaldır",
     "FAVORITE": "Favorilere ekle",
     "UNFAVORITE": "Favorilerden çıkar",
-    "HIDE": "Gizle",
-    "UNHIDE": "Göster",
     "RECORD": "Kaydet",
     "DOWNLOAD": "İndir",
     "CANCEL_DOWNLOAD": "İndirmeyi iptal et",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "Henüz favori yok",
     "NO_FAVORITES_HINT": "Eklemek için bir kanala sağ tıklayın",
     "NOTHING_WATCHED": "Henüz hiçbir şey izlenmedi",
-    "NO_HIDDEN": "Gizli kanal yok",
     "NO_RECORDINGS": "Zamanlanmış kayıt yok",
     "NO_RECORDINGS_HINT": "Bir kanalın TV rehberinden zamanlayın",
     "NO_GUIDE": "Henüz rehber verisi yok",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "Henüz devam edilecek bir şey yok",
     "NOTHING_TO_CONTINUE_HINT": "Başladığınız filmler ve bölümler burada görünür ve kaldığınız yerden devam eder",
     "NO_RECORDING_FILES": "Henüz kaydedilmiş dosya yok",
-    "NO_RECORDING_FILES_HINT": "Kayıtlar ve indirmeler kayıt klasörüne kaydedilir (Ayarlar → Kayıt)"
+    "NO_RECORDING_FILES_HINT": "Kayıtlar ve indirmeler kayıt klasörüne kaydedilir (Ayarlar → Kayıt)",
+    "LOAD_FAILED": "Bu görünüm yüklenemedi",
+    "LOAD_FAILED_HINT": "Kaynağınla bağlantıyı kontrol edip tekrar dene",
+    "RETRY": "Tekrar dene"
   },
   "RECORDING": {
     "SCHEDULED": "Zamanlanmış kayıt",
@@ -172,7 +175,8 @@
       "APP_VERSION": "Sürüm",
       "APP_VERSION_DESC": "{{version}} sürümünü kullanıyorsun",
       "CHECK_UPDATES": "Şimdi denetle",
-      "CHECKING": "Denetleniyor..."
+      "CHECKING": "Denetleniyor...",
+      "RESTART_REQUIRED": "Yeniden başlatma gerekir"
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "Oynatıcı günlüğü yaz",
       "DEBUG_LOG_DESC": "Yalnızca sorun giderme için: günlük klasöründeki mpv.log, içindeki giriş bilgileri dahil her yayın adresini kaydeder. Oynatıcı bir sonraki açılışta etkinleşir.",
       "AUTO_FALLBACK": "Yayın kesilirse kanalın başka bir akışına geç",
-      "AUTO_FALLBACK_DESC": "Canlı yayın kesilirse oynatıcı otomatik olarak aynı kanalın başka bir kalitesine geçer, örneğin HD'den SD'ye."
+      "AUTO_FALLBACK_DESC": "Canlı yayın kesilirse oynatıcı otomatik olarak aynı kanalın başka bir kalitesine geçer, örneğin HD'den SD'ye.",
+      "APPLIES_NEXT_CHANNEL": "Bir sonraki kanalda geçerli olur"
     },
     "RECORDING": {
       "PATH": "Kayıt yolu",
       "PATH_DESC": "Kaydedilen canlı yayınların saklandığı klasör.",
       "ALWAYS_ASK": "İndirmelerin kaydedileceği yeri her zaman sor",
-      "ALWAYS_ASK_DESC": "Her indirme ve kayıt için bir dosya iletişim kutusu aç. Kayıt yolunu geçersiz kılar."
+      "ALWAYS_ASK_DESC": "Her indirme ve kayıt için bir dosya iletişim kutusu aç. Kayıt yolunu geçersiz kılar.",
+      "RESET_DEFAULT": "Varsayılan",
+      "RESET_DEFAULT_TOOLTIP": "Kayıtları yeniden varsayılan klasöre kaydet"
     },
     "NETWORK": {
       "RESTREAM_PORT": "Yeniden yayın portu",
-      "RESTREAM_PORT_DESC": "Bir kanalı diğer cihazlara yeniden yayınlarken kullanılan yerel port."
+      "RESTREAM_PORT_DESC": "Bir kanalı diğer cihazlara yeniden yayınlarken kullanılan yerel port.",
+      "RESTREAM_PORT_INVALID": "{{min}} ile {{max}} arasında bir port girin veya varsayılan için alanı boş bırakın."
     },
     "SOURCES": {
       "ADD_SOURCE": "Kaynak ekle",
@@ -286,7 +294,6 @@
       "TITLE": "Harici EPG",
       "INTRO": "Bir kanalın sağlayıcısından program verisi yoksa streameo bunları bu XMLTV kaynaklarından tamamlar: tvg-id ile, yoksa kanal adıyla ya da senin elle yaptığın eşleştirmeyle. Her XMLTV URL'si çalışır (örneğin bir IPTV-EPG.org dışa aktarımı); .xml ve .xml.gz desteklenir.",
       "SOURCES_LABEL": "XMLTV kaynakları",
-      "SOURCES_DESC": "Her satıra bir XMLTV URL'si.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Şimdi yenile",
       "REFRESH_DESC": "En güncel program verilerini indir. Bu, kaynak otomatik yenileme zamanlamana göre, kapalıysa günde bir kez otomatik olarak da yapılır.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "Atla",
     "DONE_TITLE": "Hazır",
     "DONE_TEXT": "Kaynağın hazır. İyi seyirler!",
-    "GO_TO_CHANNELS": "Kanallara git"
+    "GO_TO_CHANNELS": "Kanallara git",
+    "IMPORT_FAILED": "Dosya içe aktarılamadı",
+    "ADD_CUSTOM_FAILED": "Özel kaynak oluşturulamadı",
+    "FETCH_FAILED": "Liste yüklenemedi. Bağlantıyı ve internet bağlantınızı kontrol edin.",
+    "REQUIRED_FIELD": "Zorunlu alan",
+    "SOURCE_TYPE": "Kaynak türü",
+    "XTREAM_TOOLTIP": "Sağlayıcınızın sunucu adresi, kullanıcı adı ve parolasıyla giriş yapın. Sağlayıcının EPG'sini, catch-up'ı ve sezonlara göre dizileri sunar.",
+    "CUSTOM_TOOLTIP": "Kanalları ve kategorileri kendiniz eklediğiniz boş bir kaynak.",
+    "CUSTOM_IMPORT_TOOLTIP": "streameoIPTV'den dışa aktarılmış özel bir kaynağı içe aktarır (.siptvp dosyası)."
   },
   "EPG": {
     "PLAYING_NOW": "Şu anda oynatılıyor",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "Arşivden izle",
     "DOWNLOAD_CATCHUP": "Arşivden indir",
     "NOTIFY_ON": "Başladığında bana bildir",
-    "NOTIFY_OFF": "Bildirimi kapat"
+    "NOTIFY_OFF": "Bildirimi kapat",
+    "NOTIFY_NEEDS_TRAY": "Hatırlatıcılar için tepsi simgesi gerekir (Ayarlar → Genel)"
   },
   "RESTREAM": {
     "TITLE": "Yeniden yayınlanıyor: {{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "Tüm kullanıcı verilerinin silinmesini onayla",
     "BODY1": "Bu işlem, tüm kaynaklar için kanallar, kategoriler ve favoriler dahil tüm kullanıcı verilerini siler.",
-    "BODY2": "Bir sürüm yükseltmesinden kaynaklanabilecek garip hatalarla karşılaşıyorsanız bu seçeneği kullanmanız önerilir."
+    "BODY2": "Bir sürüm yükseltmesinden kaynaklanabilecek garip hatalarla karşılaşıyorsanız bu seçeneği kullanmanız önerilir.",
+    "APP_CLOSES": "Ardından uygulama kapanır. Baştan kurmak için yeniden başlatın.",
+    "CONFIRM_ALL": "Her şeyi sil"
   },
   "CONFIRM_URL": {
     "TITLE": "Doğru URL bu mu?",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "Hata",
     "OCCURRED": "Aşağıdaki hata oluştu, <a target=\"_blank\" href=\"{{link}}\">buradan bildirebilirsiniz</a>",
-    "LOGS_INTRO": "Hatalara neden olabilecek şeylerin ayrıntılı günlüklerini $XDG_CACHE_HOME içinde de bulabilirsiniz. Bu şunlara karşılık gelir:",
     "ATTACH_LOGS": "Lütfen bu günlükleri (varsa) ve aşağıdaki hatayı hata bildiriminize ekleyin. Teşekkürler!",
-    "PERSISTENT": "Garip/kalıcı hatalarla karşılaşırsanız, lütfen ayarlardaki \"Her şeyi sil\" düğmesini veya ekranın sağ altındaki (varsa) küçük nuke düğmesini kullanmayı deneyin",
-    "COPY": "Kopyala"
-  },
-  "WHATS_NEW": {
-    "TITLE": "v{{version}} sürümündeki yenilikler",
-    "CHANGES": "Değişiklikler",
-    "CHANGE_1": "Catchup indirme/oynatma hatası düzeltildi",
-    "CHANGE_2": "Yeni özel kanal oluştururken oluşan hata düzeltildi",
-    "CHANGE_3": "Favorilerin gizli görünümde görünmemesi düzeltildi",
-    "CHANGE_4": "Linux desteği iyileştirildi",
-    "CHANGE_5": "Etiket arama simgesi düzeltildi",
-    "CHANGE_6": "Gizli kategorilerin yenilemede kalıcı olmaması düzeltildi",
-    "CHANGE_7": "Arama çubuğuna toplu işlemler eklendi",
-    "UPCOMING": "Gelecek iyileştirmeler",
-    "UPCOMING_1": "Kayıt zamanlama",
-    "UPCOMING_2": "Fikriniz burada!",
-    "DONT_SHOW": "Bir daha gösterme"
+    "COPY": "Kopyala",
+    "LOGS_FOLDER_HINT": "Günlük dosyaları ve bir tanılama raporu nedeni bulmaya yardımcı olur:",
+    "PERSISTENT_DIAGNOSTICS": "Hata tekrar ederse tanılama raporunu dışa aktarın ve bildiriminize ekleyin. Rapor parola veya yayın adresi içermez."
   },
   "SOURCE": {
     "REFRESHED": "Yenilendi:",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "Bağlantı başarısız",
     "XTREAM_HINT": "Bu bağlantı bir Xtream girişi içeriyor. Xtream kaynağı olarak sağlayıcınızın EPG'sini, kaçırılan programlar için catch-up'ı ve sezonlara göre dizileri alırsınız.",
     "CONVERT_TO_XTREAM": "Xtream'e dönüştür",
-    "CONVERTING": "Dönüştürülüyor…"
+    "CONVERTING": "Dönüştürülüyor…",
+    "MAX_STREAMS_INVALID": "En az 1 olan bir tam sayı girin"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Kaydın kaydedileceği yeri seçin",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "Geçmiş başarıyla temizlendi",
     "HISTORY_CLEAR_FAILED": "Geçmiş temizlenemedi",
     "RECORDINGS_LOAD_FAILED": "Zamanlanmış kayıtlar yüklenemedi",
-    "RECORDING_ENTRY_REMOVED": "Kayıt girişi kaldırıldı",
     "RECORDING_CANCELLED": "Zamanlanmış kayıt iptal edildi",
     "RECORDING_CANCEL_FAILED": "Zamanlanmış kayıt iptal edilemedi",
     "RECORDING_SCHEDULED": "Kayıt başarıyla zamanlandı",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "\"{{name}}\" favorilere ekleme/çıkarma başarısız oldu",
     "HISTORY_REMOVED": "\"{{name}}\" geçmişten kaldırıldı",
     "HISTORY_REMOVE_FAILED": "\"{{name}}\" geçmişten kaldırılamadı",
-    "CHANNEL_HIDDEN": "\"{{name}}\" gizlendi (yeniden yüklemede güncellenir)",
-    "CHANNEL_UNHIDDEN": "\"{{name}}\" gösterildi (yeniden yüklemede güncellenir)",
-    "GROUP_HIDDEN": "\"{{name}}\" grubu gizlendi (yeniden yüklemede güncellenir)",
-    "GROUP_UNHIDDEN": "\"{{name}}\" grubu gösterildi (yeniden yüklemede güncellenir)",
-    "HIDE_FAILED": "\"{{name}}\" gizleme/gösterme başarısız oldu",
     "NO_EPG": "Bu kanal için EPG verisi yok",
     "EPG_MISSING_STREAM_ID": "Stream kimliği eksik. EPG özelliğini etkinleştirmek için lütfen kaynaklarınızı yenileyin (Ayarlar -> Tümünü Yenile)",
     "CATEGORY_EXPORTED": "Kategori {{path}} konumuna başarıyla dışa aktarıldı",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "Günlük klasörü açılamadı",
     "DIAGNOSTICS_EXPORTED": "Tanılama raporu {{path}} konumuna kaydedildi",
     "DIAGNOSTICS_EXPORT_FAILED": "Tanılama raporu dışa aktarılamadı",
-    "EPG_LOADING": "Yayın akışı arka planda yükleniyor…"
+    "EPG_LOADING": "Yayın akışı arka planda yükleniyor…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "“{{name}}” favorilerden kaldırıldı, “{{list}}” listesinde kalıyor"
   },
   "UPDATE": {
     "TITLE": "Güncelleme mevcut",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "Otomatik kural silinsin mi?",
     "DELETE_ALERT_REMIND_BODY": "Başlığında \"{{query}}\" geçen programlar artık otomatik hatırlatma almayacak.",
     "DELETE_ALERT_RECORD_BODY": "Başlığında \"{{query}}\" geçen programlar artık otomatik olarak kaydedilmeyecek.",
-    "DELETE_ALERT_KEEP": "Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır. Artık istemiyorsan bunları tek tek kaldır."
+    "DELETE_ALERT_KEEP": "Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır. Artık istemiyorsan bunları tek tek kaldır.",
+    "CLEAR_FINISHED_TITLE": "Tamamlanan kayıtlar kaldırılsın mı?",
+    "CLEAR_FINISHED_FAILED_BODY": "Aralarında başarısız kayıtlar var: {{count}}. Bu kayıtların çalışmadığının tek işareti bu girişlerdir. Kaydedilen dosyalar klasörde kalır."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Kanallara dön",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "{{minutes}} dk kaldı",
     "RESUMED_AT": "{{time}} konumundan devam ediliyor",
     "RESTART_HINT": "Home: baştan başlat",
-    "RESTARTED": "Baştan başlatılıyor"
+    "RESTARTED": "Baştan başlatılıyor",
+    "CONNECTING": "Bağlanıyor…",
+    "BUFFERING": "Arabelleğe alınıyor…",
+    "ERR_LOADING": "yayın açılamadı (sunucuya ulaşılamıyor veya bağlantı geçersiz)",
+    "ERR_FORMAT": "yayın biçimi tanınmıyor",
+    "ERR_NO_DATA": "yayından görüntü veya ses gelmedi",
+    "ERR_AUDIO_OUTPUT": "ses çıkışı başlatılamadı",
+    "ERR_VIDEO_OUTPUT": "video çıkışı başlatılamadı (grafik sürücüsünü kontrol edin)",
+    "ERR_UNSUPPORTED": "yayın, oynatıcının desteklemediği bir biçim kullanıyor",
+    "ERR_NETWORK": "sunucuya bağlantı başarısız oldu",
+    "CLOSE_PLAYER": "Oynatıcıyı kapat",
+    "CLOSE_PLAYER_HINT": "Oynatıcıyı kapat (Esc)",
+    "FULLSCREEN_HINT": "Esc: tam ekrandan çık"
   },
   "GUIDE": {
     "CHANNEL": "Kanal",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "Hatırlatmalar için tepsi simgesi gerekir (Ayarlar → Genel).",
     "ALERT_REMIND_ADDED": "Başlığında \"{{query}}\" geçen her program için hatırlatılacaksın, rehbere sonradan eklenenler de dahil.",
     "ALERT_RECORD_ADDED": "Başlığında \"{{query}}\" geçen her program kaydedilecek, rehbere sonradan eklenenler de dahil.",
-    "ALERT_REMOVED": "\"{{query}}\" için otomatik kural durduruldu. Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır."
+    "ALERT_REMOVED": "\"{{query}}\" için otomatik kural durduruldu. Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır.",
+    "TIME_NAV": "Rehberde zaman aralığı",
+    "NOW": "Şimdi",
+    "NOW_HINT": "Şu anki zamana dön",
+    "CATCHUP_AVAILABLE": "Arşivde mevcut",
+    "NOW_MENU_HINT": "Şimdiden kaydetmek için sağ tıklayın",
+    "RECORD_FROM_NOW": "Şimdiden kaydet",
+    "NO_PROGRAMMES_IN_WINDOW": "Bu zaman aralığında program yok",
+    "EPG_FAILED": "Program verileri yüklenemedi",
+    "EPG_RETRY": "Tekrar dene",
+    "EPG_RETRY_ARIA": "{{name}} program verilerini yeniden yükle"
   },
   "PARENTAL": {
     "CONFIRM": "Tamam",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "\"{{name}}\" grubunu kilitle",
     "UNLOCK_GROUP_TITLE": "\"{{name}}\" grubunun kilidini aç",
     "GROUP_LOCKED": "\"{{name}}\" kilitlendi",
-    "GROUP_UNLOCKED": "\"{{name}}\" kilidi açıldı"
+    "GROUP_UNLOCKED": "\"{{name}}\" kilidi açıldı",
+    "PIN_FORMAT_INVALID": "PIN 4 ila 8 rakamdan oluşmalıdır"
   },
   "RECORDINGS": {
     "CANCEL": "Kaydı iptal et",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "Hatırlatma",
     "ALERT_KIND_RECORD": "Kayıt",
     "ALERT_CREATED": "Oluşturuldu: {{date}}",
-    "ALERT_DELETE_ARIA": "\"{{query}}\" için otomatik kuralı sil"
+    "ALERT_DELETE_ARIA": "\"{{query}}\" için otomatik kuralı sil",
+    "FILE_RECORDING": "Kaydediliyor",
+    "FILE_RECORDING_HINT": "Hâlâ kaydediliyor. Silmek için yukarıdaki kaydı iptal edin."
   },
   "EPG_MAPPING": {
     "TITLE": "EPG ata",

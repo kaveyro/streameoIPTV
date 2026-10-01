@@ -39,7 +39,6 @@
       "CATEGORIES": "Categorieën",
       "FAVORITES": "Favorieten",
       "HISTORY": "Geschiedenis",
-      "HIDDEN": "Verborgen",
       "RECORDINGS": "Opnames",
       "SETTINGS": "Instellingen",
       "GUIDE": "TV-gids",
@@ -49,19 +48,21 @@
       "LIVESTREAMS": "Livestreams",
       "MOVIES_VODS": "Films/Vods",
       "MOVIES_VODS_SERIES": "Films/Vods/Series",
-      "SERIES": "Series"
+      "SERIES": "Series",
+      "KEEP_ONE": "Er moet minstens één mediatype geselecteerd blijven"
     },
     "COLLAPSE_SIDEBAR": "Zijbalk inklappen",
     "EXPAND_SIDEBAR": "Zijbalk uitklappen",
     "COUNTRY_FILTER": "Filteren op land",
-    "ALL_COUNTRIES": "Alle landen"
+    "ALL_COUNTRIES": "Alle landen",
+    "VIEWING": "Weergave: {{path}}",
+    "SEARCH_LABEL": "Zoek zenders, films en series",
+    "CLEAR_SEARCH": "Zoekopdracht wissen"
   },
   "MENU": {
     "REMOVE": "Verwijderen",
     "FAVORITE": "Aan favorieten toevoegen",
     "UNFAVORITE": "Uit favorieten verwijderen",
-    "HIDE": "Verbergen",
-    "UNHIDE": "Tonen",
     "RECORD": "Opnemen",
     "DOWNLOAD": "Downloaden",
     "CANCEL_DOWNLOAD": "Download annuleren",
@@ -83,7 +84,6 @@
     "NO_FAVORITES": "Nog geen favorieten",
     "NO_FAVORITES_HINT": "Klik met de rechtermuisknop op een kanaal om er een toe te voegen",
     "NOTHING_WATCHED": "Nog niets bekeken",
-    "NO_HIDDEN": "Geen verborgen kanalen",
     "NO_RECORDINGS": "Geen geplande opnames",
     "NO_RECORDINGS_HINT": "Plan er een via de tv-gids van een kanaal",
     "NO_GUIDE": "Nog geen gidsgegevens",
@@ -91,7 +91,10 @@
     "NOTHING_TO_CONTINUE": "Nog niets om verder te kijken",
     "NOTHING_TO_CONTINUE_HINT": "Films en afleveringen die je hebt gestart verschijnen hier en gaan verder waar je was gebleven",
     "NO_RECORDING_FILES": "Nog geen opgenomen bestanden",
-    "NO_RECORDING_FILES_HINT": "Opnames en downloads worden opgeslagen in de opnamemap (Instellingen → Opname)"
+    "NO_RECORDING_FILES_HINT": "Opnames en downloads worden opgeslagen in de opnamemap (Instellingen → Opname)",
+    "LOAD_FAILED": "Deze weergave kon niet worden geladen",
+    "LOAD_FAILED_HINT": "Controleer de verbinding met je bron en probeer het opnieuw",
+    "RETRY": "Opnieuw proberen"
   },
   "RECORDING": {
     "SCHEDULED": "Geplande opname",
@@ -172,7 +175,8 @@
       "APP_VERSION": "Versie",
       "APP_VERSION_DESC": "Je gebruikt versie {{version}}",
       "CHECK_UPDATES": "Nu controleren",
-      "CHECKING": "Bezig met controleren..."
+      "CHECKING": "Bezig met controleren...",
+      "RESTART_REQUIRED": "Herstart vereist"
     },
     "APPEARANCE": {
       "THEME": "Thema",
@@ -227,17 +231,21 @@
       "DEBUG_LOG": "Spelerlogboek schrijven",
       "DEBUG_LOG_DESC": "Alleen voor probleemoplossing: mpv.log in de logmap legt elk streamadres vast, inclusief de inloggegevens erin. Werkt vanaf de volgende keer dat de speler opent.",
       "AUTO_FALLBACK": "Bij uitval een andere stream van de zender gebruiken",
-      "AUTO_FALLBACK_DESC": "Valt een livestream uit, dan schakelt de speler automatisch over naar een andere kwaliteit van dezelfde zender, bijvoorbeeld van HD naar SD."
+      "AUTO_FALLBACK_DESC": "Valt een livestream uit, dan schakelt de speler automatisch over naar een andere kwaliteit van dezelfde zender, bijvoorbeeld van HD naar SD.",
+      "APPLIES_NEXT_CHANNEL": "Geldt vanaf de volgende zender"
     },
     "RECORDING": {
       "PATH": "Opnamepad",
       "PATH_DESC": "Map waarin opgenomen livestreams worden opgeslagen.",
       "ALWAYS_ASK": "Altijd vragen waar downloads worden opgeslagen",
-      "ALWAYS_ASK_DESC": "Opent een bestandsvenster voor elke download en opname. Heeft voorrang op het opnamepad."
+      "ALWAYS_ASK_DESC": "Opent een bestandsvenster voor elke download en opname. Heeft voorrang op het opnamepad.",
+      "RESET_DEFAULT": "Standaard",
+      "RESET_DEFAULT_TOOLTIP": "Opnames weer in de standaardmap opslaan"
     },
     "NETWORK": {
       "RESTREAM_PORT": "Re-streampoort",
-      "RESTREAM_PORT_DESC": "Lokale poort die wordt gebruikt bij het re-streamen van een kanaal naar andere apparaten."
+      "RESTREAM_PORT_DESC": "Lokale poort die wordt gebruikt bij het re-streamen van een kanaal naar andere apparaten.",
+      "RESTREAM_PORT_INVALID": "Voer een poort van {{min}} tot {{max}} in of laat het veld leeg voor de standaardwaarde."
     },
     "SOURCES": {
       "ADD_SOURCE": "Bron toevoegen",
@@ -286,7 +294,6 @@
       "TITLE": "Externe EPG",
       "INTRO": "Als een zender geen gidsgegevens van zijn aanbieder heeft, vult streameo die aan uit deze XMLTV-bronnen: gekoppeld via tvg-id, anders via de zendernaam, of zoals jij ze met de hand koppelt. Elke XMLTV-URL werkt (bijvoorbeeld een export van IPTV-EPG.org); .xml en .xml.gz worden allebei ondersteund.",
       "SOURCES_LABEL": "XMLTV-bronnen",
-      "SOURCES_DESC": "Eén XMLTV-URL per regel.",
       "SOURCES_PLACEHOLDER": "https://example.com/guide.xml.gz",
       "REFRESH": "Nu vernieuwen",
       "REFRESH_DESC": "De nieuwste gidsgegevens downloaden. Dit gebeurt ook automatisch volgens je schema voor het automatisch vernieuwen van bronnen, of één keer per dag als dat uit staat.",
@@ -359,7 +366,15 @@
     "EPG_SKIP": "Overslaan",
     "DONE_TITLE": "Klaar",
     "DONE_TEXT": "Je bron is ingesteld. Veel kijkplezier!",
-    "GO_TO_CHANNELS": "Naar de zenders"
+    "GO_TO_CHANNELS": "Naar de zenders",
+    "IMPORT_FAILED": "Het bestand kon niet worden geïmporteerd",
+    "ADD_CUSTOM_FAILED": "De aangepaste bron kon niet worden aangemaakt",
+    "FETCH_FAILED": "De lijst kon niet worden geladen. Controleer de link en je internetverbinding.",
+    "REQUIRED_FIELD": "Verplicht veld",
+    "SOURCE_TYPE": "Brontype",
+    "XTREAM_TOOLTIP": "Inloggen met het serveradres, de gebruikersnaam en het wachtwoord van je provider. Je krijgt de EPG van de provider, catch-up en series per seizoen.",
+    "CUSTOM_TOOLTIP": "Een lege bron waaraan je zelf zenders en categorieën toevoegt.",
+    "CUSTOM_IMPORT_TOOLTIP": "Importeert een aangepaste bron die uit streameoIPTV is geëxporteerd (.siptvp-bestand)."
   },
   "EPG": {
     "PLAYING_NOW": "Nu bezig",
@@ -371,7 +386,8 @@
     "WATCH_CATCHUP": "Bekijken uit archief",
     "DOWNLOAD_CATCHUP": "Downloaden uit archief",
     "NOTIFY_ON": "Waarschuw me als het begint",
-    "NOTIFY_OFF": "Melding uitschakelen"
+    "NOTIFY_OFF": "Melding uitschakelen",
+    "NOTIFY_NEEDS_TRAY": "Herinneringen hebben het systeemvakpictogram nodig (Instellingen → Algemeen)"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -446,7 +462,9 @@
   "CONFIRM_DELETE": {
     "TITLE": "Verwijderen van alle gebruikersgegevens bevestigen",
     "BODY1": "Deze actie verwijdert alle gebruikersgegevens, waaronder kanalen, categorieën en favorieten voor alle bronnen.",
-    "BODY2": "Het wordt aanbevolen deze optie te gebruiken als je vreemde bugs tegenkomt die mogelijk het gevolg zijn van een versie-upgrade."
+    "BODY2": "Het wordt aanbevolen deze optie te gebruiken als je vreemde bugs tegenkomt die mogelijk het gevolg zijn van een versie-upgrade.",
+    "APP_CLOSES": "Daarna wordt de app afgesloten. Start hem opnieuw om hem opnieuw in te stellen.",
+    "CONFIRM_ALL": "Alles verwijderen"
   },
   "CONFIRM_URL": {
     "TITLE": "Is dit de juiste URL?",
@@ -465,25 +483,10 @@
   "ERROR": {
     "TITLE": "Fout",
     "OCCURRED": "De volgende fout is opgetreden, <a target=\"_blank\" href=\"{{link}}\">je kunt deze hier melden</a>",
-    "LOGS_INTRO": "Je kunt ook gedetailleerde logbestanden vinden over wat de fouten kan hebben veroorzaakt in $XDG_CACHE_HOME. Dat komt overeen met:",
     "ATTACH_LOGS": "Voeg die logbestanden (als ze bestaan) en de fout hieronder toe aan je bugmelding. Bedankt!",
-    "PERSISTENT": "Als je vreemde/aanhoudende fouten tegenkomt, probeer dan de knop \"Alles verwijderen\" in de instellingen of de kleine nuke-knop rechtsonder in het scherm waar aanwezig",
-    "COPY": "Kopiëren"
-  },
-  "WHATS_NEW": {
-    "TITLE": "Nieuw in v{{version}}",
-    "CHANGES": "Wijzigingen",
-    "CHANGE_1": "Fout bij downloaden/afspelen van catchup opgelost",
-    "CHANGE_2": "Fout bij het maken van nieuwe aangepaste kanalen opgelost",
-    "CHANGE_3": "Favorieten die niet verschenen in de verborgen weergave opgelost",
-    "CHANGE_4": "Linux-ondersteuning verbeterd",
-    "CHANGE_5": "Pictogram voor tagzoeken opgelost",
-    "CHANGE_6": "Verborgen categorieën die niet behouden bleven bij vernieuwen opgelost",
-    "CHANGE_7": "Bulkbewerkingen in de zoekbalk toegevoegd",
-    "UPCOMING": "Aankomende verbeteringen",
-    "UPCOMING_1": "Opnames plannen",
-    "UPCOMING_2": "Jouw idee hier!",
-    "DONT_SHOW": "Niet meer tonen"
+    "COPY": "Kopiëren",
+    "LOGS_FOLDER_HINT": "De logbestanden en een diagnoserapport helpen de oorzaak te vinden:",
+    "PERSISTENT_DIAGNOSTICS": "Blijft de fout terugkomen, exporteer dan het diagnoserapport en voeg het toe aan je melding. Het bevat geen wachtwoorden of streamadressen."
   },
   "SOURCE": {
     "REFRESHED": "Vernieuwd:",
@@ -517,7 +520,8 @@
     "CHECK_FAILED": "Verbinding mislukt",
     "XTREAM_HINT": "Deze link bevat een Xtream-login. Als Xtream-bron krijg je de EPG van je provider, catch-up voor gemiste programma’s en series per seizoen.",
     "CONVERT_TO_XTREAM": "Omzetten naar Xtream",
-    "CONVERTING": "Omzetten…"
+    "CONVERTING": "Omzetten…",
+    "MAX_STREAMS_INVALID": "Voer een geheel getal van minstens 1 in"
   },
   "DIALOG": {
     "SAVE_RECORDING": "Selecteer waar de opname wordt opgeslagen",
@@ -549,7 +553,6 @@
     "HISTORY_CLEARED": "Geschiedenis succesvol gewist",
     "HISTORY_CLEAR_FAILED": "Wissen van geschiedenis mislukt",
     "RECORDINGS_LOAD_FAILED": "Laden van geplande opnames mislukt",
-    "RECORDING_ENTRY_REMOVED": "Opname-item verwijderd",
     "RECORDING_CANCELLED": "Geplande opname geannuleerd",
     "RECORDING_CANCEL_FAILED": "Annuleren van geplande opname mislukt",
     "RECORDING_SCHEDULED": "Opname succesvol gepland",
@@ -559,11 +562,6 @@
     "FAVORITE_FAILED": "Toevoegen/verwijderen van \"{{name}}\" aan/uit favorieten mislukt",
     "HISTORY_REMOVED": "\"{{name}}\" verwijderd uit geschiedenis",
     "HISTORY_REMOVE_FAILED": "Verwijderen van \"{{name}}\" uit geschiedenis mislukt",
-    "CHANNEL_HIDDEN": "\"{{name}}\" verborgen (wordt bijgewerkt bij herladen)",
-    "CHANNEL_UNHIDDEN": "\"{{name}}\" getoond (wordt bijgewerkt bij herladen)",
-    "GROUP_HIDDEN": "Groep \"{{name}}\" verborgen (wordt bijgewerkt bij herladen)",
-    "GROUP_UNHIDDEN": "Groep \"{{name}}\" getoond (wordt bijgewerkt bij herladen)",
-    "HIDE_FAILED": "Verbergen/tonen van \"{{name}}\" mislukt",
     "NO_EPG": "Geen EPG-gegevens voor dit kanaal",
     "EPG_MISSING_STREAM_ID": "Stream-id ontbreekt. Vernieuw je bronnen (Instellingen -> Alles vernieuwen) om de EPG-functie in te schakelen",
     "CATEGORY_EXPORTED": "Categorie succesvol geëxporteerd naar {{path}}",
@@ -626,7 +624,8 @@
     "LOG_FOLDER_FAILED": "De logmap kon niet worden geopend",
     "DIAGNOSTICS_EXPORTED": "Diagnoserapport opgeslagen in {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Het diagnoserapport kon niet worden geëxporteerd",
-    "EPG_LOADING": "De tv-gids wordt op de achtergrond geladen…"
+    "EPG_LOADING": "De tv-gids wordt op de achtergrond geladen…",
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’ verwijderd uit favorieten; blijft in ‘{{list}}’"
   },
   "UPDATE": {
     "TITLE": "Update beschikbaar",
@@ -673,7 +672,9 @@
     "DELETE_ALERT_TITLE": "Automatische regel verwijderen?",
     "DELETE_ALERT_REMIND_BODY": "Programma's met \"{{query}}\" in de titel krijgen dan geen automatische herinnering meer.",
     "DELETE_ALERT_RECORD_BODY": "Programma's met \"{{query}}\" in de titel worden dan niet meer automatisch opgenomen.",
-    "DELETE_ALERT_KEEP": "Herinneringen en opnames die al zijn aangemaakt, blijven bestaan. Verwijder ze afzonderlijk als je ze niet meer wilt."
+    "DELETE_ALERT_KEEP": "Herinneringen en opnames die al zijn aangemaakt, blijven bestaan. Verwijder ze afzonderlijk als je ze niet meer wilt.",
+    "CLEAR_FINISHED_TITLE": "Afgeronde items verwijderen?",
+    "CLEAR_FINISHED_FAILED_BODY": "Waaronder mislukte opnamen: {{count}}. Hun items zijn het enige teken dat deze opnamen niet gelukt zijn. De opgenomen bestanden blijven in de map."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Terug naar kanalen",
@@ -697,7 +698,19 @@
     "MIN_LEFT": "nog {{minutes}} min",
     "RESUMED_AT": "Hervat bij {{time}}",
     "RESTART_HINT": "Home: opnieuw beginnen",
-    "RESTARTED": "Opnieuw vanaf het begin"
+    "RESTARTED": "Opnieuw vanaf het begin",
+    "CONNECTING": "Verbinden…",
+    "BUFFERING": "Bufferen…",
+    "ERR_LOADING": "de stream kon niet worden geopend (server niet bereikbaar of link ongeldig)",
+    "ERR_FORMAT": "het formaat van de stream wordt niet herkend",
+    "ERR_NO_DATA": "de stream leverde geen beeld of geluid",
+    "ERR_AUDIO_OUTPUT": "de audio-uitvoer kon niet worden gestart",
+    "ERR_VIDEO_OUTPUT": "de video-uitvoer kon niet worden gestart (controleer het grafische stuurprogramma)",
+    "ERR_UNSUPPORTED": "de stream gebruikt een formaat dat de speler niet ondersteunt",
+    "ERR_NETWORK": "de verbinding met de server is mislukt",
+    "CLOSE_PLAYER": "Speler sluiten",
+    "CLOSE_PLAYER_HINT": "Speler sluiten (Esc)",
+    "FULLSCREEN_HINT": "Esc: volledig scherm verlaten"
   },
   "GUIDE": {
     "CHANNEL": "Kanaal",
@@ -726,7 +739,17 @@
     "ALERT_NEEDS_TRAY": "Voor herinneringen is het systeemvakpictogram nodig (Instellingen → Algemeen).",
     "ALERT_REMIND_ADDED": "Je krijgt een herinnering voor elk programma met \"{{query}}\" in de titel, ook voor programma's die later aan de gids worden toegevoegd.",
     "ALERT_RECORD_ADDED": "Elk programma met \"{{query}}\" in de titel wordt opgenomen, ook programma's die later aan de gids worden toegevoegd.",
-    "ALERT_REMOVED": "Automatische regel voor \"{{query}}\" gestopt. Herinneringen en opnames die al zijn aangemaakt, blijven bestaan."
+    "ALERT_REMOVED": "Automatische regel voor \"{{query}}\" gestopt. Herinneringen en opnames die al zijn aangemaakt, blijven bestaan.",
+    "TIME_NAV": "Tijdvak in de gids",
+    "NOW": "Nu",
+    "NOW_HINT": "Terug naar de huidige tijd",
+    "CATCHUP_AVAILABLE": "Beschikbaar in het archief",
+    "NOW_MENU_HINT": "Rechtsklik om vanaf nu op te nemen",
+    "RECORD_FROM_NOW": "Vanaf nu opnemen",
+    "NO_PROGRAMMES_IN_WINDOW": "Geen programma’s in deze periode",
+    "EPG_FAILED": "Programmagegevens konden niet worden geladen",
+    "EPG_RETRY": "Opnieuw proberen",
+    "EPG_RETRY_ARIA": "Programmagegevens van {{name}} opnieuw laden"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -745,7 +768,8 @@
     "LOCK_GROUP_TITLE": "\"{{name}}\" vergrendelen",
     "UNLOCK_GROUP_TITLE": "\"{{name}}\" ontgrendelen",
     "GROUP_LOCKED": "\"{{name}}\" vergrendeld",
-    "GROUP_UNLOCKED": "\"{{name}}\" ontgrendeld"
+    "GROUP_UNLOCKED": "\"{{name}}\" ontgrendeld",
+    "PIN_FORMAT_INVALID": "De pincode moet uit 4 tot 8 cijfers bestaan"
   },
   "RECORDINGS": {
     "CANCEL": "Opname annuleren",
@@ -776,7 +800,9 @@
     "ALERT_KIND_REMIND": "Herinnering",
     "ALERT_KIND_RECORD": "Opname",
     "ALERT_CREATED": "Aangemaakt: {{date}}",
-    "ALERT_DELETE_ARIA": "Automatische regel voor \"{{query}}\" verwijderen"
+    "ALERT_DELETE_ARIA": "Automatische regel voor \"{{query}}\" verwijderen",
+    "FILE_RECORDING": "Bezig",
+    "FILE_RECORDING_HINT": "Wordt nog opgenomen. Annuleer de opname hierboven om het te verwijderen."
   },
   "EPG_MAPPING": {
     "TITLE": "EPG toewijzen",

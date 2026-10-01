@@ -16,16 +16,18 @@
       type="button"
       class="pbtn"
       (click)="back()"
-      [title]="'PLAYER.BACK_TO_CHANNELS' | translate"
-      [attr.aria-label]="'PLAYER.BACK_TO_CHANNELS' | translate"
+      [title]="'PLAYER.CLOSE_PLAYER_HINT' | translate"
+      [attr.aria-label]="'PLAYER.CLOSE_PLAYER' | translate"
     >
+      <!-- It ends playback (the mini player keeps it going): a close, not a
+           way back that leaves the stream running. -->
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path
           fill="currentColor"
-          d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
         />
       </svg>
-      <span>{{ "PLAYER.CHANNELS" | translate }}</span>
+      <span>{{ "PLAYER.CLOSE_PLAYER" | translate }}</span>
     </button>
     <!-- The channel number being typed; mpv's OSD shows it over the video.
          Always rendered, so screen readers pick up the live region. -->

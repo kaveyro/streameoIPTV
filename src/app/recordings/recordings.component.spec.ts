@@ -139,6 +139,8 @@ describe("RecordingsComponent", () => {
     clear!.click();
     await settle();
     expect(callsOf(calls, "clear_finished_recordings").length).toBe(1);
+    // Only done entries: nothing to ask about.
+    expect(confirm).not.toHaveBeenCalled();
   });
 
   it("hides 'clear finished' when nothing is finished", async () => {
@@ -171,7 +173,38 @@ describe("RecordingsComponent", () => {
         media_type: MediaType.movie,
         favorite: false,
       }),
+      // Nothing to zap to from a recording.
+      [],
     );
+  });
+
+  it("marks a file still being recorded and does not delete it", async () => {
+    await create({ get_recording_files: [{ ...files[0], recording: true }] });
+    const row = element.querySelector('[aria-labelledby="rec-files-title"] .recording-row');
+    expect(row?.querySelector(".recording-status")?.textContent).toContain(
+      "RECORDINGS.FILE_RECORDING",
+    );
+    const remove = row?.querySelector<HTMLButtonElement>(
+      'button[aria-label^="HOME.DELETE_RECORDING_ARIA"]',
+    );
+    expect(remove?.disabled).toBeTrue();
+    await component.deleteFile({ ...files[0], recording: true });
+    expect(confirm).not.toHaveBeenCalled();
+    expect(callsOf(calls, "delete_recording_file").length).toBe(0);
+  });
+
+  it("asks before clearing finished entries that include failed ones", async () => {
+    const failed: ScheduledRecording = { ...schedule[2], id: 4, status: RecordingStatus.Failed };
+    await create({ get_recording_schedule: [...schedule, failed] });
+    confirm.and.resolveTo(false);
+    await component.clearFinished();
+    expect(confirm).toHaveBeenCalledWith(
+      jasmine.objectContaining({ title: "CONFIRM.CLEAR_FINISHED_TITLE", params: { count: 1 } }),
+    );
+    expect(callsOf(calls, "clear_finished_recordings").length).toBe(0);
+    confirm.and.resolveTo(true);
+    await component.clearFinished();
+    expect(callsOf(calls, "clear_finished_recordings").length).toBe(1);
   });
 
   it("deletes a file after confirming", async () => {

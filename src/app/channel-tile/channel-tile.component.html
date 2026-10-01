@@ -121,86 +121,173 @@
   [style.left.px]="menuTopLeftPosition.x"
   [style.top.px]="menuTopLeftPosition.y"
   [matMenuTriggerFor]="rightMenu"
+  (menuClosed)="onMenuClosed()"
 ></div>
 
+<!-- Items that do not apply are left out (not [hidden]): the menu's keyboard
+     navigation would still stop on a hidden item, and Enter would trigger it.
+     Dividers only sit between groups that have items. -->
 <mat-menu #rightMenu="matMenu">
   <ng-template matMenuContent let-item="item">
-    <button
-      [hidden]="viewMode !== viewModeEnum.History"
-      mat-menu-item
-      (click)="removeFromHistory()"
-    >
-      {{ "MENU.REMOVE" | translate }}
-    </button>
-    <button
-      [hidden]="
-        channel?.media_type === mediaTypeEnum.group ||
-        channel?.media_type === mediaTypeEnum.season ||
-        viewMode === viewModeEnum.History
-      "
-      mat-menu-item
-      (click)="favorite()"
-    >
-      <ng-container *ngIf="alreadyExistsInFav">{{ "MENU.UNFAVORITE" | translate }}</ng-container>
-      <ng-container *ngIf="!alreadyExistsInFav">{{ "MENU.FAVORITE" | translate }}</ng-container>
-    </button>
-    <button [hidden]="!canFavorite()" mat-menu-item [matMenuTriggerFor]="listsMenu">
-      {{ "FAV_LISTS.ADD_TO_LIST" | translate }}
-    </button>
-    <button [hidden]="favoriteList === undefined" mat-menu-item (click)="removeFromList()">
-      {{ "FAV_LISTS.REMOVE_FROM_LIST" | translate }}
-    </button>
-    <button [hidden]="!reorderable || first" mat-menu-item (click)="moveBy(-1)">
-      {{ "FAV_LISTS.MOVE_FORWARD" | translate }}
-    </button>
-    <button [hidden]="!reorderable || last" mat-menu-item (click)="moveBy(1)">
-      {{ "FAV_LISTS.MOVE_BACK" | translate }}
-    </button>
-    <button [hidden]="!resumable" mat-menu-item (click)="playFromStart()">
-      {{ "MENU.PLAY_FROM_START" | translate }}
-    </button>
-    <button [hidden]="!resumable && !watched" mat-menu-item (click)="markUnwatched()">
-      {{ "MENU.MARK_UNWATCHED" | translate }}
-    </button>
-    <button [hidden]="!isLivestream()" mat-menu-item (click)="record()">
-      {{ "MENU.RECORD" | translate }}
-    </button>
-    <button [hidden]="!isMovie() || downloading" mat-menu-item (click)="downloadVod()">
-      {{ "MENU.DOWNLOAD" | translate }}
-    </button>
-    <button [hidden]="!isMovie() || !downloading" mat-menu-item (click)="cancelDownload()">
-      {{ "MENU.CANCEL_DOWNLOAD" | translate }}
-    </button>
-    <button [hidden]="!showEPG()" mat-menu-item (click)="showEPGModal()">
-      {{ "MENU.EPG" | translate }}
-    </button>
-    <button [hidden]="!canMapEpg()" mat-menu-item (click)="openEpgMapping()">
-      {{ "MENU.MAP_EPG" | translate }}
-    </button>
-    <button [hidden]="!isCustom()" mat-menu-item (click)="edit()">
-      {{ "MENU.EDIT" | translate }}
-    </button>
-    <button [hidden]="!isCustom()" mat-menu-item (click)="share()">
-      {{ "MENU.SHARE" | translate }}
-    </button>
-    <button [hidden]="!isLivestream()" mat-menu-item (click)="openRestreamModal()">
-      {{ "MENU.RESTREAM" | translate }}
-    </button>
-    <button
-      mat-menu-item
-      [hidden]="
-        channel?.media_type === mediaTypeEnum.group || channel?.media_type === mediaTypeEnum.season
-      "
-      (click)="copyURL()"
-    >
-      {{ "MENU.COPY_URL" | translate }}
-    </button>
-    <button [hidden]="!isGroup()" mat-menu-item (click)="toggleGroupLock()">
-      {{ (isLockedGroup() ? "MENU.UNLOCK_GROUP" : "MENU.LOCK_GROUP") | translate }}
-    </button>
-    <button [hidden]="!isCustom()" mat-menu-item (click)="delete()">
-      {{ "MENU.DELETE" | translate }}
-    </button>
+    @let isGroupOrSeason =
+      channel?.media_type === mediaTypeEnum.group || channel?.media_type === mediaTypeEnum.season;
+    <!-- Playback -->
+    @let showPlayFromStart = resumable;
+    @let showMarkUnwatched = resumable || watched;
+    @let showRecord = isLivestream();
+    @let showDownload = isMovie() && !downloading;
+    @let showCancelDownload = isMovie() && downloading;
+    @let showRestream = isLivestream();
+    <!-- History, favorites and lists -->
+    @let showRemoveFromHistory = viewMode === viewModeEnum.History;
+    @let showFavorite = !isGroupOrSeason && viewMode !== viewModeEnum.History;
+    @let showAddToList = canFavorite();
+    @let showRemoveFromList = favoriteList !== undefined;
+    @let showMoveForward = reorderable && !first;
+    @let showMoveBack = reorderable && !last;
+    <!-- Guide -->
+    @let showEpg = showEPG();
+    @let showMapEpg = canMapEpg();
+    <!-- Edit, export, copy. A series' url holds its series id, not a stream. -->
+    @let showEdit = isCustom();
+    @let showShare = isCustom();
+    @let showCopyUrl = !isGroupOrSeason && channel?.media_type !== mediaTypeEnum.serie;
+    <!-- Lock (only with a PIN to lock with) and delete -->
+    @let showLock = canLockGroup();
+    @let showDelete = isCustom();
+
+    @let playGroup =
+      showPlayFromStart ||
+      showMarkUnwatched ||
+      showRecord ||
+      showDownload ||
+      showCancelDownload ||
+      showRestream;
+    @let listGroup =
+      showRemoveFromHistory ||
+      showFavorite ||
+      showAddToList ||
+      showRemoveFromList ||
+      showMoveForward ||
+      showMoveBack;
+    @let guideGroup = showEpg || showMapEpg;
+    @let editGroup = showEdit || showShare || showCopyUrl;
+
+    @if (showPlayFromStart) {
+      <button mat-menu-item (click)="playFromStart()">
+        {{ "MENU.PLAY_FROM_START" | translate }}
+      </button>
+    }
+    @if (showMarkUnwatched) {
+      <button mat-menu-item (click)="markUnwatched()">
+        {{ "MENU.MARK_UNWATCHED" | translate }}
+      </button>
+    }
+    @if (showRecord) {
+      <button mat-menu-item (click)="record()">
+        {{ "MENU.RECORD" | translate }}
+      </button>
+    }
+    @if (showDownload) {
+      <button mat-menu-item (click)="downloadVod()">
+        {{ "MENU.DOWNLOAD" | translate }}
+      </button>
+    }
+    @if (showCancelDownload) {
+      <button mat-menu-item (click)="cancelDownload()">
+        {{ "MENU.CANCEL_DOWNLOAD" | translate }}
+      </button>
+    }
+    @if (showRestream) {
+      <button mat-menu-item (click)="openRestreamModal()">
+        {{ "MENU.RESTREAM" | translate }}
+      </button>
+    }
+
+    @if (listGroup && playGroup) {
+      <mat-divider></mat-divider>
+    }
+    @if (showRemoveFromHistory) {
+      <button mat-menu-item (click)="removeFromHistory()">
+        {{ "MENU.REMOVE" | translate }}
+      </button>
+    }
+    @if (showFavorite) {
+      <button mat-menu-item (click)="favorite()">
+        {{ (alreadyExistsInFav ? "MENU.UNFAVORITE" : "MENU.FAVORITE") | translate }}
+      </button>
+    }
+    @if (showAddToList) {
+      <button mat-menu-item [matMenuTriggerFor]="listsMenu">
+        {{ "FAV_LISTS.ADD_TO_LIST" | translate }}
+      </button>
+    }
+    @if (showRemoveFromList) {
+      <button mat-menu-item (click)="removeFromList()">
+        {{ "FAV_LISTS.REMOVE_FROM_LIST" | translate }}
+      </button>
+    }
+    @if (showMoveForward) {
+      <button mat-menu-item (click)="moveBy(-1)">
+        {{ "FAV_LISTS.MOVE_FORWARD" | translate }}
+      </button>
+    }
+    @if (showMoveBack) {
+      <button mat-menu-item (click)="moveBy(1)">
+        {{ "FAV_LISTS.MOVE_BACK" | translate }}
+      </button>
+    }
+
+    @if (guideGroup && (playGroup || listGroup)) {
+      <mat-divider></mat-divider>
+    }
+    @if (showEpg) {
+      <button mat-menu-item (click)="showEPGModal()">
+        {{ "MENU.EPG" | translate }}
+      </button>
+    }
+    @if (showMapEpg) {
+      <button mat-menu-item (click)="openEpgMapping()">
+        {{ "MENU.MAP_EPG" | translate }}
+      </button>
+    }
+
+    @if (editGroup && (playGroup || listGroup || guideGroup)) {
+      <mat-divider></mat-divider>
+    }
+    @if (showEdit) {
+      <button mat-menu-item (click)="edit()">
+        {{ "MENU.EDIT" | translate }}
+      </button>
+    }
+    @if (showShare) {
+      <button mat-menu-item (click)="share()">
+        {{ "MENU.SHARE" | translate }}
+      </button>
+    }
+    @if (showCopyUrl) {
+      <button mat-menu-item (click)="copyURL()">
+        {{ "MENU.COPY_URL" | translate }}
+      </button>
+    }
+
+    @if (showLock && (playGroup || listGroup || guideGroup || editGroup)) {
+      <mat-divider></mat-divider>
+    }
+    @if (showLock) {
+      <button mat-menu-item (click)="toggleGroupLock()">
+        {{ (isLockedGroup() ? "MENU.UNLOCK_GROUP" : "MENU.LOCK_GROUP") | translate }}
+      </button>
+    }
+
+    @if (showDelete && (playGroup || listGroup || guideGroup || editGroup || showLock)) {
+      <mat-divider></mat-divider>
+    }
+    @if (showDelete) {
+      <button mat-menu-item class="menu-item-danger" (click)="delete()">
+        {{ "MENU.DELETE" | translate }}
+      </button>
+    }
   </ng-template>
 </mat-menu>
 

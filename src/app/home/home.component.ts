@@ -40,6 +40,8 @@ import { Stack } from "../models/stack";
 import { VIEW_FORMAT, ViewFormat } from "../models/viewFormat";
 import { TranslateService, TranslatePipe } from "@ngx-translate/core";
 import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
+import { EditChannelModalComponent } from "../edit-channel-modal/edit-channel-modal.component";
+import { EditGroupModalComponent } from "../edit-group-modal/edit-group-modal.component";
 import { ParentalService } from "../parental.service";
 import { CountryCount } from "../models/epgExtras";
 import { toCountryPrefixMode } from "../country-prefix";
@@ -59,6 +61,10 @@ export type HomePanel = "library" | "guide" | "recordings";
 
 /// Number of sidebar nav items (ids viewMode-0 .. viewMode-6).
 const NAV_ITEM_COUNT = 7;
+
+/// Going back loads at most this many pages again to restore the scroll
+/// position (36 tiles each); further down, the list starts shorter.
+const MAX_RESTORED_PAGES = 10;
 
 @Component({
   selector: "app-home",
@@ -129,7 +135,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly PAGE_SIZE = 36;
   channelsVisible = true;
   prevSearchValue = "";
+  /// What the search box holds (for its clear button).
+  searchText = "";
   loading = false;
+  /// The first page of the current view failed to load: an error with a
+  /// retry button is shown instead of the "nothing found" state.
+  loadFailed = false;
   gridLoading = false;
   readonly skeletons = Array(9);
   nodeStack: Stack = new Stack();
@@ -146,6 +157,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private navigatingBack = false;
   private scrollListener?: () => void;
   sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED) === "true";
+  /// Below 768px the sidebar is a top bar without labels (home.component.css).
+  private readonly narrowQuery = window.matchMedia("(max-width: 767.98px)");
+  narrow = this.narrowQuery.matches;
+  private readonly narrowListener = (event: MediaQueryListEvent) =>
+    this.ngZone.run(() => (this.narrow = event.matches));
   panel: HomePanel = "library";
   /// History restricted to movies/episodes, which resume where they were left.
   continueWatching = false;
@@ -225,6 +241,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.scrollListener = () => this.onScroll();
       window.addEventListener("scroll", this.scrollListener, { passive: true });
     });
+    this.narrowQuery.addEventListener("change", this.narrowListener);
     this.buildShortcuts();
     // The help labels are translated: rebuild them once the language file is
     // loaded (it may still be loading when the home page opens) or switched.
@@ -358,9 +375,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         // twice.
         const top = this.nodeStack.get();
         if (top && top.id === dto.id && top.type === dto.type) return;
-        this.nodeStack.add(
-          new Node(dto.id, dto.name, dto.type, this.filters?.query, this.filters?.view_type),
+        const node = new Node(
+          dto.id,
+          dto.name,
+          dto.type,
+          this.filters?.query,
+          this.filters?.view_type,
+          top,
         );
+        // Kept for goBack(): how far the level being left was scrolled and
+        // paged, and which tile the keyboard was on.
+        node.page = this.filters?.page;
+        node.tileIndex = this.focusedTile()?.id;
+        this.nodeStack.add(node);
         if (dto.type == NodeType.Category) this.filters!.group_id = dto.id;
         else if (dto.type == NodeType.Series) {
           this.filters!.series_id = dto.id;
@@ -369,6 +396,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
         this.clearSearch();
         await this.load();
+        // The new level starts at its top; the old position is restored on
+        // the way back.
+        window.scrollTo({ top: 0, behavior: "instant" });
         if (this.focusArea == FocusArea.Tiles) this.selectFirstChannelDelayed(100);
       }),
     );
@@ -390,9 +420,34 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   clearSearch() {
-    this.search.nativeElement.value = "";
+    this.setSearchValue("");
     this.prevSearchValue = "";
     this.filters!.query = "";
+  }
+
+  /// Writes the search box from code; `searchText` mirrors it for the clear
+  /// button (the input itself is not bound).
+  private setSearchValue(value: string) {
+    this.search.nativeElement.value = value;
+    this.searchText = value;
+  }
+
+  /** The search box's clear button: empties the query and reloads. */
+  async clearSearchAndReload() {
+    if (!this.filters) return;
+    this.clearSearch();
+    this.channelsVisible = true;
+    (this.search.nativeElement as HTMLInputElement).focus();
+    await this.load();
+  }
+
+  /// Escape in a filled search box only empties it; with nothing to clear it
+  /// goes on to the page's handler (onKeyDown), which leaves the box.
+  onSearchEscape(event: Event) {
+    if (!this.searchText || !this.filters) return;
+    event.preventDefault();
+    event.stopPropagation();
+    void this.clearSearchAndReload();
   }
 
   /**
@@ -445,6 +500,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.mirrorPlayerList();
       this.reachedMax = channels.length < this.PAGE_SIZE;
       this.loadMoreFailed = false;
+      if (!more) this.loadFailed = false;
     } catch (e) {
       if (seq !== this.loadSeq) return;
       this.error.handleError(e);
@@ -457,6 +513,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.filters.page = 1;
         this.reachedMax = true;
         this.channelsVisible = true;
+        this.loadFailed = true;
       }
     } finally {
       if (seq === this.loadSeq) {
@@ -516,6 +573,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           debounceTime(300),
         )
         .subscribe(async (term: string) => {
+          // Cleared (button, Escape) while the term was still debouncing.
+          if (term !== this.search.nativeElement.value) return;
           this.filters!.query = term;
           await this.load();
         }),
@@ -676,11 +735,43 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   updateMediaTypes(mediaType: MediaType) {
     // "Continue watching" always shows movies/episodes only; the pills are
     // hidden there and the shortcuts must not change it either.
-    if (this.continueWatching || this.panel !== "library") return;
-    const index = this.filters!.media_types.indexOf(mediaType);
-    if (index == -1) this.filters!.media_types.push(mediaType);
-    else this.filters!.media_types.splice(index, 1);
+    if (this.continueWatching || this.panel !== "library" || !this.filters) return;
+    const index = this.filters.media_types.indexOf(mediaType);
+    if (index != -1 && this.activePillCount() === 0) {
+      // The last one was switched off (by shortcut; a click is stopped in
+      // guardLastPill): nothing would be left to show.
+      this.setPill(mediaType, true);
+      this.toast.info(this.translate.instant("HOME.PILL.KEEP_ONE"));
+      return;
+    }
+    if (index == -1) this.filters.media_types.push(mediaType);
+    else this.filters.media_types.splice(index, 1);
     this.load();
+  }
+
+  /// Active media pills the user can see (series only exist with Xtream).
+  private activePillCount(): number {
+    return [this.chkLiveStream, this.chkMovie, this.hasXtream && this.chkSerie].filter(Boolean)
+      .length;
+  }
+
+  private setPill(mediaType: MediaType, active: boolean) {
+    if (mediaType === MediaType.livestream) this.chkLiveStream = active;
+    else if (mediaType === MediaType.movie) this.chkMovie = active;
+    else if (mediaType === MediaType.serie) this.chkSerie = active;
+  }
+
+  /// The only active pill: switching it off would leave an empty list.
+  isLastActivePill(active: boolean): boolean {
+    return active && this.activePillCount() === 1;
+  }
+
+  /** Click on a pill's checkbox: the last active one stays on. */
+  guardLastPill(event: Event, active: boolean) {
+    if (!this.isLastActivePill(active)) return;
+    // Keeps the box checked; no change event, so no reload either.
+    event.preventDefault();
+    this.toast.info(this.translate.instant("HOME.PILL.KEEP_ONE"));
   }
 
   /**
@@ -842,6 +933,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return !this.filters?.series_id && !this.continueWatching && this.panel === "library";
   }
 
+  /// The history (also "continue watching") is always ordered by last
+  /// watched; only a series' season list follows the sort there.
+  sortApplies(): boolean {
+    if (this.filters?.view_type !== ViewMode.History) return true;
+    return this.filters.series_id !== undefined && this.filters.season === undefined;
+  }
+
+  /// The sidebar shows its icons only (collapsed, or the narrow top bar):
+  /// the nav items get tooltips then.
+  labelsHidden(): boolean {
+    return this.sidebarCollapsed || this.narrow;
+  }
+
   async switchMode(viewMode: ViewMode, continueWatching = false) {
     if (!this.filters) return;
     const sameMode =
@@ -898,8 +1002,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private closeTrackedModal() {
     const ref = this.memory.ModalRef;
     if (!ref) return;
-    if (ref.componentInstance.name != "RestreamModalComponent" || !ref.componentInstance.started)
-      ref.close("close");
+    // The edit dialogs hold unsaved input: they close by their buttons only.
+    const instance = ref.componentInstance;
+    if (
+      instance instanceof EditChannelModalComponent ||
+      instance instanceof EditGroupModalComponent
+    )
+      return;
+    if (instance.name != "RestreamModalComponent" || !instance.started) ref.close("close");
   }
 
   async goBackHotkey() {
@@ -913,8 +1023,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectFirstChannelDelayed(100);
     } else if (this.nodeStack.hasNodes()) {
       if (this.navigatingBack) return;
-      await this.goBack();
-      this.selectFirstChannelDelayed(100);
+      if (!(await this.goBack())) this.selectFirstChannelDelayed(100);
     } else {
       this.selectFirstChannel();
     }
@@ -924,10 +1033,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     setTimeout(() => this.selectFirstChannel(), milliseconds);
   }
 
-  async goBack() {
+  /**
+   * One level up, back to where that level was scrolled. Resolves to true
+   * when the keyboard focus went back to the tile the level was left from.
+   */
+  async goBack(): Promise<boolean> {
     // Holding Backspace (or clicking the arrow repeatedly) must not pop two
     // levels at once or pop an empty stack.
-    if (this.navigatingBack || !this.nodeStack.hasNodes() || !this.filters) return;
+    if (this.navigatingBack || !this.nodeStack.hasNodes() || !this.filters) return false;
     this.navigatingBack = true;
     try {
       const node = this.nodeStack.pop();
@@ -939,16 +1052,46 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.filters.season = undefined;
       }
       if (node.query) {
-        this.search.nativeElement.value = node.query;
+        this.setSearchValue(node.query);
+        this.prevSearchValue = node.query;
         this.filters.query = node.query;
       }
       if (node.fromViewType && this.filters.view_type !== node.fromViewType) {
         this.filters.view_type = node.fromViewType;
       }
       await this.load();
+      return await this.restorePosition(node);
     } finally {
       this.navigatingBack = false;
     }
+  }
+
+  /**
+   * Back on the level a node was opened from: loads as many pages as it had,
+   * scrolls to where it was and, when the focus got lost with the old tiles,
+   * puts it on the tile that was opened. Resolves to true in that case.
+   */
+  private async restorePosition(node: Node): Promise<boolean> {
+    let seq = this.loadSeq;
+    const pages = Math.min(node.page ?? 1, MAX_RESTORED_PAGES);
+    while (this.filters && this.filters.page < pages && !this.reachedMax && !this.loadMoreFailed) {
+      await this.load(true);
+      // Superseded (the user moved on meanwhile): leave the position alone.
+      if (this.loadSeq !== seq + 1) return false;
+      seq = this.loadSeq;
+    }
+    // The tiles render after this change detection.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    if (this.loadSeq !== seq || this.panel !== "library") return false;
+    window.scrollTo({ top: node.scrollPosition, behavior: "instant" });
+    const active = document.activeElement;
+    if (node.tileIndex === undefined || (active && active !== document.body)) return false;
+    const tile = document.getElementById(`${FocusAreaPrefix[FocusArea.Tiles]}${node.tileIndex}`);
+    if (!tile) return false;
+    tile.focus({ preventScroll: true });
+    this.focusArea = FocusArea.Tiles;
+    this.focus = node.tileIndex;
+    return true;
   }
 
   /** Shows the TV guide or the recordings instead of the channel library. */
@@ -1172,6 +1315,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.destroyed = true;
     if (this.scrollListener) window.removeEventListener("scroll", this.scrollListener);
+    this.narrowQuery.removeEventListener("change", this.narrowListener);
     this.subscriptions.forEach((x) => x.unsubscribe());
     this.autoRefreshUnlisten?.();
   }

@@ -16,6 +16,10 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 
+/// A file as get_recording_files lists it: `recording` while a scheduled
+/// recording still writes it (recordings.rs marks those).
+export type ListedRecordingFile = RecordingFile;
+
 /**
  * The recordings view of the home page: the recording schedule (pending,
  * running and finished scheduled recordings), the saved guide searches that
@@ -37,7 +41,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
   readonly statusEnum = RecordingStatus;
   readonly alertMinLength = EPG_ALERT_MIN_LENGTH;
   schedule: ScheduledRecording[] = [];
-  files: RecordingFile[] = [];
+  files: ListedRecordingFile[] = [];
   folder?: string;
   scheduleLoaded = false;
   filesLoaded = false;
@@ -97,7 +101,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 
   async loadFiles(silent = false) {
     try {
-      this.files = await invoke<RecordingFile[]>("get_recording_files");
+      this.files = await invoke<ListedRecordingFile[]>("get_recording_files");
     } catch (e) {
       if (!silent)
         this.error.handleError(e, this.translate.instant("RECORDINGS.FILES_LOAD_FAILED"));
@@ -278,6 +282,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
       ],
       confirmLabel: "RECORDINGS.CANCEL",
       params: { title: this.recordingTitle(recording) },
+      trashIcon: false,
     });
     if (!confirmed) return;
     this.busy.add(key);
@@ -292,8 +297,22 @@ export class RecordingsComponent implements OnInit, OnDestroy {
     await this.loadSchedule();
   }
 
+  /**
+   * Removes the finished entries from the schedule. Failed ones are asked
+   * about first: with them goes the only sign that a recording did not work.
+   */
   async clearFinished() {
     if (this.clearing) return;
+    const failed = this.schedule.filter((r) => r.status === RecordingStatus.Failed).length;
+    if (failed > 0) {
+      const confirmed = await this.confirmService.confirm({
+        title: "CONFIRM.CLEAR_FINISHED_TITLE",
+        messages: ["CONFIRM.CLEAR_FINISHED_FAILED_BODY"],
+        confirmLabel: "RECORDINGS.CLEAR_FINISHED",
+        params: { count: failed },
+      });
+      if (!confirmed) return;
+    }
     this.clearing = true;
     try {
       await invoke("clear_finished_recordings");
@@ -306,7 +325,11 @@ export class RecordingsComponent implements OnInit, OnDestroy {
     await this.loadSchedule();
   }
 
-  /** Plays a file through the same path as the channel tiles. */
+  /**
+   * Plays a file through the same path as the channel tiles. A recording
+   * has no channels to zap to: the player's channel keys must not jump to
+   * whatever live channel was listed before.
+   */
   async play(file: RecordingFile) {
     const channel: Channel = {
       id: -1,
@@ -316,15 +339,16 @@ export class RecordingsComponent implements OnInit, OnDestroy {
       favorite: false,
     };
     try {
-      await this.playback.play(channel);
+      await this.playback.play(channel, []);
     } catch (e) {
       this.error.handleError(e);
     }
   }
 
-  async deleteFile(file: RecordingFile) {
+  async deleteFile(file: ListedRecordingFile) {
     const key = `f${file.path}`;
-    if (this.busy.has(key)) return;
+    // Still being written: the scheduled recording would fail with it.
+    if (this.busy.has(key) || file.recording) return;
     const confirmed = await this.confirmService.confirm({
       title: "CONFIRM.DELETE_RECORDING_TITLE",
       messages: ["CONFIRM.DELETE_RECORDING_BODY"],

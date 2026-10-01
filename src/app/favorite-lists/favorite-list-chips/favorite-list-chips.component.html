@@ -20,7 +20,8 @@
       [attr.aria-label]="'FAV_LISTS.CHIP_LABEL' | translate: { name: list.name, count: list.count }"
       (click)="selectList.emit(list.id)"
     >
-      <span class="chip-name">{{ list.name }}</span>
+      <!-- Long names are cut off in the chip: the full one on hover. -->
+      <span class="chip-name" [title]="list.name">{{ list.name }}</span>
       <span class="chip-count" aria-hidden="true">{{ list.count }}</span>
     </button>
     <button
@@ -54,7 +55,7 @@
     <button mat-menu-item (click)="rename(list)">
       {{ "FAV_LISTS.RENAME" | translate }}
     </button>
-    <button mat-menu-item (click)="delete(list)">
+    <button mat-menu-item class="menu-item-danger" (click)="delete(list)">
       {{ "MENU.DELETE" | translate }}
     </button>
   </ng-template>

@@ -1,13 +1,14 @@
 //! Lightweight PVR: records scheduled EPG programs in the background.
 //!
 //! A tokio task (started from the app setup hook) wakes up every 30 seconds,
-//! starts an ffmpeg `-c copy` capture for every due recording and reaps
-//! finished ones. Child process handles are kept in a module-level map so an
-//! active recording can be cancelled from a tauri command.
+//! or right away when a recording is scheduled that should already be
+//! running, starts an ffmpeg `-c copy` capture for every due recording and
+//! reaps finished ones. Child process handles are kept in a module-level map
+//! so an active recording can be cancelled from a tauri command.
 
 use std::{
     collections::HashMap,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{LazyLock, Mutex},
     time::Duration,
@@ -46,6 +47,9 @@ const EARLY_EXIT_TOLERANCE_SECS: i64 = 60;
 struct ActiveRecording {
     child: Child,
     end_timestamp: i64,
+    /// The file ffmpeg writes, so the recordings view can tell it is not
+    /// finished yet (and refuse to delete it).
+    output: PathBuf,
 }
 
 /// Child handles of currently running ffmpeg captures, keyed by
@@ -53,6 +57,10 @@ struct ActiveRecording {
 /// non-async critical sections.
 static ACTIVE: LazyLock<Mutex<HashMap<i64, ActiveRecording>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Wakes the scheduler loop before its next poll: "record from now" on a
+/// running programme should not wait up to 30 seconds to start.
+static WAKE: tokio::sync::Notify = tokio::sync::Notify::const_new();
 
 /// Starts the background scheduler loop. Called once from the tauri setup hook.
 pub fn start(app: AppHandle) {
@@ -66,7 +74,10 @@ pub fn start(app: AppHandle) {
             if let Err(e) = tick(&app) {
                 log(format!("{:?}", e.context("recording scheduler tick")));
             }
-            tokio::time::sleep(POLL_INTERVAL).await;
+            tokio::select! {
+                _ = tokio::time::sleep(POLL_INTERVAL) => {}
+                _ = WAKE.notified() => {}
+            }
         }
     });
 }
@@ -98,7 +109,33 @@ pub fn schedule(
         status: STATUS_PENDING,
         channel_name: None,
     })?;
+    // A running programme recorded "from now": start it with the next tick
+    // instead of the next poll. It records until the programme's end.
+    if starts_immediately(start_timestamp, now()) {
+        WAKE.notify_one();
+    }
     Ok(())
+}
+
+/// Whether a recording starting at `start_timestamp` is due already.
+fn starts_immediately(start_timestamp: i64, current: i64) -> bool {
+    start_timestamp <= current
+}
+
+/// The files running recordings are writing right now.
+pub fn active_outputs() -> Vec<PathBuf> {
+    lock_active()
+        .map(|active| active.values().map(|r| r.output.clone()).collect())
+        .unwrap_or_default()
+}
+
+/// Whether `path` is one of the files a running recording writes. Compared
+/// canonically where possible: the folder setting may be spelled differently
+/// (case, separators) from the path the folder listing produced.
+pub fn is_active_output(path: &Path, active: &[PathBuf]) -> bool {
+    let canonical = |p: &Path| std::fs::canonicalize(p).unwrap_or_else(|_| p.to_path_buf());
+    let path = canonical(path);
+    active.iter().any(|a| canonical(a) == path)
 }
 
 /// Cancels a scheduled recording: kills ffmpeg if it is currently running,
@@ -127,12 +164,13 @@ fn tick(app: &AppHandle) -> Result<()> {
             continue;
         }
         match start_recording(&recording, current) {
-            Ok(child) => {
+            Ok((child, output)) => {
                 lock_active()?.insert(
                     id,
                     ActiveRecording {
                         child,
                         end_timestamp: recording.end_timestamp,
+                        output,
                     },
                 );
                 sql::set_scheduled_recording_status(id, STATUS_RECORDING)?;
@@ -197,7 +235,7 @@ fn reap_finished(current: i64) -> Result<()> {
 
 /// Spawns ffmpeg for one due recording:
 /// `ffmpeg -y [header args] -i <url> -t <remaining secs> -c copy <output>.ts`
-fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<Child> {
+fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<(Child, PathBuf)> {
     let channel = sql::get_channel_by_id(recording.channel_id)?;
     let url = crate::mpv::channel_stream_url(&channel)?;
     let remaining_secs = recording.end_timestamp - current;
@@ -222,12 +260,12 @@ fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<Child
         .arg(remaining_secs.to_string())
         .arg("-c")
         .arg("copy")
-        .arg(output)
+        .arg(&output)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .map_err(|e| crate::utils::friendly_spawn_error(FFMPEG_BIN_NAME, e))?;
-    Ok(child)
+    Ok((child, PathBuf::from(output)))
 }
 
 /// `<recording_path>/<sanitized title or channel name>-<yyyyMMdd-HHmm>.ts`,
@@ -258,4 +296,32 @@ fn notify_started(app: &AppHandle, recording: &ScheduledRecording) {
         .title(format!("Recording started: {title}"))
         .show()
         .map_err(|e| log(format!("failed to show recording notification: {e:?}")));
+}
+
+#[cfg(test)]
+mod test_recording_scheduler {
+    use super::*;
+
+    #[test]
+    fn test_running_programme_starts_immediately() {
+        // "Record from now" sends the programme's start, which has passed.
+        assert!(starts_immediately(1_000, 1_000));
+        assert!(starts_immediately(900, 1_000));
+        assert!(!starts_immediately(1_001, 1_000));
+    }
+
+    #[test]
+    fn test_active_output_matching() {
+        let dir = std::env::temp_dir().join("streameo-test-active-output");
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("show-20260101-2000.ts");
+        std::fs::write(&file, b"x").unwrap();
+        let other = dir.join("other.ts");
+        // The same file spelled another way (a `.` component) still matches.
+        let spelled = dir.join(".").join("show-20260101-2000.ts");
+        assert!(is_active_output(&file, &[spelled]));
+        assert!(!is_active_output(&other, std::slice::from_ref(&file)));
+        assert!(!is_active_output(&file, &[]));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

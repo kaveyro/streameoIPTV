@@ -82,7 +82,7 @@ const MAX_RESTORED_PAGES = 10;
     RecordingsComponent,
   ],
   templateUrl: "./home.component.html",
-  styleUrl: "./home.component.css",
+  styleUrls: ["./home.component.css", "./home-search.css"],
   animations: [
     trigger("fadeInOut", [
       transition(":enter", [

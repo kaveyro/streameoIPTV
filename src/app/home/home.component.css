@@ -59,46 +59,6 @@
   margin-bottom: 1rem;
 }
 
-.search-box {
-  position: relative;
-  flex: 1 1 240px;
-  min-width: 200px;
-}
-
-/* Room for the magnifier at the start and the clear button at the end. */
-.search-input {
-  width: 100%;
-  padding-inline: 2.25rem;
-}
-
-.search-icon {
-  position: absolute;
-  top: 50%;
-  inset-inline-start: 0.7rem;
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-  pointer-events: none;
-}
-
-.search-clear {
-  position: absolute;
-  top: 50%;
-  inset-inline-end: 0.45rem;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-}
-
-.search-clear:hover {
-  color: var(--text-primary);
-}
-
-.search-clear > svg {
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
-}
-
 .toolbar-actions {
   display: flex;
   align-items: center;

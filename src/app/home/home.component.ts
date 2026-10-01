@@ -528,9 +528,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /// publishes its own rows while it is shown.
   private mirrorPlayerList() {
     if (this.panel !== "library") return;
-    this.memory.PlayerChannelList = this.channels.filter(
+    const following = this.memory.PlayerChannelList === this.memory.LibraryChannelList;
+    this.memory.LibraryChannelList = this.channels.filter(
       (c) => c.media_type === MediaType.livestream || c.media_type === MediaType.movie,
     );
+    if (following) this.memory.PlayerChannelList = this.memory.LibraryChannelList;
   }
 
   /** Runs outside the Angular zone (see ngOnInit). */
@@ -1108,9 +1110,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.focusArea = FocusArea.ViewMode;
     this.showScrollTop = false;
     window.scrollTo({ top: 0, behavior: "instant" });
-    // The player's side list mirrors the shown channels: the guide publishes
-    // its own rows, the recordings have none.
-    this.memory.PlayerChannelList = [];
   }
 
   /** Home toolbar lock: show the locked groups (after the PIN) or hide them. */

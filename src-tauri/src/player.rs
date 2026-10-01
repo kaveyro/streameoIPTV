@@ -142,14 +142,12 @@ static INIT_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 /// are forwarded to the frontend as a `player-key` event with the action.
 /// The digits (channel number zapping) come back as `digit-N`. `i` shows the
 /// channel banner again (mpv's stats stay on `I`), Home starts a movie over.
-/// Up/Down switch channels like in the app (mpv would seek a minute), Enter
-/// confirms a typed number (mpv would skip in the playlist).
+/// Enter confirms a typed number (mpv would skip in the playlist). Up/Down
+/// depend on what plays, see [`arrow_keybinds`].
 #[cfg_attr(not(target_os = "windows"), allow(dead_code))]
-const APP_KEYS: [(&str, &str); 30] = [
+const APP_KEYS: [(&str, &str); 28] = [
     ("PGDWN", "next"),
     ("PGUP", "prev"),
-    ("DOWN", "next"),
-    ("UP", "prev"),
     ("ENTER", "commit"),
     ("KP_ENTER", "commit"),
     ("ESC", "back"),
@@ -1071,6 +1069,7 @@ fn build_play_commands(
     cmds.push(set_prop("cache", json!(cache)));
 
     let is_live = channel.media_type == crate::media_type::LIVESTREAM;
+    cmds.extend(arrow_keybinds(is_live));
     cmds.push(set_prop(
         "loop-playlist",
         json!(if is_live { "inf" } else { "no" }),
@@ -1109,6 +1108,46 @@ fn build_play_commands(
     Ok(cmds)
 }
 
+/// Up/Down switch channels on live TV, like in the app; in a movie, an
+/// episode or a recording they keep seeking a minute, as mpv does.
+fn arrow_keybinds(is_live: bool) -> [Value; 2] {
+    let (up, down) = if is_live {
+        (
+            "script-message streameo-key prev",
+            "script-message streameo-key next",
+        )
+    } else {
+        ("seek 60", "seek -60")
+    };
+    [
+        json!({ "command": ["keybind", "UP", up] }),
+        json!({ "command": ["keybind", "DOWN", down] }),
+    ]
+}
+
+/// What a `paused-for-cache` change means for the status over the video.
+/// `buffering` is the last value seen. Unavailable (no file loaded, `None`)
+/// says nothing: the end of "connecting" is the first frame
+/// (`playback-restart`), not the property turning false while a file opens.
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+fn cache_status(buffering: &mut bool, value: Option<bool>) -> Option<&'static str> {
+    match value {
+        Some(true) if !*buffering => {
+            *buffering = true;
+            Some("buffering")
+        }
+        Some(false) if *buffering => {
+            *buffering = false;
+            Some("playing")
+        }
+        None => {
+            *buffering = false;
+            None
+        }
+        _ => None,
+    }
+}
+
 fn set_prop(name: &str, value: Value) -> Value {
     json!({ "command": ["set_property", name, value] })
 }
@@ -1138,6 +1177,7 @@ async fn run_ipc(
     tokio::spawn(async move {
         let mut lines = BufReader::new(reader).lines();
         let mut info = StreamInfo::default();
+        let mut buffering = false;
         let mut info_sent = std::time::Instant::now();
         while let Ok(Some(line)) = lines.next_line().await {
             let Ok(v) = serde_json::from_str::<Value>(&line) else {
@@ -1167,9 +1207,10 @@ async fn run_ipc(
                 Some("property-change")
                     if v.get("name").and_then(Value::as_str) == Some("paused-for-cache") =>
                 {
-                    let buffering = v.get("data").and_then(Value::as_bool) == Some(true);
-                    let status = if buffering { "buffering" } else { "playing" };
-                    let _ = reader_app.emit("player-status", status);
+                    let value = v.get("data").and_then(Value::as_bool);
+                    if let Some(status) = cache_status(&mut buffering, value) {
+                        let _ = reader_app.emit("player-status", status);
+                    }
                 }
                 Some("property-change") => {
                     let name = v.get("name").and_then(Value::as_str).unwrap_or_default();
@@ -1773,6 +1814,21 @@ mod test_player {
     }
 
     #[test]
+    fn test_cache_status_reports_changes_only() {
+        let mut buffering = false;
+        // A file opening: unavailable, then false - not "playing" yet.
+        assert_eq!(cache_status(&mut buffering, None), None);
+        assert_eq!(cache_status(&mut buffering, Some(false)), None);
+        assert_eq!(cache_status(&mut buffering, Some(true)), Some("buffering"));
+        assert_eq!(cache_status(&mut buffering, Some(true)), None);
+        assert_eq!(cache_status(&mut buffering, Some(false)), Some("playing"));
+        // Zapped away while buffering: the old file's end says nothing.
+        assert_eq!(cache_status(&mut buffering, Some(true)), Some("buffering"));
+        assert_eq!(cache_status(&mut buffering, None), None);
+        assert_eq!(cache_status(&mut buffering, Some(false)), None);
+    }
+
+    #[test]
     fn test_status_overlay() {
         let shown = status_overlay(Some("Verbinde…"));
         assert_eq!(shown["command"]["id"].as_u64(), Some(STATUS_OVERLAY_ID));
@@ -1819,9 +1875,11 @@ mod test_player {
             assert!(IGNORED_KEYS.contains(&key), "{key}");
         }
         let action = |key: &str| APP_KEYS.iter().find(|(k, _)| *k == key).map(|(_, a)| *a);
-        assert_eq!(action("UP"), Some("prev"));
-        assert_eq!(action("DOWN"), Some("next"));
         assert_eq!(action("ENTER"), Some("commit"));
+        // Up/Down zap on live TV only; a movie keeps seeking with them.
+        let up = |live: bool| arrow_keybinds(live)[0]["command"][2].clone();
+        assert_eq!(up(true), "script-message streameo-key prev");
+        assert_eq!(up(false), "seek 60");
         // No key is both forwarded and ignored.
         assert!(APP_KEYS.iter().all(|(k, _)| !IGNORED_KEYS.contains(k)));
     }

@@ -396,7 +396,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       if (record) {
         await invoke("play", { channel: this.channel, record: record, recordPath: file });
       } else {
-        await this.playback.play(this.channel!);
+        await this.playback.play(this.channel!, this.memory.LibraryChannelList);
       }
     } catch (e) {
       this.error.handleError(e);

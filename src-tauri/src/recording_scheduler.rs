@@ -125,7 +125,14 @@ fn starts_immediately(start_timestamp: i64, current: i64) -> bool {
 /// The files running recordings are writing right now.
 pub fn active_outputs() -> Vec<PathBuf> {
     lock_active()
-        .map(|active| active.values().map(|r| r.output.clone()).collect())
+        .map(|mut active| {
+            active
+                .values_mut()
+                // ffmpeg ended (its -t limit) but the next tick has not
+                // reaped it yet: the file is complete.
+                .filter_map(|r| matches!(r.child.try_wait(), Ok(None)).then(|| r.output.clone()))
+                .collect()
+        })
         .unwrap_or_default()
 }
 

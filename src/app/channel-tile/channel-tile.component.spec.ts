@@ -270,7 +270,10 @@ describe("ChannelTileComponent", () => {
     const play = spyOn(TestBed.inject(PlaybackService), "play").and.resolveTo();
     await component.click();
     await settle();
-    expect(play).toHaveBeenCalledOnceWith(movie);
+    // With the library's list, so a catch-up played before does not leave
+    // the player without channels to zap to.
+    const library = TestBed.inject(MemoryService).LibraryChannelList;
+    expect(play).toHaveBeenCalledOnceWith(movie, library);
     expect(callsOf(calls, "add_last_watched").map((c) => c.args)).toEqual([{ id: 1 }]);
   });
 

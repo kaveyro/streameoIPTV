@@ -21,7 +21,7 @@ export class PlaybackService {
    * (next/previous, number entry) offer for it. Callers that pass it make
    * the list theirs; an empty one (catch-up, recordings) leaves nothing to
    * zap to, so a key cannot jump to an unrelated live channel. Without it
-   * the list stays as the page last published it (the library grid).
+   * the player keeps the list it has.
    */
   async play(channel: Channel, channelList?: Channel[]): Promise<void> {
     if (channelList) this.memory.PlayerChannelList = channelList;

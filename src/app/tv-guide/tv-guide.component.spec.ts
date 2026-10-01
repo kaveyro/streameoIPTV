@@ -230,9 +230,15 @@ describe("TvGuideComponent", () => {
     expect(element.querySelector(".guide-row")?.textContent).toContain(
       "GUIDE.NO_PROGRAMMES_IN_WINDOW",
     );
+    // Only as far as the programmes reach: the far future one is 3 days
+    // ahead, and nothing is older than today.
+    for (let i = 0; i < 10; i++) component.shiftDay(1);
+    expect(component.dayOffset).toBe(3);
+    expect(component.canShiftDay(1)).toBeFalse();
     for (let i = 0; i < 10; i++) component.shiftDay(-1);
-    expect(component.dayOffset).toBe(-TvGuideComponent.MAX_DAY_OFFSET);
+    expect(component.dayOffset).toBe(0);
     expect(component.canShiftDay(-1)).toBeFalse();
+    component.shiftDay(1);
     component.goToNow();
     near(component.windowStart, start);
     expect(component.dayTitle).toBe("GUIDE.TODAY");
@@ -280,7 +286,9 @@ describe("TvGuideComponent", () => {
     expect(memory.PlayerChannelList).toEqual([]);
     spyOn(TestBed.inject(PlaybackService), "play").and.callThrough();
     await component.playChannel(component.rows[0].channel);
-    expect(memory.PlayerChannelList.length).toBe(TvGuideComponent.PAGE_SIZE);
+    // The rows loaded so far (the scroll sentinel may already have fetched
+    // the second page in a tall browser window).
+    expect(memory.PlayerChannelList.length).toBe(component.rows.length);
     component.loadMore();
     await settle();
     expect(memory.PlayerChannelList.length).toBe(TvGuideComponent.PAGE_SIZE + 3);

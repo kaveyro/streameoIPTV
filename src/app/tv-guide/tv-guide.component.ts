@@ -115,6 +115,10 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   /// How many days the window goes back or ahead (catch-up archives and
   /// provider EPG rarely reach further).
   static readonly MAX_DAY_OFFSET = 7;
+  /// The earliest start and latest end among the loaded rows' programmes:
+  /// how far day navigation leads (canShiftDay).
+  private epgFrom?: number;
+  private epgUntil?: number;
   /// Once now is this far into the window, it moves on with the clock.
   static readonly WINDOW_ADVANCE_SECONDS = 2 * 3600;
 
@@ -299,8 +303,18 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     this.moveWindow("keep-position");
   }
 
+  /**
+   * Only to a day the loaded programmes reach: the backend keeps no past
+   * programmes (except catch-up) and a limited number ahead, so most other
+   * days would show empty rows. Today is always reachable.
+   */
   canShiftDay(days: number): boolean {
-    return Math.abs(this.dayOffset + days) <= TvGuideComponent.MAX_DAY_OFFSET;
+    const target = this.dayOffset + days;
+    if (Math.abs(target) > TvGuideComponent.MAX_DAY_OFFSET) return false;
+    if (target === 0) return true;
+    if (this.epgFrom === undefined || this.epgUntil === undefined) return false;
+    const base = Date.now() / 1000 + target * TvGuideComponent.DAY_SECONDS;
+    return this.epgFrom < base + 6 * 3600 && this.epgUntil > base - 3600;
   }
 
   private updateNow(now: number) {
@@ -397,6 +411,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       if (seq !== this.loadSeq || this.destroyed) return;
       this.page = page;
       const rows = channels.map((channel) => this.toRow(channel));
+      if (!more) this.epgFrom = this.epgUntil = undefined;
       this.rows = more ? this.rows.concat(rows) : rows;
       this.reachedMax = channels.length < TvGuideComponent.PAGE_SIZE;
       this.loadFailed = false;
@@ -494,6 +509,10 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private applyEpg(row: GuideRow, epg: EPG[]) {
+    for (const e of epg) {
+      this.epgFrom = Math.min(this.epgFrom ?? e.start_timestamp, e.start_timestamp);
+      this.epgUntil = Math.max(this.epgUntil ?? e.end_timestamp, e.end_timestamp);
+    }
     const px = TvGuideComponent.PX_PER_SECOND;
     const now = Date.now() / 1000;
     const catchUp = this.translate.instant("GUIDE.CATCHUP_AVAILABLE");

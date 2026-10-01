@@ -323,12 +323,13 @@ describe("SettingsComponent", () => {
     expect(lastSaved().restream_port).toBe(8080);
   });
 
-  it("accepts re-stream ports from 1024 to 65535 or none", () => {
+  it("accepts re-stream ports from 1 to 65535 or none", () => {
     expect(isValidRestreamPort(undefined)).toBeTrue();
     expect(isValidRestreamPort(null)).toBeTrue();
-    expect(isValidRestreamPort(1024)).toBeTrue();
+    expect(isValidRestreamPort(1)).toBeTrue();
+    expect(isValidRestreamPort(554)).toBeTrue();
     expect(isValidRestreamPort(65535)).toBeTrue();
-    expect(isValidRestreamPort(1023)).toBeFalse();
+    expect(isValidRestreamPort(0)).toBeFalse();
     expect(isValidRestreamPort(65536)).toBeFalse();
     expect(isValidRestreamPort(3000.5)).toBeFalse();
   });

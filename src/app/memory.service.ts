@@ -70,6 +70,10 @@ export class MemoryService {
   /// The currently displayed channel list, mirrored so the player's side list
   /// can offer seamless switching without going back to the grid.
   public PlayerChannelList: Channel[] = [];
+  /// The library grid's playable channels, handed to the player when a tile
+  /// starts playback. The player only follows its updates (more pages
+  /// loaded) while it plays from this list, not catch-up or a recording.
+  public LibraryChannelList: Channel[] = [];
   /// When true, playback keeps using the classic external mpv window instead of
   /// the embedded player (user setting / non-Windows).
   public UseExternalPlayer = false;

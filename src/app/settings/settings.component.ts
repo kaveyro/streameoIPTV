@@ -57,8 +57,9 @@ const SAVED_TOAST_INTERVAL_MS = 2000;
 const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
 
 /// Re-stream ports the settings accept: the backend stores a u16 (a larger
-/// value fails the whole save), and ports below 1024 need admin rights.
-export const RESTREAM_PORT_MIN = 1024;
+/// value fails the whole save). Low ports stay allowed: Windows binds them
+/// without admin rights, and a port saved earlier must keep working.
+export const RESTREAM_PORT_MIN = 1;
 export const RESTREAM_PORT_MAX = 65535;
 
 /// Empty means "use the default port".
@@ -424,9 +425,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
         if (this.settings.auto_fallback == undefined) this.settings.auto_fallback = true;
         this.settings.country_prefix = toCountryPrefixMode(this.settings.country_prefix);
         this.settings.language = this.settings.language ?? "system";
-        this.validRestreamPort = isValidRestreamPort(this.settings.restream_port)
-          ? this.settings.restream_port
-          : 3000;
+        // What is stored is kept until a valid port replaces it: a save of
+        // another setting must not change the port behind the user's back.
+        this.validRestreamPort = this.settings.restream_port ?? undefined;
         this.playerSnapshot = this.playerSettingsSnapshot();
       })
       .catch((e) => this.error.handleError(e));

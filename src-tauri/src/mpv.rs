@@ -392,7 +392,9 @@ fn get_play_args(
         urls.extend(episode_urls_after(channel)?);
         args.push(ARG_NO_RESUME_PLAYBACK.to_string());
     }
-    if channel.media_type != media_type::LIVESTREAM {
+    // Not for catch-up (a pseudo channel with a negative id): its URL carries
+    // the login and would end up in mpv's watch-later files.
+    if channel.media_type != media_type::LIVESTREAM && channel.id.is_some_and(|id| id >= 0) {
         args.push(ARG_SAVE_POSITION_ON_QUIT.to_string());
     }
     if settings.use_stream_caching == Some(false) {

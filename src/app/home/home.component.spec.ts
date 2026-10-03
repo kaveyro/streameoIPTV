@@ -18,6 +18,8 @@ import { SortType } from "../models/sortType";
 import { Channel } from "../models/channel";
 import { CdkDragDrop } from "@angular/cdk/drag-drop";
 import { FavoriteListsService } from "../favorite-lists/favorite-lists.service";
+import { FocusArea } from "../models/focusArea";
+import { Router } from "@angular/router";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -196,7 +198,16 @@ describe("HomeComponent", () => {
         favorite: false,
       }));
 
-    it("shows the whole path of the opened levels", async () => {
+    it("names the view in a heading at the top level", async () => {
+      await create();
+      expect(element.querySelector("h1")?.textContent?.trim()).toBe("HOME.NAV.ALL_CHANNELS");
+      expect(element.querySelector("nav.crumbs")).toBeNull();
+      await component.switchMode(ViewMode.History, true);
+      fixture.detectChanges();
+      expect(element.querySelector("h1")?.textContent?.trim()).toBe("HOME.NAV.CONTINUE_WATCHING");
+    });
+
+    it("shows the whole path of the opened levels as a breadcrumb", async () => {
       await create();
       const memory = TestBed.inject(MemoryService);
       memory.SetNode.next({ id: 5, name: "Show", type: NodeType.Series, sourceId: 1 });
@@ -205,10 +216,55 @@ describe("HomeComponent", () => {
       await settle();
       fixture.detectChanges();
       expect(component.nodeStack.get()?.pathLabel()).toBe("Show › Season 2");
-      expect(element.querySelector(".node-path")?.textContent).toContain("HOME.VIEWING");
+      const nav = element.querySelector("nav.crumbs");
+      expect(nav?.getAttribute("aria-label")).toBe("HOME.BREADCRUMB");
+      const crumbs = Array.from(nav!.querySelectorAll("button.crumb")).map((b) =>
+        b.textContent?.trim(),
+      );
+      expect(crumbs).toEqual(["HOME.NAV.ALL_CHANNELS", "Show"]);
+      const current = nav!.querySelector('[aria-current="page"]');
+      expect(current?.tagName).toBe("H1");
+      expect(current?.textContent?.trim()).toBe("Season 2");
+      expect(element.querySelectorAll("h1").length).toBe(1);
       expect(element.querySelector("button.go-back-btn")?.getAttribute("aria-label")).toBe(
         "COMMON.GO_BACK",
       );
+    });
+
+    it("pops back to the level of a breadcrumb segment", async () => {
+      await create({ search: tiles(36) });
+      await component.switchMode(ViewMode.Categories);
+      const memory = TestBed.inject(MemoryService);
+      memory.SetNode.next({ id: 9, name: "Kids", type: NodeType.Category });
+      await settle();
+      memory.SetNode.next({ id: 5, name: "Show", type: NodeType.Series, sourceId: 1 });
+      await settle();
+      memory.SetNode.next({ id: 2, name: "Season 2", type: NodeType.Season });
+      await settle();
+      fixture.detectChanges();
+      const scroll = spyOn(window, "scrollTo");
+      const crumbs = element.querySelectorAll<HTMLButtonElement>("nav.crumbs button.crumb");
+      // "Categories › Kids › Show › Season 2": back to "Kids" in one step.
+      crumbs[1].click();
+      await settle();
+      fixture.detectChanges();
+      expect(component.nodeStack.get()?.name).toBe("Kids");
+      expect(lastSearch().group_id).toBe(9);
+      expect(lastSearch().series_id).toBeUndefined();
+      expect(lastSearch().season).toBeUndefined();
+      expect(scroll).toHaveBeenCalled();
+      expect(element.querySelector('nav.crumbs [aria-current="page"]')?.textContent?.trim()).toBe(
+        "Kids",
+      );
+
+      // The view itself: no levels left.
+      element.querySelector<HTMLButtonElement>("nav.crumbs button.crumb")!.click();
+      await settle();
+      fixture.detectChanges();
+      expect(component.nodeStack.hasNodes()).toBeFalse();
+      expect(lastSearch().group_id).toBeUndefined();
+      expect(element.querySelector("nav.crumbs")).toBeNull();
+      expect(element.querySelector("h1")?.textContent?.trim()).toBe("HOME.NAV.CATEGORIES");
     });
 
     it("loads the pages of the level again and scrolls back on the way back", async () => {
@@ -255,6 +311,92 @@ describe("HomeComponent", () => {
       expect(element.querySelector(".empty-state")?.textContent).toContain(
         "EMPTY.NO_CHANNELS_FOUND",
       );
+    });
+
+    it("offers a retry instead of the setup when the start fails", async () => {
+      let fail = true;
+      await create({
+        get_settings: () => {
+          if (fail) throw "ipc down";
+          return {};
+        },
+      });
+      expect(TestBed.inject(Router).url).not.toBe("/setup");
+      expect(component.loadFailed).toBeTrue();
+      expect(callsOf(calls, "search").length).toBe(0);
+
+      fail = false;
+      const retry = element.querySelector(".empty-state button") as HTMLButtonElement;
+      expect(retry.textContent).toContain("EMPTY.RETRY");
+      retry.click();
+      await settle();
+      fixture.detectChanges();
+      expect(component.loadFailed).toBeFalse();
+      expect(callsOf(calls, "search").length).toBe(1);
+      expect(TestBed.inject(Router).url).not.toBe("/setup");
+    });
+
+    it("still goes to the setup without any source", async () => {
+      await create({ get_sources: [] });
+      expect(TestBed.inject(Router).url).toBe("/setup");
+    });
+  });
+
+  describe("refresh on start", () => {
+    afterEach(() => sessionStorage.removeItem("refreshedOnStart"));
+
+    it("reloads the list once the sources are refreshed", async () => {
+      sessionStorage.removeItem("refreshedOnStart");
+      let finishRefresh!: () => void;
+      await create({
+        get_settings: { refresh_on_start: true },
+        refresh_all: () => new Promise<void>((resolve) => (finishRefresh = resolve)),
+      });
+      expect(callsOf(calls, "search").length).toBe(1);
+      finishRefresh();
+      await settle();
+      expect(callsOf(calls, "search").length).toBe(2);
+    });
+
+    it("keeps the list when the refresh failed", async () => {
+      sessionStorage.removeItem("refreshedOnStart");
+      await create({
+        get_settings: { refresh_on_start: true },
+        refresh_all: () => {
+          throw "offline";
+        },
+      });
+      await settle();
+      expect(callsOf(calls, "refresh_all").length).toBe(1);
+      expect(callsOf(calls, "search").length).toBe(1);
+    });
+  });
+
+  describe("Enter key", () => {
+    function enter() {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+      );
+    }
+
+    it("toggles a focused media pill once", async () => {
+      await create();
+      const live = element.querySelector("#filter-0") as HTMLInputElement;
+      const click = spyOn(live, "click").and.callThrough();
+      live.focus();
+      enter();
+      expect(click).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a focused button to its own activation, whatever the focus area", async () => {
+      await create();
+      // Arrow keys last put the focus area on the filters; Tab moved on since.
+      component.focusArea = FocusArea.Filters;
+      const reload = element.querySelector("button.reload-btn") as HTMLButtonElement;
+      const click = spyOn(reload, "click");
+      reload.focus();
+      enter();
+      expect(click).not.toHaveBeenCalled();
     });
   });
 

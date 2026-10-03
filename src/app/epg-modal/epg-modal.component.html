@@ -52,6 +52,7 @@
         [sourceId]="sourceId"
         [channelId]="channelId"
         [scheduledRecordingId]="getScheduledRecordingId(item)"
+        [day]="currentDate"
         (scheduleChanged)="loadScheduledRecordings()"
       ></app-epg-modal-item>
     </div>

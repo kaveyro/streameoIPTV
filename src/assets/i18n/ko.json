@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "모든 국가",
     "VIEWING": "보는 중: {{path}}",
     "SEARCH_LABEL": "채널, 영화 및 시리즈 검색",
-    "CLEAR_SEARCH": "검색 지우기"
+    "CLEAR_SEARCH": "검색 지우기",
+    "BREADCRUMB": "경로"
   },
   "MENU": {
     "REMOVE": "제거",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "해당 로그(있는 경우)와 아래 오류를 버그 요청에 첨부해 주세요. 감사합니다!",
     "COPY": "복사",
     "LOGS_FOLDER_HINT": "로그 파일과 진단 보고서가 원인을 찾는 데 도움이 됩니다:",
-    "PERSISTENT_DIAGNOSTICS": "오류가 계속 발생하면 진단 보고서를 내보내 신고에 첨부하세요. 비밀번호나 스트림 주소는 포함되지 않습니다."
+    "PERSISTENT_DIAGNOSTICS": "오류가 계속 발생하면 진단 보고서를 내보내 신고에 첨부하세요. 비밀번호나 스트림 주소는 포함되지 않습니다.",
+    "CREDENTIALS_REJECTED": "제공업체가 사용자 이름 또는 비밀번호를 거부했습니다",
+    "NOT_XTREAM_SERVER": "서버가 Xtream Codes 서버처럼 응답하지 않았습니다",
+    "NOT_M3U_PLAYLIST": "링크가 M3U 재생 목록을 가리키지 않습니다"
   },
   "SOURCE": {
     "REFRESHED": "새로 고침:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "진단 보고서를 {{path}}에 저장했습니다",
     "DIAGNOSTICS_EXPORT_FAILED": "진단 보고서를 내보낼 수 없습니다",
     "EPG_LOADING": "편성표를 백그라운드에서 불러오는 중…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’을(를) 즐겨찾기에서 제거했습니다. ‘{{list}}’에는 그대로 남아 있습니다"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’을(를) 즐겨찾기에서 제거했습니다. ‘{{list}}’에는 그대로 남아 있습니다",
+    "DETAILS": "자세히",
+    "RECORDING_ALREADY_SCHEDULED": "이 프로그램은 이미 녹화가 예약되어 있습니다"
   },
   "UPDATE": {
     "TITLE": "업데이트 있음",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "서버에 연결하지 못했습니다",
     "CLOSE_PLAYER": "플레이어 닫기",
     "CLOSE_PLAYER_HINT": "플레이어 닫기 (Esc)",
-    "FULLSCREEN_HINT": "Esc: 전체 화면 종료"
+    "FULLSCREEN_HINT": "Esc: 전체 화면 종료",
+    "ERROR_RETRY_HINT": "Enter: 다시 시도",
+    "ERROR_LAST_HINT": "Backspace: 이전 채널"
   },
   "GUIDE": {
     "CHANNEL": "채널",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "이 시간대에 프로그램이 없습니다",
     "EPG_FAILED": "편성 정보를 불러오지 못했습니다",
     "EPG_RETRY": "다시 시도",
-    "EPG_RETRY_ARIA": "{{name}} 편성 정보 다시 불러오기"
+    "EPG_RETRY_ARIA": "{{name}} 편성 정보 다시 불러오기",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "녹화 예약됨",
+    "STATE_REMINDER_SET": "알림 설정됨"
   },
   "PARENTAL": {
     "CONFIRM": "확인",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "뒤로 이동",
     "REORDER_HINT": "타일을 끌어 순서를 바꾸거나 컨텍스트 메뉴의 ‘앞으로/뒤로 이동’을 사용하세요",
     "MOVE_FAILED": "새 순서를 저장하지 못했습니다"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "표시",
+    "TRAY_QUIT": "종료",
+    "TRAY_PAUSE": "재생/일시정지",
+    "TRAY_STOP": "재생 중지",
+    "REMINDER_TITLE": "생방송: {title}",
+    "REMINDER_BODY": "지금 {channel}에서 방송 중",
+    "RECORDING_STARTED": "녹화 시작: {title}",
+    "RECORDING_FINISHED": "녹화 완료: {title}",
+    "RECORDING_FAILED": "녹화 실패: {title}",
+    "SCHEDULED_PROGRAM": "예약된 프로그램",
+    "LOCAL_LIVESTREAM": "로컬 라이브 스트림",
+    "QUIT_TITLE": "streameoIPTV를 종료할까요?",
+    "QUIT_BODY": "녹화 또는 다운로드 {count}개가 진행 중이거나 곧 시작됩니다. 종료하면 중지되며, 아직 방송 중인 프로그램은 다음 실행 시 이어서 녹화됩니다.",
+    "QUIT_CONFIRM": "종료",
+    "QUIT_CANCEL": "취소"
   }
 }

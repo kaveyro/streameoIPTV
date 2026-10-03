@@ -13,12 +13,13 @@
   <p class="notice">{{ "DELETE_GROUP.NOTICE" | translate }}</p>
   <div class="row mt-4 align-items-center">
     <div class="col-2">
-      <span>{{ "DELETE_GROUP.CATEGORY" | translate }}</span>
+      <label for="dgm-group">{{ "DELETE_GROUP.CATEGORY" | translate }}</label>
     </div>
     <div class="col">
       <input
         [placeholder]="'FORM.TYPEAHEAD_PLACEHOLDER' | translate"
-        id="typeahead-basic"
+        id="dgm-group"
+        ngbAutofocus
         name="group"
         type="text"
         class="form-control"

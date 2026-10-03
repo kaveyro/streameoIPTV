@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "Alle Länder",
     "VIEWING": "Ansicht: {{path}}",
     "SEARCH_LABEL": "Sender, Filme und Serien durchsuchen",
-    "CLEAR_SEARCH": "Suche leeren"
+    "CLEAR_SEARCH": "Suche leeren",
+    "BREADCRUMB": "Pfad"
   },
   "MENU": {
     "REMOVE": "Aus Verlauf entfernen",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "Bitte hänge diese Logs (falls vorhanden) und den Fehler unten an deine Fehlermeldung an. Danke!",
     "COPY": "Kopieren",
     "LOGS_FOLDER_HINT": "Die Log-Dateien und ein Diagnosebericht helfen bei der Fehlersuche:",
-    "PERSISTENT_DIAGNOSTICS": "Wenn der Fehler bleibt, exportiere den Diagnosebericht und hänge ihn an deine Fehlermeldung an. Er enthält keine Passwörter oder Stream-Adressen."
+    "PERSISTENT_DIAGNOSTICS": "Wenn der Fehler bleibt, exportiere den Diagnosebericht und hänge ihn an deine Fehlermeldung an. Er enthält keine Passwörter oder Stream-Adressen.",
+    "CREDENTIALS_REJECTED": "Der Anbieter hat den Benutzernamen oder das Passwort abgelehnt",
+    "NOT_XTREAM_SERVER": "Der Server hat nicht wie ein Xtream-Codes-Server geantwortet",
+    "NOT_M3U_PLAYLIST": "Der Link führt nicht zu einer M3U-Playlist"
   },
   "SOURCE": {
     "REFRESHED": "Aktualisiert:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "Diagnosebericht gespeichert unter {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Der Diagnosebericht konnte nicht exportiert werden",
     "EPG_LOADING": "Die Programmdaten werden im Hintergrund geladen…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "„{{name}}“ aus den Favoriten entfernt, bleibt aber in „{{list}}“"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "„{{name}}“ aus den Favoriten entfernt, bleibt aber in „{{list}}“",
+    "DETAILS": "Details",
+    "RECORDING_ALREADY_SCHEDULED": "Diese Sendung ist schon zur Aufnahme geplant"
   },
   "UPDATE": {
     "TITLE": "Update verfügbar",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "Die Verbindung zum Server ist fehlgeschlagen",
     "CLOSE_PLAYER": "Player schließen",
     "CLOSE_PLAYER_HINT": "Player schließen (Esc)",
-    "FULLSCREEN_HINT": "Esc: Vollbild beenden"
+    "FULLSCREEN_HINT": "Esc: Vollbild beenden",
+    "ERROR_RETRY_HINT": "Enter: erneut versuchen",
+    "ERROR_LAST_HINT": "Rücktaste: vorheriger Sender"
   },
   "GUIDE": {
     "CHANNEL": "Sender",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "Keine Sendungen in diesem Zeitraum",
     "EPG_FAILED": "Programmdaten konnten nicht geladen werden",
     "EPG_RETRY": "Erneut versuchen",
-    "EPG_RETRY_ARIA": "Programmdaten von {{name}} erneut laden"
+    "EPG_RETRY_ARIA": "Programmdaten von {{name}} erneut laden",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "Aufnahme geplant",
+    "STATE_REMINDER_SET": "Erinnerung gesetzt"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "Nach hinten",
     "REORDER_HINT": "Ziehe Kacheln, um die Reihenfolge zu ändern, oder nutze „Nach vorne/hinten“ im Kontextmenü",
     "MOVE_FAILED": "Die neue Reihenfolge konnte nicht gespeichert werden"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "Anzeigen",
+    "TRAY_QUIT": "Beenden",
+    "TRAY_PAUSE": "Wiedergabe/Pause",
+    "TRAY_STOP": "Wiedergabe beenden",
+    "REMINDER_TITLE": "LIVE: {title}",
+    "REMINDER_BODY": "Jetzt auf {channel}",
+    "RECORDING_STARTED": "Aufnahme gestartet: {title}",
+    "RECORDING_FINISHED": "Aufnahme fertig: {title}",
+    "RECORDING_FAILED": "Aufnahme fehlgeschlagen: {title}",
+    "SCHEDULED_PROGRAM": "Geplante Sendung",
+    "LOCAL_LIVESTREAM": "Lokaler Livestream",
+    "QUIT_TITLE": "streameoIPTV beenden?",
+    "QUIT_BODY": "{count} Aufnahmen oder Downloads laufen oder stehen bald an. Beim Beenden werden sie gestoppt; eine Sendung, die noch läuft, wird beim nächsten Start weiter aufgenommen.",
+    "QUIT_CONFIRM": "Beenden",
+    "QUIT_CANCEL": "Abbrechen"
   }
 }

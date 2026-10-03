@@ -10,6 +10,8 @@ import { Filters } from "../models/filters";
 import { MediaType } from "../models/mediaType";
 import { ProgrammeHit } from "../models/epgExtras";
 import { EpgAlert } from "../models/epgAlert";
+import { TranslateService } from "@ngx-translate/core";
+import { firstValueFrom } from "rxjs";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -337,6 +339,80 @@ describe("TvGuideComponent", () => {
     await settle();
     fixture.detectChanges();
     expect(document.activeElement?.id).toBe(component.cellId(0, 0));
+  });
+
+  it("moves ten rows with PageDown / PageUp, up to the last row loaded", async () => {
+    const many: Channel[] = Array.from({ length: 15 }, (_, i) => ({
+      ...channels[0],
+      id: i + 1,
+      name: `Channel ${i + 1}`,
+    }));
+    await create({ search: many, get_epg: [] });
+    const key = (k: string) =>
+      component.onKeyDown(new KeyboardEvent("keydown", { key: k, cancelable: true }));
+    key("PageDown");
+    expect([component.activeRow, component.activeCol]).toEqual([10, 0]);
+    key("PageDown");
+    expect(component.activeRow).toBe(14);
+    key("PageUp");
+    expect(component.activeRow).toBe(4);
+    key("PageUp");
+    expect(component.activeRow).toBe(0);
+    await settle();
+    expect(document.activeElement?.id).toBe(component.cellId(0, 0));
+  });
+
+  it("loads the next page when PageDown goes past the rows loaded", async () => {
+    const page: Channel[] = Array.from({ length: TvGuideComponent.PAGE_SIZE }, (_, i) => ({
+      ...channels[0],
+      id: i + 1,
+      name: `Channel ${i + 1}`,
+    }));
+    await create({
+      search: (args: Record<string, unknown>) =>
+        (args["filters"] as Filters).page === 1 ? page : [],
+      get_epg: [],
+    });
+    component.activeRow = TvGuideComponent.PAGE_SIZE - 5;
+    component.onKeyDown(new KeyboardEvent("keydown", { key: "PageDown", cancelable: true }));
+    expect(component.activeRow).toBe(TvGuideComponent.PAGE_SIZE - 1);
+    await settle();
+    const pages = callsOf(calls, "search").map((c) => (c.args["filters"] as Filters).page);
+    expect(pages).toContain(2);
+  });
+
+  it("names channel, time and state of a programme for screen readers", async () => {
+    await create();
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation("en", {
+      GUIDE: {
+        PROGRAMME_LABEL: "{{channel}}: {{title}}, {{time}}",
+        STATE_REMINDER_SET: "reminder set",
+        CATCHUP_AVAILABLE: "in the archive",
+      },
+      EPG: { PLAYING_NOW: "on now" },
+    });
+    await firstValueFrom(translate.use("en"));
+    TestBed.inject(MemoryService).Watched_epgs = new Set(["Later"]);
+    component.request(component.rows[0]);
+    await settle();
+    fixture.detectChanges();
+    const grid = element.querySelector('[role="grid"]');
+    expect(grid).not.toBeNull();
+    expect(grid?.querySelectorAll('[role="row"]').length).toBe(2);
+    expect(grid?.querySelector('[role="rowheader"] .guide-channel')).not.toBeNull();
+    const cells = Array.from(element.querySelectorAll('[role="gridcell"] .guide-block'));
+    const labels = cells.map((c) => c.getAttribute("aria-label") ?? "");
+    expect(labels.length).toBe(3);
+    expect(labels[0]).toMatch(/^One: Past, .+\. in the archive$/);
+    expect(labels[1]).toMatch(/^One: Now, .+\. on now$/);
+    expect(labels[2]).toMatch(/^One: Later, .+\. reminder set$/);
+    // The bell shows on the programme with the reminder only.
+    expect(cells.map((c) => !!c.querySelector(".guide-reminder-icon"))).toEqual([
+      false,
+      false,
+      true,
+    ]);
   });
 
   it("shows the country prefix as a pill in badge mode", async () => {

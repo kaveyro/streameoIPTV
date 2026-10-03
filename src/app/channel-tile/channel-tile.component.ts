@@ -126,6 +126,10 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /// page moves the tile and saves the order.
   @Output() move = new EventEmitter<-1 | 1>();
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
+  @ViewChild("title") titleElement?: ElementRef<HTMLElement>;
+  /// The name is cut off (ellipsis or line clamp): only then the tooltip
+  /// shows it in full. Measured when the pointer or the focus arrives.
+  nameTruncated = false;
   menuTopLeftPosition = { x: 0, y: 0 };
   showImage = true;
   starting = false;
@@ -331,6 +335,27 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     (element as HTMLElement).style.removeProperty("--dl-progress");
   }
 
+  /** Enter/Space on the tile (role="button"): one activation per press. */
+  onActivateKey(event: Event) {
+    // Space would scroll the page; a handled Enter must not also reach the
+    // home page's key handler.
+    event.preventDefault();
+    if ((event as KeyboardEvent).repeat) return;
+    void this.click();
+  }
+
+  checkNameTruncated() {
+    const title = this.titleElement?.nativeElement;
+    this.nameTruncated =
+      !!title && (title.scrollWidth > title.clientWidth || title.scrollHeight > title.clientHeight);
+  }
+
+  /// The tooltip only repeats the name, which the aria-label already
+  /// carries: no aria-describedby, so screen readers do not read it twice.
+  onTooltipShown() {
+    this.tileElement()?.removeAttribute("aria-describedby");
+  }
+
   async click(record = false) {
     if (this.starting === true) {
       try {
@@ -399,9 +424,12 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
         await this.playback.play(this.channel!, this.memory.LibraryChannelList);
       }
     } catch (e) {
+      // Nothing played: keep it out of the history.
       this.error.handleError(e);
+      this.starting = false;
+      return;
     }
-    invoke("add_last_watched", { id: this.channel?.id }).catch((e) => {
+    this.playback.addToHistory(this.channel!).catch((e) => {
       console.error(e);
       this.error.handleError(e);
     });

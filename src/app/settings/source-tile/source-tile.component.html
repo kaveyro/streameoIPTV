@@ -32,12 +32,29 @@
 
     <ng-container *ngIf="source?.source_type !== sourceTypeEnum.Custom">
       <dt>{{ "SOURCE.URL" | translate }}</dt>
-      <dd *ngIf="!editing" class="wrap-text selectable">{{ source?.url }}</dd>
+      <dd *ngIf="!editing && !urlHasSecrets" class="wrap-text selectable">{{ source?.url }}</dd>
+      <!-- Passwords and tokens in the link stay masked until revealed -->
+      <dd *ngIf="!editing && urlHasSecrets" class="secret-row">
+        <span class="wrap-text" [class.selectable]="showUrlSecrets">{{ displayUrl }}</span>
+        <button
+          type="button"
+          class="icon-btn eye"
+          (click)="showUrlSecrets = !showUrlSecrets"
+          [attr.aria-label]="
+            (showUrlSecrets ? 'COMMON.HIDE_PASSWORD' : 'COMMON.SHOW_PASSWORD') | translate
+          "
+          [attr.aria-pressed]="showUrlSecrets"
+        >
+          <ng-container
+            *ngTemplateOutlet="eyeIcon; context: { $implicit: showUrlSecrets }"
+          ></ng-container>
+        </button>
+      </dd>
       <dd *ngIf="editing && source?.source_type !== sourceTypeEnum.M3U">
         <input
           class="form-control form-control-sm"
           name="url"
-          [attr.aria-label]="'SOURCE.URL' | translate"
+          [attr.aria-label]="'SOURCE.URL' | translate | labelText"
           [(ngModel)]="editableSource.url"
         />
       </dd>
@@ -67,8 +84,11 @@
         source?.source_type !== sourceTypeEnum.M3U && source?.source_type !== sourceTypeEnum.Custom
       "
     >
-      <dt [ngbTooltip]="'SOURCE.USER_AGENT_TOOLTIP' | translate">
+      <dt>
         {{ "SOURCE.USER_AGENT" | translate }}
+        <ng-container
+          *ngTemplateOutlet="infoButton; context: { $implicit: 'SOURCE.USER_AGENT_TOOLTIP' }"
+        ></ng-container>
       </dt>
       <dd *ngIf="!editing" class="wrap-text selectable">
         {{ source?.user_agent || defaultUserAgent }}
@@ -77,15 +97,18 @@
         <input
           class="form-control form-control-sm"
           name="user_agent"
-          [attr.aria-label]="'SOURCE.USER_AGENT' | translate"
+          [attr.aria-label]="'SOURCE.USER_AGENT' | translate | labelText"
           [(ngModel)]="editableSource.user_agent"
           [placeholder]="defaultUserAgent"
         />
       </dd>
     </ng-container>
 
-    <dt [ngbTooltip]="'SOURCE.STREAM_USER_AGENT_TOOLTIP' | translate">
+    <dt>
       {{ "SOURCE.STREAM_USER_AGENT" | translate }}
+      <ng-container
+        *ngTemplateOutlet="infoButton; context: { $implicit: 'SOURCE.STREAM_USER_AGENT_TOOLTIP' }"
+      ></ng-container>
     </dt>
     <!-- Unset: mpv's own default; a dash instead of an empty row -->
     <dd *ngIf="!editing" class="wrap-text selectable">{{ source?.stream_user_agent || "—" }}</dd>
@@ -93,7 +116,7 @@
       <input
         class="form-control form-control-sm"
         name="stream_user_agent"
-        [attr.aria-label]="'SOURCE.STREAM_USER_AGENT' | translate"
+        [attr.aria-label]="'SOURCE.STREAM_USER_AGENT' | translate | labelText"
         [(ngModel)]="editableSource.stream_user_agent"
       />
     </dd>
@@ -104,8 +127,11 @@
         source?.source_type !== sourceTypeEnum.CustomImport
       "
     >
-      <dt [ngbTooltip]="'SOURCE.MAX_STREAMS_TOOLTIP' | translate">
+      <dt>
         {{ "SOURCE.MAX_STREAMS" | translate }}
+        <ng-container
+          *ngTemplateOutlet="infoButton; context: { $implicit: 'SOURCE.MAX_STREAMS_TOOLTIP' }"
+        ></ng-container>
       </dt>
       <dd *ngIf="!editing" class="wrap-text selectable">{{ source?.max_streams || "1" }}</dd>
       <dd *ngIf="editing">
@@ -115,7 +141,7 @@
           name="streams"
           min="1"
           step="1"
-          [attr.aria-label]="'SOURCE.MAX_STREAMS' | translate"
+          [attr.aria-label]="'SOURCE.MAX_STREAMS' | translate | labelText"
           [attr.aria-invalid]="!maxStreamsValid"
           [class.is-invalid]="!maxStreamsValid"
           [(ngModel)]="editableSource.max_streams"
@@ -152,7 +178,7 @@
           class="form-control form-control-sm"
           name="username"
           autocomplete="off"
-          [attr.aria-label]="'SOURCE.USERNAME' | translate"
+          [attr.aria-label]="'SOURCE.USERNAME' | translate | labelText"
           [(ngModel)]="editableSource.username"
         />
       </dd>
@@ -183,7 +209,7 @@
             name="password"
             autocomplete="off"
             [type]="showPassword ? 'text' : 'password'"
-            [attr.aria-label]="'SOURCE.PASSWORD' | translate"
+            [attr.aria-label]="'SOURCE.PASSWORD' | translate | labelText"
             [(ngModel)]="editableSource.password"
           />
           <button
@@ -318,6 +344,7 @@
       </button>
 
       <button
+        #moreButton
         type="button"
         class="btn btn-outline-secondary btn-sm more-btn"
         [disabled]="memory.Loading"
@@ -398,6 +425,23 @@
     <span>{{ "MODAL.DELETE" | translate }}</span>
   </button>
 </mat-menu>
+
+<!-- Focusable help next to a label: the tooltip shows on hover and focus -->
+<ng-template #infoButton let-help>
+  <button
+    type="button"
+    class="icon-btn info-btn"
+    [ngbTooltip]="help | translate"
+    [attr.aria-label]="help | translate"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+      />
+    </svg>
+  </button>
+</ng-template>
 
 <ng-template #eyeIcon let-visible>
   <svg *ngIf="!visible" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

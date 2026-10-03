@@ -73,23 +73,7 @@ button:hover .refresh {
   box-shadow: 0 0 0 0.15rem var(--focus-ring);
 }
 
-/* Two-pane layout */
-
-.settings-layout {
-  display: flex;
-  align-items: flex-start;
-  gap: 2rem;
-  padding-bottom: 3rem;
-}
-
-.settings-nav {
-  flex: 0 0 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  position: sticky;
-  top: 1rem;
-}
+/* Two-pane layout: the navigation is in settings-nav.css */
 
 .settings-content {
   flex: 1;
@@ -237,34 +221,9 @@ app-source-tile {
   display: block;
 }
 
-/* Narrow widths: sidebar becomes a horizontal tab row */
+/* Narrow widths (the tab rows are in settings-nav.css) */
 
 @media (max-width: 767.98px) {
-  .settings-layout {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .settings-nav {
-    position: static;
-    flex: none;
-    width: 100%;
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 0.25rem;
-  }
-
-  .settings-nav .nav-item--active::before {
-    inset-block: auto 0;
-    inset-inline: 0.35rem;
-    width: auto;
-    height: 3px;
-  }
-
-  .settings-content {
-    width: 100%;
-  }
-
   .setting-row {
     flex-wrap: wrap;
     gap: 0.75rem;

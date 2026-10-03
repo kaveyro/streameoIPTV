@@ -1,12 +1,43 @@
+/* The modal itself has --bg-surface-alt: a raised surface and a border keep
+   the notes box visible in every theme. The rendered notes come in through
+   [innerHTML] without the encapsulation attribute, hence ::ng-deep below. */
 .update-notes {
   max-height: 40vh;
   overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  padding: 0.75rem;
+  overflow-wrap: anywhere;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  background-color: var(--bg-surface-alt);
+  background-color: var(--bg-surface);
   color: var(--text-secondary);
   font-size: var(--fs-sm);
   margin-bottom: 0.75rem;
+}
+
+.update-notes ::ng-deep :is(h5, h6) {
+  margin: 0.75rem 0 0.35rem;
+  color: var(--text-primary);
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+
+.update-notes ::ng-deep :is(h5, h6):first-child {
+  margin-top: 0;
+}
+
+.update-notes ::ng-deep :is(p, ul) {
+  margin: 0 0 0.5rem;
+}
+
+.update-notes ::ng-deep ul {
+  padding-inline-start: 1.25rem;
+}
+
+.update-notes ::ng-deep > :last-child {
+  margin-bottom: 0;
+}
+
+.update-notes ::ng-deep code {
+  color: var(--text-primary);
+  font-size: 0.95em;
 }

@@ -14,10 +14,17 @@
     <p class="mt-2 notice">{{ "IMPORT.NOTICE" | translate }}</p>
     <div class="row mt-3 align-items-center">
       <div class="col-2">
-        <span>{{ "IMPORT.NAME" | translate }}</span>
+        <label for="import-name">{{ "IMPORT.NAME" | translate }}</label>
       </div>
       <div class="col">
-        <input #name="ngModel" name="name" class="form-control" [(ngModel)]="nameOverride" />
+        <input
+          #name="ngModel"
+          id="import-name"
+          ngbAutofocus
+          name="name"
+          class="form-control"
+          [(ngModel)]="nameOverride"
+        />
       </div>
     </div>
   </div>

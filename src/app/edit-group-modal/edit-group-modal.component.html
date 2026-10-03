@@ -18,11 +18,15 @@
   <div class="modal-body">
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_GROUP.NAME" | translate }} <span class="text-danger">*</span></span>
+        <label for="egm-name"
+          >{{ "EDIT_GROUP.NAME" | translate }} <span class="text-danger">*</span></label
+        >
       </div>
       <div class="col">
         <input
           #name="ngModel"
+          id="egm-name"
+          ngbAutofocus
           group-name-exists
           [originalName]="originalName"
           [sourceId]="this.group.source_id"
@@ -51,14 +55,15 @@
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_GROUP.IMAGE" | translate }}</span>
+        <label for="egm-image">{{ "EDIT_GROUP.IMAGE" | translate }}</label>
       </div>
       <div class="col">
         <input
+          id="egm-image"
           class="form-control"
           name="image"
           [(ngModel)]="group.image"
-          placeholder="http://mycoolsite.com/image.png"
+          placeholder="https://example.com/image.png"
         />
       </div>
     </div>

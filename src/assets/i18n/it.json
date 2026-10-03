@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "Tutti i paesi",
     "VIEWING": "Visualizzazione: {{path}}",
     "SEARCH_LABEL": "Cerca canali, film e serie",
-    "CLEAR_SEARCH": "Cancella ricerca"
+    "CLEAR_SEARCH": "Cancella ricerca",
+    "BREADCRUMB": "Percorso"
   },
   "MENU": {
     "REMOVE": "Rimuovi",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "Allega quei log (se esistono) e l'errore qui sotto alla tua segnalazione di bug. Grazie!",
     "COPY": "Copia",
     "LOGS_FOLDER_HINT": "I file di log e un rapporto diagnostico aiutano a trovare la causa:",
-    "PERSISTENT_DIAGNOSTICS": "Se l'errore si ripresenta, esporta il rapporto diagnostico e allegalo alla tua segnalazione. Non contiene password né indirizzi degli stream."
+    "PERSISTENT_DIAGNOSTICS": "Se l'errore si ripresenta, esporta il rapporto diagnostico e allegalo alla tua segnalazione. Non contiene password né indirizzi degli stream.",
+    "CREDENTIALS_REJECTED": "Il provider ha rifiutato il nome utente o la password",
+    "NOT_XTREAM_SERVER": "Il server non ha risposto come un server Xtream Codes",
+    "NOT_M3U_PLAYLIST": "Il link non punta a una playlist M3U"
   },
   "SOURCE": {
     "REFRESHED": "Aggiornato:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "Rapporto diagnostico salvato in {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Impossibile esportare il rapporto diagnostico",
     "EPG_LOADING": "La guida TV si sta caricando in background…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "«{{name}}» rimosso dai preferiti; resta in «{{list}}»"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "«{{name}}» rimosso dai preferiti; resta in «{{list}}»",
+    "DETAILS": "Dettagli",
+    "RECORDING_ALREADY_SCHEDULED": "Questo programma è già pianificato per la registrazione"
   },
   "UPDATE": {
     "TITLE": "Aggiornamento disponibile",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "la connessione al server non è riuscita",
     "CLOSE_PLAYER": "Chiudi lettore",
     "CLOSE_PLAYER_HINT": "Chiudi lettore (Esc)",
-    "FULLSCREEN_HINT": "Esc: esci da schermo intero"
+    "FULLSCREEN_HINT": "Esc: esci da schermo intero",
+    "ERROR_RETRY_HINT": "Invio: riprova",
+    "ERROR_LAST_HINT": "Backspace: canale precedente"
   },
   "GUIDE": {
     "CHANNEL": "Canale",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "Nessun programma in questo periodo",
     "EPG_FAILED": "Impossibile caricare i dati del palinsesto",
     "EPG_RETRY": "Riprova",
-    "EPG_RETRY_ARIA": "Ricarica il palinsesto di {{name}}"
+    "EPG_RETRY_ARIA": "Ricarica il palinsesto di {{name}}",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "Registrazione programmata",
+    "STATE_REMINDER_SET": "Promemoria impostato"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "Sposta indietro",
     "REORDER_HINT": "Trascina i riquadri per cambiare l'ordine, oppure usa «Sposta avanti/indietro» nel menu contestuale",
     "MOVE_FAILED": "Impossibile salvare il nuovo ordine"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "Mostra",
+    "TRAY_QUIT": "Esci",
+    "TRAY_PAUSE": "Riproduci/Pausa",
+    "TRAY_STOP": "Interrompi riproduzione",
+    "REMINDER_TITLE": "IN DIRETTA: {title}",
+    "REMINDER_BODY": "Ora su {channel}",
+    "RECORDING_STARTED": "Registrazione avviata: {title}",
+    "RECORDING_FINISHED": "Registrazione completata: {title}",
+    "RECORDING_FAILED": "Registrazione non riuscita: {title}",
+    "SCHEDULED_PROGRAM": "Programma pianificato",
+    "LOCAL_LIVESTREAM": "Diretta locale",
+    "QUIT_TITLE": "Uscire da streameoIPTV?",
+    "QUIT_BODY": "{count} registrazioni o download sono in corso o stanno per iniziare. Uscendo verranno interrotti; un programma ancora in onda verrà registrato al prossimo avvio.",
+    "QUIT_CONFIRM": "Esci",
+    "QUIT_CANCEL": "Annulla"
   }
 }

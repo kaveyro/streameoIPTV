@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "كل البلدان",
     "VIEWING": "العرض: {{path}}",
     "SEARCH_LABEL": "البحث في القنوات والأفلام والمسلسلات",
-    "CLEAR_SEARCH": "مسح البحث"
+    "CLEAR_SEARCH": "مسح البحث",
+    "BREADCRUMB": "المسار"
   },
   "MENU": {
     "REMOVE": "إزالة",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "يرجى إرفاق تلك السجلات (إن وجدت) والخطأ أدناه بطلب الإبلاغ عن الخطأ. شكرًا لك!",
     "COPY": "نسخ",
     "LOGS_FOLDER_HINT": "تساعد ملفات السجل وتقرير التشخيص في معرفة السبب:",
-    "PERSISTENT_DIAGNOSTICS": "إذا تكرر الخطأ، فصدّر تقرير التشخيص وأرفقه ببلاغك. لا يحتوي على كلمات مرور أو عناوين بث."
+    "PERSISTENT_DIAGNOSTICS": "إذا تكرر الخطأ، فصدّر تقرير التشخيص وأرفقه ببلاغك. لا يحتوي على كلمات مرور أو عناوين بث.",
+    "CREDENTIALS_REJECTED": "رفض المزوّد اسم المستخدم أو كلمة المرور",
+    "NOT_XTREAM_SERVER": "لم يستجب الخادم كخادم Xtream Codes",
+    "NOT_M3U_PLAYLIST": "الرابط لا يشير إلى قائمة تشغيل M3U"
   },
   "SOURCE": {
     "REFRESHED": "آخر تحديث:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "تم حفظ تقرير التشخيص في {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "تعذر تصدير تقرير التشخيص",
     "EPG_LOADING": "يتم تحميل دليل البرامج في الخلفية…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "تمت إزالة «{{name}}» من المفضلة، لكنه يبقى في «{{list}}»"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "تمت إزالة «{{name}}» من المفضلة، لكنه يبقى في «{{list}}»",
+    "DETAILS": "التفاصيل",
+    "RECORDING_ALREADY_SCHEDULED": "هذا البرنامج مجدول للتسجيل بالفعل"
   },
   "UPDATE": {
     "TITLE": "يتوفر تحديث",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "فشل الاتصال بالخادم",
     "CLOSE_PLAYER": "إغلاق المشغل",
     "CLOSE_PLAYER_HINT": "إغلاق المشغل (Esc)",
-    "FULLSCREEN_HINT": "Esc: الخروج من ملء الشاشة"
+    "FULLSCREEN_HINT": "Esc: الخروج من ملء الشاشة",
+    "ERROR_RETRY_HINT": "Enter: إعادة المحاولة",
+    "ERROR_LAST_HINT": "Backspace: القناة السابقة"
   },
   "GUIDE": {
     "CHANNEL": "القناة",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "لا توجد برامج في هذه الفترة",
     "EPG_FAILED": "تعذّر تحميل بيانات البرامج",
     "EPG_RETRY": "إعادة المحاولة",
-    "EPG_RETRY_ARIA": "إعادة تحميل بيانات برامج {{name}}"
+    "EPG_RETRY_ARIA": "إعادة تحميل بيانات برامج {{name}}",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}، {{time}}",
+    "STATE_RECORDING_SCHEDULED": "التسجيل مجدول",
+    "STATE_REMINDER_SET": "تم ضبط التذكير"
   },
   "PARENTAL": {
     "CONFIRM": "موافق",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "نقل إلى الخلف",
     "REORDER_HINT": "اسحب البطاقات لتغيير الترتيب، أو استخدم «نقل إلى الأمام/الخلف» في قائمة السياق",
     "MOVE_FAILED": "تعذّر حفظ الترتيب الجديد"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "إظهار",
+    "TRAY_QUIT": "إنهاء",
+    "TRAY_PAUSE": "تشغيل/إيقاف مؤقت",
+    "TRAY_STOP": "إيقاف التشغيل",
+    "REMINDER_TITLE": "مباشر: {title}",
+    "REMINDER_BODY": "الآن على {channel}",
+    "RECORDING_STARTED": "بدأ التسجيل: {title}",
+    "RECORDING_FINISHED": "اكتمل التسجيل: {title}",
+    "RECORDING_FAILED": "فشل التسجيل: {title}",
+    "SCHEDULED_PROGRAM": "برنامج مجدول",
+    "LOCAL_LIVESTREAM": "بث مباشر محلي",
+    "QUIT_TITLE": "هل تريد إنهاء streameoIPTV؟",
+    "QUIT_BODY": "هناك {count} من التسجيلات أو التنزيلات قيد التشغيل أو ستبدأ قريبًا. الإنهاء يوقفها؛ والبرنامج الذي لا يزال يُعرض سيُستأنف تسجيله عند التشغيل التالي.",
+    "QUIT_CONFIRM": "إنهاء",
+    "QUIT_CANCEL": "إلغاء"
   }
 }

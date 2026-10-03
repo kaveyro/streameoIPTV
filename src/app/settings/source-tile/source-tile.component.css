@@ -97,9 +97,21 @@
 }
 
 .eye > svg,
-.eye-addon svg {
+.eye-addon svg,
+.info-btn > svg {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);
+}
+
+/* Help icon next to a label (its tooltip opens on hover and focus) */
+.info-btn {
+  vertical-align: middle;
+  margin-inline-start: 0.15rem;
+  color: var(--text-secondary);
+}
+
+.info-btn:hover {
+  color: var(--text-primary);
 }
 
 .eye-addon {

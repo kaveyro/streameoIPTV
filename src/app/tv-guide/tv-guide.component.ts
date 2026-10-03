@@ -44,7 +44,8 @@ export interface GuideBlock {
   offset: number;
   width: number;
   state: ProgrammeState;
-  /// "Title, 20:15 – 21:00" for screen readers.
+  /// "Channel: Title, 20:15 – 21:00", the start of the screen reader label
+  /// (see blockLabel) and the title of the programme's menu.
   label: string;
   /// Title, time and description for the tooltip.
   tooltip: string;
@@ -105,6 +106,8 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   static readonly PAGE_SIZE = 36;
   static readonly MAX_IN_FLIGHT = 4;
   static readonly SLOT_SECONDS = 30 * 60;
+  /// Rows PageUp / PageDown move the focus by.
+  static readonly PAGE_ROWS = 10;
   /// Width of one 30 minute slot in px (keep in sync with --guide-slot-width).
   static readonly SLOT_WIDTH = 120;
   static readonly PX_PER_SECOND = TvGuideComponent.SLOT_WIDTH / TvGuideComponent.SLOT_SECONDS;
@@ -185,6 +188,8 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   /// The channel list this guide last gave the player, see playChannel.
   private playerList?: Channel[];
   private searchTimer?: ReturnType<typeof setTimeout>;
+  /// Country codes of the channel names, see {@link countryCode}.
+  private countryCodes = new Map<string, string | undefined>();
 
   constructor(
     public memory: MemoryService,
@@ -517,6 +522,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     const now = Date.now() / 1000;
     const catchUp = this.translate.instant("GUIDE.CATCHUP_AVAILABLE");
     const recordNow = this.translate.instant("GUIDE.NOW_MENU_HINT");
+    const channel = row.channel.name ?? "";
     row.epgCount = epg.length;
     row.blocks = epg
       .filter((e) => e.end_timestamp > this.windowStart && e.start_timestamp < this.windowEnd)
@@ -534,7 +540,11 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
           offset: (start - this.windowStart) * px,
           width: Math.max(4, (end - start) * px),
           state,
-          label: e.timeshift_url ? `${e.title}, ${time}. ${catchUp}` : `${e.title}, ${time}`,
+          label: this.translate.instant("GUIDE.PROGRAMME_LABEL", {
+            channel,
+            title: e.title,
+            time,
+          }),
           tooltip: [e.title, time, e.description, hint].filter((x) => !!x).join("\n"),
         };
       });
@@ -561,9 +571,44 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     return row === this.activeRow && col === this.activeCol ? 0 : -1;
   }
 
+  /**
+   * The screen reader label of a programme: channel, title and time, then
+   * what is special about it. The states change while the guide is open
+   * (the clock, recordings and reminders), so they are not part of
+   * block.label.
+   */
+  blockLabel(row: GuideRow, block: GuideBlock): string {
+    const now = block.state === "now";
+    const catchup = !!block.epg.timeshift_url;
+    const scheduled = this.scheduledId(row, block) !== undefined;
+    const reminder = this.reminderOn(block.epg);
+    // Asked on every change detection for every block: translated only when
+    // the block's state or the language changed.
+    const key = `${this.translate.getCurrentLang()}|${block.label}|${+now}${+catchup}${+scheduled}${+reminder}`;
+    const cached = this.blockLabels.get(block);
+    if (cached?.key === key) return cached.label;
+    const states: string[] = [];
+    if (now) states.push(this.translate.instant("EPG.PLAYING_NOW"));
+    if (catchup) states.push(this.translate.instant("GUIDE.CATCHUP_AVAILABLE"));
+    if (scheduled) states.push(this.translate.instant("GUIDE.STATE_RECORDING_SCHEDULED"));
+    if (reminder) states.push(this.translate.instant("GUIDE.STATE_REMINDER_SET"));
+    const label = [block.label, ...states].join(". ");
+    this.blockLabels.set(block, { key, label });
+    return label;
+  }
+
+  /// Accessible labels per block (see blockLabel); dropped with the blocks.
+  private blockLabels = new WeakMap<GuideBlock, { key: string; label: string }>();
+
   /// The country code shown as a pill in front of the name ("badge" mode).
+  /// Cached per name: every row asks for it on each change detection.
   countryCode(name?: string): string | undefined {
-    return this.memory.CountryPrefixMode === "badge" ? splitCountryPrefix(name).code : undefined;
+    if (this.memory.CountryPrefixMode !== "badge" || !name) return undefined;
+    if (!this.countryCodes.has(name)) {
+      if (this.countryCodes.size > 5000) this.countryCodes.clear();
+      this.countryCodes.set(name, splitCountryPrefix(name).code);
+    }
+    return this.countryCodes.get(name);
   }
 
   // ----------------------------------------------------------------- search
@@ -933,8 +978,8 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onKeyDown(event: KeyboardEvent) {
-    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key))
-      return;
+    const keys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
+    if (!keys.includes(event.key) && event.key !== "PageUp" && event.key !== "PageDown") return;
     if (this.rows.length === 0) return;
     // The home page's own arrow key navigation must not run as well.
     event.preventDefault();
@@ -965,6 +1010,22 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
           this.loadMore();
           return;
         }
+        col = this.matchingCol(current, col, this.rows[target]);
+        row = target;
+        break;
+      }
+      case "PageUp":
+      case "PageDown": {
+        const step = TvGuideComponent.PAGE_ROWS * (event.key === "PageDown" ? 1 : -1);
+        let target = row + step;
+        if (target >= this.rows.length) {
+          // Up to the last row loaded so far; the next page comes meanwhile
+          // (and with it the bottom of the guide, as when scrolling there).
+          this.loadMore();
+          target = this.rows.length - 1;
+        }
+        target = Math.max(0, target);
+        if (target === row) return;
         col = this.matchingCol(current, col, this.rows[target]);
         row = target;
         break;

@@ -13,11 +13,11 @@ use crate::{
     types::{Channel, ChannelHttpHeaders, Filters, Source},
     view_type,
 };
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use directories::ProjectDirs;
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::{OptionalExtension, Row, Transaction, params, params_from_iter};
+use rusqlite::{Connection, OptionalExtension, Row, Transaction, params, params_from_iter};
 use rusqlite_migration::{M, Migrations};
 
 const PAGE_SIZE: u8 = 36;
@@ -2329,11 +2329,21 @@ pub fn get_channel_by_id(id: i64) -> Result<Channel> {
 }
 
 pub fn add_scheduled_recording(rec: &ScheduledRecording) -> Result<i64> {
-    let sql = get_conn()?;
-    sql.execute(
+    let conn = get_conn()?;
+    add_scheduled_recording_on(&conn, rec)
+}
+
+/// A finished or failed recording of the same programme is scheduled again
+/// in place (the unique index would refuse a second row); a pending or
+/// running one stays as it is.
+fn add_scheduled_recording_on(sql: &Connection, rec: &ScheduledRecording) -> Result<i64> {
+    let changed = sql.execute(
         r#"
         INSERT INTO scheduled_recordings (channel_id, title, start_timestamp, end_timestamp, status)
-        VALUES (?, ?, ?, ?, 0)
+        VALUES (?1, ?2, ?3, ?4, 0)
+        ON CONFLICT(channel_id, start_timestamp) DO UPDATE SET
+          title = excluded.title, end_timestamp = excluded.end_timestamp, status = 0
+        WHERE status IN (2, 3)
         "#,
         params![
             rec.channel_id,
@@ -2342,7 +2352,40 @@ pub fn add_scheduled_recording(rec: &ScheduledRecording) -> Result<i64> {
             rec.end_timestamp
         ],
     )?;
-    Ok(sql.last_insert_rowid())
+    if changed == 0 {
+        bail!("This programme is already scheduled for recording");
+    }
+    Ok(sql.query_row(
+        "SELECT id FROM scheduled_recordings WHERE channel_id = ? AND start_timestamp = ?",
+        params![rec.channel_id, rec.start_timestamp],
+        |r| r.get(0),
+    )?)
+}
+
+/// Pending recordings that start before `until` and have not ended yet.
+pub fn count_upcoming_recordings(now: i64, until: i64) -> Result<usize> {
+    let sql = get_conn()?;
+    let count: i64 = sql.query_row(
+        r#"
+        SELECT COUNT(*) FROM scheduled_recordings
+        WHERE status = 0 AND start_timestamp <= ?2 AND end_timestamp > ?1
+        "#,
+        params![now, until],
+        |r| r.get(0),
+    )?;
+    Ok(count as usize)
+}
+
+pub fn get_scheduled_recording_title(id: i64) -> Result<Option<String>> {
+    let sql = get_conn()?;
+    Ok(sql
+        .query_row(
+            "SELECT title FROM scheduled_recordings WHERE id = ?",
+            params![id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .flatten())
 }
 
 pub fn delete_scheduled_recording(id: i64) -> Result<()> {
@@ -3489,6 +3532,50 @@ mod test_sql {
         tx.commit().unwrap();
         assert!(locked(&conn, "Kids"));
         assert!(locked(&conn, "Adult"));
+    }
+
+    #[test]
+    fn test_failed_recording_can_be_scheduled_again() {
+        use super::add_scheduled_recording_on;
+        use crate::types::ScheduledRecording;
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            CREATE TABLE scheduled_recordings (id INTEGER PRIMARY KEY, channel_id INTEGER NOT NULL,
+              title TEXT, start_timestamp INTEGER NOT NULL, end_timestamp INTEGER NOT NULL,
+              status INTEGER DEFAULT 0);
+            CREATE UNIQUE INDEX index_scheduled_recordings_unique
+              ON scheduled_recordings(channel_id, start_timestamp);
+            "#,
+        )
+        .unwrap();
+        let rec = ScheduledRecording {
+            id: None,
+            channel_id: 1,
+            title: Some("News".into()),
+            start_timestamp: 100,
+            end_timestamp: 200,
+            status: 0,
+            channel_name: None,
+        };
+        let id = add_scheduled_recording_on(&conn, &rec).unwrap();
+        // Still pending: a second schedule is refused with a clear message.
+        assert!(add_scheduled_recording_on(&conn, &rec).is_err());
+        conn.execute("UPDATE scheduled_recordings SET status = 3", [])
+            .unwrap();
+        let again = ScheduledRecording {
+            end_timestamp: 300,
+            ..rec
+        };
+        assert_eq!(add_scheduled_recording_on(&conn, &again).unwrap(), id);
+        let (status, end): (u8, i64) = conn
+            .query_row(
+                "SELECT status, end_timestamp FROM scheduled_recordings",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((status, end), (0, 300));
     }
 
     fn progress_db() -> Connection {

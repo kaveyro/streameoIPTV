@@ -18,11 +18,15 @@
   <div class="modal-body">
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.NAME" | translate }} <span class="text-danger">*</span></span>
+        <label for="ecm-name"
+          >{{ "EDIT_CHANNEL.NAME" | translate }} <span class="text-danger">*</span></label
+        >
       </div>
       <div class="col">
         <input
           #name="ngModel"
+          id="ecm-name"
+          ngbAutofocus
           (ngModelChange)="onNameChange($event)"
           name="name"
           required
@@ -41,24 +45,28 @@
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.IMAGE" | translate }}</span>
+        <label for="ecm-image">{{ "EDIT_CHANNEL.IMAGE" | translate }}</label>
       </div>
       <div class="col">
         <input
+          id="ecm-image"
           class="form-control"
           name="image"
           [(ngModel)]="channel.data.image"
-          placeholder="http://mycoolsite.com/image.png"
+          placeholder="https://example.com/image.png"
         />
       </div>
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.URL" | translate }} <span class="text-danger">*</span></span>
+        <label for="ecm-url"
+          >{{ "EDIT_CHANNEL.URL" | translate }} <span class="text-danger">*</span></label
+        >
       </div>
       <div class="col">
         <input
           #url="ngModel"
+          id="ecm-url"
           name="url"
           (ngModelChange)="onUrlChange($event)"
           required
@@ -77,11 +85,14 @@
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.MEDIA_TYPE" | translate }} <span class="text-danger">*</span></span>
+        <label for="ecm-media-type"
+          >{{ "EDIT_CHANNEL.MEDIA_TYPE" | translate }} <span class="text-danger">*</span></label
+        >
       </div>
       <div class="col">
         <select
           #mediaType="ngModel"
+          id="ecm-media-type"
           name="mediaType"
           required
           [(ngModel)]="channel.data.media_type"
@@ -97,11 +108,11 @@
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.CATEGORY" | translate }}</span>
+        <label for="ecm-group">{{ "EDIT_CHANNEL.CATEGORY" | translate }}</label>
       </div>
       <div class="col">
         <input
-          id="typeahead-basic"
+          id="ecm-group"
           [placeholder]="'FORM.TYPEAHEAD_PLACEHOLDER' | translate"
           (ngModelChange)="checkEmpty($event)"
           name="group"
@@ -123,10 +134,11 @@
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.HTTP_USER_AGENT" | translate }}</span>
+        <label for="ecm-user-agent">{{ "EDIT_CHANNEL.HTTP_USER_AGENT" | translate }}</label>
       </div>
       <div class="col">
         <input
+          id="ecm-user-agent"
           name="httpUserAgent"
           class="form-control"
           placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
@@ -136,43 +148,45 @@
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.HTTP_ORIGIN" | translate }}</span>
+        <label for="ecm-origin">{{ "EDIT_CHANNEL.HTTP_ORIGIN" | translate }}</label>
       </div>
       <div class="col">
         <input
+          id="ecm-origin"
           name="httpOrigin"
           class="form-control"
-          placeholder="http://mycoolsite.com"
+          placeholder="https://example.com"
           [(ngModel)]="channel.headers!.http_origin"
         />
       </div>
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.HTTP_REFERRER" | translate }}</span>
+        <label for="ecm-referrer">{{ "EDIT_CHANNEL.HTTP_REFERRER" | translate }}</label>
       </div>
       <div class="col">
-        <div class="col">
-          <input
-            name="httpReferrer"
-            class="form-control"
-            placeholder="http://mycoolsite.com"
-            [(ngModel)]="channel.headers!.referrer"
-          />
-        </div>
+        <input
+          id="ecm-referrer"
+          name="httpReferrer"
+          class="form-control"
+          placeholder="https://example.com"
+          [(ngModel)]="channel.headers!.referrer"
+        />
       </div>
     </div>
     <div class="row mt-3 align-items-center">
       <div class="col-4">
-        <span>{{ "EDIT_CHANNEL.IGNORE_SSL" | translate }}</span>
+        <label for="ecm-ignore-ssl">{{ "EDIT_CHANNEL.IGNORE_SSL" | translate }}</label>
       </div>
       <div class="col">
         <div class="form-check form-switch">
           <input
+            id="ecm-ignore-ssl"
             name="ignoreSSL"
             [(ngModel)]="channel.headers!.ignore_ssl"
             class="form-check-input"
             type="checkbox"
+            role="switch"
           />
         </div>
       </div>

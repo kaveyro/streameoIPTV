@@ -1,4 +1,12 @@
-import { Component, HostListener, OnInit, OnDestroy } from "@angular/core";
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  OnDestroy,
+  QueryList,
+  ViewChildren,
+} from "@angular/core";
 import { debounceTime, Subject, Subscription } from "rxjs";
 import { Settings } from "../models/settings";
 import { invoke } from "@tauri-apps/api/core";
@@ -18,7 +26,6 @@ import { UpdateService } from "../update.service";
 import { ErrorService } from "../error.service";
 import { ConfirmService } from "../confirm.service";
 import { ToastrService } from "ngx-toastr";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { EpgCoverage, XmltvSourceStatus } from "../models/epgExtras";
 import {
   COUNTRY_PREFIX_MODES,
@@ -32,6 +39,9 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { SourceTileComponent } from "./source-tile/source-tile.component";
 import { TimeAgoPipe } from "../pipes/time-ago.pipe";
+import { errorText } from "../error-text";
+import { cacheTheme, DEFAULT_THEME } from "../theme-cache";
+import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, ZoomService } from "../zoom.service";
 
 /// Settings that are passed to mpv as launch arguments (see
 /// get_global_mpv_args in src-tauri/src/mpv.rs): changing one only takes effect
@@ -79,7 +89,7 @@ export function isValidRestreamPort(port: number | null | undefined): boolean {
     TimeAgoPipe,
   ],
   templateUrl: "./settings.component.html",
-  styleUrl: "./settings.component.css",
+  styleUrls: ["./settings.component.css", "./settings-nav.css"],
 })
 export class SettingsComponent implements OnInit, OnDestroy {
   subscriptions: Subscription[] = [];
@@ -148,6 +158,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   readonly languageOptions = LanguageService.OPTIONS;
   readonly restreamPortMin = RESTREAM_PORT_MIN;
   readonly restreamPortMax = RESTREAM_PORT_MAX;
+  readonly zoomMin = ZOOM_MIN;
+  readonly zoomMax = ZOOM_MAX;
+  readonly zoomStep = ZOOM_STEP;
+  @ViewChildren(SourceTileComponent) private sourceTiles?: QueryList<SourceTileComponent>;
   /// The tray icon is hidden on Linux (no reliable tray support there). There
   /// is no OS plugin in the frontend; the WebKitGTK user agent names Linux.
   readonly isLinux = navigator.userAgent.includes("Linux");
@@ -177,6 +191,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private confirmService: ConfirmService,
     private toastr: ToastrService,
     private nowPlaying: NowPlayingService,
+    private zoom: ZoomService,
+    private host: ElementRef<HTMLElement>,
   ) {}
 
   _getSortTypeText(sortType: SortType) {
@@ -191,6 +207,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.expiriesLoaded = true;
       this.getExpiries();
     }
+    // Narrow windows wrap the tabs into rows; keep the chosen one in view.
+    setTimeout(() => {
+      const tab = this.host.nativeElement.querySelector<HTMLElement>(
+        ".settings-nav .nav-item--active",
+      );
+      tab?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    });
   }
 
   isInputFocused(): boolean {
@@ -200,6 +223,39 @@ export class SettingsComponent implements OnInit, OnDestroy {
       activeElement instanceof HTMLTextAreaElement ||
       activeElement instanceof HTMLSelectElement
     );
+  }
+
+  /// A field that takes typed text (or a choice) has the focus: Escape then
+  /// only leaves the field, not the page.
+  isTextFieldFocused(): boolean {
+    const el = document.activeElement;
+    if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true;
+    return (
+      el instanceof HTMLInputElement &&
+      !["checkbox", "radio", "range", "button", "submit", "reset", "color", "file"].includes(
+        el.type,
+      )
+    );
+  }
+
+  /// Escape inside the page: cancels the edit of a source tile, else leaves
+  /// a focused field. Returns whether the key was used for that.
+  private escapeWithinPage(): boolean {
+    const active = document.activeElement;
+    const editing = this.sourceTiles?.filter((tile) => tile.editing) ?? [];
+    // The edited tile that has the focus, or the only one being edited.
+    const tile =
+      editing.find((t) => t.containsFocus()) ??
+      (editing.length === 1 && !this.isTextFieldFocused() ? editing[0] : undefined);
+    if (tile) {
+      tile.cancel(true);
+      return true;
+    }
+    if (this.isTextFieldFocused()) {
+      (active as HTMLElement).blur();
+      return true;
+    }
+    return false;
   }
 
   @HostListener("document:keydown", ["$event"])
@@ -222,12 +278,19 @@ export class SettingsComponent implements OnInit, OnDestroy {
       // closes modals that allow Escape; the ones opened with keyboard: false
       // (add channel/group, import) must stay open, or typed input is lost.
       if (this.modal.hasOpenModals()) return;
-      this.goBack();
       event.preventDefault();
+      if (event.key == "Escape" && this.escapeWithinPage()) return;
+      this.goBack();
     }
   }
 
   ngOnInit(): void {
+    // Ctrl +/-/0 change the zoom while the page is open: show the new value.
+    this.subscriptions.push(
+      this.zoom.changes.subscribe((zoom) => {
+        this.settings.zoom = zoom;
+      }),
+    );
     this.subscriptions.push(
       this.savedToast.pipe(debounceTime(600)).subscribe(() => {
         const now = Date.now();
@@ -408,11 +471,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
         if (this.settings.restream_port == undefined) this.settings.restream_port = 3000;
         if (this.settings.enable_tray_icon == undefined) this.settings.enable_tray_icon = true;
         if (this.settings.zoom == undefined) this.settings.zoom = 100;
+        // A shortcut's zoom that is not saved yet is newer than the stored
+        // one; otherwise the stored one is what the shortcuts continue from.
+        if (this.zoom.savePending) this.settings.zoom = this.zoom.value;
+        else if (this.settings.zoom !== this.zoom.value) this.zoom.apply(this.settings.zoom);
         if (this.settings.default_sort == undefined) this.settings.default_sort = SortType.provider;
         if (this.settings.enable_hwdec == undefined) this.settings.enable_hwdec = true;
         if (this.settings.always_ask_save == undefined) this.settings.always_ask_save = false;
         if (this.settings.enable_gpu == undefined) this.settings.enable_gpu = false;
-        if (this.settings.theme == undefined) this.settings.theme = "dark";
+        if (this.settings.theme == undefined) this.settings.theme = DEFAULT_THEME;
         if (this.settings.accent_color == undefined) this.settings.accent_color = "blue";
         if (this.settings.use_external_player == undefined)
           this.settings.use_external_player = false;
@@ -482,38 +549,26 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.scheduleSave();
   }
 
-  /// Applies the UI zoom right away, the save itself is debounced.
+  /// Applies the UI zoom right away; ZoomService clamps it, saves it
+  /// (debounced) and updates settings.zoom through the ngOnInit subscription.
   /// Applied on `change` (blur, Enter, spinner), not per keystroke: typing
   /// "120" would otherwise shrink the whole UI to 12% on the way.
   onZoomChange(input: HTMLInputElement) {
-    const typed = input.valueAsNumber;
     // The field is bound one-way ([ngModel]): when the clamped value equals
     // the stored one, Angular sees no change and would leave e.g. "900" in
     // the field. Write the effective value back by hand.
-    const zoom = Number.isFinite(typed)
-      ? Math.min(300, Math.max(50, Math.round(typed)))
-      : (this.settings.zoom ?? 100);
-    input.value = String(zoom);
-    if (zoom === this.settings.zoom) return;
-    this.settings.zoom = zoom;
-    getCurrentWebview()
-      .setZoom(Math.trunc(zoom * 100) / 10000)
-      .catch((e) => console.error(e));
-    this.scheduleSave();
+    input.value = String(this.zoom.set(input.valueAsNumber));
   }
 
   /// Re-applies theme, accent, language and zoom from the loaded settings.
   private applyLoadedAppearance() {
     this.theme.apply(this.settings.theme, this.settings.accent_color);
+    cacheTheme(this.settings.theme, this.settings.accent_color);
     this.language.apply(this.settings.language === "system" ? undefined : this.settings.language);
     this.memory.ShowChannelSource = this.settings.show_channel_source ?? true;
     this.memory.CountryPrefixMode = toCountryPrefixMode(this.settings.country_prefix);
     this.memory.AutoFallback = this.settings.auto_fallback ?? true;
-    if (this.settings.zoom) {
-      getCurrentWebview()
-        .setZoom(Math.trunc(this.settings.zoom * 100) / 10000)
-        .catch((e) => console.error(e));
-    }
+    this.zoom.apply(this.settings.zoom);
   }
 
   async updateTheme(theme?: string) {
@@ -522,6 +577,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // value, so reading this.settings.theme here would be one selection behind.
     if (theme !== undefined) this.settings.theme = theme;
     this.theme.apply(this.settings.theme, this.settings.accent_color);
+    cacheTheme(this.settings.theme, this.settings.accent_color);
     await this.updateSettings();
   }
 
@@ -698,7 +754,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.pinForm = { current: "", next: "", repeat: "", remove: "" };
     } catch (e) {
       // "Wrong PIN", "The PIN must be 4 to 8 digits": meant for the user.
-      this.toastr.error(String(e));
+      this.toastr.error(errorText(e, this.translate));
     } finally {
       this.pinBusy = false;
     }
@@ -723,7 +779,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       this.toastr.success(this.translate.instant("PARENTAL.PIN_REMOVED"));
       this.pinForm = { current: "", next: "", repeat: "", remove: "" };
     } catch (e) {
-      this.toastr.error(String(e));
+      this.toastr.error(errorText(e, this.translate));
     } finally {
       this.pinBusy = false;
     }

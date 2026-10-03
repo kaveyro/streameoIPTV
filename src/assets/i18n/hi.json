@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "सभी देश",
     "VIEWING": "देख रहे हैं: {{path}}",
     "SEARCH_LABEL": "चैनल, फ़िल्में और सीरीज़ खोजें",
-    "CLEAR_SEARCH": "खोज साफ़ करें"
+    "CLEAR_SEARCH": "खोज साफ़ करें",
+    "BREADCRUMB": "पथ"
   },
   "MENU": {
     "REMOVE": "हटाएँ",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "कृपया उन लॉग (यदि मौजूद हों) और नीचे दी गई त्रुटि को अपने बग अनुरोध के साथ संलग्न करें। धन्यवाद!",
     "COPY": "कॉपी करें",
     "LOGS_FOLDER_HINT": "लॉग फ़ाइलें और डायग्नोस्टिक रिपोर्ट कारण खोजने में मदद करती हैं:",
-    "PERSISTENT_DIAGNOSTICS": "यदि त्रुटि बार-बार आती है, तो डायग्नोस्टिक रिपोर्ट निर्यात करें और उसे अपनी रिपोर्ट के साथ संलग्न करें। इसमें कोई पासवर्ड या स्ट्रीम पता नहीं होता।"
+    "PERSISTENT_DIAGNOSTICS": "यदि त्रुटि बार-बार आती है, तो डायग्नोस्टिक रिपोर्ट निर्यात करें और उसे अपनी रिपोर्ट के साथ संलग्न करें। इसमें कोई पासवर्ड या स्ट्रीम पता नहीं होता।",
+    "CREDENTIALS_REJECTED": "प्रदाता ने उपयोगकर्ता नाम या पासवर्ड अस्वीकार कर दिया",
+    "NOT_XTREAM_SERVER": "सर्वर ने Xtream Codes सर्वर की तरह जवाब नहीं दिया",
+    "NOT_M3U_PLAYLIST": "लिंक किसी M3U प्लेलिस्ट की ओर नहीं ले जाता"
   },
   "SOURCE": {
     "REFRESHED": "रीफ़्रेश किया गया:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "डायग्नोस्टिक रिपोर्ट {{path}} में सहेजी गई",
     "DIAGNOSTICS_EXPORT_FAILED": "डायग्नोस्टिक रिपोर्ट निर्यात नहीं की जा सकी",
     "EPG_LOADING": "टीवी गाइड बैकग्राउंड में लोड हो रही है…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "“{{name}}” को पसंदीदा से हटाया गया; यह “{{list}}” में बना रहेगा"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "“{{name}}” को पसंदीदा से हटाया गया; यह “{{list}}” में बना रहेगा",
+    "DETAILS": "विवरण",
+    "RECORDING_ALREADY_SCHEDULED": "यह कार्यक्रम पहले से रिकॉर्डिंग के लिए निर्धारित है"
   },
   "UPDATE": {
     "TITLE": "अपडेट उपलब्ध",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "सर्वर से कनेक्शन विफल रहा",
     "CLOSE_PLAYER": "प्लेयर बंद करें",
     "CLOSE_PLAYER_HINT": "प्लेयर बंद करें (Esc)",
-    "FULLSCREEN_HINT": "Esc: फ़ुल स्क्रीन से बाहर निकलें"
+    "FULLSCREEN_HINT": "Esc: फ़ुल स्क्रीन से बाहर निकलें",
+    "ERROR_RETRY_HINT": "Enter: फिर से कोशिश करें",
+    "ERROR_LAST_HINT": "Backspace: पिछला चैनल"
   },
   "GUIDE": {
     "CHANNEL": "चैनल",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "इस अवधि में कोई कार्यक्रम नहीं",
     "EPG_FAILED": "कार्यक्रम डेटा लोड नहीं हो सका",
     "EPG_RETRY": "फिर से कोशिश करें",
-    "EPG_RETRY_ARIA": "{{name}} का कार्यक्रम डेटा फिर से लोड करें"
+    "EPG_RETRY_ARIA": "{{name}} का कार्यक्रम डेटा फिर से लोड करें",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "रिकॉर्डिंग निर्धारित",
+    "STATE_REMINDER_SET": "रिमाइंडर सेट है"
   },
   "PARENTAL": {
     "CONFIRM": "ठीक है",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "पीछे ले जाएँ",
     "REORDER_HINT": "क्रम बदलने के लिए टाइलें खींचें, या संदर्भ मेनू में “आगे/पीछे ले जाएँ” का उपयोग करें",
     "MOVE_FAILED": "नया क्रम सहेजा नहीं जा सका"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "दिखाएँ",
+    "TRAY_QUIT": "बंद करें",
+    "TRAY_PAUSE": "चलाएँ/रोकें",
+    "TRAY_STOP": "प्लेबैक रोकें",
+    "REMINDER_TITLE": "लाइव: {title}",
+    "REMINDER_BODY": "अभी {channel} पर",
+    "RECORDING_STARTED": "रिकॉर्डिंग शुरू: {title}",
+    "RECORDING_FINISHED": "रिकॉर्डिंग पूरी: {title}",
+    "RECORDING_FAILED": "रिकॉर्डिंग विफल: {title}",
+    "SCHEDULED_PROGRAM": "निर्धारित कार्यक्रम",
+    "LOCAL_LIVESTREAM": "स्थानीय लाइवस्ट्रीम",
+    "QUIT_TITLE": "streameoIPTV बंद करें?",
+    "QUIT_BODY": "{count} रिकॉर्डिंग या डाउनलोड चल रहे हैं या जल्द शुरू होंगे। बंद करने पर वे रुक जाएँगे; जो कार्यक्रम अभी चल रहा है, उसकी रिकॉर्डिंग अगली बार शुरू करने पर जारी रहेगी।",
+    "QUIT_CONFIRM": "बंद करें",
+    "QUIT_CANCEL": "रद्द करें"
   }
 }

@@ -6,6 +6,7 @@ import { TranslateService } from "@ngx-translate/core";
 import { MemoryService } from "./memory.service";
 import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
 import { Channel } from "./models/channel";
+import { errorText } from "./error-text";
 
 /** Parental lock actions shared by the home toolbar and the group tiles. */
 @Injectable({
@@ -52,7 +53,7 @@ export class ParentalService {
         return false;
       }
     } catch (e) {
-      this.toastr.error(String(e));
+      this.toastr.error(errorText(e, this.translate));
       return false;
     }
     this.memory.ShowLocked = true;
@@ -80,8 +81,8 @@ export class ParentalService {
     try {
       await invoke("set_group_locked", { groupId: group.id, locked, pin });
     } catch (e) {
-      // "Wrong PIN" and the like: the backend message is meant for the user.
-      this.toastr.error(String(e));
+      // "Wrong PIN" and the like: shown translated when known.
+      this.toastr.error(errorText(e, this.translate));
       return false;
     }
     if (locked) this.memory.LockedGroupIds.add(group.id);

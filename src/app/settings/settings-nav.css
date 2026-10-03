@@ -1,0 +1,63 @@
+/* Two-pane layout: category navigation beside the active pane. Its own sheet
+   keeps settings.component.css within the component style budget. */
+
+.settings-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  padding-bottom: 3rem;
+}
+
+/* As wide as the longest label, at least 180px: long labels (el, es, pt, ar,
+   ru) wrap at the maximum instead of running out of the column. */
+.settings-nav {
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 180px;
+  max-width: 15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: sticky;
+  top: 1rem;
+}
+
+/* The nav-item rule in styles.css (shared with the home sidebar) keeps
+   labels on one line; only the settings labels may wrap. */
+.settings-nav .nav-item {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+/* Narrow widths: the tabs wrap into rows, so all of them stay in view */
+
+@media (max-width: 767.98px) {
+  .settings-layout {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .settings-content {
+    width: 100%;
+  }
+
+  .settings-nav {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .settings-nav .nav-item {
+    width: auto;
+  }
+
+  .settings-nav .nav-item--active::before {
+    inset-block: auto 0;
+    inset-inline: 0.35rem;
+    width: auto;
+    height: 3px;
+  }
+}

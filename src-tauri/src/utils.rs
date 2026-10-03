@@ -20,7 +20,10 @@ use std::{
     env::{consts::OS, current_exe},
     fs::File,
     path::{Path, PathBuf},
-    sync::LazyLock,
+    sync::{
+        LazyLock,
+        atomic::{AtomicUsize, Ordering},
+    },
     time::Duration,
 };
 use tauri::{AppHandle, Emitter, State};
@@ -163,6 +166,35 @@ pub async fn download(
     result
 }
 
+/// Downloads in progress, so quitting can warn about them.
+static ACTIVE_DOWNLOADS: AtomicUsize = AtomicUsize::new(0);
+
+pub fn active_downloads() -> usize {
+    ACTIVE_DOWNLOADS.load(Ordering::SeqCst)
+}
+
+/// Counts one running download for as long as it lives.
+struct DownloadGuard;
+
+impl DownloadGuard {
+    fn new() -> Self {
+        ACTIVE_DOWNLOADS.fetch_add(1, Ordering::SeqCst);
+        DownloadGuard
+    }
+}
+
+impl Drop for DownloadGuard {
+    fn drop(&mut self) {
+        ACTIVE_DOWNLOADS.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+/// Where a download is written until it is complete: an interrupted one
+/// (the app quit, a crash) must not look like a finished movie.
+fn partial_path(path: &str) -> String {
+    format!("{path}.part")
+}
+
 async fn download_to_file(
     client: &reqwest::Client,
     url: &str,
@@ -184,7 +216,9 @@ async fn download_to_file(
         Some(p) => p,
         None => get_download_path(get_filename(name, url))?,
     };
-    let mut file = tokio::fs::File::create(&path).await?;
+    let _guard = DownloadGuard::new();
+    let part = partial_path(&path);
+    let mut file = tokio::fs::File::create(&part).await?;
     let mut send_threshold: f64 = 0.1;
 
     let mut result: Result<()> = loop {
@@ -221,11 +255,14 @@ async fn download_to_file(
     }
     drop(file);
     if let Err(e) = result {
-        // A partial file looks like a finished movie in the folder; remove it
-        // whatever the reason (abort, network error, full disk).
-        let _ = tokio::fs::remove_file(&path).await;
+        // Remove the partial file whatever the reason (abort, network error,
+        // full disk).
+        let _ = tokio::fs::remove_file(&part).await;
         return Err(e);
     }
+    tokio::fs::rename(&part, &path)
+        .await
+        .with_context(|| format!("failed to move the finished download to {path}"))?;
     Ok(())
 }
 
@@ -558,7 +595,24 @@ mod test_ffmpeg_input_args {
 
 #[cfg(test)]
 mod test_download_filename {
-    use super::{get_extension, get_filename};
+    use super::{active_downloads, get_extension, get_filename, partial_path};
+
+    #[test]
+    fn test_download_writes_a_part_file_first() {
+        assert_eq!(
+            partial_path("C:/Movies/Film.mkv"),
+            "C:/Movies/Film.mkv.part"
+        );
+    }
+
+    #[test]
+    fn test_download_guard_counts_while_alive() {
+        let before = active_downloads();
+        let guard = super::DownloadGuard::new();
+        assert!(active_downloads() > before);
+        drop(guard);
+        assert_eq!(active_downloads(), before);
+    }
 
     #[test]
     fn test_extension_ignores_the_query() {

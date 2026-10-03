@@ -29,7 +29,7 @@ import { SourceType } from "../models/sourceType";
 import { animate, state, style, transition, trigger } from "@angular/animations";
 import { ErrorService } from "../error.service";
 import { Settings } from "../models/settings";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { ZoomService } from "../zoom.service";
 import { SortType } from "../models/sortType";
 import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
 import { SIDEBAR_COLLAPSED } from "../models/localStorage";
@@ -82,7 +82,7 @@ const MAX_RESTORED_PAGES = 10;
     RecordingsComponent,
   ],
   templateUrl: "./home.component.html",
-  styleUrls: ["./home.component.css", "./home-search.css"],
+  styleUrls: ["./home.component.css", "./home-search.css", "./home-heading.css"],
   animations: [
     trigger("fadeInOut", [
       transition(":enter", [
@@ -227,6 +227,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private nowPlaying: NowPlayingService,
     private favoriteLists: FavoriteListsService,
     private watchProgress: WatchProgressService,
+    private zoom: ZoomService,
   ) {
     this.getSources();
     this.listenForAutoRefresh();
@@ -270,17 +271,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       .catch((e) => console.error(e));
   }
 
-  getSources() {
+  getSources(): Promise<void> {
+    this.loadFailed = false;
     const get_settings = invoke("get_settings");
     const get_sources = invoke("get_sources");
-    Promise.all([get_settings, get_sources])
+    return Promise.all([get_settings, get_sources])
       .then((data) => {
         const settings = data[0] as Settings;
         const sources = data[1] as Source[];
-        if (settings.zoom)
-          getCurrentWebview()
-            .setZoom(Math.trunc(settings.zoom! * 100) / 10000)
-            .catch((e) => console.error(e));
+        // A shortcut's zoom that is not saved yet is newer than the stored one.
+        if (settings.zoom && !this.zoom.savePending) this.zoom.apply(settings.zoom);
         this.memory.trayEnabled = settings.enable_tray_icon ?? true;
         this.memory.AlwaysAskSave = settings.always_ask_save ?? false;
         this.memory.ShowChannelSource = settings.show_channel_source ?? true;
@@ -334,24 +334,31 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       })
       .catch((e) => {
+        // A failed IPC call says nothing about the sources: offer a retry
+        // (reload() runs this again) instead of sending the user to setup.
         this.error.handleError(e);
-        this.reset();
+        this.loadFailed = true;
       });
   }
 
   async refreshOnStart() {
     this.toast.info(this.translate.instant("TOAST.REFRESH_ON_START"));
-    await this.memory.tryIPC(
+    // tryIPC resolves to true when the action failed.
+    const failed = await this.memory.tryIPC(
       this.translate.instant("TOAST.REFRESH_ON_START_SUCCESS"),
       this.translate.instant("TOAST.REFRESH_ON_START_FAILED"),
       async () => {
         await invoke("refresh_all");
       },
     );
+    // The list loaded in parallel shows the old data: load it again.
+    if (!failed) this.memory.Refresh.next(false);
   }
 
   async reload() {
-    await this.load();
+    // The start failed before the filters were set up: start over.
+    if (!this.filters) await this.getSources();
+    else await this.load();
   }
 
   reset() {
@@ -1036,22 +1043,24 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * One level up, back to where that level was scrolled. Resolves to true
-   * when the keyboard focus went back to the tile the level was left from.
+   * `levels` levels up (one by default; more from the breadcrumb), back to
+   * where the level reached was scrolled. Resolves to true when the keyboard
+   * focus went back to the tile the level was left from.
    */
-  async goBack(): Promise<boolean> {
+  async goBack(levels = 1): Promise<boolean> {
     // Holding Backspace (or clicking the arrow repeatedly) must not pop two
     // levels at once or pop an empty stack.
-    if (this.navigatingBack || !this.nodeStack.hasNodes() || !this.filters) return false;
+    if (this.navigatingBack || !this.nodeStack.hasNodes() || !this.filters || levels < 1)
+      return false;
     this.navigatingBack = true;
     try {
-      const node = this.nodeStack.pop();
-      if (node.type == NodeType.Category) this.filters.group_id = undefined;
-      else if (node.type == NodeType.Series) {
-        this.filters.series_id = undefined;
-        this.filters.source_ids = Array.from(this.memory.Sources.keys());
-      } else if (node.type == NodeType.Season) {
-        this.filters.season = undefined;
+      // The outermost node popped describes the level reached (its query,
+      // scroll position and pages).
+      let node = this.nodeStack.pop();
+      this.leaveLevel(node);
+      for (let i = 1; i < levels && this.nodeStack.hasNodes(); i++) {
+        node = this.nodeStack.pop();
+        this.leaveLevel(node);
       }
       if (node.query) {
         this.setSearchValue(node.query);
@@ -1065,6 +1074,48 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       return await this.restorePosition(node);
     } finally {
       this.navigatingBack = false;
+    }
+  }
+
+  /// Drops the filter a popped node had narrowed the list by.
+  private leaveLevel(node: Node) {
+    if (!this.filters) return;
+    if (node.type == NodeType.Category) this.filters.group_id = undefined;
+    else if (node.type == NodeType.Series) {
+      this.filters.series_id = undefined;
+      this.filters.source_ids = Array.from(this.memory.Sources.keys());
+    } else if (node.type == NodeType.Season) {
+      this.filters.season = undefined;
+    }
+  }
+
+  /** Breadcrumb: back to the level `depth` levels deep (0: the view itself). */
+  async goToLevel(depth: number): Promise<boolean> {
+    const levels = this.nodeStack.get()?.path.length ?? 0;
+    return this.goBack(levels - depth);
+  }
+
+  /// Inside a category or series: the heading shows the way back to the view.
+  insideLevel(): boolean {
+    return (
+      this.nodeStack.hasNodes() &&
+      ((this.filters?.view_type === ViewMode.Categories && !!this.filters?.group_id) ||
+        !!this.filters?.series_id)
+    );
+  }
+
+  /// Translation key of the library view's name (the sidebar's label).
+  viewLabelKey(): string {
+    if (this.continueWatching) return "HOME.NAV.CONTINUE_WATCHING";
+    switch (this.filters?.view_type) {
+      case ViewMode.Categories:
+        return "HOME.NAV.CATEGORIES";
+      case ViewMode.Favorites:
+        return "HOME.NAV.FAVORITES";
+      case ViewMode.History:
+        return "HOME.NAV.HISTORY";
+      default:
+        return "HOME.NAV.ALL_CHANNELS";
     }
   }
 
@@ -1295,8 +1346,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       return;
     }
-    if (event.key == "Enter" && this.focusArea == FocusArea.Filters && this.panel === "library")
-      (document.activeElement as HTMLElement).click();
+    // The media pills are checkboxes, which only toggle on Space by
+    // themselves. Decided by the focused element, not by focusArea (only
+    // arrow keys update that): tiles and buttons activate on Enter already.
+    const active = document.activeElement;
+    if (
+      event.key == "Enter" &&
+      !event.repeat &&
+      this.panel === "library" &&
+      active instanceof HTMLInputElement &&
+      active.type === "checkbox" &&
+      active.id.startsWith(FocusAreaPrefix[FocusArea.Filters])
+    )
+      active.click();
   }
 
   selectFirstChannel() {

@@ -72,3 +72,27 @@
 .guide-tray-hint .btn:disabled {
   pointer-events: none;
 }
+
+/* Grid cells for screen readers (role="gridcell" / "rowheader"): the
+   buttons inside are laid out as before. */
+.guide-cell {
+  display: contents;
+}
+
+/* Bell mark: a reminder is set for this programme. */
+.guide-reminder-icon {
+  width: 0.9em;
+  height: 0.9em;
+  margin-inline-end: 0.25rem;
+  vertical-align: -0.12em;
+  fill: var(--text-secondary);
+}
+
+/* Rows far from the viewport skip layout and paint of their programmes.
+   On the timeline rather than the whole row: the containment makes a
+   stacking context, and one per row would put the now line above the
+   sticky channel column. */
+.guide-timeline {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto var(--guide-row-height);
+}

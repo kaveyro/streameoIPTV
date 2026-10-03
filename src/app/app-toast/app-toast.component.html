@@ -1,0 +1,43 @@
+@let _options = options();
+
+@if (_options.closeButton) {
+  <button
+    (click)="close($event)"
+    type="button"
+    class="toast-close-button"
+    [attr.aria-label]="'MODAL.CLOSE' | translate"
+  >
+    <span aria-hidden="true">&times;</span>
+  </button>
+}
+
+@if (title()) {
+  <div [class]="_options.titleClass" [attr.aria-label]="title()">
+    {{ title() }}
+    @if (duplicatesCount) {
+      <ng-container>[{{ duplicatesCount + 1 }}]</ng-container>
+    }
+  </div>
+}
+
+@if (message()) {
+  <div role="alert" [class]="_options.messageClass" [attr.aria-label]="message()">
+    {{ message() }}
+  </div>
+}
+
+@if (hasDetails) {
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-secondary toast-details-button"
+    (click)="showDetails($event)"
+  >
+    {{ "TOAST.DETAILS" | translate }}
+  </button>
+}
+
+@if (_options.progressBar) {
+  <div>
+    <div class="toast-progress" [style.width]="width() + '%'"></div>
+  </div>
+}

@@ -188,6 +188,51 @@
   </aside>
 
   <main class="main-area">
+    <!-- Where the library is: the view's name, or inside a category/series
+         the way back to it, one button per level (the guide and the
+         recordings have their own titles). -->
+    @if (panel === "library" && filters) {
+      <div class="view-heading">
+        @if (insideLevel() && nodeStack.get(); as node) {
+          <button
+            type="button"
+            class="icon-btn go-back-btn"
+            (click)="goBack()"
+            [attr.aria-label]="'COMMON.GO_BACK' | translate"
+            [ngbTooltip]="'COMMON.GO_BACK' | translate"
+          >
+            <svg class="go-back-arrow" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12M18,11H10L13.5,7.5L12.08,6.08L6.16,12L12.08,17.92L13.5,16.5L10,13H18V11Z"
+              />
+            </svg>
+          </button>
+          <nav class="crumbs" [attr.aria-label]="'HOME.BREADCRUMB' | translate">
+            <ol>
+              <li>
+                <button type="button" class="crumb" (click)="goToLevel(0)">
+                  {{ viewLabelKey() | translate }}
+                </button>
+              </li>
+              @for (name of node.path; track $index) {
+                <li>
+                  @if ($last) {
+                    <h1 class="view-title crumb-current" aria-current="page">{{ name }}</h1>
+                  } @else {
+                    <button type="button" class="crumb" (click)="goToLevel($index + 1)">
+                      {{ name }}
+                    </button>
+                  }
+                </li>
+              }
+            </ol>
+          </nav>
+        } @else {
+          <h1 class="view-title">{{ viewLabelKey() | translate }}</h1>
+        }
+      </div>
+    }
+
     <div class="toolbar" [hidden]="panel !== 'library'">
       <div class="search-box">
         <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -351,34 +396,6 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <div
-      class="mb-3 d-flex align-items-center"
-      *ngIf="
-        panel === 'library' &&
-        ((filters?.view_type === viewModeEnum.Categories && filters?.group_id) ||
-          filters?.series_id)
-      "
-    >
-      <button
-        type="button"
-        class="icon-btn go-back-btn"
-        (click)="goBack()"
-        [attr.aria-label]="'COMMON.GO_BACK' | translate"
-        [ngbTooltip]="'COMMON.GO_BACK' | translate"
-      >
-        <svg class="go-back-arrow" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12M18,11H10L13.5,7.5L12.08,6.08L6.16,12L12.08,17.92L13.5,16.5L10,13H18V11Z"
-          />
-        </svg>
-      </button>
-      @if (nodeStack.get(); as node) {
-        <h4 class="ms-2 mb-0 node-path">
-          {{ "HOME.VIEWING" | translate: { path: node.pathLabel() } }}
-        </h4>
-      }
     </div>
 
     <!-- Favorites view: the favorites plus the user's own lists. -->

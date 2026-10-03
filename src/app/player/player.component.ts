@@ -161,7 +161,8 @@ function setBackgroundInert(inert: boolean) {
   styleUrl: "./player.component.css",
 })
 export class PlayerComponent implements AfterViewInit, OnDestroy {
-  /// Minimum gap between two playback-failure toasts.
+  /// Minimum gap between two playback-failure toasts (while a dialog hides
+  /// the video; over the video the error stays up until it is resolved).
   private static readonly ERROR_TOAST_INTERVAL_MS = 5000;
   /// How often the now/next line and its progress bar are refreshed.
   private static readonly EPG_REFRESH_MS = 30 * 1000;
@@ -237,6 +238,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   /// "Connecting…" / "Buffering…" is waiting to show, or shown, over the video.
   private statusTimer?: ReturnType<typeof setTimeout>;
   private statusShown = false;
+  /// The playback error shown in the status over the video until the stream
+  /// plays or another one is picked; Enter retries the channel meanwhile.
+  private errorText?: string;
   private embeddedUnavailable = false;
   private resizeObserver?: ResizeObserver;
   private subscriptions: Subscription[] = [];
@@ -535,20 +539,53 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
    * While the video is shown a toast is useless: the native video window
    * composites above the WebView, so anything the DOM paints over the video
    * area is invisible. mpv's own OSD is drawn inside that window and is the
-   * only surface the user can actually see there. Only while a dialog hides
-   * the video does the toast take over; never both.
+   * only surface the user can actually see there. The error stays there (in
+   * the status) with the keys that help, instead of a short message that
+   * leaves a black picture behind. Only while a dialog hides the video does a
+   * toast tell as well.
    */
   private reportPlaybackError(message: string) {
     const key = playbackErrorKey(message);
     const reason = key ? this.translate.instant(key) : message;
     const text = `${this.translate.instant("TOAST.PLAYER_ERROR")}: ${reason}`;
+    // mpv keeps retrying a failed live stream (loop-playlist=inf) and reports
+    // each failure: an error already up stays as it is.
+    if (text !== this.errorText) this.showError(text);
     const videoShown = this.active && (this.mini || !this.modal.hasOpenModals());
     if (videoShown) {
       console.error(message);
-      this.osd(text);
-    } else {
-      this.error.handleError(message, text);
+      return;
     }
+    // At most one toast per interval instead of a toast storm.
+    const now = Date.now();
+    if (now - this.lastErrorAt < PlayerComponent.ERROR_TOAST_INTERVAL_MS) return;
+    this.lastErrorAt = now;
+    this.error.handleError(message, text);
+  }
+
+  /**
+   * The error over the video with the keys that work on it: Enter retries
+   * (see {@link retry}), Backspace goes back to the previous channel when
+   * there is one. It stays until the stream plays or a channel is picked.
+   */
+  private showError(text: string) {
+    if (!this.active) return;
+    this.cancelStatusTimer();
+    const hints = [this.translate.instant("PLAYER.ERROR_RETRY_HINT")];
+    if (this.previous) hints.push(this.translate.instant("PLAYER.ERROR_LAST_HINT"));
+    this.errorText = text;
+    this.statusShown = true;
+    invoke("player_status", { text: `${text}\n${hints.join(" · ")}` }).catch(() => undefined);
+  }
+
+  /**
+   * Enter while the failed stream's error is shown: plays the channel again.
+   * False when there is nothing to retry.
+   */
+  retry(): boolean {
+    if (!this.active || !this.current || !this.currentFailed || !this.errorText) return false;
+    this.switch(this.current);
+    return true;
   }
 
   /**
@@ -578,7 +615,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private acceptPlaybackError(message: string) {
     // Selecting the failed channel again must retry it.
     this.currentFailed = true;
-    this.clearStatus();
+    // A pending "Connecting…" never shows; one that is up stays until the
+    // error (or the fallback's switch) replaces it, without a gap between.
+    this.cancelStatusTimer();
     this.onPlaybackError(message);
   }
 
@@ -623,9 +662,10 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     } else if (status !== "buffering") {
       return;
     }
+    // mpv retrying the failed stream: its error stays up until it plays.
+    if (this.errorText !== undefined) return;
     const key = status === "connecting" ? "PLAYER.CONNECTING" : "PLAYER.BUFFERING";
-    if (this.statusTimer !== undefined) clearTimeout(this.statusTimer);
-    this.statusTimer = undefined;
+    this.cancelStatusTimer();
     // Already up: only the text changes.
     if (this.statusShown) {
       this.showStatus(key);
@@ -656,9 +696,14 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
 
   /** Forgets the status without telling mpv (player_stop removes it there). */
   private resetStatus() {
+    this.cancelStatusTimer();
+    this.statusShown = false;
+    this.errorText = undefined;
+  }
+
+  private cancelStatusTimer() {
     if (this.statusTimer !== undefined) clearTimeout(this.statusTimer);
     this.statusTimer = undefined;
-    this.statusShown = false;
   }
 
   /**
@@ -696,11 +741,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       const outcome = await this.fallBackFrom(failed);
       if (outcome !== "none") return;
     }
-    // A live stream that keeps failing makes mpv retry (loop-playlist=inf),
-    // so report at most one failure per interval instead of a toast storm.
-    const now = Date.now();
-    if (now - this.lastErrorAt < PlayerComponent.ERROR_TOAST_INTERVAL_MS) return;
-    this.lastErrorAt = now;
     this.reportPlaybackError(message);
   }
 
@@ -852,8 +892,9 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         this.restart();
         break;
       case "commit":
-        // Enter only means something while a channel number is typed.
+        // Enter takes a typed channel number, or retries a failed stream.
         if (this.zapDigits) this.commitZap();
+        else this.retry();
         break;
     }
   }
@@ -909,6 +950,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement;
+    const onButton = target instanceof HTMLButtonElement;
     // Channel number entry (top row and numpad give the same `key`).
     if (!inTextInput && !event.ctrlKey && !event.altKey && !event.metaKey) {
       if (/^[0-9]$/.test(event.key)) {
@@ -919,6 +961,13 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       }
       if (event.key === "Enter" && this.zapDigits) {
         this.commitZap();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      // After a failure Enter retries, like inside mpv. A focused button
+      // keeps its own Enter (the failed channel's list entry retries too).
+      if (event.key === "Enter" && !onButton && this.retry()) {
         event.preventDefault();
         event.stopImmediatePropagation();
         return;
@@ -944,7 +993,6 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       }
       // Pause and mute like inside mpv. Space on a focused button (the bar,
       // the side list's entries) stays that button's own.
-      const onButton = target instanceof HTMLButtonElement;
       if ((event.key === " " && !onButton) || event.key === "m" || event.key === "M") {
         const command = event.key === " " ? "toggle_pause" : "toggle_mute";
         invoke("player_command", { command }).catch(() => undefined);

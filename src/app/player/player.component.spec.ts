@@ -81,18 +81,55 @@ describe("PlayerComponent", () => {
     expect(sameChannel(channels[0], { ...channels[0], url: "other" })).toBeTrue();
   });
 
-  it("reports an error over the video only, with the explained text", async () => {
+  it("keeps an error over the video, with the explained text and what to do", async () => {
     await openFirst();
     const toast = spyOn(TestBed.inject(ErrorService), "handleError");
     component.onPlayerError("loading failed");
-    expect(osdTexts()).toContain("TOAST.PLAYER_ERROR: PLAYER.ERR_LOADING");
+    expect(statusTexts()).toEqual([
+      "TOAST.PLAYER_ERROR: PLAYER.ERR_LOADING\nPLAYER.ERROR_RETRY_HINT",
+    ]);
+    // Not also as a passing message, and no toast hidden behind the video.
+    expect(osdTexts().some((t) => t.startsWith("TOAST.PLAYER_ERROR"))).toBeFalse();
     expect(toast).not.toHaveBeenCalled();
+    // mpv retrying the stream: the error stays, without "Connecting…".
+    component.onPlayerStatus("connecting");
+    component.onPlayerError("loading failed");
+    await new Promise((resolve) => setTimeout(resolve, PlayerComponent.CONNECTING_STATUS_MS + 50));
+    expect(statusTexts().length).toBe(1);
+    // It plays after all: the error goes.
+    component.onPlayerStatus("playing");
+    expect(statusTexts()).toEqual([jasmine.any(String), null]);
   });
 
-  it("shows mpv's own text for an unknown error", async () => {
+  it("offers the previous channel in the error when there is one", async () => {
     await openFirst();
+    await component.switch(channels[1]);
+    component.onPlayerStatus("connecting");
     component.onPlayerError("something odd");
-    expect(osdTexts()).toContain("TOAST.PLAYER_ERROR: something odd");
+    expect(statusTexts()).toContain(
+      "TOAST.PLAYER_ERROR: something odd\nPLAYER.ERROR_RETRY_HINT · PLAYER.ERROR_LAST_HINT",
+    );
+  });
+
+  it("retries the failed channel on Enter, from mpv and from the page", async () => {
+    await openFirst();
+    // Nothing failed: Enter does nothing.
+    component.handlePlayerKey("commit");
+    await settle();
+    expect(plays()).toEqual([1]);
+    component.onPlayerError("loading failed");
+    component.handlePlayerKey("commit");
+    await settle();
+    expect(plays()).toEqual([1, 1]);
+    // The retry removed the error.
+    expect(statusTexts()[statusTexts().length - 1]).toBeNull();
+    component.onPlayerStatus("connecting");
+    component.onPlayerError("loading failed");
+    document.body.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+    );
+    await settle();
+    expect(plays()).toEqual([1, 1, 1]);
   });
 
   describe("status text", () => {
@@ -121,12 +158,15 @@ describe("PlayerComponent", () => {
       expect(statusTexts()).toEqual([]);
     });
 
-    it("removes the status when the stream fails", () => {
+    it("replaces the status with the error when the stream fails", () => {
       component.onPlayerStatus("buffering");
       jasmine.clock().tick(PlayerComponent.BUFFERING_STATUS_MS + 1);
       expect(statusTexts()).toEqual(["PLAYER.BUFFERING"]);
       component.onPlayerError("loading failed");
-      expect(statusTexts()).toEqual(["PLAYER.BUFFERING", null]);
+      expect(statusTexts()).toEqual([
+        "PLAYER.BUFFERING",
+        "TOAST.PLAYER_ERROR: PLAYER.ERR_LOADING\nPLAYER.ERROR_RETRY_HINT",
+      ]);
     });
   });
 
@@ -151,7 +191,7 @@ describe("PlayerComponent", () => {
     component.onPlayerStatus("connecting");
     component.onPlayerStatus("playing");
     await new Promise((resolve) => setTimeout(resolve, PlayerComponent.STALE_ERROR_GRACE_MS + 50));
-    expect(osdTexts().some((t) => t.startsWith("TOAST.PLAYER_ERROR"))).toBeFalse();
+    expect(statusTexts().some((t) => String(t).startsWith("TOAST.PLAYER_ERROR"))).toBeFalse();
     // Not marked as failed: picking it again does not restart it.
     await component.switch(channels[1]);
     expect(plays()).toEqual([1, 2]);
@@ -165,9 +205,11 @@ describe("PlayerComponent", () => {
       // A rejected loadfile: no file start follows.
       component.onPlayerError("loading failed");
       jasmine.clock().tick(PlayerComponent.STALE_ERROR_GRACE_MS - 1);
-      expect(osdTexts()).not.toContain("TOAST.PLAYER_ERROR: PLAYER.ERR_LOADING");
+      expect(statusTexts()).toEqual([]);
       jasmine.clock().tick(2);
-      expect(osdTexts()).toContain("TOAST.PLAYER_ERROR: PLAYER.ERR_LOADING");
+      expect(statusTexts()).toEqual([
+        "TOAST.PLAYER_ERROR: PLAYER.ERR_LOADING\nPLAYER.ERROR_RETRY_HINT · PLAYER.ERROR_LAST_HINT",
+      ]);
     } finally {
       jasmine.clock().uninstall();
     }

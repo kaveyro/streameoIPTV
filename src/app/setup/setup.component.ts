@@ -25,6 +25,8 @@ import { FormsModule, NgModel } from "@angular/forms";
 import { LoadingComponent } from "../loading/loading.component";
 import { NotEmptyValidatorDirective } from "./validators/not-empty-validator.directive";
 import { SourceNameExistsValidator } from "./validators/source-name-exists-validator.directive";
+import { errorText } from "../error-text";
+import { cacheTheme } from "../theme-cache";
 
 /// How to import an M3U link that turned out to be an Xtream login.
 type LinkImportChoice = "xtream" | "m3u" | "abort";
@@ -139,11 +141,11 @@ export class SetupComponent implements OnInit {
       .then((settings) => {
         this.settings = settings ?? {};
         this.settings.language = this.settings.language ?? "system";
-        this.settings.theme = this.settings.theme ?? "dark";
+        this.settings.theme = this.settings.theme ?? "system";
       })
       .catch(() => {
         // First launch: nothing stored yet, keep the defaults.
-        this.settings = { language: "system", theme: "dark" };
+        this.settings = { language: "system", theme: "system" };
       });
   }
 
@@ -156,6 +158,7 @@ export class SetupComponent implements OnInit {
   async updateTheme(theme: string) {
     this.settings.theme = theme;
     this.themeService.apply(theme, this.settings.accent_color);
+    cacheTheme(theme, this.settings.accent_color);
     await this.saveSettings();
   }
 
@@ -186,8 +189,12 @@ export class SetupComponent implements OnInit {
       await invoke("check_source", { source: sourceForCheck(this.source) });
       this.toastr.success(this.translate.instant("SOURCE.CHECK_OK"));
     } catch (e) {
-      // The backend message is already redacted and meant for the user.
-      this.toastr.error(String(e), this.translate.instant("SOURCE.CHECK_FAILED"));
+      // The backend message is already redacted; only its first line (or
+      // its translation) is meant for the user, not the cause chain.
+      this.toastr.error(
+        errorText(e, this.translate),
+        this.translate.instant("SOURCE.CHECK_FAILED"),
+      );
     } finally {
       this.checking = false;
     }
@@ -195,6 +202,8 @@ export class SetupComponent implements OnInit {
 
   switchMode(sourceType: SourceType) {
     this.source.source_type = sourceType;
+    // The error belonged to the URL of the previous type's form.
+    this.urlError = undefined;
   }
 
   goBack() {

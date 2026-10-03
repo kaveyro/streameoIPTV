@@ -277,6 +277,76 @@ describe("ChannelTileComponent", () => {
     expect(callsOf(calls, "add_last_watched").map((c) => c.args)).toEqual([{ id: 1 }]);
   });
 
+  it("keeps a channel that failed to play out of the history", async () => {
+    await create(movie);
+    spyOn(TestBed.inject(PlaybackService), "play").and.rejectWith("no stream");
+    await component.click();
+    await settle();
+    expect(callsOf(calls, "add_last_watched").length).toBe(0);
+    expect(component.starting).toBeFalse();
+  });
+
+  describe("keyboard activation", () => {
+    function key(type: string, key: string, init: KeyboardEventInit = {}): KeyboardEvent {
+      const event = new KeyboardEvent(type, { key, bubbles: true, cancelable: true, ...init });
+      tile().dispatchEvent(event);
+      return event;
+    }
+
+    it("starts once per Enter or Space press", async () => {
+      await create(movie);
+      const click = spyOn(component, "click").and.resolveTo();
+      key("keydown", "Enter");
+      key("keydown", "Enter", { repeat: true });
+      key("keyup", "Enter");
+      expect(click).toHaveBeenCalledTimes(1);
+      const space = key("keydown", " ");
+      // Space must not scroll the page.
+      expect(space.defaultPrevented).toBeTrue();
+      expect(click).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not start when Enter on a menu item hands the focus back", async () => {
+      await create(live, ViewMode.All, { get_epg: [] });
+      component.openContextMenuFromKeyboard();
+      await settle();
+      fixture.detectChanges();
+      const click = spyOn(component, "click").and.resolveTo();
+      // Enter activates the item on keydown; the menu closes and the focus
+      // returns to the tile before the key comes up.
+      const favorite = Array.from(
+        document.querySelectorAll<HTMLElement>(".mat-mdc-menu-panel .mat-mdc-menu-item"),
+      ).find((item) => item.textContent?.trim() === "MENU.FAVORITE");
+      favorite!.focus();
+      favorite!.click();
+      await settle();
+      expect(document.activeElement).toBe(tile());
+      key("keyup", "Enter");
+      expect(click).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("name tooltip", () => {
+    it("is only on when the name is cut off", async () => {
+      await create({ ...movie, name: "A very long channel name ".repeat(20) });
+      tile().dispatchEvent(new MouseEvent("mouseenter"));
+      expect(component.nameTruncated).toBeTrue();
+    });
+
+    it("stays off for a name that fits", async () => {
+      await create(movie);
+      tile().dispatchEvent(new MouseEvent("mouseenter"));
+      expect(component.nameTruncated).toBeFalse();
+    });
+
+    it("does not describe the tile by its name a second time", async () => {
+      await create(movie);
+      tile().setAttribute("aria-describedby", "ngb-tooltip-1");
+      component.onTooltipShown();
+      expect(tile().hasAttribute("aria-describedby")).toBeFalse();
+    });
+  });
+
   it("opens a group instead of playing it", async () => {
     await create(group, ViewMode.Categories);
     const play = spyOn(TestBed.inject(PlaybackService), "play");

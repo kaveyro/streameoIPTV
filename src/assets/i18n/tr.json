@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "Tüm ülkeler",
     "VIEWING": "Görüntülenen: {{path}}",
     "SEARCH_LABEL": "Kanal, film ve dizi ara",
-    "CLEAR_SEARCH": "Aramayı temizle"
+    "CLEAR_SEARCH": "Aramayı temizle",
+    "BREADCRUMB": "Yol"
   },
   "MENU": {
     "REMOVE": "Kaldır",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "Lütfen bu günlükleri (varsa) ve aşağıdaki hatayı hata bildiriminize ekleyin. Teşekkürler!",
     "COPY": "Kopyala",
     "LOGS_FOLDER_HINT": "Günlük dosyaları ve bir tanılama raporu nedeni bulmaya yardımcı olur:",
-    "PERSISTENT_DIAGNOSTICS": "Hata tekrar ederse tanılama raporunu dışa aktarın ve bildiriminize ekleyin. Rapor parola veya yayın adresi içermez."
+    "PERSISTENT_DIAGNOSTICS": "Hata tekrar ederse tanılama raporunu dışa aktarın ve bildiriminize ekleyin. Rapor parola veya yayın adresi içermez.",
+    "CREDENTIALS_REJECTED": "Sağlayıcı kullanıcı adını veya şifreyi reddetti",
+    "NOT_XTREAM_SERVER": "Sunucu bir Xtream Codes sunucusu gibi yanıt vermedi",
+    "NOT_M3U_PLAYLIST": "Bağlantı bir M3U çalma listesine işaret etmiyor"
   },
   "SOURCE": {
     "REFRESHED": "Yenilendi:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "Tanılama raporu {{path}} konumuna kaydedildi",
     "DIAGNOSTICS_EXPORT_FAILED": "Tanılama raporu dışa aktarılamadı",
     "EPG_LOADING": "Yayın akışı arka planda yükleniyor…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "“{{name}}” favorilerden kaldırıldı, “{{list}}” listesinde kalıyor"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "“{{name}}” favorilerden kaldırıldı, “{{list}}” listesinde kalıyor",
+    "DETAILS": "Ayrıntılar",
+    "RECORDING_ALREADY_SCHEDULED": "Bu program zaten kayıt için planlandı"
   },
   "UPDATE": {
     "TITLE": "Güncelleme mevcut",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "sunucuya bağlantı başarısız oldu",
     "CLOSE_PLAYER": "Oynatıcıyı kapat",
     "CLOSE_PLAYER_HINT": "Oynatıcıyı kapat (Esc)",
-    "FULLSCREEN_HINT": "Esc: tam ekrandan çık"
+    "FULLSCREEN_HINT": "Esc: tam ekrandan çık",
+    "ERROR_RETRY_HINT": "Enter: tekrar dene",
+    "ERROR_LAST_HINT": "Geri tuşu: önceki kanal"
   },
   "GUIDE": {
     "CHANNEL": "Kanal",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "Bu zaman aralığında program yok",
     "EPG_FAILED": "Program verileri yüklenemedi",
     "EPG_RETRY": "Tekrar dene",
-    "EPG_RETRY_ARIA": "{{name}} program verilerini yeniden yükle"
+    "EPG_RETRY_ARIA": "{{name}} program verilerini yeniden yükle",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "Kayıt zamanlandı",
+    "STATE_REMINDER_SET": "Hatırlatıcı ayarlandı"
   },
   "PARENTAL": {
     "CONFIRM": "Tamam",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "Arkaya taşı",
     "REORDER_HINT": "Sırayı değiştirmek için kutucukları sürükle veya bağlam menüsünde “Öne/Arkaya taşı”yı kullan",
     "MOVE_FAILED": "Yeni sıralama kaydedilemedi"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "Göster",
+    "TRAY_QUIT": "Çıkış",
+    "TRAY_PAUSE": "Oynat/Duraklat",
+    "TRAY_STOP": "Oynatmayı durdur",
+    "REMINDER_TITLE": "CANLI: {title}",
+    "REMINDER_BODY": "Şimdi {channel} kanalında",
+    "RECORDING_STARTED": "Kayıt başladı: {title}",
+    "RECORDING_FINISHED": "Kayıt tamamlandı: {title}",
+    "RECORDING_FAILED": "Kayıt başarısız: {title}",
+    "SCHEDULED_PROGRAM": "Planlanmış program",
+    "LOCAL_LIVESTREAM": "Yerel canlı yayın",
+    "QUIT_TITLE": "streameoIPTV kapatılsın mı?",
+    "QUIT_BODY": "{count} kayıt veya indirme sürüyor ya da yakında başlayacak. Çıkış yapılırsa durdurulurlar; hâlâ süren bir program bir sonraki açılışta kaydedilmeye devam eder.",
+    "QUIT_CONFIRM": "Çıkış",
+    "QUIT_CANCEL": "İptal"
   }
 }

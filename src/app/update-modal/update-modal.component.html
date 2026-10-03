@@ -5,7 +5,7 @@
   <p class="mb-2">
     {{ "UPDATE.AVAILABLE" | translate: { version: version, current: currentVersion } }}
   </p>
-  <pre class="update-notes" *ngIf="notes">{{ notes }}</pre>
+  <div class="update-notes" *ngIf="notesHtml" [innerHTML]="notesHtml"></div>
   <p class="text-secondary small mb-0">{{ "UPDATE.RESTART_HINT" | translate }}</p>
 </div>
 <div class="modal-footer">

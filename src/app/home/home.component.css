@@ -281,14 +281,6 @@
   transform: scaleX(-1) scale(1.15);
 }
 
-/* "Series › Season 2": long paths are cut, the full one is in the text. */
-.node-path {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ------------------------ Collapsible sidebar -------------------------- */
 .sidebar-toggle {
   margin-inline-start: auto;

@@ -20,7 +20,7 @@ import { DownloadService } from "../../download.service";
 import { Subscription, take } from "rxjs";
 import { Download } from "../../models/download";
 import { save } from "@tauri-apps/plugin-dialog";
-import { getDateFormatted, getExtension, sanitizeFileName } from "../../utils";
+import { getDateFormatted, getExtension, sanitizeFileName, uiLocale } from "../../utils";
 import { TranslateService } from "@ngx-translate/core";
 import { PlaybackService } from "../../playback.service";
 
@@ -32,6 +32,7 @@ import { PlaybackService } from "../../playback.service";
 })
 export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
   private static nextUid = 0;
+  private static timeFormats = new Map<string, Intl.DateTimeFormat>();
   /** Unique per instance: SVG ids are document-global. */
   readonly gradientId = `epg-dl-progress-${EpgModalItemComponent.nextUid++}`;
   constructor(
@@ -54,6 +55,9 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
   channelId?: number;
   @Input()
   scheduledRecordingId?: number;
+  /// The day the dialog shows: a time on another day gets its date.
+  @Input()
+  day?: Date;
   @Output()
   scheduleChanged = new EventEmitter<void>();
   playing = false;
@@ -107,6 +111,48 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
       start_timestamp: epg.start_timestamp,
       title: epg.title,
     };
+  }
+
+  /**
+   * "20:00 – 20:30" in the UI language, from the timestamps (the backend's
+   * start_time / end_time are English month names with the date repeated).
+   * The dialog's header names the day; a start or end on another day (a
+   * programme past midnight) gets its short date.
+   */
+  timeRange(): string {
+    if (!this.epg) return "";
+    const day = this.day ?? new Date(this.epg.start_timestamp * 1000);
+    const start = this.formatTime(this.epg.start_timestamp, day);
+    const end = this.formatTime(this.epg.end_timestamp, day);
+    return `${start} – ${end}`;
+  }
+
+  private formatTime(timestamp: number, day: Date): string {
+    const date = new Date(timestamp * 1000);
+    const sameDay =
+      date.getFullYear() === day.getFullYear() &&
+      date.getMonth() === day.getMonth() &&
+      date.getDate() === day.getDate();
+    return this.timeFormat(!sameDay).format(date);
+  }
+
+  /** Time (and short date) formats, per UI language. */
+  private timeFormat(withDate: boolean): Intl.DateTimeFormat {
+    const locale = uiLocale(this.translate);
+    const key = `${locale ?? ""}|${withDate}`;
+    let format = EpgModalItemComponent.timeFormats.get(key);
+    if (!format) {
+      const options: Intl.DateTimeFormatOptions = withDate
+        ? { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }
+        : { timeStyle: "short" };
+      try {
+        format = new Intl.DateTimeFormat(locale, options);
+      } catch {
+        format = new Intl.DateTimeFormat(undefined, options);
+      }
+      EpgModalItemComponent.timeFormats.set(key, format);
+    }
+    return format;
   }
 
   isFuture(): boolean {

@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "Alle landen",
     "VIEWING": "Weergave: {{path}}",
     "SEARCH_LABEL": "Zoek zenders, films en series",
-    "CLEAR_SEARCH": "Zoekopdracht wissen"
+    "CLEAR_SEARCH": "Zoekopdracht wissen",
+    "BREADCRUMB": "Pad"
   },
   "MENU": {
     "REMOVE": "Verwijderen",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "Voeg die logbestanden (als ze bestaan) en de fout hieronder toe aan je bugmelding. Bedankt!",
     "COPY": "Kopiëren",
     "LOGS_FOLDER_HINT": "De logbestanden en een diagnoserapport helpen de oorzaak te vinden:",
-    "PERSISTENT_DIAGNOSTICS": "Blijft de fout terugkomen, exporteer dan het diagnoserapport en voeg het toe aan je melding. Het bevat geen wachtwoorden of streamadressen."
+    "PERSISTENT_DIAGNOSTICS": "Blijft de fout terugkomen, exporteer dan het diagnoserapport en voeg het toe aan je melding. Het bevat geen wachtwoorden of streamadressen.",
+    "CREDENTIALS_REJECTED": "De provider heeft de gebruikersnaam of het wachtwoord geweigerd",
+    "NOT_XTREAM_SERVER": "De server antwoordde niet als een Xtream Codes-server",
+    "NOT_M3U_PLAYLIST": "De link verwijst niet naar een M3U-afspeellijst"
   },
   "SOURCE": {
     "REFRESHED": "Vernieuwd:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "Diagnoserapport opgeslagen in {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Het diagnoserapport kon niet worden geëxporteerd",
     "EPG_LOADING": "De tv-gids wordt op de achtergrond geladen…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’ verwijderd uit favorieten; blijft in ‘{{list}}’"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’ verwijderd uit favorieten; blijft in ‘{{list}}’",
+    "DETAILS": "Details",
+    "RECORDING_ALREADY_SCHEDULED": "Dit programma staat al gepland voor opname"
   },
   "UPDATE": {
     "TITLE": "Update beschikbaar",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "de verbinding met de server is mislukt",
     "CLOSE_PLAYER": "Speler sluiten",
     "CLOSE_PLAYER_HINT": "Speler sluiten (Esc)",
-    "FULLSCREEN_HINT": "Esc: volledig scherm verlaten"
+    "FULLSCREEN_HINT": "Esc: volledig scherm verlaten",
+    "ERROR_RETRY_HINT": "Enter: opnieuw proberen",
+    "ERROR_LAST_HINT": "Backspace: vorig kanaal"
   },
   "GUIDE": {
     "CHANNEL": "Kanaal",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "Geen programma’s in deze periode",
     "EPG_FAILED": "Programmagegevens konden niet worden geladen",
     "EPG_RETRY": "Opnieuw proberen",
-    "EPG_RETRY_ARIA": "Programmagegevens van {{name}} opnieuw laden"
+    "EPG_RETRY_ARIA": "Programmagegevens van {{name}} opnieuw laden",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "Opname gepland",
+    "STATE_REMINDER_SET": "Herinnering ingesteld"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "Naar achteren",
     "REORDER_HINT": "Sleep tegels om de volgorde te wijzigen, of gebruik ‘Naar voren/achteren’ in het contextmenu",
     "MOVE_FAILED": "De nieuwe volgorde kon niet worden opgeslagen"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "Weergeven",
+    "TRAY_QUIT": "Afsluiten",
+    "TRAY_PAUSE": "Afspelen/Pauzeren",
+    "TRAY_STOP": "Afspelen stoppen",
+    "REMINDER_TITLE": "LIVE: {title}",
+    "REMINDER_BODY": "Nu op {channel}",
+    "RECORDING_STARTED": "Opname gestart: {title}",
+    "RECORDING_FINISHED": "Opname voltooid: {title}",
+    "RECORDING_FAILED": "Opname mislukt: {title}",
+    "SCHEDULED_PROGRAM": "Gepland programma",
+    "LOCAL_LIVESTREAM": "Lokale livestream",
+    "QUIT_TITLE": "streameoIPTV afsluiten?",
+    "QUIT_BODY": "{count} opnamen of downloads lopen of beginnen binnenkort. Afsluiten stopt ze; een programma dat nog loopt, wordt bij de volgende start verder opgenomen.",
+    "QUIT_CONFIRM": "Afsluiten",
+    "QUIT_CANCEL": "Annuleren"
   }
 }

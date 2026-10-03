@@ -131,6 +131,19 @@ const STATUS_OVERLAY_ID: u64 = 2;
 /// player is closed, and its window would cover the home page.
 static PLAYER_SHOWN: AtomicBool = AtomicBool::new(false);
 
+/// For the tray and window handlers, which run on the main thread and cannot
+/// lock the async `AppState`. Weak, so destroy() dropping the real sender
+/// still ends the IPC task.
+static SYNC_TX: std::sync::Mutex<Option<tokio::sync::mpsc::WeakUnboundedSender<Value>>> =
+    std::sync::Mutex::new(None);
+
+/// mpv's `pause` property, as last reported.
+static PAUSED: AtomicBool = AtomicBool::new(false);
+
+/// The player was paused because the window went to the tray, so showing it
+/// again resumes (a pause of the user's own stays).
+static PAUSED_BY_HIDE: AtomicBool = AtomicBool::new(false);
+
 /// Serializes `init`: its liveness check and the state update are separate
 /// lock scopes, so two overlapping calls (a double-click on a channel) would
 /// both create a window and an mpv, leaving a stray black window behind.
@@ -324,6 +337,9 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         let _ = ipc_tx.send(json!({
             "command": ["observe_property", STREAM_INFO_PROPS.len() + 1, "paused-for-cache"]
         }));
+        let _ = ipc_tx.send(json!({
+            "command": ["observe_property", STREAM_INFO_PROPS.len() + 2, "pause"]
+        }));
         // Saves the progress of a running movie now and then. Holds only a
         // weak sender: destroy() dropping the real one ends the IPC task.
         {
@@ -366,6 +382,9 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         let mut s = state.lock().await;
         s.player_child_hwnd = Some(child_hwnd);
         s.player_mpv = Some(mpv);
+        if let Ok(mut sync_tx) = SYNC_TX.lock() {
+            *sync_tx = Some(ipc_tx.downgrade());
+        }
         s.player_ipc_tx = Some(ipc_tx);
         Ok(())
     }
@@ -403,6 +422,8 @@ pub async fn play(
     for cmd in commands {
         let _ = tx.send(cmd);
     }
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    crate::tray::set_now_playing(&app, Some(&channel.name));
     Ok(start)
 }
 
@@ -669,6 +690,16 @@ pub async fn show_status(state: State<'_, Mutex<AppState>>, text: Option<String>
     Ok(())
 }
 
+/// Each line of a status (an error and the keys that help) on its own OSD
+/// line, each cut to fit.
+fn status_lines(text: &str) -> String {
+    text.lines()
+        .map(|line| ass_text(line, BANNER_LINE_MAX_CHARS))
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join("\\N")
+}
+
 fn status_overlay(text: Option<&str>) -> Value {
     match text.map(str::trim).filter(|t| !t.is_empty()) {
         Some(text) => json!({ "command": {
@@ -677,7 +708,7 @@ fn status_overlay(text: Option<&str>) -> Value {
             "format": "ass-events",
             "data": format!(
                 "{{\\an5\\fs34\\bord2\\shad0\\3c&H000000&\\1c&HFFFFFF&}}{}",
-                ass_text(text, BANNER_LINE_MAX_CHARS)
+                status_lines(text)
             ),
             "res_x": 0,
             "res_y": 720,
@@ -764,6 +795,11 @@ pub async fn stop(state: State<'_, Mutex<AppState>>) -> Result<()> {
         hide_banner(&tx);
         let _ = tx.send(status_overlay(None));
         let _ = tx.send(json!({ "command": ["stop"] }));
+    }
+    PAUSED_BY_HIDE.store(false, Ordering::SeqCst);
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    if let Some(app) = APP_HANDLE.get() {
+        crate::tray::set_now_playing(app, None);
     }
     Ok(())
 }
@@ -951,6 +987,43 @@ pub fn set_visible_sync(visible: bool) {
     let _ = visible;
 }
 
+/// The window goes to the tray: pause what plays (an invisible app should not
+/// keep talking). The floating mini player is meant to keep playing.
+pub fn pause_for_hide() {
+    if !PLAYER_SHOWN.load(Ordering::SeqCst)
+        || POPPED_OUT.load(Ordering::SeqCst)
+        || PAUSED.load(Ordering::SeqCst)
+    {
+        return;
+    }
+    if send_sync(set_prop("pause", json!(true))) {
+        PAUSED_BY_HIDE.store(true, Ordering::SeqCst);
+    }
+}
+
+/// The window is back: resume what `pause_for_hide` paused.
+pub fn resume_after_show() {
+    if PAUSED_BY_HIDE.swap(false, Ordering::SeqCst) {
+        send_sync(set_prop("pause", json!(false)));
+    }
+}
+
+/// Pause/resume from the tray menu.
+pub fn toggle_pause_sync() {
+    PAUSED_BY_HIDE.store(false, Ordering::SeqCst);
+    if let Some(cmd) = player_command("toggle_pause") {
+        send_sync(cmd);
+    }
+}
+
+fn send_sync(cmd: Value) -> bool {
+    SYNC_TX
+        .lock()
+        .ok()
+        .and_then(|tx| tx.as_ref().and_then(|weak| weak.upgrade()))
+        .is_some_and(|tx| tx.send(cmd).is_ok())
+}
+
 /// Hiding is always fine; showing only while the player view is open.
 fn may_show(visible: bool) -> bool {
     !visible || PLAYER_SHOWN.load(Ordering::SeqCst)
@@ -990,6 +1063,10 @@ pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Resul
         }
     }
     CURRENT_VOD.store(0, Ordering::SeqCst);
+    PAUSED.store(false, Ordering::SeqCst);
+    PAUSED_BY_HIDE.store(false, Ordering::SeqCst);
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    crate::tray::set_now_playing(&app, None);
     let (child, mpv) = {
         let mut s = state.lock().await;
         s.player_ipc_tx = None; // dropping the sender ends the IPC task
@@ -1204,6 +1281,12 @@ async fn run_ipc(
                     }
                 }
                 // Stream info for the player bar; the bitrate at most every 3 s.
+                Some("property-change")
+                    if v.get("name").and_then(Value::as_str) == Some("pause") =>
+                {
+                    let paused = v.get("data").and_then(Value::as_bool).unwrap_or(false);
+                    PAUSED.store(paused, Ordering::SeqCst);
+                }
                 Some("property-change")
                     if v.get("name").and_then(Value::as_str) == Some("paused-for-cache") =>
                 {
@@ -1826,6 +1909,18 @@ mod test_player {
         assert_eq!(cache_status(&mut buffering, Some(true)), Some("buffering"));
         assert_eq!(cache_status(&mut buffering, None), None);
         assert_eq!(cache_status(&mut buffering, Some(false)), None);
+    }
+
+    #[test]
+    fn test_status_keeps_its_lines() {
+        let long = "x".repeat(80);
+        let text = format!("Wiedergabe fehlgeschlagen: {long}\nEnter: erneut versuchen\n");
+        let lines = status_lines(&text);
+        let parts: Vec<&str> = lines.split("\\N").collect();
+        assert_eq!(parts.len(), 2);
+        assert!(parts[0].ends_with('…'));
+        assert_eq!(parts[0].chars().count(), BANNER_LINE_MAX_CHARS);
+        assert_eq!(parts[1], "Enter: erneut versuchen");
     }
 
     #[test]

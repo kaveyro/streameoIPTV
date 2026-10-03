@@ -4,7 +4,8 @@
   tabindex="0"
   role="button"
   [attr.aria-label]="ariaLabel()"
-  (keyup.enter)="click()"
+  (keydown.enter)="onActivateKey($event)"
+  (keydown.space)="onActivateKey($event)"
   [ngClass]="{
     playing: starting,
     faded: fade,
@@ -13,6 +14,11 @@
   }"
   [ngbTooltip]="channel?.name"
   triggers="hover focus"
+  [openDelay]="400"
+  [disableTooltip]="!nameTruncated"
+  (mouseenter)="checkNameTruncated()"
+  (focusin)="checkNameTruncated()"
+  (shown)="onTooltipShown()"
   (click)="click()"
   class="channel d-inline-flex p-2 align-items-center"
   (contextmenu)="onRightClick($event)"
@@ -27,7 +33,7 @@
   </div>
   <div class="channel-title-container">
     <div class="channel-names">
-      <div class="channel-title">
+      <div class="channel-title" #title>
         <span *ngIf="channel?.number != null" class="channel-number" aria-hidden="true">{{
           channel?.number
         }}</span

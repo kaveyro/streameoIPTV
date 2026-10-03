@@ -327,11 +327,12 @@
   #scroller
   class="guide-scroller"
   [hidden]="searchActive() || (loaded && rows.length === 0)"
-  role="region"
-  [attr.aria-label]="'HOME.NAV.GUIDE' | translate"
   (keydown)="onKeyDown($event)"
 >
-  <div class="guide-grid">
+  <!-- A grid for screen readers: one row per channel, the channel name as
+       its row header, the programmes as cells. The cells hold the buttons
+       (the roving tab stop), they add no box of their own. -->
+  <div class="guide-grid" role="grid" [attr.aria-label]="'HOME.NAV.GUIDE' | translate">
     <!-- The times are part of every programme's label for screen readers. -->
     <div class="guide-header" aria-hidden="true">
       <div class="guide-corner">{{ "GUIDE.CHANNEL" | translate }}</div>
@@ -353,62 +354,84 @@
       *ngFor="let row of rows; let r = index; trackBy: trackRow"
       #rowEl
       class="guide-row"
+      role="row"
       [attr.data-row]="r"
     >
-      <button
-        type="button"
-        class="guide-channel"
-        [id]="cellId(r, 0)"
-        [tabindex]="tabIndex(r, 0)"
-        [title]="row.channel.name"
-        [attr.aria-label]="'GUIDE.PLAY_CHANNEL' | translate: { name: row.channel.name }"
-        (focus)="onFocusCell(r, 0)"
-        (click)="playChannel(row.channel)"
-      >
-        <span *ngIf="countryCode(row.channel.name) as code" class="guide-country">{{ code }}</span>
-        {{ row.channel.name | countryName: memory.CountryPrefixMode }}
-      </button>
+      <div class="guide-cell" role="rowheader">
+        <button
+          type="button"
+          class="guide-channel"
+          [id]="cellId(r, 0)"
+          [tabindex]="tabIndex(r, 0)"
+          [title]="row.channel.name"
+          [attr.aria-label]="'GUIDE.PLAY_CHANNEL' | translate: { name: row.channel.name }"
+          (focus)="onFocusCell(r, 0)"
+          (click)="playChannel(row.channel)"
+        >
+          <span *ngIf="countryCode(row.channel.name) as code" class="guide-country">{{
+            code
+          }}</span>
+          {{ row.channel.name | countryName: memory.CountryPrefixMode }}
+        </button>
+      </div>
       <div class="guide-timeline" [style.width.px]="timelineWidth">
         <ng-container [ngSwitch]="row.state">
           <ng-container *ngSwitchCase="'done'">
-            <button
+            <div
               *ngFor="let block of row.blocks; let b = index; trackBy: trackBlock"
-              type="button"
-              class="guide-block"
-              [class.is-past]="block.state === 'past'"
-              [class.is-now]="block.state === 'now'"
-              [class.is-future]="block.state === 'future'"
-              [class.has-catchup]="!!block.epg.timeshift_url"
-              [class.is-scheduled]="scheduledId(row, block) !== undefined"
-              [id]="cellId(r, b + 1)"
-              [tabindex]="tabIndex(r, b + 1)"
-              [style.inset-inline-start.px]="block.offset"
-              [style.width.px]="block.width"
-              [title]="block.tooltip"
-              [attr.aria-label]="block.label"
-              (focus)="onFocusCell(r, b + 1)"
-              (click)="activate(row, block, $event)"
-              (contextmenu)="onBlockContextMenu(row, block, $event)"
+              class="guide-cell"
+              role="gridcell"
             >
-              <!-- Replay mark: this one can be watched from the archive. -->
-              <svg
-                *ngIf="block.epg.timeshift_url"
-                class="guide-catchup-icon"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
+              <button
+                type="button"
+                class="guide-block"
+                [class.is-past]="block.state === 'past'"
+                [class.is-now]="block.state === 'now'"
+                [class.is-future]="block.state === 'future'"
+                [class.has-catchup]="!!block.epg.timeshift_url"
+                [class.is-scheduled]="scheduledId(row, block) !== undefined"
+                [id]="cellId(r, b + 1)"
+                [tabindex]="tabIndex(r, b + 1)"
+                [style.inset-inline-start.px]="block.offset"
+                [style.width.px]="block.width"
+                [title]="block.tooltip"
+                [attr.aria-label]="blockLabel(row, block)"
+                (focus)="onFocusCell(r, b + 1)"
+                (click)="activate(row, block, $event)"
+                (contextmenu)="onBlockContextMenu(row, block, $event)"
               >
-                <path
-                  d="M12.5,8H11V13L15.28,15.54L16,14.33L12.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3"
-                />
-              </svg>
-              {{ block.epg.title }}
-            </button>
-            <span *ngIf="row.blocks.length === 0" class="guide-no-epg">{{
+                <!-- Replay mark: this one can be watched from the archive. -->
+                <svg
+                  *ngIf="block.epg.timeshift_url"
+                  class="guide-catchup-icon"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12.5,8H11V13L15.28,15.54L16,14.33L12.5,12.25V8M13,3A9,9 0 0,0 4,12H1L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3"
+                  />
+                </svg>
+                <!-- Bell: a reminder is set for this one. -->
+                <svg
+                  *ngIf="reminderOn(block.epg)"
+                  class="guide-reminder-icon"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"
+                  />
+                </svg>
+                {{ block.epg.title }}
+              </button>
+            </div>
+            <span *ngIf="row.blocks.length === 0" class="guide-no-epg" role="gridcell">{{
               (row.epgCount ? "GUIDE.NO_PROGRAMMES_IN_WINDOW" : "GUIDE.NO_EPG") | translate
             }}</span>
           </ng-container>
-          <span *ngSwitchCase="'error'" class="guide-no-epg guide-epg-failed">
+          <span *ngSwitchCase="'error'" class="guide-no-epg guide-epg-failed" role="gridcell">
             {{ "GUIDE.EPG_FAILED" | translate }}
             <button
               type="button"

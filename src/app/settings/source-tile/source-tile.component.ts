@@ -1,4 +1,4 @@
-import { Component, Input } from "@angular/core";
+import { Component, ElementRef, Input, ViewChild } from "@angular/core";
 import { Source } from "../../models/source";
 import { SourceType } from "../../models/sourceType";
 import { invoke } from "@tauri-apps/api/core";
@@ -19,6 +19,8 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { MatMenuModule } from "@angular/material/menu";
 import { TimeAgoPipe } from "../../pipes/time-ago.pipe";
+import { errorText } from "../../error-text";
+import { LabelTextPipe } from "./label-text.pipe";
 
 /// Labels of the setup's source type picker.
 export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
@@ -29,9 +31,32 @@ export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   [SourceType.CustomImport]: "SETUP.CUSTOM_IMPORT",
 };
 
+/// Mask for secrets in a shown link.
+const SECRET_MASK = "••••";
+
+/// Query parameters that carry a password or token (get.php?password=..).
+const SECRET_QUERY = /([?&](?:password|pass|pwd|token)=)[^&#]*/gi;
+/// The password of a user:password@host link.
+const SECRET_USERINFO = /(\/\/[^/?#@:]+:)[^/?#@]+@/;
+
+/** The link with its password-like query parameters and userinfo password masked. */
+export function maskUrlSecrets(url: string): string {
+  return url
+    .replace(SECRET_QUERY, (_, name: string) => name + SECRET_MASK)
+    .replace(SECRET_USERINFO, `$1${SECRET_MASK}@`);
+}
+
 @Component({
   selector: "app-source-tile",
-  imports: [CommonModule, FormsModule, TranslatePipe, NgbTooltipModule, MatMenuModule, TimeAgoPipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    TranslatePipe,
+    NgbTooltipModule,
+    MatMenuModule,
+    TimeAgoPipe,
+    LabelTextPipe,
+  ],
   templateUrl: "./source-tile.component.html",
   styleUrl: "./source-tile.component.css",
 })
@@ -49,6 +74,8 @@ export class SourceTileComponent {
   expiry?: number;
   showUsername = false;
   showPassword = false;
+  /// Reveals the password/token query parameters of the M3U link.
+  showUrlSecrets = false;
   loading = false;
   sourceTypeEnum = SourceType;
   editing = false;
@@ -59,6 +86,7 @@ export class SourceTileComponent {
   converting = false;
   editableSource: Source = {};
   defaultUserAgent = "streameoIPTV";
+  @ViewChild("moreButton") private moreButton?: ElementRef<HTMLButtonElement>;
 
   constructor(
     public memory: MemoryService,
@@ -66,6 +94,7 @@ export class SourceTileComponent {
     private translate: TranslateService,
     private confirmService: ConfirmService,
     private toastr: ToastrService,
+    private host: ElementRef<HTMLElement>,
   ) {}
 
   /// Translation key (or fixed name) of the source type, as the setup's
@@ -281,16 +310,40 @@ export class SourceTileComponent {
       await invoke("check_source", { source: sourceForCheck(this.editableSource) });
       this.toastr.success(this.translate.instant("SOURCE.CHECK_OK"));
     } catch (e) {
-      // The backend message is already redacted and meant for the user.
-      this.toastr.error(String(e), this.translate.instant("SOURCE.CHECK_FAILED"));
+      // The backend message is already redacted; only its first line (or
+      // its translation) is meant for the user, not the cause chain.
+      this.toastr.error(
+        errorText(e, this.translate),
+        this.translate.instant("SOURCE.CHECK_FAILED"),
+      );
     } finally {
       this.checking = false;
     }
   }
 
-  cancel() {
+  /// Leaves edit mode without saving. From the keyboard (Escape) the focus
+  /// moves to the actions button, as the focused field disappears.
+  cancel(fromKeyboard = false) {
     this.editableSource = {};
     this.editing = false;
+    if (fromKeyboard) setTimeout(() => this.moreButton?.nativeElement.focus());
+  }
+
+  /// The focus is inside this tile (e.g. in one of its edit fields).
+  containsFocus(): boolean {
+    return this.host.nativeElement.contains(document.activeElement);
+  }
+
+  /// The link as shown: passwords and tokens in it masked unless revealed.
+  get displayUrl(): string {
+    const url = this.source?.url ?? "";
+    return this.showUrlSecrets ? url : maskUrlSecrets(url);
+  }
+
+  /// The link contains a password or token that is masked.
+  get urlHasSecrets(): boolean {
+    const url = this.source?.url ?? "";
+    return maskUrlSecrets(url) !== url;
   }
 
   async backupFavs() {

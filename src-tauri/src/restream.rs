@@ -201,7 +201,7 @@ pub async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<
         watch_duration: None,
         watch_finished: None,
         url: Some(format!("http://127.0.0.1:{port}/{}", stream_path())),
-        name: "Local livestream".to_string(),
+        name: crate::native_strings::text("local_livestream", &[]),
         favorite: false,
         group: None,
         group_id: None,

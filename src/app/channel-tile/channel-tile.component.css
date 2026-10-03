@@ -17,9 +17,17 @@
   overflow-y: hidden;
   overflow-x: hidden;
   user-select: none;
+  box-shadow: var(--tile-edge, none);
   transition:
     background-color var(--transition-fast),
     box-shadow var(--transition-fast);
+}
+
+/* Light theme: the white surface needs an edge on the light page background.
+   An inset shadow (no layout shift) through a property, so the hover and
+   focus outlines below still replace it. */
+:host-context([data-theme="light"]) {
+  --tile-edge: inset 0 0 0 1px var(--border-subtle, rgba(0, 0, 0, 0.08));
 }
 
 .channel-title-container {

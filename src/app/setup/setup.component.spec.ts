@@ -132,10 +132,14 @@ describe("SetupComponent", () => {
     await component.testConnection();
     const checked = callsOf(calls, "check_source")[0].args["source"] as Source;
     expect(checked.username).toBeUndefined();
-    expect(error).toHaveBeenCalledWith(
-      "The link does not point to an M3U playlist",
-      "SOURCE.CHECK_FAILED",
-    );
+    expect(error).toHaveBeenCalledWith("ERROR.NOT_M3U_PLAYLIST", "SOURCE.CHECK_FAILED");
+  });
+
+  it("clears the URL error when the source type changes", async () => {
+    await create();
+    component.urlError = "SETUP.INVALID_URL";
+    component.switchMode(SourceType.M3ULink);
+    expect(component.urlError).toBeUndefined();
   });
 
   it("needs username and password before testing an Xtream login", async () => {

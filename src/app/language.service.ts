@@ -1,5 +1,26 @@
 import { ApplicationRef, Injectable } from "@angular/core";
 import { TranslateService } from "@ngx-translate/core";
+import { invoke } from "@tauri-apps/api/core";
+
+/// Strings the backend shows outside the WebView (tray menu, notifications,
+/// quit dialog): translation key -> name in set_native_strings.
+export const NATIVE_STRING_KEYS: Record<string, string> = {
+  "NATIVE.TRAY_SHOW": "tray_show",
+  "NATIVE.TRAY_QUIT": "tray_quit",
+  "NATIVE.TRAY_PAUSE": "tray_pause",
+  "NATIVE.TRAY_STOP": "tray_stop",
+  "NATIVE.REMINDER_TITLE": "reminder_title",
+  "NATIVE.REMINDER_BODY": "reminder_body",
+  "NATIVE.RECORDING_STARTED": "recording_started",
+  "NATIVE.RECORDING_FINISHED": "recording_finished",
+  "NATIVE.RECORDING_FAILED": "recording_failed",
+  "NATIVE.SCHEDULED_PROGRAM": "scheduled_program",
+  "NATIVE.LOCAL_LIVESTREAM": "local_livestream",
+  "NATIVE.QUIT_TITLE": "quit_title",
+  "NATIVE.QUIT_BODY": "quit_body",
+  "NATIVE.QUIT_CONFIRM": "quit_confirm",
+  "NATIVE.QUIT_CANCEL": "quit_cancel",
+};
 
 @Injectable({ providedIn: "root" })
 export class LanguageService {
@@ -51,6 +72,13 @@ export class LanguageService {
     private appRef: ApplicationRef,
   ) {
     this.translate.setFallbackLang("en");
+    // Emitted once the language's translations are loaded: every switch
+    // (also the first one at startup) updates <html lang> and hands the
+    // backend its strings in the new language.
+    this.translate.onLangChange.subscribe((event) => {
+      this.setDocumentLanguage(event.lang);
+      this.sendNativeStrings();
+    });
   }
 
   /** Resolve a stored setting (may be undefined / "system") to a supported code. */
@@ -88,7 +116,7 @@ export class LanguageService {
             resolve();
             return;
           }
-          document.documentElement.dir = this.isRtl(lang) ? "rtl" : "ltr";
+          this.setDocumentLanguage(lang);
           this.appRef.tick();
           resolve();
         },
@@ -96,5 +124,23 @@ export class LanguageService {
         complete: () => resolve(),
       });
     });
+  }
+
+  /// lang (screen reader pronunciation, hyphenation) and text direction of
+  /// the whole document.
+  private setDocumentLanguage(lang: string) {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = this.isRtl(lang) ? "rtl" : "ltr";
+  }
+
+  /// Tray menu, notifications and the quit dialog are drawn by the backend.
+  /// Keys without a translation are left out (the backend keeps its default).
+  private sendNativeStrings() {
+    const strings: Record<string, string> = {};
+    for (const [key, name] of Object.entries(NATIVE_STRING_KEYS)) {
+      const value: unknown = this.translate.instant(key);
+      if (typeof value === "string" && value && value !== key) strings[name] = value;
+    }
+    invoke("set_native_strings", { strings }).catch((e) => console.error(e));
   }
 }

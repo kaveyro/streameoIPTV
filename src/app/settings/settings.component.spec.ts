@@ -11,6 +11,7 @@ import { SourceType } from "../models/sourceType";
 import { Settings } from "../models/settings";
 import { NowPlayingService } from "../now-playing.service";
 import { FREE_EPG_SOURCES } from "../epg-free-sources";
+import { ZoomService } from "../zoom.service";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -97,7 +98,8 @@ describe("SettingsComponent", () => {
     expect(callsOf(calls, "set_parental_pin").map((c) => c.args)).toEqual([
       { currentPin: "0000", newPin: "5678" },
     ]);
-    expect(error).toHaveBeenCalledWith("Wrong PIN");
+    // Translated, not the backend's English text.
+    expect(error).toHaveBeenCalledWith("PARENTAL.WRONG_PIN");
   });
 
   it("lists the XMLTV sources with their status and the coverage", async () => {
@@ -346,6 +348,78 @@ describe("SettingsComponent", () => {
     expect(ref.dismiss).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
     memory.ModalRef = undefined;
+  });
+
+  describe("Escape", () => {
+    let navigate: jasmine.Spy;
+
+    async function createWithTiles() {
+      await create();
+      navigate = spyOn(TestBed.inject(Router), "navigateByUrl").and.resolveTo(true);
+      component.setCategory("sources");
+      fixture.detectChanges();
+      await settle();
+    }
+
+    function escape(): KeyboardEvent {
+      const event = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+      component.onKeyDown(event);
+      return event;
+    }
+
+    afterEach(() => document.querySelectorAll(".test-field").forEach((el) => el.remove()));
+
+    it("in a focused text field only leaves the field, not the page", async () => {
+      await createWithTiles();
+      const input = document.createElement("input");
+      input.className = "test-field";
+      document.body.appendChild(input);
+      input.focus();
+      expect(escape().defaultPrevented).toBeTrue();
+      expect(document.activeElement).not.toBe(input);
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it("in a focused select or textarea does not navigate either", async () => {
+      await createWithTiles();
+      for (const tag of ["select", "textarea"]) {
+        const field = document.createElement(tag);
+        field.className = "test-field";
+        document.body.appendChild(field);
+        field.focus();
+        escape();
+        expect(document.activeElement).not.toBe(field);
+      }
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it("cancels the edit of a source tile instead of leaving", async () => {
+      await createWithTiles();
+      const tile = fixture.debugElement.query((de) => de.name === "app-source-tile")
+        .componentInstance as { editing: boolean; edit(): void };
+      tile.edit();
+      fixture.detectChanges();
+      const field = element.querySelector<HTMLInputElement>("app-source-tile input[name=url]");
+      field?.focus();
+      escape();
+      expect(tile.editing).toBeFalse();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it("with nothing focused goes back", async () => {
+      await createWithTiles();
+      (document.activeElement as HTMLElement | null)?.blur();
+      escape();
+      await settle();
+      expect(navigate).toHaveBeenCalledWith("");
+    });
+  });
+
+  it("shows a zoom changed by the shortcuts", async () => {
+    await create({ get_settings: { zoom: 120 } });
+    expect(component.settings.zoom).toBe(120);
+    TestBed.inject(ZoomService).step(1);
+    expect(component.settings.zoom).toBe(130);
   });
 
   it("writes the clamped zoom back into the field", async () => {

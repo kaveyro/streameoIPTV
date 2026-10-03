@@ -241,9 +241,9 @@
                 <input
                   id="set-zoom"
                   class="form-control"
-                  step="10"
-                  min="50"
-                  max="300"
+                  [step]="zoomStep"
+                  [min]="zoomMin"
+                  [max]="zoomMax"
                   type="number"
                   [ngModel]="settings.zoom"
                   (change)="onZoomChange($any($event.target))"

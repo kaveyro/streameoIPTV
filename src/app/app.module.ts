@@ -31,6 +31,7 @@ import { PinDialogComponent } from "./pin-dialog/pin-dialog.component";
 import { FavoriteListNameModalComponent } from "./favorite-lists/favorite-list-name-modal/favorite-list-name-modal.component";
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { CountryNamePipe } from "./pipes/country-name.pipe";
+import { AppToastComponent } from "./app-toast/app-toast.component";
 
 @NgModule({
   declarations: [
@@ -69,6 +70,9 @@ import { CountryNamePipe } from "./pipes/country-name.pipe";
       newestOnTop: true,
       preventDuplicates: true,
       maxOpened: 4,
+      // Translated close label, focus pauses the timeout, and error toasts
+      // get a "Details" button instead of only a click on the toast.
+      toastComponent: AppToastComponent,
     }),
     KeyboardShortcutsModule.forRoot(),
     MatMenuModule,

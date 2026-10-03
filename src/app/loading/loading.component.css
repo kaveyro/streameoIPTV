@@ -93,23 +93,12 @@
   overflow: hidden;
 }
 
-.text-item {
-  opacity: 0;
-  animation: textOpacity 3.5s infinite;
-}
-
-@keyframes textOpacity {
-  0%,
-  20% {
-    opacity: 0;
-  }
-  30%,
-  80% {
-    opacity: 1;
-  }
-  90%,
-  100% {
-    opacity: 0;
+/* The status text stays visible all the time (it used to fade out with the
+   test pattern). No flashing test pattern for users who asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .tv-container,
+  .test-pattern {
+    animation: none;
   }
 }
 

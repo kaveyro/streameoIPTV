@@ -4,6 +4,8 @@ import { AppComponent } from "./app.component";
 import { ThemeService } from "./theme.service";
 import { LanguageService } from "./language.service";
 import { UpdateService } from "./update.service";
+import { ZoomService } from "./zoom.service";
+import { DEFAULT_THEME } from "./theme-cache";
 import {
   TEST_IMPORTS,
   TEST_PROVIDERS,
@@ -59,5 +61,67 @@ describe("AppComponent", () => {
     expect(theme).toHaveBeenCalledWith("light", "teal");
     expect(language).toHaveBeenCalledWith("de");
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it("follows the OS theme when none is stored, and caches the applied theme", async () => {
+    await create({ accent_color: "teal" });
+    const theme = spyOn(TestBed.inject(ThemeService), "apply");
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    await settle();
+    expect(theme).toHaveBeenCalledWith(DEFAULT_THEME, "teal");
+    expect(JSON.parse(localStorage.getItem("streameo.theme") ?? "{}")).toEqual({
+      theme: "system",
+      accent: "teal",
+    });
+  });
+
+  it("zooms with Ctrl +, Ctrl - and Ctrl 0, also on the numpad", async () => {
+    await create({ zoom: 120 });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    await settle();
+    const zoom = TestBed.inject(ZoomService);
+    expect(zoom.value).toBe(120);
+    const press = (init: KeyboardEventInit) => {
+      const event = new KeyboardEvent("keydown", { ctrlKey: true, cancelable: true, ...init });
+      document.dispatchEvent(event);
+      return event;
+    };
+    expect(press({ key: "+" }).defaultPrevented).toBeTrue();
+    expect(zoom.value).toBe(130);
+    press({ key: "=" });
+    press({ key: "+", code: "NumpadAdd" });
+    expect(zoom.value).toBe(150);
+    press({ key: "-" });
+    press({ key: "-", code: "NumpadSubtract" });
+    expect(zoom.value).toBe(130);
+    press({ key: "0", code: "Numpad0" });
+    expect(zoom.value).toBe(100);
+    // Without Ctrl, or with AltGr (Ctrl+Alt), nothing happens.
+    press({ key: "+", ctrlKey: false });
+    press({ key: "+", altKey: true });
+    expect(zoom.value).toBe(100);
+  });
+
+  it("zooms with Ctrl + mouse wheel, one step per notch", async () => {
+    await create({ zoom: 100 });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    await settle();
+    const zoom = TestBed.inject(ZoomService);
+    const wheel = (deltaY: number, ctrlKey = true) =>
+      document.dispatchEvent(new WheelEvent("wheel", { deltaY, ctrlKey }));
+    wheel(-100);
+    expect(zoom.value).toBe(110);
+    // A touchpad's small deltas add up to one step.
+    wheel(40);
+    wheel(40);
+    expect(zoom.value).toBe(110);
+    wheel(40);
+    expect(zoom.value).toBe(100);
+    // Scrolling without Ctrl does not zoom.
+    wheel(-300, false);
+    expect(zoom.value).toBe(100);
   });
 });

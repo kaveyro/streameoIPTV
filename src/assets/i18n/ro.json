@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "Toate țările",
     "VIEWING": "Vizualizare: {{path}}",
     "SEARCH_LABEL": "Caută canale, filme și seriale",
-    "CLEAR_SEARCH": "Șterge căutarea"
+    "CLEAR_SEARCH": "Șterge căutarea",
+    "BREADCRUMB": "Cale"
   },
   "MENU": {
     "REMOVE": "Elimină",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "Te rugăm să atașezi acele jurnale (dacă există) și eroarea de mai jos la solicitarea ta de raportare a erorii. Mulțumim!",
     "COPY": "Copiază",
     "LOGS_FOLDER_HINT": "Fișierele jurnal și un raport de diagnosticare ajută la găsirea cauzei:",
-    "PERSISTENT_DIAGNOSTICS": "Dacă eroarea revine, exportați raportul de diagnosticare și atașați-l la raportul dumneavoastră. Nu conține parole sau adrese de stream."
+    "PERSISTENT_DIAGNOSTICS": "Dacă eroarea revine, exportați raportul de diagnosticare și atașați-l la raportul dumneavoastră. Nu conține parole sau adrese de stream.",
+    "CREDENTIALS_REJECTED": "Furnizorul a respins numele de utilizator sau parola",
+    "NOT_XTREAM_SERVER": "Serverul nu a răspuns ca un server Xtream Codes",
+    "NOT_M3U_PLAYLIST": "Linkul nu duce la o listă de redare M3U"
   },
   "SOURCE": {
     "REFRESHED": "Reîmprospătat:",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "Raportul de diagnosticare a fost salvat în {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Raportul de diagnosticare nu a putut fi exportat",
     "EPG_LOADING": "Ghidul TV se încarcă în fundal…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "„{{name}}” a fost eliminat din favorite; rămâne în „{{list}}”"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "„{{name}}” a fost eliminat din favorite; rămâne în „{{list}}”",
+    "DETAILS": "Detalii",
+    "RECORDING_ALREADY_SCHEDULED": "Această emisiune este deja programată pentru înregistrare"
   },
   "UPDATE": {
     "TITLE": "Actualizare disponibilă",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "conexiunea la server a eșuat",
     "CLOSE_PLAYER": "Închide playerul",
     "CLOSE_PLAYER_HINT": "Închide playerul (Esc)",
-    "FULLSCREEN_HINT": "Esc: ieși din ecran complet"
+    "FULLSCREEN_HINT": "Esc: ieși din ecran complet",
+    "ERROR_RETRY_HINT": "Enter: încearcă din nou",
+    "ERROR_LAST_HINT": "Backspace: canalul anterior"
   },
   "GUIDE": {
     "CHANNEL": "Canal",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "Nicio emisiune în acest interval",
     "EPG_FAILED": "Datele programului nu au putut fi încărcate",
     "EPG_RETRY": "Încearcă din nou",
-    "EPG_RETRY_ARIA": "Reîncarcă programul pentru {{name}}"
+    "EPG_RETRY_ARIA": "Reîncarcă programul pentru {{name}}",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "Înregistrare programată",
+    "STATE_REMINDER_SET": "Memento setat"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "Mută înapoi",
     "REORDER_HINT": "Trage plăcile pentru a schimba ordinea sau folosește „Mută înainte/înapoi” din meniul contextual",
     "MOVE_FAILED": "Noua ordine nu a putut fi salvată"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "Afișează",
+    "TRAY_QUIT": "Ieșire",
+    "TRAY_PAUSE": "Redare/Pauză",
+    "TRAY_STOP": "Oprește redarea",
+    "REMINDER_TITLE": "LIVE: {title}",
+    "REMINDER_BODY": "Acum pe {channel}",
+    "RECORDING_STARTED": "Înregistrare pornită: {title}",
+    "RECORDING_FINISHED": "Înregistrare finalizată: {title}",
+    "RECORDING_FAILED": "Înregistrare eșuată: {title}",
+    "SCHEDULED_PROGRAM": "Emisiune programată",
+    "LOCAL_LIVESTREAM": "Transmisiune locală în direct",
+    "QUIT_TITLE": "Închizi streameoIPTV?",
+    "QUIT_BODY": "{count} înregistrări sau descărcări rulează ori încep în curând. La ieșire sunt oprite; o emisiune care încă rulează va fi înregistrată în continuare la următoarea pornire.",
+    "QUIT_CONFIRM": "Ieșire",
+    "QUIT_CANCEL": "Anulează"
   }
 }

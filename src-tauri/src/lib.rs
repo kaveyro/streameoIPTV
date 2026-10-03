@@ -4,19 +4,14 @@ use std::collections::HashMap;
 use anyhow::Context;
 use anyhow::Error;
 
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use std::sync::LazyLock;
 use tauri::{AppHandle, Manager, State};
+use tauri_plugin_window_state::StateFlags;
 use tokio::sync::Mutex;
 use types::{
     AppState, Channel, CustomChannel, CustomChannelExtraData, EPG, EPGNotify, Filters, Group,
     IdName, NetworkInfo, ScheduledRecording, Settings, Source,
-};
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-use {
-    std::sync::LazyLock,
-    tauri::{
-        menu::{Menu, MenuItem},
-        tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    },
 };
 
 pub mod auto_refresh;
@@ -29,8 +24,10 @@ pub mod logo_cache;
 pub mod m3u;
 pub mod media_type;
 pub mod mpv;
+pub mod native_strings;
 pub mod parental;
 pub mod player;
+pub mod quit;
 pub mod recording_scheduler;
 pub mod recordings;
 pub mod redact;
@@ -40,6 +37,8 @@ pub mod share;
 pub mod sort_type;
 pub mod source_type;
 pub mod sql;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+pub mod tray;
 pub mod types;
 pub mod utils;
 pub mod view_type;
@@ -57,13 +56,16 @@ static ENABLE_TRAY_ICON: LazyLock<bool> = LazyLock::new(|| {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            let window = app.get_webview_window("main").expect("no main window");
-            let _ = window.unminimize();
-            let _ = window.show();
-            let _ = window.set_focus();
-            player::set_visible_sync(true);
+            show_main_window(app);
         }))
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Without fullscreen: quitting from the player's fullscreen would
+        // otherwise start the app borderless on the home page, where nothing
+        // leaves fullscreen again.
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(window_state_flags())
+                .build(),
+        )
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_shell::init())
@@ -154,6 +156,7 @@ pub fn run() {
             player_osd,
             player_osd_banner,
             player_status,
+            set_native_strings,
             player_set_volume,
             player_command,
             player_restart,
@@ -212,7 +215,7 @@ pub fn run() {
             });
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             if *ENABLE_TRAY_ICON {
-                let _ = build_tray_icon(app);
+                let _ = tray::build(app);
             }
             // Title the window with the version actually running. It used to be
             // a hardcoded string in tauri.conf.json, which silently kept
@@ -223,23 +226,27 @@ pub fn run() {
             }
             Ok(())
         })
-        .on_window_event(|_window, event| match event {
-            #[cfg(any(target_os = "macos", target_os = "windows"))]
-            tauri::WindowEvent::CloseRequested { api, .. } => {
-                if !*ENABLE_TRAY_ICON {
+        .on_window_event(|_window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                #[cfg(any(target_os = "macos", target_os = "windows"))]
+                if *ENABLE_TRAY_ICON {
+                    // Hide the native player window too, so the embedded video
+                    // does not float over the desktop while the app is in the
+                    // tray, and pause it. The mini player is meant to float: it
+                    // keeps playing.
+                    if !player::is_popped_out() {
+                        player::pause_for_hide();
+                        player::set_visible_sync(false);
+                    }
+                    _window.hide().unwrap();
+                    api.prevent_close();
                     return;
                 }
-
-                // Hide the native player window too, so the embedded video does
-                // not float over the desktop while the app is in the tray. The
-                // mini player is meant to float: it keeps playing.
-                if !player::is_popped_out() {
-                    player::set_visible_sync(false);
-                }
-                _window.hide().unwrap();
+                // Closing quits: through the same path as the tray's "Quit",
+                // which asks first while recordings or downloads run.
                 api.prevent_close();
+                quit::request(_window.app_handle());
             }
-            _ => {}
         })
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
@@ -247,64 +254,47 @@ pub fn run() {
             // Managed state is not dropped when the process ends, so the
             // embedded mpv would outlive the app, keep a provider connection
             // open and hold on to its IPC pipe.
+            // A quit from the OS (Cmd+Q, the Dock) asks like the tray's
+            // "Quit"; ours (app.exit) carries a code and has asked already.
+            tauri::RunEvent::ExitRequested { code, api, .. } => {
+                if code.is_none() && quit::pending_work() > 0 {
+                    api.prevent_exit();
+                    quit::request(_app);
+                    return;
+                }
+                quit::leave_fullscreen(_app);
+            }
             tauri::RunEvent::Exit => {
                 player::kill_sync();
                 restream::kill_sync();
+                quit::on_exit();
             }
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => {
                 if !*ENABLE_TRAY_ICON {
                     return;
                 }
-                let window = _app.get_webview_window("main").expect("no main window");
-                let _ = window.show();
-                let _ = window.set_focus();
+                show_main_window(_app);
             }
             _ => {}
         });
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
-    let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-    let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
-    TrayIconBuilder::new()
-        .menu(&menu)
-        .show_menu_on_left_click(false)
-        .on_menu_event(|app, event| match event.id.as_ref() {
-            "quit" => {
-                app.exit(0);
-            }
-            "show" => {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.unminimize();
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                    player::set_visible_sync(true);
-                }
-            }
-            _ => {}
-        })
-        .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = event
-            {
-                let app = tray.app_handle();
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.unminimize();
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                    player::set_visible_sync(true);
-                }
-            }
-        })
-        .icon(app.default_window_icon().unwrap().clone())
-        .build(app)?;
-    Ok(())
+/// What the window remembers between starts: everything but fullscreen.
+fn window_state_flags() -> StateFlags {
+    StateFlags::all() - StateFlags::FULLSCREEN
+}
+
+/// Brings the window back (tray, second instance, dock) with the video, and
+/// resumes what going to the tray paused.
+pub fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+        player::set_visible_sync(true);
+        player::resume_after_show();
+    }
 }
 
 fn map_err_frontend(e: Error) -> String {
@@ -367,6 +357,14 @@ async fn player_osd_banner(
 }
 
 /// The status in the middle of the picture ("Connecting…"); `None` removes it.
+/// The translated texts the backend shows itself (tray, notifications).
+#[tauri::command]
+fn set_native_strings(strings: HashMap<String, String>) {
+    native_strings::set(strings);
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    tray::update_texts();
+}
+
 #[tauri::command]
 async fn player_status(
     state: State<'_, Mutex<AppState>>,
@@ -1117,4 +1115,15 @@ async fn check_source(source: Source) -> Result<(), String> {
         _ => Ok(()),
     }
     .map_err(map_err_frontend)
+}
+
+#[cfg(test)]
+mod test_lib {
+    use super::*;
+
+    #[test]
+    fn test_window_state_skips_fullscreen() {
+        assert!(!window_state_flags().contains(StateFlags::FULLSCREEN));
+        assert!(window_state_flags().contains(StateFlags::SIZE | StateFlags::POSITION));
+    }
 }

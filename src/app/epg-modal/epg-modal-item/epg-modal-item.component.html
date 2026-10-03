@@ -147,7 +147,7 @@
       </span>
     </div>
   </div>
-  <p class="epg-time">{{ epg?.start_time }} - {{ epg?.end_time }}</p>
+  <p class="epg-time">{{ timeRange() }}</p>
   <div class="thin-line mt-2"></div>
   <p class="epg-desc mt-2" *ngIf="epg?.description">{{ epg?.description }}</p>
 </div>

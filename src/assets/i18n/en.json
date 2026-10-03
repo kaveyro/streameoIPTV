@@ -41,7 +41,7 @@
       "HISTORY": "History",
       "RECORDINGS": "Recordings",
       "SETTINGS": "Settings",
-      "GUIDE": "TV Guide",
+      "GUIDE": "TV guide",
       "CONTINUE_WATCHING": "Continue watching"
     },
     "PILL": {
@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "All countries",
     "VIEWING": "Viewing: {{path}}",
     "SEARCH_LABEL": "Search channels, movies and series",
-    "CLEAR_SEARCH": "Clear search"
+    "CLEAR_SEARCH": "Clear search",
+    "BREADCRUMB": "Path"
   },
   "MENU": {
     "REMOVE": "Remove",
@@ -279,9 +280,9 @@
       "REFRESHING": "Refreshing…"
     },
     "DATA": {
-      "BACKUP": "Backup database",
+      "BACKUP": "Back up database",
       "BACKUP_DESC": "Save all sources, channels, favorites and settings to a file.",
-      "BACKUP_BTN": "Backup",
+      "BACKUP_BTN": "Back up",
       "RESTORE": "Restore database",
       "RESTORE_DESC": "Replace all current data with a previously saved backup.",
       "RESTORE_BTN": "Restore",
@@ -332,12 +333,12 @@
   "SETUP": {
     "FIRST_SOURCE": "Let's add your first source",
     "ANOTHER_SOURCE": "Let's add another source",
-    "M3U_FILE": "M3U File",
+    "M3U_FILE": "M3U file",
     "M3U_FILE_TOOLTIP": "Use this option if you only have an M3U file. If the file was obtained through a URL given to you by your IPTV provider, the M3U URL option is better",
     "M3U_URL": "M3U URL",
     "M3U_URL_TOOLTIP": "If you want your channel list to refresh automatically with new channels added by your IPTV provider, this option is recommended over the M3U file",
     "CUSTOM": "Custom",
-    "CUSTOM_IMPORT": "Custom Import",
+    "CUSTOM_IMPORT": "Custom import",
     "NICKNAME": "Nickname for this source",
     "SOURCE_NAME_TAKEN": "This source name is already taken",
     "USER_AGENT_OPTIONAL": "User-Agent (optional)",
@@ -434,17 +435,17 @@
     "NAME": "Name",
     "NAME_PLACEHOLDER": "My cool channel",
     "IMAGE": "Image (link)",
-    "URL": "Url",
+    "URL": "URL",
     "URL_PLACEHOLDER": "YouTube, Twitch, anything",
     "MEDIA_TYPE": "Media type",
     "LIVESTREAM": "Livestream",
     "MOVIE": "Movie",
     "CATEGORY": "Category",
-    "HTTP_USER_AGENT": "HTTP User agent",
+    "HTTP_USER_AGENT": "HTTP User-Agent",
     "HTTP_ORIGIN": "HTTP Origin",
     "HTTP_REFERRER": "HTTP Referrer",
     "IGNORE_SSL": "Ignore SSL",
-    "ALREADY_EXISTS": "Channel already exists (name, url)"
+    "ALREADY_EXISTS": "Channel already exists (name, URL)"
   },
   "EDIT_GROUP": {
     "CREATE_TITLE": "Creating a custom category",
@@ -486,24 +487,27 @@
     "ATTACH_LOGS": "Please attach those logs (if they exist) and the error below to your bug report. Thank you!",
     "COPY": "Copy",
     "LOGS_FOLDER_HINT": "The log files and a diagnostics report help to find the cause:",
-    "PERSISTENT_DIAGNOSTICS": "If the error keeps coming back, export the diagnostics report and attach it to your report. It contains no passwords or stream addresses."
+    "PERSISTENT_DIAGNOSTICS": "If the error keeps coming back, export the diagnostics report and attach it to your report. It contains no passwords or stream addresses.",
+    "CREDENTIALS_REJECTED": "The provider rejected the username or password",
+    "NOT_XTREAM_SERVER": "The server did not answer like an Xtream Codes server",
+    "NOT_M3U_PLAYLIST": "The link does not point to an M3U playlist"
   },
   "SOURCE": {
     "REFRESHED": "Refreshed:",
     "TYPE": "Type:",
-    "URL": "Url:",
-    "USER_AGENT": "User-agent:",
-    "USER_AGENT_TOOLTIP": "User agent to be used when fetching/refreshing playlists",
-    "STREAM_USER_AGENT": "Stream user-agent:",
-    "STREAM_USER_AGENT_TOOLTIP": "User agent to be used when playing streams",
-    "MAX_STREAMS": "Max Streams:",
+    "URL": "URL:",
+    "USER_AGENT": "User-Agent:",
+    "USER_AGENT_TOOLTIP": "User-Agent sent when fetching and refreshing playlists",
+    "STREAM_USER_AGENT": "Stream User-Agent:",
+    "STREAM_USER_AGENT_TOOLTIP": "User-Agent sent when playing streams",
+    "MAX_STREAMS": "Max. streams:",
     "MAX_STREAMS_TOOLTIP": "Limits the number of concurrent streams. When the limit is reached and a new stream is opened, the oldest stream is closed",
     "USERNAME": "Username:",
     "PASSWORD": "Password:",
     "EDIT": "Edit",
     "REFRESH": "Refresh",
-    "BACKUP_FAVS": "Backup favs",
-    "RESTORE_FAVS": "Restore favs",
+    "BACKUP_FAVS": "Back up favorites",
+    "RESTORE_FAVS": "Restore favorites",
     "ADD_CHANNEL": "Add channel",
     "ADD_GROUP": "Add group",
     "SHARE": "Export…",
@@ -545,7 +549,7 @@
     "REFRESH_ON_START_SUCCESS": "Successfully refreshed all sources (refresh on start enabled)",
     "REFRESH_ON_START_FAILED": "Failed to refresh all sources (refresh on start enabled)",
     "BACKUP_SAVED": "Successfully saved database backup in {{path}}",
-    "BACKUP_FAILED": "Failed to backup database",
+    "BACKUP_FAILED": "Failed to back up database",
     "RESTORE_SUCCESS": "Successfully restored database backup",
     "RESTORE_FAILED": "Failed to restore database",
     "FAVORITES_EXPORTED": "Successfully exported favorites in {{path}}",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "Diagnostics report saved to {{path}}",
     "DIAGNOSTICS_EXPORT_FAILED": "Could not export the diagnostics report",
     "EPG_LOADING": "The TV guide is loading in the background…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "Removed “{{name}}” from favorites; it stays in “{{list}}”"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "Removed “{{name}}” from favorites; it stays in “{{list}}”",
+    "DETAILS": "Details",
+    "RECORDING_ALREADY_SCHEDULED": "This programme is already scheduled for recording"
   },
   "UPDATE": {
     "TITLE": "Update available",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "the connection to the server failed",
     "CLOSE_PLAYER": "Close player",
     "CLOSE_PLAYER_HINT": "Close player (Esc)",
-    "FULLSCREEN_HINT": "Esc: exit full screen"
+    "FULLSCREEN_HINT": "Esc: exit full screen",
+    "ERROR_RETRY_HINT": "Enter: try again",
+    "ERROR_LAST_HINT": "Backspace: previous channel"
   },
   "GUIDE": {
     "CHANNEL": "Channel",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "No programmes in this period",
     "EPG_FAILED": "Programme data could not be loaded",
     "EPG_RETRY": "Try again",
-    "EPG_RETRY_ARIA": "Load the programme data of {{name}} again"
+    "EPG_RETRY_ARIA": "Load the programme data of {{name}} again",
+    "PROGRAMME_LABEL": "{{channel}}: {{title}}, {{time}}",
+    "STATE_RECORDING_SCHEDULED": "Recording scheduled",
+    "STATE_REMINDER_SET": "Reminder set"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "Move back",
     "REORDER_HINT": "Drag tiles to change the order, or use “Move forward/back” in the context menu",
     "MOVE_FAILED": "Failed to save the new order"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "Show",
+    "TRAY_QUIT": "Quit",
+    "TRAY_PAUSE": "Play/Pause",
+    "TRAY_STOP": "Stop playback",
+    "REMINDER_TITLE": "LIVE: {title}",
+    "REMINDER_BODY": "Now on {channel}",
+    "RECORDING_STARTED": "Recording started: {title}",
+    "RECORDING_FINISHED": "Recording finished: {title}",
+    "RECORDING_FAILED": "Recording failed: {title}",
+    "SCHEDULED_PROGRAM": "Scheduled program",
+    "LOCAL_LIVESTREAM": "Local livestream",
+    "QUIT_TITLE": "Quit streameoIPTV?",
+    "QUIT_BODY": "{count} recordings or downloads are running or due soon. Quitting stops them; a programme that is still on is recorded further on the next start.",
+    "QUIT_CONFIRM": "Quit",
+    "QUIT_CANCEL": "Cancel"
   }
 }

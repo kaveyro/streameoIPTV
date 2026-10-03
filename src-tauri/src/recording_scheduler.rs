@@ -10,7 +10,10 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::{LazyLock, Mutex},
+    sync::{
+        LazyLock, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
     time::Duration,
 };
 
@@ -24,6 +27,7 @@ use tauri_plugin_notification::NotificationExt;
 
 use crate::{
     log::log,
+    native_strings::text,
     settings::{get_default_record_path, get_settings},
     sql,
     types::{Channel, ScheduledRecording},
@@ -57,6 +61,10 @@ struct ActiveRecording {
 /// non-async critical sections.
 static ACTIVE: LazyLock<Mutex<HashMap<i64, ActiveRecording>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Set once the app quits: no recording starts after the running ones were
+/// stopped.
+static EXITING: AtomicBool = AtomicBool::new(false);
 
 /// Wakes the scheduler loop before its next poll: "record from now" on a
 /// running programme should not wait up to 30 seconds to start.
@@ -136,6 +144,28 @@ pub fn active_outputs() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
+/// How many recordings run right now.
+pub fn active_count() -> usize {
+    active_outputs().len()
+}
+
+/// Stops every running recording when the app quits: ffmpeg is a plain child
+/// process and would otherwise keep writing on its own. The rows go back to
+/// pending, so the next start records what is left of a programme that still
+/// runs (and fails the ones that ended meanwhile).
+pub fn stop_all_for_exit() {
+    EXITING.store(true, Ordering::SeqCst);
+    let Ok(mut active) = lock_active() else {
+        return;
+    };
+    for (id, mut recording) in active.drain() {
+        let _ = recording.child.kill();
+        let _ = recording.child.wait();
+        let _ = sql::set_scheduled_recording_status(id, STATUS_PENDING)
+            .map_err(|e| log(format!("{:?}", e)));
+    }
+}
+
 /// Whether `path` is one of the files a running recording writes. Compared
 /// canonically where possible: the folder setting may be spelled differently
 /// (case, separators) from the path the folder listing produced.
@@ -164,15 +194,18 @@ fn lock_active() -> Result<std::sync::MutexGuard<'static, HashMap<i64, ActiveRec
 /// One scheduler iteration: reap finished captures, then start due ones.
 fn tick(app: &AppHandle) -> Result<()> {
     let current = now();
-    reap_finished(current)?;
+    reap_finished(app, current)?;
     for recording in sql::get_due_recordings(current)? {
         let id = recording.id.context("scheduled recording without id")?;
-        if lock_active()?.contains_key(&id) {
-            continue;
-        }
-        match start_recording(&recording, current) {
-            Ok((child, output)) => {
-                lock_active()?.insert(
+        // Spawned and registered under one lock: quitting in between would
+        // otherwise leave an ffmpeg nobody stops.
+        let started = {
+            let mut active = lock_active()?;
+            if active.contains_key(&id) || EXITING.load(Ordering::SeqCst) {
+                continue;
+            }
+            start_recording(&recording, current).map(|(child, output)| {
+                active.insert(
                     id,
                     ActiveRecording {
                         child,
@@ -180,6 +213,10 @@ fn tick(app: &AppHandle) -> Result<()> {
                         output,
                     },
                 );
+            })
+        };
+        match started {
+            Ok(()) => {
                 sql::set_scheduled_recording_status(id, STATUS_RECORDING)?;
                 notify_started(app, &recording);
             }
@@ -197,7 +234,7 @@ fn tick(app: &AppHandle) -> Result<()> {
 
 /// Checks every active ffmpeg process: kill it once its end time passed, and
 /// mark rows done/failed for processes that exited.
-fn reap_finished(current: i64) -> Result<()> {
+fn reap_finished(app: &AppHandle, current: i64) -> Result<()> {
     let mut finished: Vec<(i64, u8)> = Vec::new();
     {
         let mut active = lock_active()?;
@@ -236,6 +273,8 @@ fn reap_finished(current: i64) -> Result<()> {
         // The row may have been deleted by a concurrent cancel; ignore errors.
         let _ =
             sql::set_scheduled_recording_status(id, status).map_err(|e| log(format!("{:?}", e)));
+        let title = sql::get_scheduled_recording_title(id).ok().flatten();
+        notify_ended(app, title.as_deref(), status == STATUS_DONE);
     }
     Ok(())
 }
@@ -290,17 +329,46 @@ fn get_output_path(recording: &ScheduledRecording, channel: &Channel) -> Result<
         .unwrap_or_else(|| channel.name.clone());
     let name = sanitize(name);
     let timestamp = Local::now().format("%Y%m%d-%H%M");
-    let mut path = PathBuf::from(dir);
-    path.push(format!("{name}-{timestamp}.ts"));
+    let path = unused_path(&PathBuf::from(dir), &format!("{name}-{timestamp}"), |p| {
+        p.exists()
+    });
     Ok(path.to_string_lossy().to_string())
 }
 
+/// `<dir>/<stem>.ts`, or `<stem>-2.ts`, `-3`, ... when it exists: a recording
+/// that resumes after a restart within the same minute must not overwrite
+/// (ffmpeg -y) the part recorded before.
+fn unused_path(dir: &Path, stem: &str, exists: impl Fn(&Path) -> bool) -> PathBuf {
+    let first = dir.join(format!("{stem}.ts"));
+    if !exists(&first) {
+        return first;
+    }
+    (2..)
+        .map(|n| dir.join(format!("{stem}-{n}.ts")))
+        .find(|p| !exists(p))
+        .expect("an unused file name")
+}
+
 fn notify_started(app: &AppHandle, recording: &ScheduledRecording) {
-    let title = recording.title.as_deref().unwrap_or("Scheduled program");
+    notify(app, "recording_started", recording.title.as_deref());
+}
+
+fn notify_ended(app: &AppHandle, title: Option<&str>, done: bool) {
+    let key = if done {
+        "recording_finished"
+    } else {
+        "recording_failed"
+    };
+    notify(app, key, title);
+}
+
+fn notify(app: &AppHandle, key: &str, title: Option<&str>) {
+    let fallback = text("scheduled_program", &[]);
+    let title = title.filter(|t| !t.trim().is_empty()).unwrap_or(&fallback);
     let _ = app
         .notification()
         .builder()
-        .title(format!("Recording started: {title}"))
+        .title(text(key, &[("title", title)]))
         .show()
         .map_err(|e| log(format!("failed to show recording notification: {e:?}")));
 }
@@ -308,6 +376,23 @@ fn notify_started(app: &AppHandle, recording: &ScheduledRecording) {
 #[cfg(test)]
 mod test_recording_scheduler {
     use super::*;
+
+    #[test]
+    fn test_output_path_never_overwrites() {
+        let dir = Path::new("rec");
+        let taken = [
+            dir.join("News-20261003-2015.ts"),
+            dir.join("News-20261003-2015-2.ts"),
+        ];
+        assert_eq!(
+            unused_path(dir, "News-20261003-2015", |p| taken.iter().any(|t| t == p)),
+            dir.join("News-20261003-2015-3.ts")
+        );
+        assert_eq!(
+            unused_path(dir, "Film-20261003-2015", |p| taken.iter().any(|t| t == p)),
+            dir.join("Film-20261003-2015.ts")
+        );
+    }
 
     #[test]
     fn test_running_programme_starts_immediately() {

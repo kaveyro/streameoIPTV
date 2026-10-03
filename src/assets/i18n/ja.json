@@ -57,7 +57,8 @@
     "ALL_COUNTRIES": "すべての国",
     "VIEWING": "表示中: {{path}}",
     "SEARCH_LABEL": "チャンネル・映画・シリーズを検索",
-    "CLEAR_SEARCH": "検索をクリア"
+    "CLEAR_SEARCH": "検索をクリア",
+    "BREADCRUMB": "パス"
   },
   "MENU": {
     "REMOVE": "削除",
@@ -486,7 +487,10 @@
     "ATTACH_LOGS": "それらのログ（存在する場合）と下記のエラーをバグ報告に添付してください。ありがとうございます！",
     "COPY": "コピー",
     "LOGS_FOLDER_HINT": "ログファイルと診断レポートが原因の特定に役立ちます:",
-    "PERSISTENT_DIAGNOSTICS": "エラーが繰り返し起きる場合は、診断レポートをエクスポートして報告に添付してください。パスワードやストリームのアドレスは含まれません。"
+    "PERSISTENT_DIAGNOSTICS": "エラーが繰り返し起きる場合は、診断レポートをエクスポートして報告に添付してください。パスワードやストリームのアドレスは含まれません。",
+    "CREDENTIALS_REJECTED": "プロバイダーがユーザー名またはパスワードを拒否しました",
+    "NOT_XTREAM_SERVER": "サーバーの応答が Xtream Codes サーバーのものではありません",
+    "NOT_M3U_PLAYLIST": "リンク先が M3U プレイリストではありません"
   },
   "SOURCE": {
     "REFRESHED": "更新日時：",
@@ -625,7 +629,9 @@
     "DIAGNOSTICS_EXPORTED": "診断レポートを {{path}} に保存しました",
     "DIAGNOSTICS_EXPORT_FAILED": "診断レポートをエクスポートできませんでした",
     "EPG_LOADING": "番組表をバックグラウンドで読み込んでいます…",
-    "FAVORITE_REMOVED_STAYS_IN_LIST": "「{{name}}」をお気に入りから削除しました（「{{list}}」には残ります）"
+    "FAVORITE_REMOVED_STAYS_IN_LIST": "「{{name}}」をお気に入りから削除しました（「{{list}}」には残ります）",
+    "DETAILS": "詳細",
+    "RECORDING_ALREADY_SCHEDULED": "この番組はすでに録画予約されています"
   },
   "UPDATE": {
     "TITLE": "更新があります",
@@ -710,7 +716,9 @@
     "ERR_NETWORK": "サーバーへの接続に失敗しました",
     "CLOSE_PLAYER": "プレーヤーを閉じる",
     "CLOSE_PLAYER_HINT": "プレーヤーを閉じる (Esc)",
-    "FULLSCREEN_HINT": "Esc：全画面表示を終了"
+    "FULLSCREEN_HINT": "Esc：全画面表示を終了",
+    "ERROR_RETRY_HINT": "Enter：再試行",
+    "ERROR_LAST_HINT": "Backspace：前のチャンネル"
   },
   "GUIDE": {
     "CHANNEL": "チャンネル",
@@ -749,7 +757,10 @@
     "NO_PROGRAMMES_IN_WINDOW": "この時間帯に番組はありません",
     "EPG_FAILED": "番組データを読み込めませんでした",
     "EPG_RETRY": "再試行",
-    "EPG_RETRY_ARIA": "{{name}} の番組データを再読み込み"
+    "EPG_RETRY_ARIA": "{{name}} の番組データを再読み込み",
+    "PROGRAMME_LABEL": "{{channel}}：{{title}}、{{time}}",
+    "STATE_RECORDING_SCHEDULED": "録画予約済み",
+    "STATE_REMINDER_SET": "リマインダー設定済み"
   },
   "PARENTAL": {
     "CONFIRM": "OK",
@@ -846,5 +857,22 @@
     "MOVE_BACK": "後ろへ移動",
     "REORDER_HINT": "タイルをドラッグして順番を変更するか、コンテキストメニューの「前へ/後ろへ移動」を使ってください",
     "MOVE_FAILED": "新しい順番を保存できませんでした"
+  },
+  "NATIVE": {
+    "TRAY_SHOW": "表示",
+    "TRAY_QUIT": "終了",
+    "TRAY_PAUSE": "再生/一時停止",
+    "TRAY_STOP": "再生を停止",
+    "REMINDER_TITLE": "ライブ：{title}",
+    "REMINDER_BODY": "{channel} で放送中",
+    "RECORDING_STARTED": "録画開始：{title}",
+    "RECORDING_FINISHED": "録画完了：{title}",
+    "RECORDING_FAILED": "録画失敗：{title}",
+    "SCHEDULED_PROGRAM": "予約番組",
+    "LOCAL_LIVESTREAM": "ローカルライブ配信",
+    "QUIT_TITLE": "streameoIPTV を終了しますか？",
+    "QUIT_BODY": "{count} 件の録画またはダウンロードが実行中か、まもなく始まります。終了すると停止します。放送中の番組は次回起動時に録画を再開します。",
+    "QUIT_CONFIRM": "終了",
+    "QUIT_CANCEL": "キャンセル"
   }
 }

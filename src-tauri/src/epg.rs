@@ -47,8 +47,14 @@ pub fn poll(mut to_watch: Vec<EPGNotify>, stop: Arc<AtomicBool>, app: AppHandle)
 fn notify(epg: &EPGNotify, app: &AppHandle) -> Result<()> {
     app.notification()
         .builder()
-        .title(format!("LIVE: {}", epg.title))
-        .body(format!("Watch on {}", epg.channel_name))
+        .title(crate::native_strings::text(
+            "reminder_title",
+            &[("title", &epg.title)],
+        ))
+        .body(crate::native_strings::text(
+            "reminder_body",
+            &[("channel", &epg.channel_name)],
+        ))
         .show()?;
     Ok(())
 }

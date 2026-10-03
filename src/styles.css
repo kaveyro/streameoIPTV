@@ -1038,3 +1038,38 @@ body.player-open .toast-container .ngx-toastr {
 .toast-container .toast-warning .toast-progress {
   background: var(--color-favorite);
 }
+
+/* Error toasts: "Details" opens the error dialog (AppToastComponent), so it is
+   reachable from the keyboard and not only by clicking the toast. */
+.toast-container .ngx-toastr .toast-details-button {
+  margin-top: 0.5rem;
+  padding: 0.125rem 0.6rem;
+  font-size: var(--fs-sm);
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: no shimmer, pop-ins, spins or lifts; animations end at
+   once and transitions are instant.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton::after,
+  .scroll-to-top {
+    animation: none !important;
+  }
+
+  .icon-hover-scale:hover,
+  .icon-hover-rotate:hover,
+  .scroll-to-top:hover,
+  .toast-container .ngx-toastr:hover {
+    transform: none !important;
+  }
+}

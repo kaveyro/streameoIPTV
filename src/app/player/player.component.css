@@ -242,6 +242,10 @@
   font: inherit;
   cursor: pointer;
   color: var(--text-secondary);
+  /* Long lists: only the entries near the viewport are laid out and painted
+     (they stay in the DOM for focus, scrollIntoView and the filter). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3rem;
 }
 
 .player-list-item:focus-visible {
@@ -326,6 +330,11 @@
 :host-context([dir="rtl"]) .mini-bar,
 :host-context([dir="rtl"]) .player-list {
   direction: rtl;
+}
+
+/* The active entry's mark on its inline-start edge there too. */
+:host-context([dir="rtl"]) .player-list-item.active {
+  box-shadow: inset -3px 0 0 var(--accent);
 }
 
 /* The mini player mirrors to the bottom left like the download manager (the

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ToastrService } from "ngx-toastr";
 
-import { SOURCE_TYPE_LABELS, SourceTileComponent } from "./source-tile.component";
+import { SOURCE_TYPE_LABELS, SourceTileComponent, maskUrlSecrets } from "./source-tile.component";
 import { Source } from "../../models/source";
 import { SourceType } from "../../models/sourceType";
 import { ConfirmService } from "../../confirm.service";
@@ -81,17 +81,14 @@ describe("SourceTileComponent", () => {
     expect(component.checking).toBeFalse();
   });
 
-  it("shows the backend error when the test fails", async () => {
+  it("shows a known backend error translated when the test fails", async () => {
     await create(xtream, {
       check_source: () => Promise.reject("The provider rejected the username or password"),
     });
     component.edit();
     const error = spyOn(TestBed.inject(ToastrService), "error").and.callThrough();
     await component.testConnection();
-    expect(error).toHaveBeenCalledWith(
-      "The provider rejected the username or password",
-      "SOURCE.CHECK_FAILED",
-    );
+    expect(error).toHaveBeenCalledWith("ERROR.CREDENTIALS_REJECTED", "SOURCE.CHECK_FAILED");
   });
 
   const link: Source = {
@@ -177,5 +174,75 @@ describe("SourceTileComponent", () => {
     component.edit();
     fixture.detectChanges();
     expect(buttonWithText("SOURCE.CHECK")).toBeUndefined();
+  });
+  describe("M3U link secrets", () => {
+    it("masks password-like query parameters and userinfo passwords", () => {
+      expect(maskUrlSecrets("http://h/get.php?username=u&password=p1&type=m3u")).toBe(
+        "http://h/get.php?username=u&password=••••&type=m3u",
+      );
+      expect(maskUrlSecrets("http://h/list?PASS=x&pwd=y&token=z#a")).toBe(
+        "http://h/list?PASS=••••&pwd=••••&token=••••#a",
+      );
+      expect(maskUrlSecrets("http://bob:s3cr3t@h/list.m3u")).toBe("http://bob:••••@h/list.m3u");
+      expect(maskUrlSecrets("http://h/list.m3u?type=m3u")).toBe("http://h/list.m3u?type=m3u");
+    });
+
+    it("shows the link with the password masked until revealed", async () => {
+      await create(link);
+      await settle();
+      fixture.detectChanges();
+      const details = element.querySelector(".source-details")!;
+      expect(details.textContent).not.toContain("password=p&");
+      expect(details.textContent).toContain("password=••••");
+      const eye = details.querySelector<HTMLButtonElement>(".secret-row .eye")!;
+      expect(eye.getAttribute("aria-pressed")).toBe("false");
+      expect(eye.getAttribute("aria-label")).toBe("COMMON.SHOW_PASSWORD");
+      eye.click();
+      fixture.detectChanges();
+      expect(details.textContent).toContain("password=p&");
+      expect(eye.getAttribute("aria-pressed")).toBe("true");
+      expect(eye.getAttribute("aria-label")).toBe("COMMON.HIDE_PASSWORD");
+    });
+
+    it("offers no reveal button for a link without secrets", async () => {
+      await create({ ...link, url: "http://example.test/list.m3u" });
+      fixture.detectChanges();
+      expect(element.querySelector(".source-details .secret-row")).toBeNull();
+    });
+  });
+
+  it("explains the user agents and max streams with focusable help buttons", async () => {
+    await create(link);
+    const help = Array.from(element.querySelectorAll<HTMLButtonElement>("dt .info-btn"));
+    expect(help.map((b) => b.getAttribute("aria-label"))).toEqual([
+      "SOURCE.USER_AGENT_TOOLTIP",
+      "SOURCE.STREAM_USER_AGENT_TOOLTIP",
+      "SOURCE.MAX_STREAMS_TOOLTIP",
+    ]);
+    expect(help.every((b) => b.type === "button")).toBeTrue();
+  });
+
+  it("shows only the first line of a failed connection test", async () => {
+    await create(link, {
+      check_source: () =>
+        Promise.reject("error sending request\n\nCaused by:\n    0: dns error\n    1: no host"),
+    });
+    const error = spyOn(TestBed.inject(ToastrService), "error").and.callThrough();
+    component.edit();
+    await component.testConnection();
+    expect(error).toHaveBeenCalledWith("error sending request", "SOURCE.CHECK_FAILED");
+  });
+
+  it("cancels the edit from the keyboard and focuses the actions button", async () => {
+    await create(link);
+    component.edit();
+    fixture.detectChanges();
+    element.querySelector<HTMLInputElement>("input[name=url]")!.focus();
+    expect(component.containsFocus()).toBeTrue();
+    component.cancel(true);
+    fixture.detectChanges();
+    await settle();
+    expect(component.editing).toBeFalse();
+    expect(document.activeElement).toBe(element.querySelector(".more-btn"));
   });
 });

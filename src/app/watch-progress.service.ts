@@ -30,8 +30,8 @@ export function watchPercent(channel?: Channel): number | undefined {
 
 /**
  * The watch progress of movies and episodes: the tiles' progress bars follow
- * what the player saves, and "play from the start" / "mark as unwatched"
- * reset it.
+ * what the player saves, "play from the start" / "mark as unwatched" reset
+ * it and "mark as watched" finishes it.
  */
 @Injectable({
   providedIn: "root",
@@ -76,6 +76,19 @@ export class WatchProgressService {
       position: null,
       duration: channel.watch_duration ?? null,
       finished: false,
+    });
+  }
+
+  /** Marks the movie or episode as watched to the end (no resume point left). */
+  async markWatched(channel: Channel): Promise<void> {
+    if (channel.source_id === undefined || !channel.url) return;
+    await invoke("mark_watched", { sourceId: channel.source_id, url: channel.url });
+    this.changed.next({
+      source_id: channel.source_id,
+      url: channel.url,
+      position: null,
+      duration: channel.watch_duration ?? null,
+      finished: true,
     });
   }
 }

@@ -6,7 +6,7 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { TranslateService } from "@ngx-translate/core";
 import { MemoryService } from "./memory.service";
 import { ErrorService } from "./error.service";
-import { UpdateModalComponent } from "./update-modal/update-modal.component";
+import { UpdateInstaller, UpdateModalComponent } from "./update-modal/update-modal.component";
 
 /**
  * Update checks against the endpoint configured in tauri.conf.json.
@@ -20,9 +20,12 @@ import { UpdateModalComponent } from "./update-modal/update-modal.component";
   providedIn: "root",
 })
 export class UpdateService {
-  /// True while a check or download is running, so the settings button can
-  /// disable itself instead of starting a second one.
+  /// True while a check, the offer dialog or the download is running, so the
+  /// settings button can disable itself instead of starting a second one.
   Busy = false;
+  /// Only the request to the update endpoint: the settings button says
+  /// "Checking..." for this part, not while the dialog is open.
+  Checking = false;
 
   constructor(
     private modal: NgbModal,
@@ -41,8 +44,10 @@ export class UpdateService {
       return;
     }
     this.Busy = true;
+    this.Checking = true;
     try {
       const update = await check();
+      this.Checking = false;
       if (!update) {
         if (manual) {
           this.error.info(this.translate.instant("TOAST.UPDATE_UP_TO_DATE"));
@@ -58,6 +63,7 @@ export class UpdateService {
         this.error.handleError(e, this.translate.instant("TOAST.UPDATE_FAILED"));
       }
     } finally {
+      this.Checking = false;
       this.Busy = false;
     }
   }
@@ -70,22 +76,16 @@ export class UpdateService {
     modalRef.componentInstance.version = update.version;
     modalRef.componentInstance.currentVersion = await getVersion();
     modalRef.componentInstance.notes = update.body ?? "";
+    // The dialog asks about running work first, then downloads with its
+    // progress shown. The user explicitly asked for the install, so the dialog
+    // reports a failure even for the quiet startup check.
+    const install: UpdateInstaller = (onEvent) => update.downloadAndInstall(onEvent);
+    modalRef.componentInstance.install = install;
     // The startup check can resolve while a channel is playing; the native
     // video would cover the dialog.
     void this.memory.hidePlayerWhile(modalRef.result);
-    const install = await modalRef.result.catch(() => false);
-    if (!install) {
-      return;
-    }
-    this.error.info(
-      this.translate.instant("TOAST.UPDATE_DOWNLOADING", { version: update.version }),
-    );
-    // The user explicitly asked for the install, so a failure is reported even
-    // for the quiet startup check (whose own catch only reports manual checks).
-    try {
-      await update.downloadAndInstall();
-    } catch (e) {
-      this.error.handleError(e, this.translate.instant("TOAST.UPDATE_INSTALL_FAILED"));
+    const installed = await modalRef.result.catch(() => false);
+    if (!installed) {
       return;
     }
     this.error.success(this.translate.instant("TOAST.UPDATE_INSTALLED"));

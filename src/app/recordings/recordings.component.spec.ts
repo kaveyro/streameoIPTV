@@ -8,6 +8,7 @@ import { RecordingFile } from "../models/recordingFile";
 import { MediaType } from "../models/mediaType";
 import { EpgAlert } from "../models/epgAlert";
 import { MemoryService } from "../memory.service";
+import { emit } from "@tauri-apps/api/event";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -331,6 +332,82 @@ describe("RecordingsComponent", () => {
       confirm.and.resolveTo(false);
       await component.deleteAlert(alerts[1]);
       expect(callsOf(calls, "delete_epg_alert").length).toBe(1);
+    });
+  });
+
+  describe("watch progress", () => {
+    const second: RecordingFile = {
+      path: "C:\\Recordings\\match.ts",
+      name: "match.ts",
+      size: 1024,
+      modified: now,
+    };
+    const rows = () =>
+      Array.from(
+        element.querySelectorAll<HTMLElement>('[aria-labelledby="rec-files-title"] .recording-row'),
+      );
+
+    it("shows how far each file was watched and follows the player", async () => {
+      await create({
+        get_recording_files: [files[0], second],
+        get_file_progress: {
+          [files[0].path]: { position: 600, duration: 2400, finished: false },
+          [second.path]: { position: null, duration: 3000, finished: true },
+        },
+      });
+      expect(callsOf(calls, "get_file_progress").map((c) => c.args)).toEqual([
+        { paths: [files[0].path, second.path] },
+      ]);
+      const [first, done] = rows();
+      const track = first.querySelector<HTMLElement>(".rec-watch-track");
+      expect(track?.getAttribute("aria-valuenow")).toBe("25");
+      expect(first.querySelector<HTMLElement>(".rec-watch-fill")?.style.width).toBe("25%");
+      expect(first.querySelector(".rec-badge")?.textContent?.trim()).toBe("TILE.RESUME");
+      expect(done.querySelector(".rec-watch-track")).toBeNull();
+      expect(done.querySelector(".rec-badge")?.textContent?.trim()).toBe("TILE.WATCHED");
+
+      // The player saves progress of a recording under source 0 and its path.
+      await emit("watch-progress", {
+        source_id: 0,
+        url: files[0].path,
+        position: 1200,
+        duration: 2400,
+        finished: false,
+      });
+      // Another source's movie with the same URL is not this file.
+      await emit("watch-progress", {
+        source_id: 3,
+        url: second.path,
+        position: 10,
+        duration: 3000,
+        finished: false,
+      });
+      await settle();
+      fixture.detectChanges();
+      expect(rows()[0].querySelector<HTMLElement>(".rec-watch-fill")?.style.width).toBe("50%");
+      expect(rows()[1].querySelector(".rec-watch-track")).toBeNull();
+    });
+
+    it("hands the progress to the player for its banner", async () => {
+      await create({
+        get_file_progress: { [files[0].path]: { position: 600, duration: 2400, finished: false } },
+      });
+      const play = spyOn(TestBed.inject(PlaybackService), "play").and.resolveTo();
+      await component.play(files[0]);
+      expect(play).toHaveBeenCalledOnceWith(
+        jasmine.objectContaining({ watch_position: 600, watch_duration: 2400 }),
+        [],
+      );
+    });
+
+    it("shows no bar when the progress cannot be read", async () => {
+      await create({
+        get_file_progress: () => {
+          throw new Error("no database");
+        },
+      });
+      expect(element.querySelector(".rec-watch-track")).toBeNull();
+      expect(element.querySelector(".rec-badge")).toBeNull();
     });
   });
 

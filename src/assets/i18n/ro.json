@@ -42,7 +42,8 @@
       "RECORDINGS": "Înregistrări",
       "SETTINGS": "Setări",
       "GUIDE": "Ghid TV",
-      "CONTINUE_WATCHING": "Continuă vizionarea"
+      "CONTINUE_WATCHING": "Continuă vizionarea",
+      "HIDDEN": "Ascunse"
     },
     "PILL": {
       "LIVESTREAMS": "Transmisiuni live",
@@ -58,7 +59,19 @@
     "VIEWING": "Vizualizare: {{path}}",
     "SEARCH_LABEL": "Caută canale, filme și seriale",
     "CLEAR_SEARCH": "Șterge căutarea",
-    "BREADCRUMB": "Cale"
+    "BREADCRUMB": "Cale",
+    "SEARCH_IN": "Caută în {{name}}…",
+    "RESULT_ACTIONS": "Acțiuni pentru toate rezultatele",
+    "FAVORITE_ALL_RESULTS": "Adaugă toate rezultatele la favorite",
+    "HIDE_ALL_RESULTS": "Ascunde toate rezultatele",
+    "UNHIDE_ALL_RESULTS": "Afișează din nou toate rezultatele",
+    "CLEAR_HISTORY": "Șterge istoricul",
+    "SELECTION": {
+      "ACTIONS": "Elemente selectate",
+      "COUNT": "{{count}} selectate",
+      "HIDE": "Ascunde",
+      "CLEAR": "Anulează selecția"
+    }
   },
   "MENU": {
     "REMOVE": "Elimină",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "Deblochează grupul",
     "MAP_EPG": "Atribuie EPG…",
     "PLAY_FROM_START": "Redă de la început",
-    "MARK_UNWATCHED": "Marchează ca nevizionat"
+    "MARK_UNWATCHED": "Marchează ca nevizionat",
+    "MARK_WATCHED": "Marchează ca vizionat",
+    "HIDE_CHANNEL": "Ascunde canalul",
+    "HIDE_GROUP": "Ascunde grupul",
+    "HIDE": "Ascunde",
+    "UNHIDE": "Afișează din nou"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nu s-au găsit canale",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "Înregistrările și descărcările sunt salvate în folderul de înregistrări (Setări → Înregistrare)",
     "LOAD_FAILED": "Această vizualizare nu a putut fi încărcată",
     "LOAD_FAILED_HINT": "Verifică conexiunea la sursă și încearcă din nou",
-    "RETRY": "Încearcă din nou"
+    "RETRY": "Încearcă din nou",
+    "ALL_SOURCES_DISABLED": "Toate sursele sunt dezactivate",
+    "ALL_SOURCES_DISABLED_HINT": "Activează o sursă în setări pentru a-i vedea elementele",
+    "NO_MATCH_FILTERS": "Nimic nu corespunde filtrelor active",
+    "ACTIVE_FILTERS": "Filtre active: {{filters}}",
+    "FILTER_COUNTRY": "Țara {{code}}",
+    "CLEAR_FILTERS": "Șterge filtrele",
+    "NOTHING_HIDDEN": "Nimic ascuns",
+    "NOTHING_HIDDEN_HINT": "Canalele și categoriile ascunse apar aici și pot fi afișate din nou din meniul lor"
   },
   "RECORDING": {
     "SCHEDULED": "Înregistrare programată",
     "STATUS_RECORDING": "Se înregistrează",
     "STATUS_DONE": "Finalizat",
     "STATUS_FAILED": "Eșuat",
-    "STATUS_PENDING": "În așteptare"
+    "STATUS_PENDING": "În așteptare",
+    "CONFLICT_TITLE": "Fluxuri insuficiente",
+    "CONFLICT_BODY": "{{source}} permite {{max}} fluxuri; la acea oră rulează alte {{count}} înregistrări. Programezi oricum?",
+    "CONFLICT_CONFIRM": "Programează oricum"
   },
   "SORT": {
     "SORT": "Sortează",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "Folosești versiunea {{version}}",
       "CHECK_UPDATES": "Caută acum",
       "CHECKING": "Se caută...",
-      "RESTART_REQUIRED": "Necesită repornire"
+      "RESTART_REQUIRED": "Necesită repornire",
+      "REMINDER_LEAD": "Avans pentru mementouri",
+      "REMINDER_LEAD_DESC": "Mementourile pentru emisiuni apar cu atâtea minute înainte de început (0 = la început).",
+      "MINUTES_SHORT": "min"
     },
     "APPEARANCE": {
       "THEME": "Temă",
@@ -316,7 +348,9 @@
       "COVERAGE": "{{matched}} din {{live}} canale live au date de ghid.",
       "COVERAGE_HINT": "Canalele fără potrivire pot fi asociate manual: deschide meniul canalului și alege „Asociază EPG…”.",
       "DUPLICATE_COUNTRY": "{{country}} este acoperită de {{count}} surse – sursele duplicate doar încetinesc reîmprospătarea.",
-      "REFRESHING": "Se reîmprospătează…"
+      "REFRESHING": "Se reîmprospătează…",
+      "STATUS_LOADING": "Se încarcă…",
+      "REMOVED_UNDO": "Sursa XMLTV a fost eliminată. Dă clic aici pentru a anula"
     },
     "PARENTAL": {
       "DESC": "Protejează grupurile cu un PIN. Grupurile blocate și canalele lor rămân ascunse până când PIN-ul este introdus cu butonul lacăt de pe pagina principală. Blochează un grup din meniul său contextual din Categorii.",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "Descarcă din arhivă",
     "NOTIFY_ON": "Anunță-mă când începe",
     "NOTIFY_OFF": "Dezactivează notificarea",
-    "NOTIFY_NEEDS_TRAY": "Mementourile au nevoie de pictograma din bara de sistem (Setări → General)"
+    "NOTIFY_NEEDS_TRAY": "Mementourile au nevoie de pictograma din bara de sistem (Setări → General)",
+    "STOP_RECORDING": "Oprește înregistrarea"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "Vizionează",
     "SHARE": "Partajează",
     "STOP": "Oprește",
-    "NETWORK_UNAVAILABLE": "Informațiile de rețea nu sunt disponibile, așa că retransmisia nu poate porni."
+    "NETWORK_UNAVAILABLE": "Informațiile de rețea nu sunt disponibile, așa că retransmisia nu poate porni.",
+    "STARTING": "Se pornește retransmisia…",
+    "HIDE": "Ascunde",
+    "COPY": "Copiază",
+    "COPY_URL": "Copiază {{url}}",
+    "COPIED": "Adresă copiată",
+    "CHIP_RUNNING": "Retransmisie activă · {{channel}}",
+    "CHIP_STARTING": "Retransmisia pornește · {{channel}}",
+    "OPEN": "Deschide",
+    "STOPPED_FFMPEG": "Retransmisia {{name}} s-a oprit: ffmpeg s-a închis neașteptat",
+    "STOPPED_SERVER": "Retransmisia {{name}} s-a oprit: serverul local a eșuat",
+    "STOPPED_UNKNOWN": "Retransmisia {{name}} s-a oprit neașteptat"
   },
   "DOWNLOAD": {
     "TITLE": "Descărcări",
@@ -427,7 +473,12 @@
     "FINISHED": "Finalizate",
     "CLEAR_FINISHED": "Golește",
     "CANCEL_ALL": "Anulează tot",
-    "CONCURRENT": "Descărcări paralele"
+    "CONCURRENT": "Descărcări paralele",
+    "BYTES_OF": "{{done}} din {{total}}",
+    "SPEED": "{{speed}}/s",
+    "PLAY": "Redă",
+    "PLAY_ARIA": "Redă {{name}}",
+    "SHOW_IN_FOLDER": "Arată în dosar"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Creare canal personalizat",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "Ghidul TV se încarcă în fundal…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "„{{name}}” a fost eliminat din favorite; rămâne în „{{list}}”",
     "DETAILS": "Detalii",
-    "RECORDING_ALREADY_SCHEDULED": "Această emisiune este deja programată pentru înregistrare"
+    "RECORDING_ALREADY_SCHEDULED": "Această emisiune este deja programată pentru înregistrare",
+    "HIDDEN_UNDO": "„{{name}}” a fost ascuns. Fă clic pentru a anula.",
+    "UNHIDDEN": "„{{name}}” este afișat din nou",
+    "HIDE_FAILED": "„{{name}}” nu a putut fi ascuns",
+    "UNHIDE_FAILED": "„{{name}}” nu a putut fi afișat din nou",
+    "ITEMS_FAVORITED": "{{count}} elemente adăugate la favorite",
+    "ITEMS_HIDDEN_UNDO": "{{count}} elemente ascunse. Fă clic pentru a anula.",
+    "ITEMS_UNHIDDEN": "{{count}} elemente sunt afișate din nou",
+    "BULK_FAILED": "Unele elemente nu au putut fi modificate",
+    "RESULTS_UPDATED": "Rezultatele căutării au fost actualizate"
   },
   "UPDATE": {
     "TITLE": "Actualizare disponibilă",
     "AVAILABLE": "Versiunea {{version}} este disponibilă, tu ai {{current}}.",
     "RESTART_HINT": "Aplicația repornește după instalare.",
     "INSTALL": "Instalează acum",
-    "LATER": "Mai târziu"
+    "LATER": "Mai târziu",
+    "PENDING_WORK": "{{count}} înregistrări sau descărcări rulează sau încep în curând; instalarea repornește aplicația și le oprește.",
+    "INSTALL_ANYWAY": "Instalează oricum",
+    "PROGRESS": "Progresul descărcării actualizării"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up disponibil",
@@ -646,7 +709,8 @@
     "RESUME": "Reia",
     "LOCKED_GROUP": "Grup blocat",
     "WATCHED": "Vizionat",
-    "WATCH_PROGRESS": "Vizionat {{percent}}%"
+    "WATCH_PROGRESS": "Vizionat {{percent}}%",
+    "SELECTED": "selectat"
   },
   "LOADING": {
     "CHANNELS": "Se încarcă canalele..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "Emisiunile cu „{{query}}” în titlu nu vor mai fi înregistrate automat.",
     "DELETE_ALERT_KEEP": "Mementourile și înregistrările deja create rămân. Șterge-le pe rând dacă nu le mai vrei.",
     "CLEAR_FINISHED_TITLE": "Elimini intrările încheiate?",
-    "CLEAR_FINISHED_FAILED_BODY": "Printre ele, înregistrări eșuate: {{count}}. Intrările lor sunt singurul semn că aceste înregistrări nu au reușit. Fișierele înregistrate rămân în dosar."
+    "CLEAR_FINISHED_FAILED_BODY": "Printre ele, înregistrări eșuate: {{count}}. Intrările lor sunt singurul semn că aceste înregistrări nu au reușit. Fișierele înregistrate rămân în dosar.",
+    "BULK_FAVORITE_TITLE": "Adaugi toate rezultatele la favorite?",
+    "BULK_FAVORITE_BODY": "Toate cele {{count}} rezultate pentru „{{query}}” vor fi adăugate la favorite.",
+    "BULK_HIDE_TITLE": "Ascunzi toate rezultatele?",
+    "BULK_HIDE_BODY": "Toate cele {{count}} rezultate pentru „{{query}}” vor fi ascunse. Le poți afișa din nou în vizualizarea „Ascunse”.",
+    "BULK_UNHIDE_TITLE": "Afișezi din nou toate rezultatele?",
+    "BULK_UNHIDE_BODY": "Toate cele {{count}} rezultate pentru „{{query}}” vor fi afișate din nou în celelalte vizualizări."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Înapoi la canale",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "Închide playerul (Esc)",
     "FULLSCREEN_HINT": "Esc: ieși din ecran complet",
     "ERROR_RETRY_HINT": "Enter: încearcă din nou",
-    "ERROR_LAST_HINT": "Backspace: canalul anterior"
+    "ERROR_LAST_HINT": "Backspace: canalul anterior",
+    "RECORDING_SOURCE_BUSY": "Înregistrarea „{{title}}” a început și are nevoie de conexiune – acest canal se poate opri."
   },
   "GUIDE": {
     "CHANNEL": "Canal",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "Închizi streameoIPTV?",
     "QUIT_BODY": "{count} înregistrări sau descărcări rulează ori încep în curând. La ieșire sunt oprite; o emisiune care încă rulează va fi înregistrată în continuare la următoarea pornire.",
     "QUIT_CONFIRM": "Ieșire",
-    "QUIT_CANCEL": "Anulează"
+    "QUIT_CANCEL": "Anulează",
+    "REMINDER_SOON_BODY": "Începe în {minutes} min pe {channel}"
   }
 }

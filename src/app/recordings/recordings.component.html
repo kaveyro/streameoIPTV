@@ -240,7 +240,25 @@
           <div class="recording-time">
             {{ formatSize(file.size) }} · {{ formatDate(file.modified) }}
           </div>
+          <!-- How far it was watched, like the tiles' bar. -->
+          <div
+            *ngIf="watchPercent(file) as percent"
+            class="rec-watch-track"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            [attr.aria-valuenow]="percent | number: '1.0-0'"
+            [attr.aria-label]="
+              'TILE.WATCH_PROGRESS' | translate: { percent: (percent | number: '1.0-0') }
+            "
+          >
+            <div class="rec-watch-fill" [style.width.%]="percent"></div>
+          </div>
         </div>
+        <span *ngIf="resumable(file)" class="rec-badge">{{ "TILE.RESUME" | translate }}</span>
+        <span *ngIf="watched(file)" class="rec-badge rec-badge--done">{{
+          "TILE.WATCHED" | translate
+        }}</span>
         <span *ngIf="file.recording" class="recording-status status-{{ statusEnum.Recording }}">
           <span class="rec-dot" aria-hidden="true"></span>
           {{ "RECORDINGS.FILE_RECORDING" | translate }}

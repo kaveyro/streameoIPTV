@@ -42,7 +42,8 @@
       "RECORDINGS": "التسجيلات",
       "SETTINGS": "الإعدادات",
       "GUIDE": "دليل التلفزيون",
-      "CONTINUE_WATCHING": "متابعة المشاهدة"
+      "CONTINUE_WATCHING": "متابعة المشاهدة",
+      "HIDDEN": "المخفية"
     },
     "PILL": {
       "LIVESTREAMS": "البث المباشر",
@@ -58,7 +59,19 @@
     "VIEWING": "العرض: {{path}}",
     "SEARCH_LABEL": "البحث في القنوات والأفلام والمسلسلات",
     "CLEAR_SEARCH": "مسح البحث",
-    "BREADCRUMB": "المسار"
+    "BREADCRUMB": "المسار",
+    "SEARCH_IN": "البحث في {{name}}…",
+    "RESULT_ACTIONS": "إجراءات لجميع النتائج",
+    "FAVORITE_ALL_RESULTS": "إضافة كل النتائج إلى المفضلة",
+    "HIDE_ALL_RESULTS": "إخفاء كل النتائج",
+    "UNHIDE_ALL_RESULTS": "إظهار كل النتائج مجددًا",
+    "CLEAR_HISTORY": "مسح السجل",
+    "SELECTION": {
+      "ACTIONS": "العناصر المحددة",
+      "COUNT": "تم تحديد {{count}}",
+      "HIDE": "إخفاء",
+      "CLEAR": "إلغاء التحديد"
+    }
   },
   "MENU": {
     "REMOVE": "إزالة",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "إلغاء قفل المجموعة",
     "MAP_EPG": "تعيين EPG…",
     "PLAY_FROM_START": "تشغيل من البداية",
-    "MARK_UNWATCHED": "وضع علامة كغير مُشاهَد"
+    "MARK_UNWATCHED": "وضع علامة كغير مُشاهَد",
+    "MARK_WATCHED": "وضع علامة كمُشاهد",
+    "HIDE_CHANNEL": "إخفاء القناة",
+    "HIDE_GROUP": "إخفاء المجموعة",
+    "HIDE": "إخفاء",
+    "UNHIDE": "إظهار مجددًا"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "لم يُعثر على قنوات",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "تُحفظ التسجيلات والتنزيلات في مجلد التسجيل (الإعدادات ← التسجيل)",
     "LOAD_FAILED": "تعذر تحميل هذا العرض",
     "LOAD_FAILED_HINT": "تحقق من الاتصال بمصدرك وحاول مرة أخرى",
-    "RETRY": "إعادة المحاولة"
+    "RETRY": "إعادة المحاولة",
+    "ALL_SOURCES_DISABLED": "جميع المصادر معطلة",
+    "ALL_SOURCES_DISABLED_HINT": "فعّل مصدرًا في الإعدادات لعرض عناصره",
+    "NO_MATCH_FILTERS": "لا شيء يطابق عوامل التصفية النشطة",
+    "ACTIVE_FILTERS": "عوامل التصفية النشطة: {{filters}}",
+    "FILTER_COUNTRY": "الدولة {{code}}",
+    "CLEAR_FILTERS": "مسح عوامل التصفية",
+    "NOTHING_HIDDEN": "لا يوجد شيء مخفي",
+    "NOTHING_HIDDEN_HINT": "تظهر القنوات والفئات المخفية هنا ويمكن إظهارها مجددًا من قائمتها"
   },
   "RECORDING": {
     "SCHEDULED": "تسجيل مجدول",
     "STATUS_RECORDING": "جارٍ التسجيل",
     "STATUS_DONE": "اكتمل",
     "STATUS_FAILED": "فشل",
-    "STATUS_PENDING": "قيد الانتظار"
+    "STATUS_PENDING": "قيد الانتظار",
+    "CONFLICT_TITLE": "لا توجد بثوث كافية",
+    "CONFLICT_BODY": "يسمح {{source}} بـ {{max}} بث؛ وتجري {{count}} تسجيلات أخرى في ذلك الوقت. هل تريد الجدولة على أي حال؟",
+    "CONFLICT_CONFIRM": "الجدولة على أي حال"
   },
   "SORT": {
     "SORT": "ترتيب",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "أنت تستخدم الإصدار {{version}}",
       "CHECK_UPDATES": "ابحث الآن",
       "CHECKING": "جارٍ البحث...",
-      "RESTART_REQUIRED": "يتطلب إعادة التشغيل"
+      "RESTART_REQUIRED": "يتطلب إعادة التشغيل",
+      "REMINDER_LEAD": "المدة المسبقة للتذكير",
+      "REMINDER_LEAD_DESC": "تظهر تذكيرات البرامج قبل البدء بهذا العدد من الدقائق (0 = عند البدء).",
+      "MINUTES_SHORT": "د"
     },
     "APPEARANCE": {
       "THEME": "السمة",
@@ -316,7 +348,9 @@
       "COVERAGE": "{{matched}} من أصل {{live}} قناة مباشرة لديها بيانات دليل.",
       "COVERAGE_HINT": "يمكن تعيين القنوات غير المطابقة يدويًا: افتح قائمة القناة واختر “تعيين EPG…”.",
       "DUPLICATE_COUNTRY": "{{country}} مغطاة بعدد {{count}} من المصادر – المصادر المكررة تبطئ التحديث فقط.",
-      "REFRESHING": "جارٍ التحديث…"
+      "REFRESHING": "جارٍ التحديث…",
+      "STATUS_LOADING": "جارٍ التحميل…",
+      "REMOVED_UNDO": "تمت إزالة مصدر XMLTV. انقر هنا للتراجع"
     },
     "PARENTAL": {
       "DESC": "احمِ المجموعات برمز PIN. تبقى المجموعات المقفلة وقنواتها مخفية حتى يتم إدخال الرمز عبر زر القفل في الصفحة الرئيسية. اقفل مجموعة من قائمة السياق الخاصة بها في الفئات.",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "تنزيل من الأرشيف",
     "NOTIFY_ON": "نبّهني عند البدء",
     "NOTIFY_OFF": "إيقاف التنبيه",
-    "NOTIFY_NEEDS_TRAY": "تحتاج التذكيرات إلى أيقونة شريط النظام (الإعدادات ← عام)"
+    "NOTIFY_NEEDS_TRAY": "تحتاج التذكيرات إلى أيقونة شريط النظام (الإعدادات ← عام)",
+    "STOP_RECORDING": "إيقاف التسجيل"
   },
   "RESTREAM": {
     "TITLE": "إعادة البث: {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "مشاهدة",
     "SHARE": "مشاركة",
     "STOP": "إيقاف",
-    "NETWORK_UNAVAILABLE": "معلومات الشبكة غير متاحة، لذا لا يمكن بدء إعادة البث."
+    "NETWORK_UNAVAILABLE": "معلومات الشبكة غير متاحة، لذا لا يمكن بدء إعادة البث.",
+    "STARTING": "جارٍ بدء إعادة البث…",
+    "HIDE": "إخفاء",
+    "COPY": "نسخ",
+    "COPY_URL": "نسخ {{url}}",
+    "COPIED": "تم نسخ العنوان",
+    "CHIP_RUNNING": "إعادة البث تعمل · {{channel}}",
+    "CHIP_STARTING": "إعادة البث تبدأ · {{channel}}",
+    "OPEN": "فتح",
+    "STOPPED_FFMPEG": "توقفت إعادة بث {{name}}: أُغلق ffmpeg بشكل غير متوقع",
+    "STOPPED_SERVER": "توقفت إعادة بث {{name}}: تعطل الخادم المحلي",
+    "STOPPED_UNKNOWN": "توقفت إعادة بث {{name}} بشكل غير متوقع"
   },
   "DOWNLOAD": {
     "TITLE": "التنزيلات",
@@ -427,7 +473,12 @@
     "FINISHED": "المكتملة",
     "CLEAR_FINISHED": "مسح",
     "CANCEL_ALL": "إلغاء الكل",
-    "CONCURRENT": "تنزيلات متوازية"
+    "CONCURRENT": "تنزيلات متوازية",
+    "BYTES_OF": "{{done}} من {{total}}",
+    "SPEED": "{{speed}}/ث",
+    "PLAY": "تشغيل",
+    "PLAY_ARIA": "تشغيل {{name}}",
+    "SHOW_IN_FOLDER": "إظهار في المجلد"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "إنشاء قناة مخصّصة",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "يتم تحميل دليل البرامج في الخلفية…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "تمت إزالة «{{name}}» من المفضلة، لكنه يبقى في «{{list}}»",
     "DETAILS": "التفاصيل",
-    "RECORDING_ALREADY_SCHEDULED": "هذا البرنامج مجدول للتسجيل بالفعل"
+    "RECORDING_ALREADY_SCHEDULED": "هذا البرنامج مجدول للتسجيل بالفعل",
+    "HIDDEN_UNDO": "تم إخفاء «{{name}}». انقر للتراجع.",
+    "UNHIDDEN": "يظهر «{{name}}» مجددًا",
+    "HIDE_FAILED": "تعذّر إخفاء «{{name}}»",
+    "UNHIDE_FAILED": "تعذّر إظهار «{{name}}» مجددًا",
+    "ITEMS_FAVORITED": "تمت إضافة {{count}} عنصر إلى المفضلة",
+    "ITEMS_HIDDEN_UNDO": "تم إخفاء {{count}} عنصر. انقر للتراجع.",
+    "ITEMS_UNHIDDEN": "يظهر {{count}} عنصر مجددًا",
+    "BULK_FAILED": "تعذّر تغيير بعض العناصر",
+    "RESULTS_UPDATED": "تم تحديث نتائج البحث"
   },
   "UPDATE": {
     "TITLE": "يتوفر تحديث",
     "AVAILABLE": "الإصدار {{version}} متاح، ولديك {{current}}.",
     "RESTART_HINT": "يُعاد تشغيل التطبيق بعد تثبيت التحديث.",
     "INSTALL": "ثبّت الآن",
-    "LATER": "لاحقًا"
+    "LATER": "لاحقًا",
+    "PENDING_WORK": "هناك {{count}} من التسجيلات أو التنزيلات قيد التشغيل أو ستبدأ قريبًا؛ التثبيت يعيد تشغيل التطبيق ويوقفها.",
+    "INSTALL_ANYWAY": "التثبيت على أي حال",
+    "PROGRESS": "تقدم تنزيل التحديث"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "المشاهدة اللاحقة متاحة",
@@ -646,7 +709,8 @@
     "RESUME": "استئناف",
     "LOCKED_GROUP": "مجموعة مقفلة",
     "WATCHED": "تمت المشاهدة",
-    "WATCH_PROGRESS": "تمت مشاهدة {{percent}}%"
+    "WATCH_PROGRESS": "تمت مشاهدة {{percent}}%",
+    "SELECTED": "محدد"
   },
   "LOADING": {
     "CHANNELS": "جارٍ تحميل قنواتك..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "لن تُسجَّل البرامج التي يحتوي عنوانها على \"{{query}}\" تلقائيًا بعد الآن.",
     "DELETE_ALERT_KEEP": "تبقى التذكيرات والتسجيلات التي أُنشئت من قبل. احذفها واحدًا تلو الآخر إذا لم تعد تريدها.",
     "CLEAR_FINISHED_TITLE": "إزالة الإدخالات المنتهية؟",
-    "CLEAR_FINISHED_FAILED_BODY": "من بينها تسجيلات فاشلة: {{count}}. إدخالاتها هي الدليل الوحيد على أن هذه التسجيلات لم تنجح. تبقى الملفات المسجّلة في المجلد."
+    "CLEAR_FINISHED_FAILED_BODY": "من بينها تسجيلات فاشلة: {{count}}. إدخالاتها هي الدليل الوحيد على أن هذه التسجيلات لم تنجح. تبقى الملفات المسجّلة في المجلد.",
+    "BULK_FAVORITE_TITLE": "هل تريد إضافة كل النتائج إلى المفضلة؟",
+    "BULK_FAVORITE_BODY": "ستُضاف كل نتائج «{{query}}» ({{count}}) إلى المفضلة.",
+    "BULK_HIDE_TITLE": "هل تريد إخفاء كل النتائج؟",
+    "BULK_HIDE_BODY": "ستُخفى كل نتائج «{{query}}» ({{count}}). يمكنك إظهارها مجددًا من عرض «المخفية».",
+    "BULK_UNHIDE_TITLE": "هل تريد إظهار كل النتائج مجددًا؟",
+    "BULK_UNHIDE_BODY": "ستظهر كل نتائج «{{query}}» ({{count}}) مجددًا في العروض الأخرى."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "العودة إلى القنوات",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "إغلاق المشغل (Esc)",
     "FULLSCREEN_HINT": "Esc: الخروج من ملء الشاشة",
     "ERROR_RETRY_HINT": "Enter: إعادة المحاولة",
-    "ERROR_LAST_HINT": "Backspace: القناة السابقة"
+    "ERROR_LAST_HINT": "Backspace: القناة السابقة",
+    "RECORDING_SOURCE_BUSY": "بدأ تسجيل “{{title}}” ويحتاج إلى الاتصال – قد تتوقف هذه القناة."
   },
   "GUIDE": {
     "CHANNEL": "القناة",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "هل تريد إنهاء streameoIPTV؟",
     "QUIT_BODY": "هناك {count} من التسجيلات أو التنزيلات قيد التشغيل أو ستبدأ قريبًا. الإنهاء يوقفها؛ والبرنامج الذي لا يزال يُعرض سيُستأنف تسجيله عند التشغيل التالي.",
     "QUIT_CONFIRM": "إنهاء",
-    "QUIT_CANCEL": "إلغاء"
+    "QUIT_CANCEL": "إلغاء",
+    "REMINDER_SOON_BODY": "يبدأ بعد {minutes} دقيقة على {channel}"
   }
 }

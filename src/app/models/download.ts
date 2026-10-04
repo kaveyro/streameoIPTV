@@ -24,4 +24,14 @@ export class Download {
   path?: string;
   /// Failure reason, shown in the download manager.
   error?: string;
+  /// Bytes received so far (event download-bytes-<id>).
+  downloaded?: number;
+  /// Size of the file, when the server sends it.
+  total?: number | null;
+  /// Transfer rate in bytes per second, smoothed.
+  speed?: number;
+  /// Continue a partial file (<path>.part) instead of starting over.
+  resume?: boolean;
+  /// Where the finished file was saved (returned by the backend).
+  filePath?: string;
 }

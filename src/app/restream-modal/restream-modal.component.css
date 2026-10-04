@@ -18,3 +18,49 @@ button .icon {
 button:hover .icon {
   transform: scale(1.25);
 }
+
+.restream-status {
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+}
+
+.restream-heading {
+  margin: 0 0 0.25rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.restream-addresses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.restream-addresses li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.restream-url {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--bs-font-monospace);
+  font-size: var(--fs-sm);
+}
+
+.restream-copy {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.restream-copy .icon {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}

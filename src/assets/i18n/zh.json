@@ -42,7 +42,8 @@
       "RECORDINGS": "录制",
       "SETTINGS": "设置",
       "GUIDE": "电视指南",
-      "CONTINUE_WATCHING": "继续观看"
+      "CONTINUE_WATCHING": "继续观看",
+      "HIDDEN": "已隐藏"
     },
     "PILL": {
       "LIVESTREAMS": "直播",
@@ -58,7 +59,19 @@
     "VIEWING": "正在查看：{{path}}",
     "SEARCH_LABEL": "搜索频道、电影和剧集",
     "CLEAR_SEARCH": "清除搜索",
-    "BREADCRUMB": "路径"
+    "BREADCRUMB": "路径",
+    "SEARCH_IN": "在 {{name}} 中搜索…",
+    "RESULT_ACTIONS": "对所有结果执行操作",
+    "FAVORITE_ALL_RESULTS": "将所有结果加入收藏",
+    "HIDE_ALL_RESULTS": "隐藏所有结果",
+    "UNHIDE_ALL_RESULTS": "重新显示所有结果",
+    "CLEAR_HISTORY": "清除历史记录",
+    "SELECTION": {
+      "ACTIONS": "已选项目",
+      "COUNT": "已选择 {{count}} 项",
+      "HIDE": "隐藏",
+      "CLEAR": "清除选择"
+    }
   },
   "MENU": {
     "REMOVE": "移除",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "解锁分组",
     "MAP_EPG": "分配 EPG…",
     "PLAY_FROM_START": "从头播放",
-    "MARK_UNWATCHED": "标记为未观看"
+    "MARK_UNWATCHED": "标记为未观看",
+    "MARK_WATCHED": "标记为已观看",
+    "HIDE_CHANNEL": "隐藏频道",
+    "HIDE_GROUP": "隐藏分组",
+    "HIDE": "隐藏",
+    "UNHIDE": "重新显示"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "未找到频道",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "录制和下载的文件保存在录制文件夹中（设置 → 录制）",
     "LOAD_FAILED": "无法加载此视图",
     "LOAD_FAILED_HINT": "请检查与来源的连接后重试",
-    "RETRY": "重试"
+    "RETRY": "重试",
+    "ALL_SOURCES_DISABLED": "所有来源均已禁用",
+    "ALL_SOURCES_DISABLED_HINT": "在设置中启用来源以查看其内容",
+    "NO_MATCH_FILTERS": "没有符合当前筛选条件的内容",
+    "ACTIVE_FILTERS": "当前筛选：{{filters}}",
+    "FILTER_COUNTRY": "国家/地区 {{code}}",
+    "CLEAR_FILTERS": "清除筛选",
+    "NOTHING_HIDDEN": "没有隐藏的内容",
+    "NOTHING_HIDDEN_HINT": "隐藏的频道和分类会显示在这里，可通过其菜单重新显示"
   },
   "RECORDING": {
     "SCHEDULED": "计划录制",
     "STATUS_RECORDING": "录制中",
     "STATUS_DONE": "已完成",
     "STATUS_FAILED": "失败",
-    "STATUS_PENDING": "等待中"
+    "STATUS_PENDING": "等待中",
+    "CONFLICT_TITLE": "流数量不足",
+    "CONFLICT_BODY": "{{source}} 允许 {{max}} 个流；该时段还有 {{count}} 个其他录制。仍要安排吗？",
+    "CONFLICT_CONFIRM": "仍然安排"
   },
   "SORT": {
     "SORT": "排序",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "当前版本 {{version}}",
       "CHECK_UPDATES": "立即检查",
       "CHECKING": "正在检查...",
-      "RESTART_REQUIRED": "需要重启"
+      "RESTART_REQUIRED": "需要重启",
+      "REMINDER_LEAD": "提醒提前时间",
+      "REMINDER_LEAD_DESC": "节目提醒会在开始前这么多分钟出现（0 = 开始时）。",
+      "MINUTES_SHORT": "分钟"
     },
     "APPEARANCE": {
       "THEME": "主题",
@@ -316,7 +348,9 @@
       "COVERAGE": "{{live}} 个直播频道中有 {{matched}} 个有节目指南数据。",
       "COVERAGE_HINT": "未匹配的频道可以手动分配：打开频道菜单并选择“分配 EPG…”。",
       "DUPLICATE_COUNTRY": "{{country}} 由 {{count}} 个源覆盖——重复的源只会让刷新变慢。",
-      "REFRESHING": "正在刷新…"
+      "REFRESHING": "正在刷新…",
+      "STATUS_LOADING": "正在加载…",
+      "REMOVED_UNDO": "已移除 XMLTV 源。点击此处撤销"
     },
     "PARENTAL": {
       "DESC": "用 PIN 保护分组。在主页上通过锁按钮输入 PIN 之前，已锁定的分组及其频道将保持隐藏。可在“分类”中通过分组的右键菜单锁定分组。",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "从回看下载",
     "NOTIFY_ON": "开始时提醒我",
     "NOTIFY_OFF": "关闭提醒",
-    "NOTIFY_NEEDS_TRAY": "提醒需要启用托盘图标（设置 → 常规）"
+    "NOTIFY_NEEDS_TRAY": "提醒需要启用托盘图标（设置 → 常规）",
+    "STOP_RECORDING": "停止录制"
   },
   "RESTREAM": {
     "TITLE": "转推流：{{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "观看",
     "SHARE": "分享",
     "STOP": "停止",
-    "NETWORK_UNAVAILABLE": "网络信息不可用，无法开始转播。"
+    "NETWORK_UNAVAILABLE": "网络信息不可用，无法开始转播。",
+    "STARTING": "正在启动转播…",
+    "HIDE": "隐藏",
+    "COPY": "复制",
+    "COPY_URL": "复制 {{url}}",
+    "COPIED": "地址已复制",
+    "CHIP_RUNNING": "转播进行中 · {{channel}}",
+    "CHIP_STARTING": "转播启动中 · {{channel}}",
+    "OPEN": "打开",
+    "STOPPED_FFMPEG": "{{name}} 的转播已停止：ffmpeg 意外退出",
+    "STOPPED_SERVER": "{{name}} 的转播已停止：本地服务器出错",
+    "STOPPED_UNKNOWN": "{{name}} 的转播意外停止"
   },
   "DOWNLOAD": {
     "TITLE": "下载",
@@ -427,7 +473,12 @@
     "FINISHED": "已完成",
     "CLEAR_FINISHED": "清空",
     "CANCEL_ALL": "全部取消",
-    "CONCURRENT": "并行下载数"
+    "CONCURRENT": "并行下载数",
+    "BYTES_OF": "{{done}} / {{total}}",
+    "SPEED": "{{speed}}/秒",
+    "PLAY": "播放",
+    "PLAY_ARIA": "播放 {{name}}",
+    "SHOW_IN_FOLDER": "在文件夹中显示"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "创建自定义频道",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "节目指南正在后台加载…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "已将“{{name}}”从收藏中移除，它仍保留在“{{list}}”中",
     "DETAILS": "详情",
-    "RECORDING_ALREADY_SCHEDULED": "该节目已预约录制"
+    "RECORDING_ALREADY_SCHEDULED": "该节目已预约录制",
+    "HIDDEN_UNDO": "已隐藏“{{name}}”。点击撤销。",
+    "UNHIDDEN": "“{{name}}”已重新显示",
+    "HIDE_FAILED": "无法隐藏“{{name}}”",
+    "UNHIDE_FAILED": "无法重新显示“{{name}}”",
+    "ITEMS_FAVORITED": "已将 {{count}} 项加入收藏",
+    "ITEMS_HIDDEN_UNDO": "已隐藏 {{count}} 项。点击撤销。",
+    "ITEMS_UNHIDDEN": "已重新显示 {{count}} 项",
+    "BULK_FAILED": "部分项目无法更改",
+    "RESULTS_UPDATED": "搜索结果已更新"
   },
   "UPDATE": {
     "TITLE": "有可用更新",
     "AVAILABLE": "版本 {{version}} 可用，你当前是 {{current}}。",
     "RESTART_HINT": "安装完成后应用会重新启动。",
     "INSTALL": "立即安装",
-    "LATER": "以后再说"
+    "LATER": "以后再说",
+    "PENDING_WORK": "有 {{count}} 个录制或下载正在进行或即将开始；安装会重启应用并停止它们。",
+    "INSTALL_ANYWAY": "仍然安装",
+    "PROGRESS": "更新下载进度"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "支持回看",
@@ -646,7 +709,8 @@
     "RESUME": "继续",
     "LOCKED_GROUP": "已锁定的分组",
     "WATCHED": "已观看",
-    "WATCH_PROGRESS": "已观看 {{percent}}%"
+    "WATCH_PROGRESS": "已观看 {{percent}}%",
+    "SELECTED": "已选择"
   },
   "LOADING": {
     "CHANNELS": "正在加载频道..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "标题包含“{{query}}”的节目将不再自动录制。",
     "DELETE_ALERT_KEEP": "已创建的提醒和录制会保留。如果不再需要，请逐个删除。",
     "CLEAR_FINISHED_TITLE": "移除已结束的条目？",
-    "CLEAR_FINISHED_FAILED_BODY": "其中失败的录制：{{count}} 个。这些条目是录制未成功的唯一提示。已录制的文件会保留在文件夹中。"
+    "CLEAR_FINISHED_FAILED_BODY": "其中失败的录制：{{count}} 个。这些条目是录制未成功的唯一提示。已录制的文件会保留在文件夹中。",
+    "BULK_FAVORITE_TITLE": "将所有结果加入收藏？",
+    "BULK_FAVORITE_BODY": "“{{query}}”的全部 {{count}} 个结果将加入收藏。",
+    "BULK_HIDE_TITLE": "隐藏所有结果？",
+    "BULK_HIDE_BODY": "“{{query}}”的全部 {{count}} 个结果将被隐藏。可在“已隐藏”视图中重新显示。",
+    "BULK_UNHIDE_TITLE": "重新显示所有结果？",
+    "BULK_UNHIDE_BODY": "“{{query}}”的全部 {{count}} 个结果将重新显示在其他视图中。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "返回频道",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "关闭播放器 (Esc)",
     "FULLSCREEN_HINT": "Esc：退出全屏",
     "ERROR_RETRY_HINT": "Enter：重试",
-    "ERROR_LAST_HINT": "Backspace：上一个频道"
+    "ERROR_LAST_HINT": "Backspace：上一个频道",
+    "RECORDING_SOURCE_BUSY": "录制“{{title}}”已开始并需要占用连接——此频道可能会中断。"
   },
   "GUIDE": {
     "CHANNEL": "频道",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "退出 streameoIPTV？",
     "QUIT_BODY": "有 {count} 个录制或下载正在进行或即将开始。退出会停止它们；仍在播出的节目会在下次启动时继续录制。",
     "QUIT_CONFIRM": "退出",
-    "QUIT_CANCEL": "取消"
+    "QUIT_CANCEL": "取消",
+    "REMINDER_SOON_BODY": "{minutes} 分钟后在 {channel} 开始"
   }
 }

@@ -1,4 +1,13 @@
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import {
+  ComponentFixture,
+  TestBed,
+  discardPeriodicTasks,
+  fakeAsync,
+  flush,
+  flushMicrotasks,
+  tick,
+} from "@angular/core/testing";
+import { emit } from "@tauri-apps/api/event";
 
 import { PlayerComponent, playbackErrorKey, sameChannel } from "./player.component";
 import { MemoryService } from "../memory.service";
@@ -178,8 +187,11 @@ describe("PlayerComponent", () => {
     component.handlePlayerKey("digit-3");
     component.handlePlayerKey("commit");
     await settle();
-    expect(plays()).toEqual([1, 3]);
+    // Highlighted at once, opened once the keys rest.
+    expect(component.current?.id).toBe(3);
     expect(component.zapDigits).toBe("");
+    await new Promise((resolve) => setTimeout(resolve, PlayerComponent.ZAP_DEBOUNCE_MS + 50));
+    expect(plays()).toEqual([1, 3]);
   });
 
   it("ignores an error of the stream being replaced", async () => {
@@ -243,10 +255,229 @@ describe("PlayerComponent", () => {
     expect(callsOf(calls, "player_init").length).toBe(2);
   });
 
-  it("keeps catch-up and recordings out of the history", async () => {
+  /** Opens the player inside fakeAsync (mocked IPC answers are microtasks). */
+  function openFirstSync() {
+    component.open(channels[0]);
+    flushMicrotasks();
+    tick();
+    fixture.detectChanges();
+    component.onPlayerStatus("connecting");
+    component.onPlayerStatus("playing");
+  }
+
+  /** mpv starts the stream of the latest switch and shows pictures. */
+  function streamStarts() {
+    component.onPlayerStatus("connecting");
+    component.onPlayerStatus("playing");
+  }
+
+  const history = () => callsOf(calls, "add_last_watched").map((c) => c.args["id"]);
+
+  it("keeps catch-up and recordings out of the history", fakeAsync(() => {
+    openFirstSync();
+    component.switch({ id: -1, url: "http://example.test/archive", name: "Past" });
+    flushMicrotasks();
+    streamStarts();
+    tick(PlayerComponent.HISTORY_DELAY_MS + 10);
+    component.switch(channels[2]);
+    flushMicrotasks();
+    streamStarts();
+    tick(PlayerComponent.HISTORY_DELAY_MS + 10);
+    expect(history()).toEqual([3]);
+    discardPeriodicTasks();
+  }));
+
+  it("writes the history only once a channel played a few seconds", fakeAsync(() => {
+    openFirstSync();
+    component.switch(channels[1]);
+    flushMicrotasks();
+    // Not before it shows pictures.
+    tick(PlayerComponent.HISTORY_DELAY_MS + 10);
+    expect(history()).toEqual([]);
+    streamStarts();
+    tick(PlayerComponent.HISTORY_DELAY_MS - 100);
+    // Left before: never counted.
+    component.switch(channels[2]);
+    flushMicrotasks();
+    tick(200);
+    expect(history()).toEqual([]);
+    streamStarts();
+    tick(PlayerComponent.HISTORY_DELAY_MS + 10);
+    expect(history()).toEqual([3]);
+    discardPeriodicTasks();
+  }));
+
+  describe("zapping", () => {
+    const many = [1, 2, 3, 4, 5, 6].map((id) => live(id, `Ch ${id}`));
+    const banners = () =>
+      callsOf(calls, "player_osd_banner").map((c) => (c.args["banner"] as { title: string }).title);
+
+    it("opens one stream for quick steps, highlighting each at once", fakeAsync(() => {
+      memory.PlayerChannelList = many;
+      openFirstSync();
+      component.next();
+      component.handlePlayerKey("next");
+      tick(100);
+      component.next();
+      // The highlight and the banner follow every step.
+      expect(component.current?.id).toBe(4);
+      expect(banners().slice(-3)).toEqual(["Ch 2", "Ch 3", "Ch 4"]);
+      flushMicrotasks();
+      expect(plays()).toEqual([1]);
+      tick(PlayerComponent.ZAP_DEBOUNCE_MS - 50);
+      expect(plays()).toEqual([1]);
+      tick(60);
+      flushMicrotasks();
+      expect(plays()).toEqual([1, 4]);
+      // The steps in between are no "last channel".
+      expect(component.previous?.id).toBe(1);
+      flush();
+      discardPeriodicTasks();
+    }));
+
+    it("opens nothing when the steps lead back to the channel on screen", fakeAsync(() => {
+      memory.PlayerChannelList = many;
+      openFirstSync();
+      component.next();
+      component.prev();
+      tick(PlayerComponent.ZAP_DEBOUNCE_MS + 50);
+      flushMicrotasks();
+      expect(plays()).toEqual([1]);
+      expect(component.current?.id).toBe(1);
+      flush();
+      discardPeriodicTasks();
+    }));
+
+    it("plays a pick from the list at once, also the one zapped to", fakeAsync(() => {
+      memory.PlayerChannelList = many;
+      openFirstSync();
+      component.next();
+      component.switch(many[1]);
+      flushMicrotasks();
+      expect(plays()).toEqual([1, 2]);
+      tick(PlayerComponent.ZAP_DEBOUNCE_MS + 50);
+      flushMicrotasks();
+      expect(plays()).toEqual([1, 2]);
+      flush();
+      discardPeriodicTasks();
+    }));
+  });
+
+  describe("keys in the WebView", () => {
+    const press = (key: string, init: KeyboardEventInit = {}) => {
+      const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init });
+      document.body.dispatchEvent(event);
+      return event;
+    };
+    const commands = () => callsOf(calls, "player_command").map((c) => c.args["command"]);
+
+    it("zaps once for a held key", async () => {
+      await openFirst();
+      const held = press("PageDown", { repeat: true });
+      expect(held.defaultPrevented).toBeTrue();
+      expect(component.current?.id).toBe(1);
+      press("ArrowDown", { repeat: true });
+      expect(component.current?.id).toBe(1);
+      press("PageDown");
+      expect(component.current?.id).toBe(2);
+    });
+
+    it("seeks a minute with Up/Down in a movie instead of zapping", async () => {
+      memory.PlayerChannelList = [];
+      const movie: Channel = { ...live(9, "Film"), media_type: MediaType.movie };
+      await component.open(movie);
+      await settle();
+      press("ArrowUp");
+      press("ArrowDown", { repeat: true });
+      expect(commands()).toEqual(["seek_forward", "seek_back"]);
+      expect(component.current?.id).toBe(9);
+      await settle();
+      expect(plays()).toEqual([9]);
+    });
+
+    it("changes the volume with + and -", async () => {
+      await openFirst();
+      press("+");
+      press("-", { code: "NumpadSubtract" });
+      press("+", { repeat: true });
+      expect(commands()).toEqual(["volume_up", "volume_down", "volume_up"]);
+      // Typed into the filter field, not taken as volume.
+      const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+        ".player-list-search",
+      );
+      input?.dispatchEvent(new KeyboardEvent("keydown", { key: "-", bubbles: true }));
+      expect(commands().length).toBe(3);
+    });
+  });
+
+  describe("side list numbers", () => {
+    const numbered = (id: number, name: string, number: number, source_id = 1): Channel => ({
+      ...live(id, name),
+      number,
+      source_id,
+    });
+    const names = () =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(".player-list-item")).map(
+        (item) => item.querySelector(".pli-num")?.textContent?.trim(),
+      );
+
+    it("shows the places of an unnumbered list and finds them with the filter", async () => {
+      await openFirst();
+      fixture.detectChanges();
+      expect(names()).toEqual(["1", "2", "3"]);
+      component.filterText = "2";
+      expect(component.visibleChannels.map((c) => c.id)).toEqual([2]);
+      component.filterText = "thr";
+      expect(component.visibleChannels.map((c) => c.id)).toEqual([3]);
+    });
+
+    it("shows provider numbers and prefers the current source for a typed one", async () => {
+      const list = [
+        numbered(1, "One", 1, 1),
+        numbered(2, "Two", 2, 1),
+        numbered(12, "Twelve", 12, 1),
+        numbered(21, "Other one", 1, 2),
+        numbered(22, "Other two", 2, 2),
+      ];
+      memory.PlayerChannelList = list;
+      await component.open(list[3]);
+      await settle();
+      fixture.detectChanges();
+      expect(names()).toEqual(["1", "2", "12", "1", "2"]);
+      component.filterText = "1";
+      expect(component.visibleChannels.map((c) => c.id)).toEqual([1, 12, 21]);
+      component.filterText = "";
+      component.handlePlayerKey("digit-2");
+      component.handlePlayerKey("commit");
+      await settle();
+      expect(component.current?.id).toBe(22);
+    });
+  });
+
+  it("brings the live list back after catch-up", async () => {
     await openFirst();
-    await component.switch({ id: -1, url: "http://example.test/archive", name: "Past" });
-    await component.switch(channels[2]);
-    expect(callsOf(calls, "add_last_watched").map((c) => c.args["id"])).toEqual([3]);
+    await component.switch(channels[1]);
+    // Catch-up comes with an empty list (nothing to zap to).
+    memory.PlayerChannelList = [];
+    await component.open({
+      id: -1,
+      url: "http://example.test/archive",
+      name: "Two · Past (Sat 3 Oct, 20:00)",
+      media_type: MediaType.movie,
+    });
+    await settle();
+    expect(component.channels).toEqual([]);
+    component.handlePlayerKey("last");
+    await settle();
+    expect(component.current?.id).toBe(2);
+    expect(component.channels).toBe(channels);
+  });
+
+  it("warns over the video when a recording needs the connection", async () => {
+    await settle();
+    await openFirst();
+    await emit("recording-source-busy", { title: "Match" });
+    await settle();
+    expect(osdTexts()).toContain("PLAYER.RECORDING_SOURCE_BUSY");
   });
 });

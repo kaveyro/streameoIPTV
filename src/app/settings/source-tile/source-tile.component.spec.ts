@@ -1,7 +1,12 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { ToastrService } from "ngx-toastr";
 
-import { SOURCE_TYPE_LABELS, SourceTileComponent, maskUrlSecrets } from "./source-tile.component";
+import {
+  SOURCE_TYPE_LABELS,
+  SourceTileComponent,
+  maskUrlSecrets,
+  sourceChangeNeedsRefresh,
+} from "./source-tile.component";
 import { Source } from "../../models/source";
 import { SourceType } from "../../models/sourceType";
 import { ConfirmService } from "../../confirm.service";
@@ -167,6 +172,52 @@ describe("SourceTileComponent", () => {
     component.editableSource.max_streams = 2;
     await component.save();
     expect(callsOf(calls, "update_source").length).toBe(1);
+  });
+
+  describe("saving an edit", () => {
+    it("reloads the channels when the login changed", async () => {
+      await create(xtream);
+      component.edit();
+      component.editableSource.password = "new-secret";
+      await component.save();
+      expect(callsOf(calls, "update_source").length).toBe(1);
+      const refreshes = callsOf(calls, "refresh_source");
+      expect(refreshes.length).toBe(1);
+      expect((refreshes[0].args["source"] as Source).password).toBe("new-secret");
+      expect(component.editing).toBeFalse();
+    });
+
+    it("only saves when nothing that selects the channels changed", async () => {
+      await create(xtream);
+      component.edit();
+      component.editableSource.user_agent = "VLC";
+      component.editableSource.max_streams = 2;
+      await component.save();
+      expect(callsOf(calls, "update_source").length).toBe(1);
+      expect(callsOf(calls, "refresh_source").length).toBe(0);
+    });
+
+    it("does not refresh after a failed save", async () => {
+      await create(xtream, {
+        update_source: () => {
+          throw "nope";
+        },
+      });
+      component.edit();
+      component.editableSource.url = "http://other.test";
+      await component.save();
+      expect(callsOf(calls, "refresh_source").length).toBe(0);
+    });
+
+    it("compares URL, username, password and type, unset as empty", () => {
+      expect(sourceChangeNeedsRefresh(xtream, { ...xtream })).toBeFalse();
+      expect(sourceChangeNeedsRefresh(xtream, { ...xtream, url: "http://x.test" })).toBeTrue();
+      expect(sourceChangeNeedsRefresh(xtream, { ...xtream, username: "u2" })).toBeTrue();
+      expect(
+        sourceChangeNeedsRefresh(xtream, { ...xtream, source_type: SourceType.M3ULink }),
+      ).toBeTrue();
+      expect(sourceChangeNeedsRefresh({ url: "a" }, { url: "a", username: "" })).toBeFalse();
+    });
   });
 
   it("has no test for local M3U files", async () => {

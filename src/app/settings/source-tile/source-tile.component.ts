@@ -46,6 +46,17 @@ export function maskUrlSecrets(url: string): string {
     .replace(SECRET_USERINFO, `$1${SECRET_MASK}@`);
 }
 
+/// Fields that decide which channels a source delivers: changing one of them
+/// makes the loaded channel list stale.
+const REFRESH_FIELDS = ["url", "username", "password", "source_type"] as const;
+
+/** Whether saving `edited` over `saved` must reload the source's channels. */
+export function sourceChangeNeedsRefresh(saved: Source | undefined, edited: Source): boolean {
+  // Unset and empty are the same for the backend.
+  const norm = (value: unknown) => (value === undefined || value === null ? "" : value);
+  return REFRESH_FIELDS.some((key) => norm(saved?.[key]) !== norm(edited[key]));
+}
+
 @Component({
   selector: "app-source-tile",
   imports: [
@@ -262,7 +273,10 @@ export class SourceTileComponent {
 
   async save() {
     if (!this.maxStreamsValid) return;
-    await this.memory.tryIPC(
+    // Another address, login or type means other channels: load them right
+    // away instead of leaving the old list until the next refresh.
+    const needsRefresh = sourceChangeNeedsRefresh(this.source, this.editableSource);
+    const failed = await this.memory.tryIPC(
       this.translate.instant("TOAST.CHANGES_SAVED"),
       this.translate.instant("TOAST.CHANGES_SAVE_FAILED"),
       async () => {
@@ -279,6 +293,10 @@ export class SourceTileComponent {
         this.editableSource = {};
       },
     );
+    // Custom sources have nothing to load (no refresh button either).
+    if (!failed && needsRefresh && this.source?.source_type !== SourceType.Custom) {
+      await this.refresh();
+    }
   }
 
   async browse() {

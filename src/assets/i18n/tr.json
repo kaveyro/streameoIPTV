@@ -42,7 +42,8 @@
       "RECORDINGS": "Kayıtlar",
       "SETTINGS": "Ayarlar",
       "GUIDE": "TV Rehberi",
-      "CONTINUE_WATCHING": "İzlemeye devam et"
+      "CONTINUE_WATCHING": "İzlemeye devam et",
+      "HIDDEN": "Gizlenenler"
     },
     "PILL": {
       "LIVESTREAMS": "Canlı yayınlar",
@@ -58,7 +59,19 @@
     "VIEWING": "Görüntülenen: {{path}}",
     "SEARCH_LABEL": "Kanal, film ve dizi ara",
     "CLEAR_SEARCH": "Aramayı temizle",
-    "BREADCRUMB": "Yol"
+    "BREADCRUMB": "Yol",
+    "SEARCH_IN": "{{name}} içinde ara…",
+    "RESULT_ACTIONS": "Tüm sonuçlar için işlemler",
+    "FAVORITE_ALL_RESULTS": "Tüm sonuçları favorilere ekle",
+    "HIDE_ALL_RESULTS": "Tüm sonuçları gizle",
+    "UNHIDE_ALL_RESULTS": "Tüm sonuçları yeniden göster",
+    "CLEAR_HISTORY": "Geçmişi temizle",
+    "SELECTION": {
+      "ACTIONS": "Seçili öğeler",
+      "COUNT": "{{count}} seçildi",
+      "HIDE": "Gizle",
+      "CLEAR": "Seçimi temizle"
+    }
   },
   "MENU": {
     "REMOVE": "Kaldır",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "Grubun kilidini aç",
     "MAP_EPG": "EPG ata…",
     "PLAY_FROM_START": "Baştan oynat",
-    "MARK_UNWATCHED": "İzlenmedi olarak işaretle"
+    "MARK_UNWATCHED": "İzlenmedi olarak işaretle",
+    "MARK_WATCHED": "İzlendi olarak işaretle",
+    "HIDE_CHANNEL": "Kanalı gizle",
+    "HIDE_GROUP": "Grubu gizle",
+    "HIDE": "Gizle",
+    "UNHIDE": "Yeniden göster"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Kanal bulunamadı",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "Kayıtlar ve indirmeler kayıt klasörüne kaydedilir (Ayarlar → Kayıt)",
     "LOAD_FAILED": "Bu görünüm yüklenemedi",
     "LOAD_FAILED_HINT": "Kaynağınla bağlantıyı kontrol edip tekrar dene",
-    "RETRY": "Tekrar dene"
+    "RETRY": "Tekrar dene",
+    "ALL_SOURCES_DISABLED": "Tüm kaynaklar devre dışı",
+    "ALL_SOURCES_DISABLED_HINT": "Öğelerini görmek için ayarlardan bir kaynağı etkinleştirin",
+    "NO_MATCH_FILTERS": "Etkin filtrelere uyan bir şey yok",
+    "ACTIVE_FILTERS": "Etkin filtreler: {{filters}}",
+    "FILTER_COUNTRY": "Ülke {{code}}",
+    "CLEAR_FILTERS": "Filtreleri temizle",
+    "NOTHING_HIDDEN": "Gizlenen bir şey yok",
+    "NOTHING_HIDDEN_HINT": "Gizlenen kanallar ve kategoriler burada görünür ve menülerinden yeniden gösterilebilir"
   },
   "RECORDING": {
     "SCHEDULED": "Zamanlanmış kayıt",
     "STATUS_RECORDING": "Kaydediliyor",
     "STATUS_DONE": "Tamamlandı",
     "STATUS_FAILED": "Başarısız",
-    "STATUS_PENDING": "Bekliyor"
+    "STATUS_PENDING": "Bekliyor",
+    "CONFLICT_TITLE": "Yeterli yayın yok",
+    "CONFLICT_BODY": "{{source}} en fazla {{max}} yayına izin veriyor; o saatte {{count}} başka kayıt çalışıyor. Yine de planlansın mı?",
+    "CONFLICT_CONFIRM": "Yine de planla"
   },
   "SORT": {
     "SORT": "Sırala",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "{{version}} sürümünü kullanıyorsun",
       "CHECK_UPDATES": "Şimdi denetle",
       "CHECKING": "Denetleniyor...",
-      "RESTART_REQUIRED": "Yeniden başlatma gerekir"
+      "RESTART_REQUIRED": "Yeniden başlatma gerekir",
+      "REMINDER_LEAD": "Hatırlatıcı ön süresi",
+      "REMINDER_LEAD_DESC": "Program hatırlatıcıları başlangıçtan bu kadar dakika önce görünür (0 = başlangıçta).",
+      "MINUTES_SHORT": "dk"
     },
     "APPEARANCE": {
       "THEME": "Tema",
@@ -316,7 +348,9 @@
       "COVERAGE": "{{live}} canlı kanalın {{matched}} tanesinin rehber verisi var.",
       "COVERAGE_HINT": "Eşleşmeyen kanallar elle atanabilir: Kanalın menüsünü açın ve “EPG ata…” seçeneğini seçin.",
       "DUPLICATE_COUNTRY": "{{country}} {{count}} kaynak tarafından kapsanıyor – yinelenen kaynaklar yalnızca yenilemeyi yavaşlatır.",
-      "REFRESHING": "Yenileniyor…"
+      "REFRESHING": "Yenileniyor…",
+      "STATUS_LOADING": "Yükleniyor…",
+      "REMOVED_UNDO": "XMLTV kaynağı kaldırıldı. Geri almak için buraya tıklayın"
     },
     "PARENTAL": {
       "DESC": "Grupları bir PIN ile koruyun. Kilitli gruplar ve kanalları, ana sayfadaki kilit düğmesiyle PIN girilene kadar gizli kalır. Bir grubu Kategoriler'deki bağlam menüsünden kilitleyin.",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "Arşivden indir",
     "NOTIFY_ON": "Başladığında bana bildir",
     "NOTIFY_OFF": "Bildirimi kapat",
-    "NOTIFY_NEEDS_TRAY": "Hatırlatıcılar için tepsi simgesi gerekir (Ayarlar → Genel)"
+    "NOTIFY_NEEDS_TRAY": "Hatırlatıcılar için tepsi simgesi gerekir (Ayarlar → Genel)",
+    "STOP_RECORDING": "Kaydı durdur"
   },
   "RESTREAM": {
     "TITLE": "Yeniden yayınlanıyor: {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "İzle",
     "SHARE": "Paylaş",
     "STOP": "Durdur",
-    "NETWORK_UNAVAILABLE": "Ağ bilgileri alınamadığı için yeniden yayın başlatılamıyor."
+    "NETWORK_UNAVAILABLE": "Ağ bilgileri alınamadığı için yeniden yayın başlatılamıyor.",
+    "STARTING": "Yeniden yayın başlatılıyor…",
+    "HIDE": "Gizle",
+    "COPY": "Kopyala",
+    "COPY_URL": "{{url}} adresini kopyala",
+    "COPIED": "Adres kopyalandı",
+    "CHIP_RUNNING": "Yeniden yayın sürüyor · {{channel}}",
+    "CHIP_STARTING": "Yeniden yayın başlıyor · {{channel}}",
+    "OPEN": "Aç",
+    "STOPPED_FFMPEG": "{{name}} yeniden yayını durdu: ffmpeg beklenmedik şekilde kapandı",
+    "STOPPED_SERVER": "{{name}} yeniden yayını durdu: yerel sunucu çöktü",
+    "STOPPED_UNKNOWN": "{{name}} yeniden yayını beklenmedik şekilde durdu"
   },
   "DOWNLOAD": {
     "TITLE": "İndirmeler",
@@ -427,7 +473,12 @@
     "FINISHED": "Tamamlananlar",
     "CLEAR_FINISHED": "Temizle",
     "CANCEL_ALL": "Tümünü iptal et",
-    "CONCURRENT": "Paralel indirme"
+    "CONCURRENT": "Paralel indirme",
+    "BYTES_OF": "{{done}} / {{total}}",
+    "SPEED": "{{speed}}/sn",
+    "PLAY": "Oynat",
+    "PLAY_ARIA": "{{name}} oynat",
+    "SHOW_IN_FOLDER": "Klasörde göster"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Özel kanal oluşturma",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "Yayın akışı arka planda yükleniyor…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "“{{name}}” favorilerden kaldırıldı, “{{list}}” listesinde kalıyor",
     "DETAILS": "Ayrıntılar",
-    "RECORDING_ALREADY_SCHEDULED": "Bu program zaten kayıt için planlandı"
+    "RECORDING_ALREADY_SCHEDULED": "Bu program zaten kayıt için planlandı",
+    "HIDDEN_UNDO": "“{{name}}” gizlendi. Geri almak için tıklayın.",
+    "UNHIDDEN": "“{{name}}” yeniden gösteriliyor",
+    "HIDE_FAILED": "“{{name}}” gizlenemedi",
+    "UNHIDE_FAILED": "“{{name}}” yeniden gösterilemedi",
+    "ITEMS_FAVORITED": "{{count}} öğe favorilere eklendi",
+    "ITEMS_HIDDEN_UNDO": "{{count}} öğe gizlendi. Geri almak için tıklayın.",
+    "ITEMS_UNHIDDEN": "{{count}} öğe yeniden gösteriliyor",
+    "BULK_FAILED": "Bazı öğeler değiştirilemedi",
+    "RESULTS_UPDATED": "Arama sonuçları güncellendi"
   },
   "UPDATE": {
     "TITLE": "Güncelleme mevcut",
     "AVAILABLE": "{{version}} sürümü mevcut, sende {{current}} var.",
     "RESTART_HINT": "Kurulumdan sonra uygulama yeniden başlar.",
     "INSTALL": "Şimdi kur",
-    "LATER": "Daha sonra"
+    "LATER": "Daha sonra",
+    "PENDING_WORK": "{{count}} kayıt veya indirme devam ediyor ya da yakında başlayacak; kurulum uygulamayı yeniden başlatır ve bunları durdurur.",
+    "INSTALL_ANYWAY": "Yine de kur",
+    "PROGRESS": "Güncelleme indirme ilerlemesi"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Geriye dönük izleme mevcut",
@@ -646,7 +709,8 @@
     "RESUME": "Devam et",
     "LOCKED_GROUP": "Kilitli grup",
     "WATCHED": "İzlendi",
-    "WATCH_PROGRESS": "%{{percent}} izlendi"
+    "WATCH_PROGRESS": "%{{percent}} izlendi",
+    "SELECTED": "seçili"
   },
   "LOADING": {
     "CHANNELS": "Kanallarınız yükleniyor..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "Başlığında \"{{query}}\" geçen programlar artık otomatik olarak kaydedilmeyecek.",
     "DELETE_ALERT_KEEP": "Daha önce oluşturulan hatırlatmalar ve kayıtlar kalır. Artık istemiyorsan bunları tek tek kaldır.",
     "CLEAR_FINISHED_TITLE": "Tamamlanan kayıtlar kaldırılsın mı?",
-    "CLEAR_FINISHED_FAILED_BODY": "Aralarında başarısız kayıtlar var: {{count}}. Bu kayıtların çalışmadığının tek işareti bu girişlerdir. Kaydedilen dosyalar klasörde kalır."
+    "CLEAR_FINISHED_FAILED_BODY": "Aralarında başarısız kayıtlar var: {{count}}. Bu kayıtların çalışmadığının tek işareti bu girişlerdir. Kaydedilen dosyalar klasörde kalır.",
+    "BULK_FAVORITE_TITLE": "Tüm sonuçlar favorilere eklensin mi?",
+    "BULK_FAVORITE_BODY": "“{{query}}” için {{count}} sonucun tümü favorilere eklenecek.",
+    "BULK_HIDE_TITLE": "Tüm sonuçlar gizlensin mi?",
+    "BULK_HIDE_BODY": "“{{query}}” için {{count}} sonucun tümü gizlenecek. Bunları “Gizlenenler” görünümünde yeniden gösterebilirsiniz.",
+    "BULK_UNHIDE_TITLE": "Tüm sonuçlar yeniden gösterilsin mi?",
+    "BULK_UNHIDE_BODY": "“{{query}}” için {{count}} sonucun tümü diğer görünümlerde yeniden gösterilecek."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Kanallara dön",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "Oynatıcıyı kapat (Esc)",
     "FULLSCREEN_HINT": "Esc: tam ekrandan çık",
     "ERROR_RETRY_HINT": "Enter: tekrar dene",
-    "ERROR_LAST_HINT": "Geri tuşu: önceki kanal"
+    "ERROR_LAST_HINT": "Geri tuşu: önceki kanal",
+    "RECORDING_SOURCE_BUSY": "“{{title}}” kaydı başladı ve bağlantıya ihtiyaç duyuyor – bu kanal durabilir."
   },
   "GUIDE": {
     "CHANNEL": "Kanal",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "streameoIPTV kapatılsın mı?",
     "QUIT_BODY": "{count} kayıt veya indirme sürüyor ya da yakında başlayacak. Çıkış yapılırsa durdurulurlar; hâlâ süren bir program bir sonraki açılışta kaydedilmeye devam eder.",
     "QUIT_CONFIRM": "Çıkış",
-    "QUIT_CANCEL": "İptal"
+    "QUIT_CANCEL": "İptal",
+    "REMINDER_SOON_BODY": "{minutes} dk sonra {channel} kanalında başlıyor"
   }
 }

@@ -3,7 +3,8 @@ import { ToastrService } from "ngx-toastr";
 
 import { Router } from "@angular/router";
 import { NgbModal, NgbModalRef } from "@ng-bootstrap/ng-bootstrap";
-import { SettingsComponent, isValidRestreamPort } from "./settings.component";
+import { SettingsComponent, clampReminderLead, isValidRestreamPort } from "./settings.component";
+import { UpdateService } from "../update.service";
 import { ConfirmService } from "../confirm.service";
 import { LanguageService } from "../language.service";
 import { MemoryService } from "../memory.service";
@@ -46,7 +47,12 @@ describe("SettingsComponent", () => {
     fixture.detectChanges();
   }
 
-  afterEach(() => resetTauri());
+  afterEach(() => {
+    // A guide refresh scheduled by a list change would otherwise run while
+    // the page is torn down, after the IPC mocks are gone.
+    component?.["cancelXmltvRefresh"]();
+    resetTauri();
+  });
 
   it("should create", async () => {
     await create();
@@ -191,6 +197,112 @@ describe("SettingsComponent", () => {
     expect(changed).toHaveBeenCalled();
     expect(callsOf(calls, "get_xmltv_status").length).toBe(before + 1);
     expect(callsOf(calls, "get_epg_coverage").length).toBeGreaterThan(0);
+  });
+
+  describe("XMLTV list changes", () => {
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    it("load the guides once, shortly after adding", async () => {
+      await create({ get_xmltv_sources: [] });
+      component.xmltvRefreshDelayMs = 20;
+      component.newXmltvUrl = "https://a.test/epg.xml";
+      await component.addXmltvSource();
+      await component.toggleFreeSource(FREE_EPG_SOURCES[0].url);
+      expect(component.xmltvRefreshPending).toBeTrue();
+      expect(callsOf(calls, "refresh_xmltv").length).toBe(0);
+      // A new link says it is loading, not "never loaded".
+      component.setCategory("epg");
+      fixture.detectChanges();
+      expect(element.textContent).toContain("SETTINGS.EPG.STATUS_LOADING");
+      expect(element.textContent).not.toContain("SETTINGS.EPG.STATUS_NEVER");
+      await wait(60);
+      await settle();
+      expect(callsOf(calls, "refresh_xmltv").length).toBe(1);
+      expect(component.xmltvRefreshPending).toBeFalse();
+    });
+
+    it("disable Add while the guides load", async () => {
+      let finish!: () => void;
+      await create({
+        refresh_xmltv: () => new Promise<void>((resolve) => (finish = resolve)),
+      });
+      component.setCategory("epg");
+      component.newXmltvUrl = "https://a.test/epg.xml";
+      const refresh = component.refreshXmltv();
+      fixture.detectChanges();
+      await fixture.whenRenderingDone();
+      const add = element.querySelector<HTMLButtonElement>(".xmltv-add button[type=submit]")!;
+      expect(add.disabled).toBeTrue();
+      await component.addXmltvSource();
+      expect(callsOf(calls, "set_xmltv_sources").length).toBe(0);
+      finish();
+      await refresh;
+      fixture.detectChanges();
+      expect(add.disabled).toBeFalse();
+    });
+
+    it("offer to undo removing a typed link, not a free guide", async () => {
+      const typed = "https://a.test/epg.xml";
+      const free = FREE_EPG_SOURCES[0].url;
+      await create({ get_xmltv_sources: [typed, free] });
+      const toastr = TestBed.inject(ToastrService);
+      const info = spyOn(toastr, "info").and.callThrough();
+      await component.removeXmltvSource(free);
+      expect(info).not.toHaveBeenCalled();
+      await component.removeXmltvSource(typed);
+      expect(info).toHaveBeenCalledWith(
+        "SETTINGS.EPG.REMOVED_UNDO",
+        undefined,
+        jasmine.any(Object),
+      );
+      expect(component.xmltvUrls).toEqual([]);
+      // Tapping the toast puts the link back.
+      const toast = info.calls.mostRecent().returnValue;
+      (toast.toastRef.componentInstance as { tapToast(): void }).tapToast();
+      await settle();
+      expect(component.xmltvUrls).toEqual([typed]);
+      expect(callsOf(calls, "set_xmltv_sources").at(-1)?.args).toEqual({ urls: [typed] });
+    });
+  });
+
+  it("names the update check only while checking, not while the dialog is open", async () => {
+    await create();
+    const update = TestBed.inject(UpdateService);
+    component.setCategory("general");
+    update.Busy = true;
+    update.Checking = false;
+    fixture.detectChanges();
+    const button = Array.from(element.querySelectorAll("button")).find((b) =>
+      b.textContent?.includes("SETTINGS.GENERAL.CHECK"),
+    )!;
+    expect(button.textContent).toContain("SETTINGS.GENERAL.CHECK_UPDATES");
+    expect(button.disabled).toBeTrue();
+    update.Checking = true;
+    fixture.detectChanges();
+    expect(button.textContent).toContain("SETTINGS.GENERAL.CHECKING");
+  });
+
+  it("saves the reminder lead time, clamped to whole minutes from 0 to 60", async () => {
+    await create({ get_settings: {} });
+    expect(component.settings.reminder_lead_minutes).toBe(0);
+    const field = element.querySelector<HTMLInputElement>("#set-reminder-lead")!;
+    expect(field.min).toBe("0");
+    expect(field.max).toBe("60");
+    expect(field.step).toBe("5");
+    field.value = "15";
+    field.dispatchEvent(new Event("change"));
+    expect(component.settings.reminder_lead_minutes).toBe(15);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await settle();
+    const saved = callsOf(calls, "update_settings").at(-1)?.args["settings"] as Settings;
+    expect(saved.reminder_lead_minutes).toBe(15);
+    field.value = "90";
+    field.dispatchEvent(new Event("change"));
+    expect(field.value).toBe("60");
+    expect(component.settings.reminder_lead_minutes).toBe(60);
+    expect(clampReminderLead(-5)).toBe(0);
+    expect(clampReminderLead(undefined)).toBe(0);
+    expect(clampReminderLead(7.4)).toBe(7);
   });
 
   it("saves and applies the country prefix mode", async () => {

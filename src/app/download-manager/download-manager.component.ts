@@ -2,6 +2,8 @@ import { Component } from "@angular/core";
 import { DownloadService } from "../download.service";
 import { Download, DownloadStatus } from "../models/download";
 import { ConfirmService } from "../confirm.service";
+import { TranslateService } from "@ngx-translate/core";
+import { formatFileSize, uiLocale } from "../utils";
 
 @Component({
   selector: "app-download-manager",
@@ -21,7 +23,41 @@ export class DownloadManagerComponent {
   constructor(
     public downloadService: DownloadService,
     private confirmService: ConfirmService,
+    private translate: TranslateService,
   ) {}
+
+  /// The percentage is known: the server sent the size (or progress came in).
+  hasProgress(download: Download): boolean {
+    return !!download.total || download.progress > 0;
+  }
+
+  /// "12 MB of 1.2 GB · 2.1 MB/s", "12 MB · 2.1 MB/s" without a known size.
+  transferText(download: Download): string {
+    if (download.downloaded === undefined) return "";
+    const locale = uiLocale(this.translate);
+    let text = download.total
+      ? this.translate.instant("DOWNLOAD.BYTES_OF", {
+          done: formatFileSize(download.downloaded, locale),
+          total: formatFileSize(download.total, locale),
+        })
+      : formatFileSize(download.downloaded, locale);
+    if (download.speed !== undefined) {
+      text +=
+        " · " +
+        this.translate.instant("DOWNLOAD.SPEED", {
+          speed: formatFileSize(download.speed, locale),
+        });
+    }
+    return text;
+  }
+
+  async reveal(download: Download) {
+    await this.downloadService.reveal(download);
+  }
+
+  async play(download: Download) {
+    await this.downloadService.play(download);
+  }
 
   /// Queued and active downloads, in queue order.
   getDownloads() {

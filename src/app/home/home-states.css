@@ -1,0 +1,75 @@
+/* Loading, empty and selection states of the library (own sheet:
+   home.component.css is at its style budget). */
+
+/* A new search term is on its way: the old results stay, dimmed. */
+.tile-grid.stale {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+/* The search box's spinner sits where the clear button is, or next to it. */
+.search-spinner {
+  position: absolute;
+  top: 50%;
+  inset-inline-end: 0.8rem;
+  margin-top: -0.5rem;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.search-spinner.next-to-clear {
+  inset-inline-end: 2.4rem;
+}
+
+.search-input.with-spinner {
+  padding-inline-end: 4rem;
+}
+
+/* The end of the list, watched to load the next page. */
+.scroll-sentinel {
+  height: 1px;
+}
+
+.active-filters {
+  margin-top: 0.75rem;
+}
+
+/* Action bar of the multi-selection, kept at the bottom of the window. */
+.selection-bar {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 1rem auto 0;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--bg-surface-alt);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.selection-count {
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.selection-clear > svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+}
+
+/* The narrow top bar holds eight items: at high zoom let it scroll rather
+   than overflow. The padding keeps the focus ring inside the scroll box. */
+@media screen and (max-width: 767.98px) {
+  .sidebar-nav {
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0.25rem;
+    margin-block: -0.25rem;
+  }
+}

@@ -157,6 +157,12 @@ pub fn run() {
             player_osd_banner,
             player_status,
             set_native_strings,
+            pending_work_count,
+            recording_conflicts,
+            mark_watched,
+            get_file_progress,
+            restream_url,
+            reveal_path,
             player_set_volume,
             player_command,
             player_restart,
@@ -204,6 +210,7 @@ pub fn run() {
                 ..Default::default()
             }));
             recording_scheduler::start(app.handle().clone());
+            tauri::async_runtime::spawn_blocking(utils::sweep_stale_downloads);
             auto_refresh::start(app.handle().clone());
             // Move any plaintext source passwords into the OS keychain.
             // Best-effort and off the main thread; on failure passwords
@@ -394,6 +401,30 @@ async fn player_command(state: State<'_, Mutex<AppState>>, command: String) -> R
 #[tauri::command]
 async fn player_restart(state: State<'_, Mutex<AppState>>) -> Result<(), String> {
     player::restart(state).await.map_err(map_err_frontend)
+}
+
+/// "Mark as watched" for a movie or episode.
+#[tauri::command(async)]
+fn mark_watched(source_id: i64, url: String) -> Result<(), String> {
+    sql::mark_watch_finished(source_id, &url).map_err(map_err_frontend)
+}
+
+/// The progress of local files (recordings, downloads), keyed by path.
+#[tauri::command(async)]
+fn get_file_progress(paths: Vec<String>) -> Result<HashMap<String, types::WatchProgress>, String> {
+    sql::get_watch_progress_for(player::LOCAL_FILE_SOURCE, &paths)
+        .map(|list| list.into_iter().map(|p| (p.url.clone(), p)).collect())
+        .map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn reveal_path(path: String) -> Result<(), String> {
+    recordings::reveal(&path).map_err(map_err_frontend)
+}
+
+#[tauri::command]
+fn restream_url(port: u16) -> String {
+    restream::local_url(port)
 }
 
 /// "Play from the start" / "mark as unwatched" for a movie or episode.
@@ -881,10 +912,18 @@ async fn download(
     channel: Channel,
     download_id: String,
     path: Option<String>,
-) -> Result<(), String> {
-    utils::download(state.clone(), app, channel, &download_id, path)
-        .await
-        .map_err(map_err_frontend)
+    resume: Option<bool>,
+) -> Result<String, String> {
+    utils::download(
+        state.clone(),
+        app,
+        channel,
+        &download_id,
+        path,
+        resume.unwrap_or(false),
+    )
+    .await
+    .map_err(map_err_frontend)
 }
 
 #[tauri::command]
@@ -1026,6 +1065,42 @@ fn schedule_recording(
 ) -> Result<(), String> {
     recording_scheduler::schedule(channel_id, title, start_timestamp, end_timestamp)
         .map_err(map_err_frontend)
+}
+
+/// Recordings of the same source at that time, against its stream limit.
+#[derive(serde::Serialize)]
+struct RecordingConflicts {
+    overlapping: usize,
+    max_streams: Option<u8>,
+    source_name: Option<String>,
+}
+
+#[tauri::command(async)]
+fn recording_conflicts(
+    channel_id: i64,
+    start_timestamp: i64,
+    end_timestamp: i64,
+) -> Result<RecordingConflicts, String> {
+    let run = || -> anyhow::Result<RecordingConflicts> {
+        let overlapping =
+            sql::count_overlapping_recordings(channel_id, start_timestamp, end_timestamp)?;
+        let source = sql::get_channel_by_id(channel_id)?
+            .source_id
+            .and_then(|id| sql::get_source_from_id(id).ok());
+        Ok(RecordingConflicts {
+            overlapping,
+            max_streams: source.as_ref().and_then(|s| s.max_streams),
+            source_name: source.map(|s| s.name),
+        })
+    };
+    run().map_err(map_err_frontend)
+}
+
+/// Running recordings and downloads plus recordings due soon (the update
+/// dialog warns before a restart stops them).
+#[tauri::command(async)]
+fn pending_work_count() -> usize {
+    quit::pending_work()
 }
 
 #[tauri::command(async)]

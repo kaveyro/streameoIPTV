@@ -21,6 +21,8 @@ export class EpgModalComponent implements OnInit {
   currentDate = new Date();
   // start_timestamp -> scheduled recording id, for this modal's channel
   scheduledRecordings: Map<number, number> = new Map();
+  /// Earliest and latest programme start, cached per programme list.
+  private range?: { epg: EPG[]; first: number; last: number };
   constructor(
     public activeModal: NgbActiveModal,
     private memory: MemoryService,
@@ -77,13 +79,77 @@ export class EpgModalComponent implements OnInit {
   }
 
   prev() {
-    this.currentDate.setDate(this.currentDate.getDate() - 1);
-    this.filterEPGs();
+    this.shiftDay(-1);
   }
 
   next() {
-    this.currentDate.setDate(this.currentDate.getDate() + 1);
+    this.shiftDay(1);
+  }
+
+  /** Back to today, at the programme on now. */
+  goToday() {
+    this.currentDate = new Date();
     this.filterEPGs();
+    this.scrollAfterDayChange();
+  }
+
+  /** The shown day is today. */
+  isToday(): boolean {
+    return this.isSameDay(this.currentDate, new Date());
+  }
+
+  /** A day back (-1) or ahead (+1), as far as the loaded programmes reach. */
+  shiftDay(days: number) {
+    if (!this.canShiftDay(days)) return;
+    const date = new Date(this.currentDate);
+    date.setDate(date.getDate() + days);
+    this.currentDate = date;
+    this.filterEPGs();
+    this.scrollAfterDayChange();
+  }
+
+  /**
+   * Only to a day on which a loaded programme starts (the days are listed by
+   * start): the provider's EPG covers a few days, the others would be empty.
+   * Today is always reachable.
+   */
+  canShiftDay(days: number): boolean {
+    const target = new Date(this.currentDate);
+    target.setHours(0, 0, 0, 0);
+    target.setDate(target.getDate() + days);
+    if (this.isSameDay(target, new Date())) return true;
+    const range = this.startRange();
+    if (!range) return false;
+    const start = target.getTime() / 1000;
+    target.setDate(target.getDate() + 1);
+    const end = target.getTime() / 1000;
+    return range.first < end && range.last >= start;
+  }
+
+  private startRange(): { first: number; last: number } | undefined {
+    if (this.epg.length === 0) return undefined;
+    if (this.range?.epg !== this.epg) {
+      let first = Number.POSITIVE_INFINITY;
+      let last = Number.NEGATIVE_INFINITY;
+      for (const e of this.epg) {
+        first = Math.min(first, e.start_timestamp);
+        last = Math.max(last, e.start_timestamp);
+      }
+      this.range = { epg: this.epg, first, last };
+    }
+    return this.range;
+  }
+
+  /** After a day change: today at the programme on now, other days at the top. */
+  private scrollAfterDayChange() {
+    if (this.isToday() && this.filteredEPGs.some((x) => x.now_playing)) {
+      this.scrollToNowPlaying(0);
+      return;
+    }
+    // The dialog scrolls as a whole (.modal), not its body.
+    const modal = this.host.nativeElement.closest<HTMLElement>(".modal");
+    if (modal) modal.scrollTop = 0;
+    else this.host.nativeElement.scrollIntoView({ block: "start" });
   }
 
   filterEPGs() {
@@ -100,13 +166,15 @@ export class EpgModalComponent implements OnInit {
     );
   }
 
-  /** Brings the currently airing programme into view once the list rendered. */
-  private scrollToNowPlaying() {
+  /**
+   * Brings the currently airing programme into view once the list rendered
+   * (on open after the modal's open animation settled).
+   */
+  private scrollToNowPlaying(delay = 150) {
     if (!this.filteredEPGs.some((x) => x.now_playing)) return;
-    // Wait for the list to render and the modal open animation to settle.
     setTimeout(() => {
       const current = this.host.nativeElement.querySelector<HTMLElement>(".epg-entry--now");
       current?.scrollIntoView({ block: "center", behavior: "auto" });
-    }, 150);
+    }, delay);
   }
 }

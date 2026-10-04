@@ -118,6 +118,7 @@ pub async fn start_restream(
     let restream_dir = get_restream_folder()?;
     delete_old_segments(&restream_dir).await?;
     let (web_server_tx, web_server_handle) = start_web_server(restream_dir.clone(), port)?;
+    let playlist = PathBuf::from(get_playlist_dir(restream_dir.clone()));
     let child = match start_ffmpeg_listening(channel, restream_dir) {
         Ok(child) => child,
         Err(e) => {
@@ -129,16 +130,29 @@ pub async fn start_restream(
     if let Ok(mut slot) = FFMPEG.lock() {
         *slot = Some(child);
     }
-    let _ = app.emit("restream_started", true);
-    while !stop.load(std::sync::atomic::Ordering::Relaxed)
-        && ffmpeg_running()
-        && !web_server_handle.is_finished()
-    {
+    // "Started" once ffmpeg delivers: watching right away would fail on a
+    // playlist that does not exist yet.
+    let mut announced = false;
+    let reason = loop {
+        if stop.load(std::sync::atomic::Ordering::Relaxed) {
+            break "stopped";
+        }
+        if !ffmpeg_running() {
+            break "ffmpeg_exited";
+        }
+        if web_server_handle.is_finished() {
+            break "server_failed";
+        }
+        if !announced && playlist.exists() {
+            let _ = app.emit("restream_started", true);
+            announced = true;
+        }
         tokio::time::sleep(Duration::from_millis(500)).await
-    }
+    };
     kill_sync();
     let _ = web_server_tx.send(true);
     let _ = web_server_handle.await;
+    let _ = app.emit("restream_stopped", serde_json::json!({ "reason": reason }));
     Ok(())
 }
 
@@ -194,13 +208,18 @@ async fn delete_old_segments(dir: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Where this machine plays the running restream.
+pub fn local_url(port: u16) -> String {
+    format!("http://127.0.0.1:{port}/{}", stream_path())
+}
+
 pub async fn watch_self(port: u16, state: State<'_, Mutex<AppState>>) -> Result<()> {
     let channel = Channel {
         number: None,
         watch_position: None,
         watch_duration: None,
         watch_finished: None,
-        url: Some(format!("http://127.0.0.1:{port}/{}", stream_path())),
+        url: Some(local_url(port)),
         name: crate::native_strings::text("local_livestream", &[]),
         favorite: false,
         group: None,

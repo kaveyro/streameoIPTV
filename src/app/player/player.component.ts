@@ -158,7 +158,7 @@ function setBackgroundInert(inert: boolean) {
   selector: "app-player",
   standalone: false,
   templateUrl: "./player.component.html",
-  styleUrl: "./player.component.css",
+  styleUrls: ["./player.component.css", "./player-extras.css"],
 })
 export class PlayerComponent implements AfterViewInit, OnDestroy {
   /// Minimum gap between two playback-failure toasts (while a dialog hides
@@ -181,6 +181,12 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   /// start follows within this time after the play went out (a rejected
   /// loadfile starts nothing).
   static readonly STALE_ERROR_GRACE_MS = 1500;
+  /// Zapping (next/previous, a typed number) moves the highlight and the
+  /// banner at once, but the stream is only opened once the keys rest this
+  /// long: zapping through five channels opens one stream, not five.
+  static readonly ZAP_DEBOUNCE_MS = 300;
+  /// A channel zapped to counts as watched (history) once it played this long.
+  static readonly HISTORY_DELAY_MS = 5000;
   active = false;
   /// Playing on in the small corner window while the rest of the app is used.
   mini = false;
@@ -199,6 +205,35 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   /// The same as one line, for the tooltip.
   streamInfoText = "";
   private zapTimer?: ReturnType<typeof setTimeout>;
+  /// A zap whose play waits for the keys to rest, see {@link zapTo}.
+  /// `origin` is the channel on screen when the zapping began (and the one
+  /// before it), so steps that never played do not become "last channel".
+  private pendingZap?: {
+    channel: Channel;
+    seq: number;
+    generation: number;
+    timer: ReturnType<typeof setTimeout>;
+    origin?: Channel;
+    originPrevious?: Channel;
+    originFailed: boolean;
+    badges: StreamBadge[];
+    badgesText: string;
+  };
+  /// The channel switched to from the player, written to the history once it
+  /// played {@link HISTORY_DELAY_MS} (timer armed by the first picture).
+  private historyFor?: { seq: number; channel: Channel; timer?: ReturnType<typeof setTimeout> };
+  /// The switch whose stream last reported pictures ("playing").
+  private playingSeq?: number;
+  /// The side list of the last live channel: catch-up and recordings bring an
+  /// empty one, a live channel played after them gets this one back.
+  private lastLiveList?: Channel[];
+  /// Channel numbers of the side list, see {@link numberText}.
+  private numberCache?: {
+    list: Channel[];
+    length: number;
+    numbered: boolean;
+    positions: Map<number | undefined, number>;
+  };
   /// False from a channel switch until its play went out: mpv's info about the
   /// previous stream that is still on its way must not show for the new one.
   private streamInfoReady = false;
@@ -325,6 +360,18 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         if (this.active && this.mini) this.back();
       });
     }).then((unlisten) => this.unlistens.push(unlisten));
+    // A scheduled recording started on the source this player streams from,
+    // and the source has no stream left: the provider may cut this one off.
+    listen<{ title: string }>("recording-source-busy", (event) => {
+      if (!this.active) return;
+      this.ngZone.run(() =>
+        this.osd(
+          this.translate.instant("PLAYER.RECORDING_SOURCE_BUSY", {
+            title: event.payload?.title ?? "",
+          }),
+        ),
+      );
+    }).then((unlisten) => this.unlistens.push(unlisten));
   }
 
   get channels(): Channel[] {
@@ -338,7 +385,12 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     if (!text) return source;
     const cache = this.filterCache;
     if (cache && cache.source === source && cache.text === text) return cache.result;
-    const result = source.filter((c) => c.name?.toLowerCase().includes(text));
+    // Digits also find the channel numbers ("1" lists 1, 10, 11 …).
+    const digits = /^[0-9]+$/.test(text);
+    const result = source.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(text) || (digits && !!this.numberText(c)?.startsWith(text)),
+    );
     this.filterCache = { source, text, result };
     return result;
   }
@@ -396,6 +448,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       this.mini = false;
       if (this.isStale(generation)) return;
     }
+    this.cancelPendingZap();
+    this.cancelHistory();
     this.setCurrent(channel);
     this.currentFailed = false;
     this.nowPlaying = undefined;
@@ -615,6 +669,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private acceptPlaybackError(message: string) {
     // Selecting the failed channel again must retry it.
     this.currentFailed = true;
+    this.cancelHistory();
     // A pending "Connecting…" never shows; one that is up stays until the
     // error (or the fallback's switch) replaces it, without a gap between.
     this.cancelStatusTimer();
@@ -653,10 +708,13 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   onPlayerStatus(status: PlayerStatus) {
     if (!this.active) return;
     if (status === "playing") {
+      this.playingSeq = this.switchSeq;
       this.clearStatus();
+      this.armHistory();
       return;
     }
     if (status === "connecting") {
+      this.playingSeq = undefined;
       this.dropDeferredError();
       if (this.playedSeq === this.switchSeq) this.startedSeq = this.switchSeq;
     } else if (status !== "buffering") {
@@ -793,39 +851,148 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Plays another channel in the open player. `fallback`: started by the
-   * automatic fallback, not by the user, so the feeds it already tried stay
-   * tried and its own OSD message stays up instead of the channel name.
+   * Plays another channel in the open player at once (a pick from the side
+   * list, the last channel, a retry, the fallback). `fallback`: started by
+   * the automatic fallback, not by the user, so the feeds it already tried
+   * stay tried and its own OSD message stays up instead of the channel name.
    */
   async switch(channel: Channel, fallback = false) {
     if (!this.active) return;
-    if (sameChannel(channel, this.current) && !this.currentFailed) {
+    const pending = this.pendingZap;
+    // The channel zapped to, picked before its play went out: play it now.
+    if (pending && !fallback && sameChannel(channel, pending.channel)) {
+      await this.flushZap();
+      return;
+    }
+    if (!pending && sameChannel(channel, this.current) && !this.currentFailed) {
       this.scrollActiveIntoView(false);
       return;
     }
     const generation = this.openGeneration;
-    const seq = ++this.switchSeq;
+    const seq = this.beginSwitch(channel, fallback);
+    await this.sendSwitch(channel, seq, generation, !fallback, false);
+  }
+
+  /**
+   * A zapping step (next/previous, a typed number, from the WebView or from
+   * mpv): the highlight and the banner move at once, the stream opens only
+   * once the keys rest for {@link ZAP_DEBOUNCE_MS}.
+   */
+  private zapTo(channel: Channel) {
+    if (!this.active) return;
+    const pending = this.pendingZap;
+    if (pending && sameChannel(channel, pending.channel)) return;
+    if (!pending && sameChannel(channel, this.current) && !this.currentFailed) {
+      this.scrollActiveIntoView(false);
+      return;
+    }
+    const origin = pending
+      ? pending
+      : {
+          origin: this.current,
+          originPrevious: this.previous,
+          originFailed: this.currentFailed,
+          badges: this.streamBadges,
+          badgesText: this.streamInfoText,
+        };
+    const generation = this.openGeneration;
+    const seq = this.beginSwitch(channel, false);
+    this.announce(channel, true);
+    if (origin.origin && sameChannel(channel, origin.origin) && !origin.originFailed) {
+      // Back on the channel still on screen before its replacement went out:
+      // nothing to open, its stream (and what mpv reports of it) goes on.
+      this.playedSeq = this.startedSeq = seq;
+      this.streamInfoReady = true;
+      this.streamBadges = origin.badges;
+      this.streamInfoText = origin.badgesText;
+      return;
+    }
+    this.pendingZap = {
+      origin: origin.origin,
+      originPrevious: origin.originPrevious,
+      originFailed: origin.originFailed,
+      badges: origin.badges,
+      badgesText: origin.badgesText,
+      channel,
+      seq,
+      generation,
+      timer: setTimeout(() => this.flushZap(), PlayerComponent.ZAP_DEBOUNCE_MS),
+    };
+  }
+
+  /** Sends the play of the zap waiting for the keys to rest. */
+  private async flushZap() {
+    const pending = this.pendingZap;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    this.pendingZap = undefined;
+    if (!this.active || pending.seq !== this.switchSeq) return;
+    await this.sendSwitch(pending.channel, pending.seq, pending.generation, true, true);
+  }
+
+  private cancelPendingZap() {
+    if (this.pendingZap) clearTimeout(this.pendingZap.timer);
+    this.pendingZap = undefined;
+  }
+
+  /**
+   * The part of a channel switch that happens at once: the new current
+   * channel (highlight, "last channel"), the old stream's state dropped.
+   * Returns the switch's sequence number.
+   */
+  private beginSwitch(channel: Channel, fallback: boolean): number {
+    const pending = this.pendingZap;
+    this.cancelPendingZap();
+    this.cancelHistory();
     const focusInList = this.isFocusInList();
     if (!fallback) this.resetFallback();
+    if (pending) {
+      // Zapping steps that never played are no "last channel".
+      this.current = pending.origin;
+      this.previous = pending.originPrevious;
+    }
     this.setCurrent(channel);
     this.currentFailed = false;
     this.nowPlaying = undefined;
     this.clearStreamInfo();
     this.clearStatus();
     this.scrollActiveIntoView(focusInList);
+    return ++this.switchSeq;
+  }
+
+  /**
+   * Sends switch `seq` to mpv. `announce`: show the channel banner (unless
+   * `announced` already did when the zap began; a movie picked up where it
+   * was left still says so). A real channel goes into the history once it
+   * played a while (see {@link armHistory}).
+   */
+  private async sendSwitch(
+    channel: Channel,
+    seq: number,
+    generation: number,
+    announce: boolean,
+    announced: boolean,
+  ) {
     try {
       const resumed = await this.playChannel(channel);
       if (this.isStale(generation)) {
         await this.undoIfClosed();
         return;
       }
-      if (seq === this.switchSeq) {
-        this.streamInfoReady = true;
-        this.playSent(seq);
+      if (seq !== this.switchSeq) return;
+      this.streamInfoReady = true;
+      this.playSent(seq);
+      // Pseudo channels (catch-up, recordings) stay out of the history.
+      if (channel.id !== undefined && channel.id >= 0) {
+        this.historyFor = { seq, channel };
+        // The pictures may have come before the play command returned.
+        if (this.playingSeq === seq) this.armHistory();
       }
-      // Pseudo channels (catch-up, recordings) are skipped there.
-      this.playback.addToHistory(channel).catch(() => undefined);
-      if (seq === this.switchSeq) this.announce(channel, !fallback, resumed);
+      if (!announced) {
+        this.announce(channel, announce, resumed);
+      } else if (channel.media_type !== MediaType.livestream && resumed) {
+        this.banner(this.movieBanner(channel, resumed));
+      }
     } catch (e) {
       if (this.isStale(generation)) return;
       if (seq === this.switchSeq) this.currentFailed = true;
@@ -833,12 +1000,30 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  /** The stream of the latest switch shows pictures: count it as watched soon. */
+  private armHistory() {
+    const entry = this.historyFor;
+    if (!entry || entry.timer !== undefined) return;
+    if (entry.seq !== this.switchSeq || this.playedSeq !== entry.seq) return;
+    entry.timer = setTimeout(() => {
+      if (this.historyFor !== entry) return;
+      this.historyFor = undefined;
+      if (!this.active || entry.seq !== this.switchSeq) return;
+      this.playback.addToHistory(entry.channel).catch(() => undefined);
+    }, PlayerComponent.HISTORY_DELAY_MS);
+  }
+
+  private cancelHistory() {
+    if (this.historyFor?.timer !== undefined) clearTimeout(this.historyFor.timer);
+    this.historyFor = undefined;
+  }
+
   /** Next channel of the (filtered) side list, wrapping around. */
   next() {
     const list = this.navigationList();
     if (list.length === 0) return;
     const index = list.findIndex((c) => c.id === this.current?.id);
-    this.switch(list[index < 0 ? 0 : (index + 1) % list.length]);
+    this.zapTo(list[index < 0 ? 0 : (index + 1) % list.length]);
   }
 
   /** Previous channel of the (filtered) side list, wrapping around. */
@@ -846,7 +1031,7 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     const list = this.navigationList();
     if (list.length === 0) return;
     const index = list.findIndex((c) => c.id === this.current?.id);
-    this.switch(list[index < 0 ? list.length - 1 : (index - 1 + list.length) % list.length]);
+    this.zapTo(list[index < 0 ? list.length - 1 : (index - 1 + list.length) % list.length]);
   }
 
   /** Back to the previously played channel. */
@@ -919,8 +1104,13 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     try {
       await invoke("player_restart");
       this.osd(this.translate.instant("PLAYER.RESTARTED"));
-      // Pseudo channels (catch-up, recordings) keep no progress to forget.
-      if (channel.id !== undefined && channel.id >= 0) await this.watchProgress.clear(channel);
+      if (channel.id !== undefined && channel.id >= 0) {
+        await this.watchProgress.clear(channel);
+      } else if (channel.source_id === undefined && channel.url) {
+        // A recording (a local file): its progress is kept under source 0.
+        await this.watchProgress.clear({ ...channel, source_id: 0 });
+      }
+      // Catch-up keeps no progress to forget.
     } catch (e) {
       console.error(e);
     }
@@ -984,6 +1174,13 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         event.stopImmediatePropagation();
         return;
       }
+      // Volume like inside mpv (top row and numpad); held, it keeps going.
+      if (event.key === "+" || event.key === "-") {
+        this.command(event.key === "+" ? "volume_up" : "volume_down");
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
       // The same key as inside mpv (`f`, rebound to the app's fullscreen).
       if (event.key === "f" || event.key === "F") {
         this.toggleFullscreen();
@@ -994,17 +1191,20 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       // Pause and mute like inside mpv. Space on a focused button (the bar,
       // the side list's entries) stays that button's own.
       if ((event.key === " " && !onButton) || event.key === "m" || event.key === "M") {
-        const command = event.key === " " ? "toggle_pause" : "toggle_mute";
-        invoke("player_command", { command }).catch(() => undefined);
+        this.command(event.key === " " ? "toggle_pause" : "toggle_mute");
         event.preventDefault();
         event.stopImmediatePropagation();
         return;
       }
     }
     const inFilter = target === this.filterInput();
+    // A held key zaps once: mpv's own channel keys do not repeat either.
+    const zap = !event.repeat;
+    // Up/Down seek a minute in a movie, an episode or a recording, as in mpv.
+    const vod = !!this.current && this.current.media_type !== MediaType.livestream;
     switch (event.key) {
       case "F11":
-        this.toggleFullscreen();
+        if (!event.repeat) this.toggleFullscreen();
         break;
       case "Escape":
       case "BrowserBack":
@@ -1012,31 +1212,38 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
         else this.escape();
         break;
       case "PageDown":
-        this.next();
+        if (zap) this.next();
         break;
       case "ArrowDown":
         // From the filter field into its results, like a search box; zapping
         // from there would play whatever happens to be next.
         if (inFilter) this.focusFirstResult();
-        else this.next();
+        else if (vod) this.command("seek_back");
+        else if (zap) this.next();
         break;
       case "PageUp":
-        this.prev();
+        if (zap) this.prev();
         break;
       case "ArrowUp":
         // The caret's own key in the field: nothing to zap.
         if (inFilter) return;
-        this.prev();
+        if (vod) this.command("seek_forward");
+        else if (zap) this.prev();
         break;
       case "Backspace":
         if (inTextInput) return;
-        this.last();
+        if (zap) this.last();
         break;
       default:
         return;
     }
     event.preventDefault();
     event.stopImmediatePropagation();
+  }
+
+  /** A player_command for mpv (pause, mute, volume, seek). */
+  private command(command: string) {
+    invoke("player_command", { command }).catch(() => undefined);
   }
 
   /**
@@ -1084,38 +1291,46 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
       this.scrollActiveIntoView(false);
       return;
     }
-    this.switch(channel);
+    this.zapTo(channel);
   }
 
-  /**
-   * The channel of the player's list with that number. A list without any
-   * numbers (most M3U playlists) is numbered by its order, starting at 1.
-   */
   /**
    * The numbered channel from the backend, for a number beyond the channels
    * the page has loaded so far (it loads them page by page). Only when the
    * list is numbered: otherwise the number is a position in it.
    */
   private async lookUpNumber(number: number): Promise<Channel | undefined> {
-    if (!this.channels.some((c) => channelNumber(c) !== undefined)) return undefined;
+    if (!this.listNumbers().numbered) return undefined;
+    const all = Array.from(this.memory.Sources.keys());
+    // The current channel's source first: several sources number alike.
+    const own = this.current?.source_id;
+    const tries = own !== undefined && all.includes(own) && all.length > 1 ? [[own], all] : [all];
     try {
-      return (
-        (await invoke<Channel | null>("get_channel_by_number", {
-          sourceIds: Array.from(this.memory.Sources.keys()),
+      for (const sourceIds of tries) {
+        const channel = await invoke<Channel | null>("get_channel_by_number", {
+          sourceIds,
           number,
           showLocked: this.memory.ShowLocked,
-        })) ?? undefined
-      );
+        });
+        if (channel) return channel;
+      }
     } catch (e) {
       console.error(e);
-      return undefined;
     }
+    return undefined;
   }
 
+  /**
+   * The channel of the player's list with that number. A list without any
+   * numbers (most M3U playlists) is numbered by its order, starting at 1.
+   * Several sources may use the same numbers: the current channel's wins.
+   */
   private channelByNumber(number: number): Channel | undefined {
     const list = this.channels;
-    if (list.some((c) => channelNumber(c) !== undefined)) {
-      return list.find((c) => channelNumber(c) === number);
+    if (this.listNumbers().numbered) {
+      const matches = list.filter((c) => channelNumber(c) === number);
+      const own = this.current?.source_id;
+      return matches.find((c) => c.source_id === own) ?? matches[0];
     }
     return number >= 1 ? list[number - 1] : undefined;
   }
@@ -1161,8 +1376,23 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   private setCurrent(channel: Channel) {
     if (this.current && !sameChannel(this.current, channel)) this.previous = this.current;
     this.current = channel;
+    this.keepLiveList(channel);
     // mpv keys switch channels in the floating window too: keep its title.
     if (this.active && this.mini) this.setPopout(true);
+  }
+
+  /**
+   * Catch-up and recordings play with an empty side list (nothing to zap
+   * to). A live channel played after them (e.g. the "last channel" key) gets
+   * the list of the live channel before back.
+   */
+  private keepLiveList(channel: Channel) {
+    if (channel.media_type !== MediaType.livestream || channel.id === undefined || channel.id < 0) {
+      return;
+    }
+    const list = this.memory.PlayerChannelList;
+    if (list.length > 0) this.lastLiveList = list;
+    else if (this.lastLiveList) this.memory.PlayerChannelList = this.lastLiveList;
   }
 
   private filterInput(): HTMLInputElement | null {
@@ -1239,14 +1469,36 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     return banner;
   }
 
-  /** The channel's number for the banner: the provider's, or its place in an unnumbered list. */
-  private numberText(channel: Channel): string | undefined {
+  /**
+   * The channel's number for the banner and the side list: the provider's,
+   * or its place in an unnumbered list.
+   */
+  numberText(channel: Channel): string | undefined {
     const number = channelNumber(channel);
     if (number !== undefined) return number.toString();
+    const { numbered, positions } = this.listNumbers();
+    if (numbered) return undefined;
+    return positions.get(channel.id)?.toString();
+  }
+
+  /**
+   * Whether the side list has provider numbers, else the places of its
+   * channels. Cached per list: the side list asks for every item on each
+   * change detection.
+   */
+  private listNumbers(): { numbered: boolean; positions: Map<number | undefined, number> } {
     const list = this.channels;
-    if (list.some((c) => channelNumber(c) !== undefined)) return undefined;
-    const index = list.findIndex((c) => c.id === channel.id);
-    return index >= 0 ? (index + 1).toString() : undefined;
+    const cache = this.numberCache;
+    if (cache && cache.list === list && cache.length === list.length) return cache;
+    const numbered = list.some((c) => channelNumber(c) !== undefined);
+    const positions = new Map<number | undefined, number>();
+    if (!numbered) {
+      list.forEach((c, i) => {
+        if (!positions.has(c.id)) positions.set(c.id, i + 1);
+      });
+    }
+    this.numberCache = { list, length: list.length, numbered, positions };
+    return this.numberCache;
   }
 
   private banner(banner: OsdBanner) {
@@ -1354,6 +1606,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
     this.nowPlaying = undefined;
     this.clearStreamInfo();
     this.cancelZap();
+    this.cancelPendingZap();
+    this.cancelHistory();
     this.resetFallback();
     this.dropDeferredError();
     this.resetStatus();
@@ -1440,6 +1694,8 @@ export class PlayerComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.subscriptions.forEach((s) => s.unsubscribe());
     this.cancelZap();
+    this.cancelPendingZap();
+    this.cancelHistory();
     this.dropDeferredError();
     this.resetStatus();
     this.stopBoundsSync();

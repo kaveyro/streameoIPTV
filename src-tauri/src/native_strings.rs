@@ -10,13 +10,14 @@ use std::{
 static STRINGS: LazyLock<RwLock<HashMap<String, String>>> =
     LazyLock::new(|| RwLock::new(HashMap::new()));
 
-const DEFAULTS: [(&str, &str); 15] = [
+const DEFAULTS: [(&str, &str); 16] = [
     ("tray_show", "Show"),
     ("tray_quit", "Quit"),
     ("tray_pause", "Play/Pause"),
     ("tray_stop", "Stop playback"),
     ("reminder_title", "LIVE: {title}"),
     ("reminder_body", "Watch on {channel}"),
+    ("reminder_soon_body", "Starts in {minutes} min on {channel}"),
     ("recording_started", "Recording started: {title}"),
     ("recording_finished", "Recording finished: {title}"),
     ("recording_failed", "Recording failed: {title}"),

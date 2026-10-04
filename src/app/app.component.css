@@ -1,0 +1,55 @@
+/* Restream status: bottom centre, clear of the corner the download manager,
+   the mini player and scroll-to-top share, and below the player overlay
+   (--z-player), like the download manager. */
+.restream-chip {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-download);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  font-size: var(--fs-sm);
+}
+
+.restream-chip-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: var(--color-success);
+}
+
+.restream-chip-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restream-chip .btn {
+  flex-shrink: 0;
+  padding: 0.1rem 0.5rem;
+}
+
+/* Too narrow for the centre: above the mini player's bar, or at the start
+   edge while the download manager takes the end corner. */
+@media (max-width: 849.98px) {
+  :host-context(body.player-mini) .restream-chip {
+    bottom: calc(var(--mini-player-height) + 2rem);
+  }
+
+  .restream-chip--beside {
+    left: auto;
+    inset-inline-start: 1rem;
+    transform: none;
+    max-width: calc(100vw - var(--download-box-width) - 3rem);
+  }
+}

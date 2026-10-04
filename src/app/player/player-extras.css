@@ -1,0 +1,17 @@
+/* Side list additions (a separate sheet to keep each under the component
+   style budget). */
+
+/* The channel number before the logo: the number to type for it. Always
+   rendered (empty without a number), so names line up. */
+.pli-num {
+  flex-shrink: 0;
+  min-width: 2.5ch;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  color: var(--text-secondary);
+}
+
+.player-list-item.active .pli-num {
+  color: inherit;
+}

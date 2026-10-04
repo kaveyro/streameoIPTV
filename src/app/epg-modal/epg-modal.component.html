@@ -14,6 +14,7 @@
     <button
       type="button"
       class="icon-btn day-arrow"
+      [disabled]="!canShiftDay(-1)"
       (click)="prev()"
       [attr.aria-label]="'EPG.PREV_DAY' | translate"
       [ngbTooltip]="'EPG.PREV_DAY' | translate"
@@ -26,6 +27,7 @@
     <button
       type="button"
       class="icon-btn day-arrow"
+      [disabled]="!canShiftDay(1)"
       (click)="next()"
       [attr.aria-label]="'EPG.NEXT_DAY' | translate"
       [ngbTooltip]="'EPG.NEXT_DAY' | translate"
@@ -33,6 +35,14 @@
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
         <path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" />
       </svg>
+    </button>
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-secondary day-today"
+      [disabled]="isToday()"
+      (click)="goToday()"
+    >
+      {{ "GUIDE.TODAY" | translate }}
     </button>
   </div>
 

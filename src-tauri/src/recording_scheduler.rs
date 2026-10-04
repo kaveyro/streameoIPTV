@@ -22,7 +22,8 @@ use std::os::windows::process::CommandExt;
 
 use anyhow::{Context, Result, anyhow};
 use chrono::Local;
-use tauri::AppHandle;
+use serde_json::json;
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::{
@@ -48,12 +49,41 @@ const POLL_INTERVAL: Duration = Duration::from_secs(30);
 /// wrong URL, ...). Within the tolerance it is just `-t` finishing early.
 const EARLY_EXIT_TOLERANCE_SECS: i64 = 60;
 
+/// A capture whose stream dropped is started again this often at most.
+const MAX_RESTARTS: u32 = 10;
+
 struct ActiveRecording {
     child: Child,
     end_timestamp: i64,
     /// The file ffmpeg writes, so the recordings view can tell it is not
     /// finished yet (and refuse to delete it).
     output: PathBuf,
+    source_id: Option<i64>,
+    recording: ScheduledRecording,
+    /// Starts after the stream dropped so far.
+    restarts: u32,
+}
+
+/// A capture waiting to start again after its stream dropped.
+struct Retry {
+    recording: ScheduledRecording,
+    restarts: u32,
+    at: i64,
+}
+
+static RETRIES: LazyLock<Mutex<HashMap<i64, Retry>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn lock_retries() -> Result<std::sync::MutexGuard<'static, HashMap<i64, Retry>>> {
+    RETRIES
+        .lock()
+        .map_err(|_| anyhow!("recording retries mutex poisoned"))
+}
+
+struct Started {
+    child: Child,
+    output: PathBuf,
+    source_id: Option<i64>,
+    max_streams: Option<u8>,
 }
 
 /// Child handles of currently running ffmpeg captures, keyed by
@@ -144,9 +174,10 @@ pub fn active_outputs() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
-/// How many recordings run right now.
+/// How many recordings run right now, also those waiting to go on after
+/// their stream dropped.
 pub fn active_count() -> usize {
-    active_outputs().len()
+    active_outputs().len() + lock_retries().map(|r| r.len()).unwrap_or(0)
 }
 
 /// Stops every running recording when the app quits: ffmpeg is a plain child
@@ -158,9 +189,16 @@ pub fn stop_all_for_exit() {
     let Ok(mut active) = lock_active() else {
         return;
     };
+    let waiting: Vec<i64> = lock_retries()
+        .map(|mut r| r.drain().map(|(id, _)| id).collect())
+        .unwrap_or_default();
     for (id, mut recording) in active.drain() {
         let _ = recording.child.kill();
         let _ = recording.child.wait();
+        let _ = sql::set_scheduled_recording_status(id, STATUS_PENDING)
+            .map_err(|e| log(format!("{:?}", e)));
+    }
+    for id in waiting {
         let _ = sql::set_scheduled_recording_status(id, STATUS_PENDING)
             .map_err(|e| log(format!("{:?}", e)));
     }
@@ -178,6 +216,7 @@ pub fn is_active_output(path: &Path, active: &[PathBuf]) -> bool {
 /// Cancels a scheduled recording: kills ffmpeg if it is currently running,
 /// then deletes the row. Any partial file recorded so far is kept.
 pub fn cancel(id: i64) -> Result<()> {
+    lock_retries()?.remove(&id);
     if let Some(mut active) = lock_active()?.remove(&id) {
         let _ = active.child.kill();
         let _ = active.child.wait();
@@ -195,31 +234,19 @@ fn lock_active() -> Result<std::sync::MutexGuard<'static, HashMap<i64, ActiveRec
 fn tick(app: &AppHandle) -> Result<()> {
     let current = now();
     reap_finished(app, current)?;
+    retry_dropped(app, current)?;
     for recording in sql::get_due_recordings(current)? {
         let id = recording.id.context("scheduled recording without id")?;
-        // Spawned and registered under one lock: quitting in between would
-        // otherwise leave an ffmpeg nobody stops.
-        let started = {
-            let mut active = lock_active()?;
-            if active.contains_key(&id) || EXITING.load(Ordering::SeqCst) {
-                continue;
-            }
-            start_recording(&recording, current).map(|(child, output)| {
-                active.insert(
-                    id,
-                    ActiveRecording {
-                        child,
-                        end_timestamp: recording.end_timestamp,
-                        output,
-                    },
-                );
-            })
-        };
-        match started {
-            Ok(()) => {
+        if lock_retries()?.contains_key(&id) {
+            continue;
+        }
+        match launch(&recording, current, 0) {
+            Ok(Some(source)) => {
                 sql::set_scheduled_recording_status(id, STATUS_RECORDING)?;
                 notify_started(app, &recording);
+                warn_player(app, &recording, source);
             }
+            Ok(None) => {}
             Err(e) => {
                 log(format!(
                     "{:?}",
@@ -232,24 +259,120 @@ fn tick(app: &AppHandle) -> Result<()> {
     Ok(())
 }
 
+/// Spawns ffmpeg for `recording` and registers it, under one lock: quitting
+/// in between would otherwise leave an ffmpeg nobody stops. `Ok(None)` when
+/// it runs already or the app quits; else the source and its stream limit.
+fn launch(
+    recording: &ScheduledRecording,
+    current: i64,
+    restarts: u32,
+) -> Result<Option<(Option<i64>, Option<u8>)>> {
+    let id = recording.id.context("scheduled recording without id")?;
+    let mut active = lock_active()?;
+    if active.contains_key(&id) || EXITING.load(Ordering::SeqCst) {
+        return Ok(None);
+    }
+    let started = start_recording(recording, current)?;
+    let source = (started.source_id, started.max_streams);
+    active.insert(
+        id,
+        ActiveRecording {
+            child: started.child,
+            end_timestamp: recording.end_timestamp,
+            output: started.output,
+            source_id: started.source_id,
+            recording: recording.clone(),
+            restarts,
+        },
+    );
+    Ok(Some(source))
+}
+
+/// The embedded player streams from the source this recording just took a
+/// connection of, and the provider allows no more: say so in the player.
+fn warn_player(
+    app: &AppHandle,
+    recording: &ScheduledRecording,
+    (source_id, max_streams): (Option<i64>, Option<u8>),
+) {
+    let (Some(source_id), Some(max)) = (source_id, max_streams) else {
+        return;
+    };
+    if crate::player::playing_source() != Some(source_id) {
+        return;
+    }
+    let recordings = lock_active()
+        .map(|a| {
+            a.values()
+                .filter(|r| r.source_id == Some(source_id))
+                .count()
+        })
+        .unwrap_or(0);
+    if exceeds_limit(recordings, max) {
+        let title = recording.title.clone().unwrap_or_default();
+        let _ = app.emit("recording-source-busy", json!({ "title": title }));
+    }
+}
+
+/// Recordings on a source plus the player's own stream above its limit.
+fn exceeds_limit(recordings: usize, max_streams: u8) -> bool {
+    recordings + 1 > usize::from(max_streams)
+}
+
+/// What a capture that ended by itself means.
+#[derive(Debug, PartialEq)]
+enum Ended {
+    /// `-t` ran out: complete.
+    Done,
+    /// The stream dropped while the programme still runs: record on.
+    Restart,
+    /// Dropped too often.
+    Failed,
+}
+
+fn ended(current: i64, end_timestamp: i64, restarts: u32) -> Ended {
+    if current >= end_timestamp - EARLY_EXIT_TOLERANCE_SECS {
+        Ended::Done
+    } else if restarts < MAX_RESTARTS {
+        Ended::Restart
+    } else {
+        Ended::Failed
+    }
+}
+
+/// Seconds before the next attempt: 30, 60, then every 2 minutes.
+fn restart_delay(restarts: u32) -> i64 {
+    (30_i64 << restarts.min(2)).min(120)
+}
+
 /// Checks every active ffmpeg process: kill it once its end time passed, and
-/// mark rows done/failed for processes that exited.
+/// mark rows done/failed for processes that exited. A capture whose stream
+/// dropped while the programme runs is retried into a new file.
 fn reap_finished(app: &AppHandle, current: i64) -> Result<()> {
     let mut finished: Vec<(i64, u8)> = Vec::new();
+    let mut dropped: Vec<(i64, Retry)> = Vec::new();
     {
         let mut active = lock_active()?;
         for (id, recording) in active.iter_mut() {
             match recording.child.try_wait() {
-                // ffmpeg exited by itself: `-t` ran out (done) or the stream
-                // died well before the scheduled end (failed).
-                Ok(Some(_)) => {
-                    let status = if current < recording.end_timestamp - EARLY_EXIT_TOLERANCE_SECS {
-                        STATUS_FAILED
-                    } else {
-                        STATUS_DONE
-                    };
-                    finished.push((*id, status));
-                }
+                Ok(Some(_)) => match ended(current, recording.end_timestamp, recording.restarts) {
+                    Ended::Done => finished.push((*id, STATUS_DONE)),
+                    Ended::Failed => finished.push((*id, STATUS_FAILED)),
+                    Ended::Restart => {
+                        log(format!(
+                            "recording {id}: the stream dropped, retrying (attempt {})",
+                            recording.restarts + 1
+                        ));
+                        dropped.push((
+                            *id,
+                            Retry {
+                                recording: recording.recording.clone(),
+                                restarts: recording.restarts + 1,
+                                at: current + restart_delay(recording.restarts),
+                            },
+                        ));
+                    }
+                },
                 // Still running: stop it once the end time has passed
                 // (belt and braces on top of ffmpeg's own -t limit).
                 Ok(None) => {
@@ -268,20 +391,78 @@ fn reap_finished(app: &AppHandle, current: i64) -> Result<()> {
         for (id, _) in &finished {
             active.remove(id);
         }
+        for (id, _) in &dropped {
+            active.remove(id);
+        }
     }
+    lock_retries()?.extend(dropped);
     for (id, status) in finished {
-        // The row may have been deleted by a concurrent cancel; ignore errors.
-        let _ =
-            sql::set_scheduled_recording_status(id, status).map_err(|e| log(format!("{:?}", e)));
-        let title = sql::get_scheduled_recording_title(id).ok().flatten();
-        notify_ended(app, title.as_deref(), status == STATUS_DONE);
+        finish(app, id, status);
     }
     Ok(())
 }
 
+/// Starts the retries that are due; a programme that ended meanwhile is
+/// incomplete.
+fn retry_dropped(app: &AppHandle, current: i64) -> Result<()> {
+    let due: Vec<(i64, Retry)> = {
+        let mut retries = lock_retries()?;
+        let ids: Vec<i64> = retries
+            .iter()
+            .filter(|(_, r)| r.at <= current)
+            .map(|(id, _)| *id)
+            .collect();
+        ids.into_iter()
+            .filter_map(|id| retries.remove(&id).map(|r| (id, r)))
+            .collect()
+    };
+    for (id, retry) in due {
+        if current >= retry.recording.end_timestamp - EARLY_EXIT_TOLERANCE_SECS {
+            finish(app, id, STATUS_FAILED);
+            continue;
+        }
+        // Cancelled while it waited (the row is gone or no longer running):
+        // nothing to record any more.
+        if sql::get_scheduled_recording_status(id).ok().flatten() != Some(STATUS_RECORDING) {
+            continue;
+        }
+        let launched = launch(&retry.recording, current, retry.restarts);
+        if matches!(launched, Ok(None)) && EXITING.load(Ordering::SeqCst) {
+            // Quitting: stop_all_for_exit no longer sees this one.
+            let _ = sql::set_scheduled_recording_status(id, STATUS_PENDING);
+        }
+        if let Err(e) = launched {
+            log(format!(
+                "{:?}",
+                e.context(format!("retrying recording {id}"))
+            ));
+            if retry.restarts < MAX_RESTARTS {
+                lock_retries()?.insert(
+                    id,
+                    Retry {
+                        at: current + restart_delay(retry.restarts),
+                        restarts: retry.restarts + 1,
+                        recording: retry.recording,
+                    },
+                );
+            } else {
+                finish(app, id, STATUS_FAILED);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn finish(app: &AppHandle, id: i64, status: u8) {
+    // The row may have been deleted by a concurrent cancel; ignore errors.
+    let _ = sql::set_scheduled_recording_status(id, status).map_err(|e| log(format!("{:?}", e)));
+    let title = sql::get_scheduled_recording_title(id).ok().flatten();
+    notify_ended(app, title.as_deref(), status == STATUS_DONE);
+}
+
 /// Spawns ffmpeg for one due recording:
 /// `ffmpeg -y [header args] -i <url> -t <remaining secs> -c copy <output>.ts`
-fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<(Child, PathBuf)> {
+fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<Started> {
     let channel = sql::get_channel_by_id(recording.channel_id)?;
     let url = crate::mpv::channel_stream_url(&channel)?;
     let remaining_secs = recording.end_timestamp - current;
@@ -311,7 +492,12 @@ fn start_recording(recording: &ScheduledRecording, current: i64) -> Result<(Chil
         .stderr(Stdio::null())
         .spawn()
         .map_err(|e| crate::utils::friendly_spawn_error(FFMPEG_BIN_NAME, e))?;
-    Ok((child, PathBuf::from(output)))
+    Ok(Started {
+        child,
+        output: PathBuf::from(output),
+        source_id: channel.source_id,
+        max_streams: source.and_then(|s| s.max_streams),
+    })
 }
 
 /// `<recording_path>/<sanitized title or channel name>-<yyyyMMdd-HHmm>.ts`,
@@ -376,6 +562,25 @@ fn notify(app: &AppHandle, key: &str, title: Option<&str>) {
 #[cfg(test)]
 mod test_recording_scheduler {
     use super::*;
+
+    #[test]
+    fn test_dropped_stream_restarts_while_the_programme_runs() {
+        assert_eq!(ended(1_000, 5_000, 0), Ended::Restart);
+        assert_eq!(ended(1_000, 5_000, MAX_RESTARTS), Ended::Failed);
+        // Within the tolerance before the end: -t simply ran out.
+        assert_eq!(ended(4_950, 5_000, 0), Ended::Done);
+        assert_eq!(restart_delay(0), 30);
+        assert_eq!(restart_delay(1), 60);
+        assert_eq!(restart_delay(5), 120);
+    }
+
+    #[test]
+    fn test_player_warning_only_above_the_limit() {
+        // One recording plus the player on a two-stream account fit.
+        assert!(!exceeds_limit(1, 2));
+        assert!(exceeds_limit(1, 1));
+        assert!(exceeds_limit(2, 2));
+    }
 
     #[test]
     fn test_output_path_never_overwrites() {

@@ -4,6 +4,7 @@ import { TvGuideComponent } from "./tv-guide.component";
 import { GuideEpgCache } from "./guide-epg-cache";
 import { MemoryService } from "../memory.service";
 import { PlaybackService } from "../playback.service";
+import { ConfirmService } from "../confirm.service";
 import { Channel } from "../models/channel";
 import { EPG } from "../models/epg";
 import { Filters } from "../models/filters";
@@ -79,13 +80,49 @@ describe("TvGuideComponent", () => {
 
   afterEach(() => resetTauri());
 
-  it("spans now - 1 h to now + 6 h in 30 minute slots", async () => {
+  /// Local midnight `days` from today, in seconds.
+  const midnight = (days: number) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + days);
+    return date.getTime() / 1000;
+  };
+  const scroller = () => element.querySelector(".guide-scroller") as HTMLElement;
+  /// Where "now" scrolls the timeline: one slot before the now line.
+  const nowScroll = () => {
+    const max = scroller().scrollWidth - scroller().clientWidth;
+    return Math.min(max, Math.max(0, component.nowOffset - TvGuideComponent.SLOT_WIDTH));
+  };
+
+  it("spans the whole day in 30 minute slots and opens at the now line", async () => {
     await create();
-    expect(component.windowStart).toBeLessThanOrEqual(now - 3600);
-    expect(component.windowStart % TvGuideComponent.SLOT_SECONDS).toBe(0);
-    expect(component.windowEnd).toBeGreaterThanOrEqual(now + 6 * 3600);
+    expect(component.windowStart).toBe(midnight(0));
+    // Past midnight as well, for the late programmes that cross it.
+    expect(component.windowEnd).toBeGreaterThanOrEqual(
+      midnight(1) + TvGuideComponent.SPILL_SECONDS,
+    );
+    expect(component.slots[0].timestamp).toBe(midnight(0));
+    expect(component.slots[1].timestamp - component.slots[0].timestamp).toBe(
+      TvGuideComponent.SLOT_SECONDS,
+    );
     expect(element.querySelectorAll(".guide-slot").length).toBe(component.slots.length);
     expect(element.querySelector(".guide-now-line")).not.toBeNull();
+    expect(scroller().scrollWidth).toBeGreaterThan(scroller().clientWidth);
+    expect(Math.abs(scroller().scrollLeft - nowScroll())).toBeLessThanOrEqual(2);
+  });
+
+  it("opens another day at its start and goes back to now with the Now button", async () => {
+    await create();
+    component.request(component.rows[0]);
+    await settle();
+    component.shiftDay(1);
+    expect(component.windowStart).toBe(midnight(1));
+    expect(scroller().scrollLeft).toBe(0);
+    fixture.detectChanges();
+    element.querySelector<HTMLButtonElement>(".guide-now-btn")?.click();
+    fixture.detectChanges();
+    expect(component.dayOffset).toBe(0);
+    expect(Math.abs(scroller().scrollLeft - nowScroll())).toBeLessThanOrEqual(2);
   });
 
   it("lists the live channels of the enabled sources, respecting the parental flag", async () => {
@@ -180,6 +217,9 @@ describe("TvGuideComponent", () => {
       jasmine.objectContaining({ id: -1, url: "http://example.test/Past.ts", source_id: 1 }),
       [],
     );
+    // Named after channel, programme and day, not passed off as the live channel.
+    const name = (play.calls.mostRecent().args[0] as Channel).name ?? "";
+    expect(name).toMatch(/^One · Past \(.+\)$/);
     expect(callsOf(calls, "add_last_watched").length).toBe(1);
   });
 
@@ -226,12 +266,19 @@ describe("TvGuideComponent", () => {
       expect(Math.abs(a - b)).toBeLessThanOrEqual(TvGuideComponent.SLOT_SECONDS);
     near(component.windowStart, start + TvGuideComponent.DAY_SECONDS);
     expect(component.dayTitle).toBe("GUIDE.TOMORROW");
-    // Laid out again from the cache: the far future programme is not in it.
-    expect(row.blocks.length).toBe(0);
-    fixture.detectChanges();
-    expect(element.querySelector(".guide-row")?.textContent).toContain(
-      "GUIDE.NO_PROGRAMMES_IN_WINDOW",
+    // Laid out again from the cache: the far future programme is not in it
+    // (today's late ones only when they run past midnight).
+    const tomorrow = epg.filter(
+      (e) => e.end_timestamp > component.windowStart && e.start_timestamp < component.windowEnd,
     );
+    expect(row.blocks.map((b) => b.epg.title)).toEqual(tomorrow.map((e) => e.title));
+    expect(tomorrow.map((e) => e.title)).not.toContain("Far future");
+    fixture.detectChanges();
+    if (tomorrow.length === 0) {
+      expect(element.querySelector(".guide-row")?.textContent).toContain(
+        "GUIDE.NO_PROGRAMMES_IN_WINDOW",
+      );
+    }
     // Only as far as the programmes reach: the far future one is 3 days
     // ahead, and nothing is older than today.
     for (let i = 0; i < 10; i++) component.shiftDay(1);
@@ -294,6 +341,58 @@ describe("TvGuideComponent", () => {
     component.loadMore();
     await settle();
     expect(memory.PlayerChannelList.length).toBe(TvGuideComponent.PAGE_SIZE + 3);
+  });
+
+  describe("recordings beyond the source's streams", () => {
+    async function recordLater(conflicts: unknown, answer: boolean) {
+      await create({ recording_conflicts: conflicts });
+      const confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(answer);
+      const row = component.rows[0];
+      component.request(row);
+      await settle();
+      component.menuRow = row;
+      component.menuBlock = row.blocks[2];
+      await component.toggleRecording();
+      return confirm;
+    }
+
+    it("asks first when the source has no stream left at that time", async () => {
+      const confirm = await recordLater(
+        { overlapping: 2, max_streams: 2, source_name: "Main" },
+        false,
+      );
+      expect(callsOf(calls, "recording_conflicts").map((c) => c.args)).toEqual([
+        { channelId: 1, startTimestamp: now + 1200, endTimestamp: now + 4800 },
+      ]);
+      expect(confirm).toHaveBeenCalledOnceWith(
+        jasmine.objectContaining({
+          messages: ["RECORDING.CONFLICT_BODY"],
+          params: { source: "Main", max: 2, count: 2 },
+          // A question, not a destructive action.
+          danger: false,
+        }),
+      );
+      expect(callsOf(calls, "schedule_recording").length).toBe(0);
+      confirm.and.resolveTo(true);
+      await component.toggleRecording();
+      expect(callsOf(calls, "schedule_recording").length).toBe(1);
+    });
+
+    it("schedules without asking within the limit or without one", async () => {
+      const confirm = await recordLater(
+        { overlapping: 1, max_streams: 2, source_name: "Main" },
+        false,
+      );
+      expect(confirm).not.toHaveBeenCalled();
+      expect(callsOf(calls, "schedule_recording").length).toBe(1);
+      resetTauri();
+      const unlimited = await recordLater(
+        { overlapping: 5, max_streams: null, source_name: "Main" },
+        false,
+      );
+      expect(unlimited).not.toHaveBeenCalled();
+      expect(callsOf(calls, "schedule_recording").length).toBe(1);
+    });
   });
 
   it("schedules a recording of a future programme", async () => {

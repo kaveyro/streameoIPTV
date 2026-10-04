@@ -7,6 +7,7 @@ import { UpdateService } from "./update.service";
 import { Settings } from "./models/settings";
 import { cacheTheme, DEFAULT_THEME } from "./theme-cache";
 import { ZoomService } from "./zoom.service";
+import { RestreamService } from "./restream.service";
 
 /// Wheel delta of one zoom step: one notch of a mouse wheel.
 const WHEEL_STEP_DELTA = 100;
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit {
     private language: LanguageService,
     private update: UpdateService,
     private zoom: ZoomService,
+    public restream: RestreamService,
   ) {}
 
   ngOnInit(): void {

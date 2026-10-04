@@ -167,6 +167,26 @@
         </svg>
         <span class="nav-label">{{ "HOME.NAV.RECORDINGS" | translate }}</span>
       </button>
+      <button
+        id="viewMode-7"
+        type="button"
+        class="nav-item"
+        [attr.aria-label]="'HOME.NAV.HIDDEN' | translate"
+        [ngbTooltip]="'HOME.NAV.HIDDEN' | translate"
+        placement="end"
+        container="body"
+        [disableTooltip]="!labelsHidden()"
+        (click)="switchMode(viewModeEnum.Hidden)"
+        [class.active]="isMode(viewModeEnum.Hidden)"
+        [attr.aria-current]="isMode(viewModeEnum.Hidden) ? 'page' : null"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M11.83,9L15,12.16C15,12.11 15,12.05 15,12A3,3 0 0,0 12,9C11.94,9 11.89,9 11.83,9M7.53,9.8L9.08,11.35C9.03,11.56 9,11.77 9,12A3,3 0 0,0 12,15C12.22,15 12.44,14.97 12.65,14.92L14.2,16.47C13.53,16.8 12.79,17 12,17A5,5 0 0,1 7,12C7,11.21 7.2,10.47 7.53,9.8M2,4.27L4.28,6.55L4.73,7C3.08,8.3 1.78,10 1,12C2.73,16.39 7,19.5 12,19.5C13.55,19.5 15.03,19.2 16.38,18.66L16.81,19.08L19.73,22L21,20.73L3.27,3M12,7A5,5 0 0,1 17,12C17,12.64 16.87,13.26 16.64,13.82L19.57,16.75C21.07,15.5 22.27,13.86 23,12C21.27,7.61 17,4.5 12,4.5C10.6,4.5 9.26,4.75 8,5.2L10.17,7.35C10.74,7.13 11.35,7 12,7Z"
+          />
+        </svg>
+        <span class="nav-label">{{ "HOME.NAV.HIDDEN" | translate }}</span>
+      </button>
     </nav>
     <button
       type="button"
@@ -247,11 +267,24 @@
           id="search"
           #search
           class="form-control search-input"
-          [placeholder]="'HOME.SEARCH_PLACEHOLDER' | translate"
+          [class.with-spinner]="searchPending"
+          [placeholder]="
+            searchScope()
+              ? ('HOME.SEARCH_IN' | translate: { name: searchScope() })
+              : ('HOME.SEARCH_PLACEHOLDER' | translate)
+          "
           [attr.aria-label]="'HOME.SEARCH_LABEL' | translate"
           (input)="searchText = search.value"
           (keydown.escape)="onSearchEscape($event)"
+          (keydown.enter)="onSearchEnter($event)"
         />
+        @if (searchPending) {
+          <span
+            class="spinner-border spinner-border-sm search-spinner"
+            [class.next-to-clear]="searchText"
+            aria-hidden="true"
+          ></span>
+        }
         @if (searchText) {
           <button
             type="button"
@@ -320,6 +353,52 @@
       </select>
 
       <div class="toolbar-actions">
+        @if (resultActionsVisible()) {
+          <button
+            type="button"
+            class="icon-btn toolbar-btn"
+            [matMenuTriggerFor]="resultActions"
+            [attr.aria-label]="'HOME.RESULT_ACTIONS' | translate"
+            [ngbTooltip]="'HOME.RESULT_ACTIONS' | translate"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z"
+              />
+            </svg>
+          </button>
+          <mat-menu #resultActions="matMenu">
+            @if (canFavoriteAllResults()) {
+              <button mat-menu-item (click)="applyToAllResults(bulkActionEnum.Favorite)">
+                {{ "HOME.FAVORITE_ALL_RESULTS" | translate }}
+              </button>
+            }
+            @if (isMode(viewModeEnum.Hidden)) {
+              <button mat-menu-item (click)="applyToAllResults(bulkActionEnum.Unhide)">
+                {{ "HOME.UNHIDE_ALL_RESULTS" | translate }}
+              </button>
+            } @else {
+              <button mat-menu-item (click)="applyToAllResults(bulkActionEnum.Hide)">
+                {{ "HOME.HIDE_ALL_RESULTS" | translate }}
+              </button>
+            }
+          </mat-menu>
+        }
+        @if (isMode(viewModeEnum.History) && channels.length > 0) {
+          <button
+            type="button"
+            class="icon-btn toolbar-btn clear-history-btn"
+            (click)="clearHistory()"
+            [attr.aria-label]="'HOME.CLEAR_HISTORY' | translate"
+            [ngbTooltip]="'HOME.CLEAR_HISTORY' | translate"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+              />
+            </svg>
+          </button>
+        }
         <button
           *ngIf="memory.HasParentalPin"
           type="button"
@@ -430,15 +509,35 @@
           {{ "EMPTY.RETRY" | translate }}
         </button>
       </div>
+      <div *ngIf="!gridLoading && !loading && allSourcesDisabled" class="empty-state">
+        <p class="mb-1">{{ "EMPTY.ALL_SOURCES_DISABLED" | translate }}</p>
+        <small class="mb-3">{{ "EMPTY.ALL_SOURCES_DISABLED_HINT" | translate }}</small>
+        <button type="button" class="btn btn-outline-primary" (click)="openSettings()">
+          {{ "HOME.OPEN_SETTINGS" | translate }}
+        </button>
+      </div>
       <div
-        *ngIf="!gridLoading && !loading && !loadFailed && filters && channels.length === 0"
+        *ngIf="
+          !gridLoading &&
+          !loading &&
+          !loadFailed &&
+          !allSourcesDisabled &&
+          filters &&
+          channels.length === 0
+        "
         class="empty-state"
       >
+        @let narrowedBy = activeFilters();
         <ng-container *ngIf="filters.query; else noQueryEmpty">
           <p class="mb-1">{{ "EMPTY.NO_CHANNELS_FOUND" | translate }}</p>
           <small>{{ "EMPTY.TRY_DIFFERENT_SEARCH" | translate }}</small>
         </ng-container>
         <ng-template #noQueryEmpty>
+          <p *ngIf="narrowedBy.length > 0; else viewEmpty" class="mb-1">
+            {{ "EMPTY.NO_MATCH_FILTERS" | translate }}
+          </p>
+        </ng-template>
+        <ng-template #viewEmpty>
           <ng-container [ngSwitch]="filters.view_type">
             <ng-container *ngSwitchCase="viewModeEnum.Favorites">
               <ng-container *ngIf="shownFavoriteList === undefined; else emptyList">
@@ -459,11 +558,29 @@
                 <p class="mb-1">{{ "EMPTY.NOTHING_WATCHED" | translate }}</p>
               </ng-template>
             </ng-container>
+            <ng-container *ngSwitchCase="viewModeEnum.Hidden">
+              <p class="mb-1">{{ "EMPTY.NOTHING_HIDDEN" | translate }}</p>
+              <small>{{ "EMPTY.NOTHING_HIDDEN_HINT" | translate }}</small>
+            </ng-container>
             <ng-container *ngSwitchDefault>
               <p class="mb-1">{{ "EMPTY.NO_CHANNELS_FOUND" | translate }}</p>
             </ng-container>
           </ng-container>
         </ng-template>
+        <!-- A media type switched off or a country chosen: say so, and offer
+             the way back to everything. -->
+        @if (narrowedBy.length > 0) {
+          <small class="active-filters">
+            {{ "EMPTY.ACTIVE_FILTERS" | translate: { filters: narrowedBy.join(", ") } }}
+          </small>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm mt-2 clear-filters-btn"
+            (click)="clearFilters()"
+          >
+            {{ "EMPTY.CLEAR_FILTERS" | translate }}
+          </button>
+        }
       </div>
       <!-- Drag & drop only rearranges the own order (favorites view, sort
            "own order"); the tile menu's "move forward/back" does the same by
@@ -474,7 +591,8 @@
         class="tile-grid"
         [class.list-view]="viewFormat === 'list'"
         [class.reorderable]="customOrderActive()"
-        [@fade]="channelsVisible ? 'visible' : 'hidden'"
+        [class.stale]="searchPending"
+        [attr.aria-busy]="searchPending || null"
         cdkDropList
         cdkDropListOrientation="mixed"
         [cdkDropListDisabled]="!customOrderActive()"
@@ -493,13 +611,16 @@
           [reorderable]="customOrderActive()"
           [first]="i === 0"
           [last]="i === channels.length - 1 && reachedMax"
+          [selected]="selection.size > 0 && isSelected(channel)"
           (move)="moveChannel(i, $event)"
+          (toggleSelect)="toggleSelection(channel)"
         ></app-channel-tile>
       </div>
 
+      <!-- Fallback for the automatic loading (the sentinel below), e.g. after
+           a page failed to load. -->
       <button
-        [@fade]="channelsVisible ? 'visible' : 'hidden'"
-        *ngIf="reachedMax === false"
+        *ngIf="reachedMax === false && !gridLoading"
         (click)="loadMore(true)"
         [disabled]="loading"
         class="btn btn-outline-primary mx-auto d-block mt-3"
@@ -512,6 +633,51 @@
         ></span>
         {{ "HOME.LOAD_MORE" | translate }}
       </button>
+      <div *ngIf="!gridLoading" #sentinel class="scroll-sentinel" aria-hidden="true"></div>
+
+      <!-- Ctrl/Cmd/Shift + click selects tiles; Escape clears the selection. -->
+      @if (selection.size > 0) {
+        <div
+          class="selection-bar"
+          role="toolbar"
+          [attr.aria-label]="'HOME.SELECTION.ACTIONS' | translate"
+        >
+          <span class="selection-count" aria-live="polite">
+            {{ "HOME.SELECTION.COUNT" | translate: { count: selection.size } }}
+          </span>
+          @if (canFavoriteSelection()) {
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-primary selection-favorite"
+              (click)="favoriteSelection()"
+            >
+              {{ "MENU.FAVORITE" | translate }}
+            </button>
+          }
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-primary selection-hide"
+            (click)="hideSelection()"
+          >
+            {{
+              (viewType === viewModeEnum.Hidden ? "MENU.UNHIDE" : "HOME.SELECTION.HIDE") | translate
+            }}
+          </button>
+          <button
+            type="button"
+            class="icon-btn selection-clear"
+            (click)="clearSelection()"
+            [attr.aria-label]="'HOME.SELECTION.CLEAR' | translate"
+            [ngbTooltip]="'HOME.SELECTION.CLEAR' | translate"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+              />
+            </svg>
+          </button>
+        </div>
+      }
     </ng-container>
 
     <!-- Guide and recordings load as separate chunks the first time they

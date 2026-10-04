@@ -601,15 +601,18 @@ describe("ChannelTileComponent", () => {
       ]);
     });
 
-    it("removes the channel from the shown list and reloads", async () => {
+    it("removes the channel from the shown list without a reload", async () => {
       await openMenu({}, ViewMode.Favorites);
       component.favoriteList = 4;
-      const refresh = spyOn(TestBed.inject(MemoryService).Refresh, "next");
+      const memory = TestBed.inject(MemoryService);
+      const refresh = spyOn(memory.Refresh, "next");
+      const removed = spyOn(memory.RemoveTile, "next");
       await component.removeFromList();
       expect(callsOf(calls, "remove_from_favorite_list").map((c) => c.args)).toEqual([
         { listId: 4, channel: live },
       ]);
-      expect(refresh).toHaveBeenCalledWith(false);
+      expect(removed).toHaveBeenCalledOnceWith({ channel: live });
+      expect(refresh).not.toHaveBeenCalled();
     });
   });
 
@@ -702,10 +705,11 @@ describe("ChannelTileComponent", () => {
   describe("unfavoriting", () => {
     const favorite: Channel = { ...live, favorite: true };
 
-    it("fades the tile in the favorites view", async () => {
+    it("asks the home page to drop the tile in the favorites view", async () => {
       await create({ ...favorite }, ViewMode.Favorites, { get_epg: [], unfavorite_channel: null });
+      const removed = spyOn(TestBed.inject(MemoryService).RemoveTile, "next");
       await component.favorite();
-      expect(component.fade).toBeTrue();
+      expect(removed).toHaveBeenCalledOnceWith({ channel: component.channel!, unfavorited: true });
     });
 
     it("keeps the tile in a favorites list, which is kept apart", async () => {
@@ -717,10 +721,258 @@ describe("ChannelTileComponent", () => {
       await TestBed.inject(FavoriteListsService).load();
       component.favoriteList = 4;
       const toast = spyOn(TestBed.inject(ToastrService), "success");
+      const removed = spyOn(TestBed.inject(MemoryService).RemoveTile, "next");
       await component.favorite();
-      expect(component.fade).toBeFalse();
+      expect(removed).not.toHaveBeenCalled();
       expect(component.channel?.favorite).toBeFalse();
       expect(toast).toHaveBeenCalledWith("TOAST.FAVORITE_REMOVED_STAYS_IN_LIST");
+    });
+  });
+
+  describe("history", () => {
+    it("drops the tile instead of reloading when removed from the history", async () => {
+      await create(movie, ViewMode.History, { remove_from_history: null });
+      const memory = TestBed.inject(MemoryService);
+      const refresh = spyOn(memory.Refresh, "next");
+      const removed = spyOn(memory.RemoveTile, "next");
+      await component.removeFromHistory();
+      expect(callsOf(calls, "remove_from_history").map((c) => c.args)).toEqual([{ id: 1 }]);
+      expect(removed).toHaveBeenCalledOnceWith({ channel: movie });
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it("can favorite there, also with the f key's check", async () => {
+      await create({ ...live, favorite: false }, ViewMode.History, {
+        get_epg: [],
+        favorite_channel: null,
+      });
+      expect(component.canFavorite()).toBeTrue();
+      component.openContextMenuFromKeyboard();
+      await settle();
+      const labels = Array.from(
+        document.querySelectorAll<HTMLElement>(".mat-mdc-menu-panel .mat-mdc-menu-item"),
+      ).map((item) => item.textContent?.trim());
+      expect(labels).toContain("MENU.FAVORITE");
+      expect(labels).toContain("MENU.REMOVE");
+    });
+  });
+
+  describe("hiding", () => {
+    function toastWithTap() {
+      const tap = new Subject<void>();
+      const success = spyOn(TestBed.inject(ToastrService), "success").and.returnValue({
+        onTap: tap,
+      } as never);
+      return { tap, success };
+    }
+
+    it("hides a channel, drops the tile and undoes it from the toast", async () => {
+      await create({ ...live }, ViewMode.All, { get_epg: [], hide_channel: null });
+      const memory = TestBed.inject(MemoryService);
+      const removed = spyOn(memory.RemoveTile, "next");
+      const refresh = spyOn(memory.Refresh, "next");
+      const { tap, success } = toastWithTap();
+      await component.hide();
+      expect(callsOf(calls, "hide_channel").map((c) => c.args)).toEqual([{ id: 3, hidden: true }]);
+      expect(removed).toHaveBeenCalledOnceWith({ channel: live });
+      expect(success).toHaveBeenCalledWith("TOAST.HIDDEN_UNDO");
+      expect(refresh).not.toHaveBeenCalled();
+
+      tap.next();
+      await settle();
+      expect(callsOf(calls, "hide_channel").map((c) => c.args)).toEqual([
+        { id: 3, hidden: true },
+        { id: 3, hidden: false },
+      ]);
+      // Back where it was, without losing the scroll position.
+      expect(refresh).toHaveBeenCalledOnceWith(false);
+    });
+
+    it("hides a group through hide_group", async () => {
+      await create(group, ViewMode.Categories, { hide_group: null });
+      toastWithTap();
+      await component.hide();
+      expect(callsOf(calls, "hide_group").map((c) => c.args)).toEqual([{ id: 9, hidden: true }]);
+      expect(callsOf(calls, "hide_channel").length).toBe(0);
+    });
+
+    it("keeps the tile when hiding failed", async () => {
+      await create({ ...live }, ViewMode.All, {
+        get_epg: [],
+        hide_channel: () => {
+          throw "nope";
+        },
+      });
+      const removed = spyOn(TestBed.inject(MemoryService).RemoveTile, "next");
+      await component.hide();
+      expect(removed).not.toHaveBeenCalled();
+    });
+
+    it("offers 'hide' in the menu and 'show again' in the hidden view", async () => {
+      await create({ ...live }, ViewMode.All, { get_epg: [] });
+      component.openContextMenuFromKeyboard();
+      await settle();
+      const labels = () =>
+        Array.from(
+          document.querySelectorAll<HTMLElement>(".mat-mdc-menu-panel .mat-mdc-menu-item"),
+        ).map((item) => item.textContent?.trim());
+      expect(labels()).toContain("MENU.HIDE_CHANNEL");
+      expect(labels()).not.toContain("MENU.UNHIDE");
+      component.matMenuTrigger.closeMenu();
+      await settle();
+
+      component.viewMode = ViewMode.Hidden;
+      component.openContextMenuFromKeyboard();
+      await settle();
+      expect(labels()).toContain("MENU.UNHIDE");
+      expect(labels()).not.toContain("MENU.HIDE_CHANNEL");
+      // Hidden items stay out of the favorites.
+      expect(labels()).not.toContain("MENU.FAVORITE");
+    });
+
+    it("shows a hidden channel again from the hidden view", async () => {
+      await create({ ...live }, ViewMode.Hidden, { get_epg: [], hide_channel: null });
+      const removed = spyOn(TestBed.inject(MemoryService).RemoveTile, "next");
+      await component.unhide();
+      expect(callsOf(calls, "hide_channel").map((c) => c.args)).toEqual([{ id: 3, hidden: false }]);
+      expect(removed).toHaveBeenCalledOnceWith({ channel: live });
+    });
+
+    it("does not open a hidden group (the hidden view lists it flat)", async () => {
+      await create(group, ViewMode.Hidden);
+      const node = spyOn(TestBed.inject(MemoryService).SetNode, "next");
+      const menu = spyOn(component, "openContextMenuFromKeyboard");
+      await component.click();
+      expect(node).not.toHaveBeenCalled();
+      expect(menu).toHaveBeenCalled();
+    });
+  });
+
+  describe("selection", () => {
+    it("selects with Ctrl/Cmd/Shift + click instead of playing", async () => {
+      await create(movie);
+      const click = spyOn(component, "click").and.resolveTo();
+      let toggles = 0;
+      component.toggleSelect.subscribe(() => toggles++);
+      tile().dispatchEvent(new MouseEvent("click", { ctrlKey: true, bubbles: true }));
+      tile().dispatchEvent(new MouseEvent("click", { metaKey: true, bubbles: true }));
+      tile().dispatchEvent(new MouseEvent("click", { shiftKey: true, bubbles: true }));
+      expect(toggles).toBe(3);
+      expect(click).not.toHaveBeenCalled();
+      tile().dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(click).toHaveBeenCalledTimes(1);
+    });
+
+    it("selects with Shift + Space by keyboard", async () => {
+      await create(movie);
+      const click = spyOn(component, "click").and.resolveTo();
+      let toggles = 0;
+      component.toggleSelect.subscribe(() => toggles++);
+      tile().dispatchEvent(
+        new KeyboardEvent("keydown", { key: " ", shiftKey: true, bubbles: true, cancelable: true }),
+      );
+      expect(toggles).toBe(1);
+      expect(click).not.toHaveBeenCalled();
+    });
+
+    it("shows a check mark and says so in the accessible name", async () => {
+      await create(movie);
+      expect(element.querySelector(".select-check")).toBeNull();
+      component.selected = true;
+      fixture.detectChanges();
+      expect(element.querySelector(".select-check")).not.toBeNull();
+      expect(tile().classList).toContain("selected");
+      expect(tile().getAttribute("aria-label")).toBe("Movie, TILE.SELECTED");
+    });
+  });
+
+  describe("opening a series", () => {
+    const serie: Channel = {
+      id: 7,
+      name: "Show",
+      media_type: MediaType.serie,
+      source_id: 1,
+      url: "123",
+      favorite: false,
+    };
+
+    it("shows a spinner on the tile while the episodes load and then opens it", async () => {
+      let finish!: () => void;
+      await create(serie, ViewMode.All, {
+        get_episodes: () => new Promise<void>((resolve) => (finish = resolve)),
+      });
+      const node = spyOn(TestBed.inject(MemoryService).SetNode, "next");
+      const opening = component.click();
+      await settle();
+      fixture.detectChanges();
+      expect(element.querySelector(".tile-spinner")).not.toBeNull();
+      expect(tile().getAttribute("aria-busy")).toBe("true");
+      finish();
+      await opening;
+      fixture.detectChanges();
+      expect(node).toHaveBeenCalledOnceWith({
+        id: 123,
+        name: "Show",
+        type: jasmine.anything(),
+        sourceId: 1,
+      } as never);
+      expect(element.querySelector(".tile-spinner")).toBeNull();
+    });
+
+    it("stays on the current level when the episodes fail to load", async () => {
+      await create(serie, ViewMode.All, {
+        get_episodes: () => {
+          throw "offline";
+        },
+      });
+      const memory = TestBed.inject(MemoryService);
+      const node = spyOn(memory.SetNode, "next");
+      await component.click();
+      fixture.detectChanges();
+      expect(node).not.toHaveBeenCalled();
+      expect(component.opening).toBeFalse();
+      expect(element.querySelector(".tile-spinner")).toBeNull();
+      expect(memory.SeriesRefreshed.has(7)).toBeFalse();
+    });
+  });
+
+  describe("mark as watched", () => {
+    const started: Channel = {
+      ...movie,
+      source_id: 1,
+      url: "http://host/movie/1.mkv",
+      watch_position: 1350,
+      watch_duration: 5400,
+    };
+
+    it("is offered for a movie left midway and finishes it", async () => {
+      await create({ ...started }, ViewMode.History, { mark_watched: null });
+      component.openContextMenuFromKeyboard();
+      await settle();
+      const item = Array.from(
+        document.querySelectorAll<HTMLElement>(".mat-mdc-menu-panel .mat-mdc-menu-item"),
+      ).find((i) => i.textContent?.trim() === "MENU.MARK_WATCHED");
+      expect(item).toBeDefined();
+      component.matMenuTrigger.closeMenu();
+      await component.markWatched();
+      fixture.detectChanges();
+      expect(callsOf(calls, "mark_watched").map((c) => c.args)).toEqual([
+        { sourceId: 1, url: started.url },
+      ]);
+      expect(component.channel?.watch_finished).toBeTrue();
+      expect(component.channel?.watch_position).toBeUndefined();
+      expect(element.querySelector(".watched-icon")).not.toBeNull();
+      expect(element.querySelector(".resume-badge")).toBeNull();
+    });
+
+    it("is not offered for a movie never started", async () => {
+      await create({ ...movie, source_id: 1, url: "http://host/movie/1.mkv" });
+      component.openContextMenuFromKeyboard();
+      await settle();
+      const labels = Array.from(
+        document.querySelectorAll<HTMLElement>(".mat-mdc-menu-panel .mat-mdc-menu-item"),
+      ).map((i) => i.textContent?.trim());
+      expect(labels).not.toContain("MENU.MARK_WATCHED");
     });
   });
 

@@ -12,8 +12,8 @@ import {
 } from "@angular/core";
 import { Router } from "@angular/router";
 import { AllowIn, ShortcutInput, KeyboardShortcutsModule } from "ng-keyboard-shortcuts";
-import { Subscription, debounceTime, filter, fromEvent, map, skip } from "rxjs";
-import { MemoryService } from "../memory.service";
+import { Subscription, debounceTime, filter, fromEvent, map, skip, take } from "rxjs";
+import { MemoryService, RemovedTile } from "../memory.service";
 import { NowPlayingService } from "../now-playing.service";
 import { WatchProgressService } from "../watch-progress.service";
 import { Channel } from "../models/channel";
@@ -26,20 +26,20 @@ import { UnlistenFn, listen } from "@tauri-apps/api/event";
 import { Source } from "../models/source";
 import { Filters } from "../models/filters";
 import { SourceType } from "../models/sourceType";
-import { animate, state, style, transition, trigger } from "@angular/animations";
+import { animate, style, transition, trigger } from "@angular/animations";
 import { ErrorService } from "../error.service";
 import { Settings } from "../models/settings";
 import { ZoomService } from "../zoom.service";
-import { SortType } from "../models/sortType";
+import { SORT_TYPES, SortType } from "../models/sortType";
 import { NgbModal, NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
-import { SIDEBAR_COLLAPSED } from "../models/localStorage";
+import { LIBRARY_SORT, SIDEBAR_COLLAPSED } from "../models/localStorage";
 import { isInputFocused } from "../utils";
 import { Node } from "../models/node";
 import { NodeType } from "../models/nodeType";
 import { Stack } from "../models/stack";
 import { VIEW_FORMAT, ViewFormat } from "../models/viewFormat";
 import { TranslateService, TranslatePipe } from "@ngx-translate/core";
-import { ChannelTileComponent } from "../channel-tile/channel-tile.component";
+import { ChannelTileComponent, setHidden } from "../channel-tile/channel-tile.component";
 import { EditChannelModalComponent } from "../edit-channel-modal/edit-channel-modal.component";
 import { EditGroupModalComponent } from "../edit-group-modal/edit-group-modal.component";
 import { ParentalService } from "../parental.service";
@@ -53,14 +53,21 @@ import { SortButtonComponent } from "./sort-button/sort-button.component";
 import { FavoriteListChipsComponent } from "../favorite-lists/favorite-list-chips/favorite-list-chips.component";
 import { TvGuideComponent } from "../tv-guide/tv-guide.component";
 import { RecordingsComponent } from "../recordings/recordings.component";
+import { MatMenuModule } from "@angular/material/menu";
+import { ConfirmService } from "../confirm.service";
+import { BulkActionType } from "../models/bulkActionType";
 
 /// What the main area shows: the channel library (all view modes, also
 /// "continue watching"), the TV guide or the recordings. Frontend only; the
 /// backend view_type is only used by `search`.
 export type HomePanel = "library" | "guide" | "recordings";
 
-/// Number of sidebar nav items (ids viewMode-0 .. viewMode-6).
-const NAV_ITEM_COUNT = 7;
+/// Number of sidebar nav items (ids viewMode-0 .. viewMode-7).
+const NAV_ITEM_COUNT = 8;
+
+/// Automatic loading goes on while the end of the list is less than this
+/// many viewport heights below the top of the viewport.
+const FILL_VIEWPORTS = 1.3;
 
 /// Going back loads at most this many pages again to restore the scroll
 /// position (36 tiles each); further down, the list starts shorter.
@@ -80,9 +87,15 @@ const MAX_RESTORED_PAGES = 10;
     FavoriteListChipsComponent,
     TvGuideComponent,
     RecordingsComponent,
+    MatMenuModule,
   ],
   templateUrl: "./home.component.html",
-  styleUrls: ["./home.component.css", "./home-search.css", "./home-heading.css"],
+  styleUrls: [
+    "./home.component.css",
+    "./home-search.css",
+    "./home-heading.css",
+    "./home-states.css",
+  ],
   animations: [
     trigger("fadeInOut", [
       transition(":enter", [
@@ -94,30 +107,25 @@ const MAX_RESTORED_PAGES = 10;
         animate("250ms", style({ opacity: 0, height: 0, padding: "0", margin: "0" })),
       ]),
     ]),
-    trigger("fade", [
-      state(
-        "visible",
-        style({
-          opacity: 1,
-        }),
-      ),
-      state(
-        "hidden",
-        style({
-          opacity: 0,
-        }),
-      ),
-      transition("visible => hidden", [animate("250ms ease-out")]),
-      transition("hidden => visible", [animate("250ms ease-in")]),
-    ]),
   ],
 })
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   channels: Channel[] = [];
   readonly viewModeEnum = ViewMode;
   readonly mediaTypeEnum = MediaType;
+  readonly bulkActionEnum = BulkActionType;
   @ViewChild("search") search!: ElementRef;
   @ViewChild("tileGrid") tileGrid?: ElementRef<HTMLElement>;
+  /// Marks the end of the list: when it comes near the viewport, the next
+  /// page loads (also when the first page fits and nothing scrolls).
+  @ViewChild("sentinel") set sentinel(ref: ElementRef<HTMLElement> | undefined) {
+    if (ref?.nativeElement === this.sentinelElement) return;
+    if (this.sentinelElement) this.endObserver?.unobserve(this.sentinelElement);
+    this.sentinelElement = ref?.nativeElement;
+    if (this.sentinelElement) this.endObserver?.observe(this.sentinelElement);
+  }
+  private sentinelElement?: HTMLElement;
+  private endObserver?: IntersectionObserver;
   @ViewChildren(ChannelTileComponent) tiles?: QueryList<ChannelTileComponent>;
   shortcuts: ShortcutInput[] = [];
   focus = 0;
@@ -133,8 +141,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /// keyboard) until the query changes or the user presses "Load more".
   loadMoreFailed = false;
   readonly PAGE_SIZE = 36;
-  channelsVisible = true;
   prevSearchValue = "";
+  /// A typed search is waiting for its debounce or its results: the old
+  /// results stay, dimmed, and the search box shows a spinner.
+  searchPending = false;
   /// What the search box holds (for its clear button).
   searchText = "";
   loading = false;
@@ -149,6 +159,21 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   /// Whether any enabled source is an Xtream one; cached when the sources load
   /// instead of being recomputed on every change detection.
   hasXtream = false;
+  /// Sources exist, but none is enabled: the list stays empty until one is.
+  allSourcesDisabled = false;
+  /// Tiles dropped in place (RemoveTile) since the last page loaded: the
+  /// backend's pages moved up by as many, so the next "load more" fetches
+  /// the last page again instead of skipping what moved onto it.
+  private removedSinceLoad = 0;
+  /// The settings' default sort (see storedSort).
+  private defaultSort: SortType = SortType.provider;
+  /// restorePosition() is loading the pages of a level: no automatic loads
+  /// in between, they would supersede it.
+  private restoring = false;
+  private fillTimer?: ReturnType<typeof setTimeout>;
+  private resizeListener?: () => void;
+  /// The multi-selection (Ctrl/Cmd/Shift + click), by trackByChannel key.
+  selection = new Map<string, Channel>();
   private autoRefreshUnlisten?: UnlistenFn;
   private destroyed = false;
   /// Sequence number of the latest load(); older responses are dropped.
@@ -212,7 +237,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   trackByChannel(index: number, channel: Channel) {
-    return channel.id === undefined ? `i${index}` : `${channel.media_type}:${channel.id}`;
+    return channel.id === undefined ? `i${index}` : HomeComponent.key(channel);
+  }
+
+  /// Channels and groups (the hidden view lists both) can share an id.
+  private static key(channel: Channel): string {
+    return `${channel.media_type}:${channel.id}`;
   }
 
   constructor(
@@ -228,6 +258,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     private favoriteLists: FavoriteListsService,
     private watchProgress: WatchProgressService,
     private zoom: ZoomService,
+    private confirm: ConfirmService,
   ) {
     this.getSources();
     this.listenForAutoRefresh();
@@ -241,6 +272,22 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ngZone.runOutsideAngular(() => {
       this.scrollListener = () => this.onScroll();
       window.addEventListener("scroll", this.scrollListener, { passive: true });
+      // A taller window can show more than the pages loaded so far.
+      this.resizeListener = () => {
+        if (this.canAutoLoad()) this.ngZone.run(() => this.scheduleFillCheck());
+      };
+      window.addEventListener("resize", this.resizeListener, { passive: true });
+      if (typeof IntersectionObserver !== "undefined") {
+        this.endObserver = new IntersectionObserver(
+          (entries) => {
+            if (entries.some((e) => e.isIntersecting) && this.canAutoLoad()) {
+              this.ngZone.run(() => this.scheduleFillCheck());
+            }
+          },
+          { rootMargin: `0px 0px ${Math.round((FILL_VIEWPORTS - 1) * 100)}% 0px` },
+        );
+        if (this.sentinelElement) this.endObserver.observe(this.sentinelElement);
+      }
     });
     this.narrowQuery.addEventListener("change", this.narrowListener);
     this.buildShortcuts();
@@ -290,6 +337,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         // Best effort: without it the lock button stays hidden.
         this.memory.refreshParental().catch((e) => console.error(e));
         this.memory.Sources = new Map(sources.filter((x) => x.enabled).map((s) => [s.id!, s]));
+        this.allSourcesDisabled = sources.length > 0 && this.memory.Sources.size === 0;
         this.hasXtream = this.anyXtream();
         if (sources.length == 0) this.reset();
         else {
@@ -310,8 +358,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
             invoke("on_start_check_epg").catch((e) => console.error(e));
           }
           // Always publish the sort, also the provider default, so the sort
-          // menu's check mark matches the list.
-          const sort: SortType = settings.default_sort ?? SortType.provider;
+          // menu's check mark matches the list. The last one chosen wins over
+          // the settings' default, until that default is changed.
+          this.defaultSort = settings.default_sort ?? SortType.provider;
+          const sort: SortType = this.storedSort() ?? this.defaultSort;
           this.filters = {
             source_ids: Array.from(this.memory.Sources.keys()),
             view_type: settings.default_view ?? ViewMode.All,
@@ -361,16 +411,36 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     else await this.load();
   }
 
+  /// The sort chosen last (localStorage may be unavailable or hold junk). It
+  /// is stored with the settings' default it was chosen against: once that
+  /// default changes, the new default applies again.
+  private storedSort(): SortType | undefined {
+    try {
+      const stored = localStorage.getItem(LIBRARY_SORT);
+      if (stored === null) return undefined;
+      const [sort, base] = stored.split("|").map(Number) as [SortType, SortType];
+      if (base !== this.defaultSort) return undefined;
+      return SORT_TYPES.includes(sort) ? sort : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private storeSort(sort: SortType) {
+    try {
+      localStorage.setItem(LIBRARY_SORT, `${sort}|${this.defaultSort}`);
+    } catch (e) {
+      // Only the next start falls back to the default sort.
+      console.error(e);
+    }
+  }
+
   reset() {
     this.router.navigateByUrl("setup");
   }
 
   async addEvents() {
-    this.subscriptions.push(
-      this.memory.HideChannels.subscribe((val) => {
-        this.channelsVisible = val;
-      }),
-    );
+    this.subscriptions.push(this.memory.RemoveTile.subscribe((tile) => this.removeTile(tile)));
     this.subscriptions.push(
       this.memory.SetFocus.subscribe((focus) => {
         this.focus = focus;
@@ -395,6 +465,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         node.page = this.filters?.page;
         node.tileIndex = this.focusedTile()?.id;
         this.nodeStack.add(node);
+        this.clearSelection();
         if (dto.type == NodeType.Category) this.filters!.group_id = dto.id;
         else if (dto.type == NodeType.Series) {
           this.filters!.series_id = dto.id;
@@ -411,19 +482,115 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     );
     this.subscriptions.push(
       this.memory.Refresh.subscribe((scroll) => {
-        this.load();
+        // `scroll`: back to the top of a new first page (an edited channel or
+        // category). Otherwise (a background refresh, a group (un)locked) the
+        // list is refreshed where it is.
+        if (scroll) {
+          this.load();
+          window.scrollTo({ top: 0, behavior: "instant" });
+        } else {
+          void this.refreshInPlace();
+        }
         // A refresh or an edited source can bring or drop country prefixes.
         this.loadCountries();
-        if (scroll) window.scrollTo({ top: 0, behavior: "instant" });
       }),
     );
     this.subscriptions.push(
       this.memory.Sort.pipe(skip(1)).subscribe(async ([sort, load]) => {
         if (!this.filters || !load) return;
         this.filters!.sort = sort;
+        this.storeSort(sort);
         await this.load();
       }),
     );
+  }
+
+  /**
+   * A tile left the list shown (RemoveTile): dropped without reloading, so
+   * the scroll position and the loaded pages stay. The keyboard focus moves
+   * on to the tile that takes its place.
+   */
+  removeTile(removed: RemovedTile) {
+    if (!this.filters || this.panel !== "library") return;
+    // Unfavorited: only gone where the favorites themselves are listed.
+    if (
+      removed.unfavorited &&
+      (this.viewType !== ViewMode.Favorites ||
+        this.filters.series_id !== undefined ||
+        this.shownFavoriteList !== undefined)
+    )
+      return;
+    const key = HomeComponent.key(removed.channel);
+    const index = this.channels.findIndex(
+      (c) => c.id !== undefined && HomeComponent.key(c) === key,
+    );
+    if (index === -1) return;
+    const active = document.activeElement;
+    const hadFocus =
+      !active ||
+      active === document.body ||
+      active.id === `${FocusAreaPrefix[FocusArea.Tiles]}${index}`;
+    this.channels = this.channels.filter((_, i) => i !== index);
+    this.removedSinceLoad++;
+    this.selection.delete(key);
+    this.mirrorPlayerList();
+    setTimeout(() => {
+      const lost = !document.activeElement || document.activeElement === document.body;
+      if (hadFocus && lost && this.channels.length > 0) {
+        this.focusTile(Math.min(index, this.channels.length - 1));
+      }
+    }, 0);
+    // The list may no longer fill the window.
+    this.scheduleFillCheck();
+  }
+
+  /**
+   * Loads the list again without leaving it: no skeletons, the pages loaded
+   * so far are fetched again and shown at once, then the scroll position is
+   * put back (a background refresh, a group locked or unlocked, ...).
+   */
+  async refreshInPlace() {
+    if (!this.filters) return;
+    // Nothing shown yet (or an error instead): a plain load is the same.
+    if (this.gridLoading || this.loadFailed || this.panel !== "library") {
+      await this.load();
+      return;
+    }
+    const seq = ++this.loadSeq;
+    const pages = Math.max(1, Math.min(this.filters.page, MAX_RESTORED_PAGES));
+    const scrollY = window.scrollY;
+    this.loading = true;
+    try {
+      let channels: Channel[] = [];
+      let last: Channel[] = [];
+      let page = 0;
+      while (page < pages) {
+        page++;
+        last = await this.fetchPage(this.searchFilters(page));
+        if (seq !== this.loadSeq) return;
+        channels = channels.concat(last);
+        if (last.length < this.PAGE_SIZE) break;
+      }
+      this.filters.page = page;
+      this.channels = channels;
+      this.reachedMax = last.length < this.PAGE_SIZE;
+      this.removedSinceLoad = 0;
+      this.loadMoreFailed = false;
+      this.pruneSelection();
+      this.mirrorPlayerList();
+      // The tiles render after this change detection.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (seq !== this.loadSeq || this.panel !== "library") return;
+      window.scrollTo({ top: scrollY, behavior: "instant" });
+    } catch (e) {
+      // The list shown stays; only the refresh failed.
+      if (seq === this.loadSeq) this.error.handleError(e);
+    } finally {
+      if (seq === this.loadSeq) {
+        this.loading = false;
+        this.scheduleFillCheck();
+      }
+    }
   }
 
   clearSearch() {
@@ -443,9 +610,45 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   async clearSearchAndReload() {
     if (!this.filters) return;
     this.clearSearch();
-    this.channelsVisible = true;
     (this.search.nativeElement as HTMLInputElement).focus();
-    await this.load();
+    await this.runSearch();
+  }
+
+  /// Loads the results of `filters.query`, keeping the old results (dimmed)
+  /// until they are there.
+  private async runSearch() {
+    if (!this.filters) return;
+    this.searchPending = true;
+    const query = this.filters.query;
+    await this.load(false, true);
+    // A newer query is on its way: its own load clears the flag.
+    if (this.filters.query === query && this.searchText === (query ?? "")) {
+      this.searchPending = false;
+    }
+  }
+
+  /// Enter in the search box: to the first result (searching right away when
+  /// the debounce has not run yet).
+  async onSearchEnter(event: Event) {
+    if (!this.filters) return;
+    event.preventDefault();
+    const term = this.search.nativeElement.value as string;
+    if (term !== (this.filters.query ?? "")) {
+      this.filters.query = term;
+      await this.runSearch();
+    }
+    this.enterResults();
+  }
+
+  /// Puts the focus on the first result; stays in the search box without one.
+  private enterResults() {
+    if (this.channels.length > 0) this.focusTile(0);
+  }
+
+  /// The search box's placeholder names where it searches: inside a category
+  /// or series only there.
+  searchScope(): string | undefined {
+    return this.insideLevel() ? this.nodeStack.get()?.name : undefined;
   }
 
   /// Escape in a filled search box only empties it; with nothing to clear it
@@ -467,33 +670,65 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.load(true);
   }
 
-  async load(more = false) {
+  /// What `search` gets for one page of the current view.
+  private searchFilters(page: number): Filters {
+    return {
+      ...this.filters!,
+      page,
+      show_locked: this.memory.ShowLocked,
+      country: this.countryApplies() ? this.filters!.country : undefined,
+    };
+  }
+
+  /// One page of results; nothing to search while every source is disabled.
+  private async fetchPage(filters: Filters): Promise<Channel[]> {
+    if (this.allSourcesDisabled) return [];
+    return (await invoke<Channel[]>("search", { filters })) ?? [];
+  }
+
+  /**
+   * Loads the first page (or with `more` the next one). `keepGrid`: the old
+   * results stay on screen (dimmed by the caller) instead of skeletons, for a
+   * new search term; skeletons are for a new view.
+   */
+  async load(more = false, keepGrid = false) {
     if (!this.filters) return;
+    // More tiles dropped in place than one page holds: refetching the last
+    // page would skip some, so reload the shown pages instead.
+    if (more && this.removedSinceLoad >= this.PAGE_SIZE) {
+      await this.refreshInPlace();
+      return;
+    }
+    const removedAtStart = this.removedSinceLoad;
     // Every load gets a sequence number; a response that arrives after a newer
     // load started (e.g. the query changed) is dropped, so an old page 2 is
     // never appended to a new page 1.
     const seq = ++this.loadSeq;
-    const page = more ? this.filters.page + 1 : 1;
+    // After tiles were dropped in place the backend's pages moved up: fetch
+    // the last page again (the known tiles on it are skipped below).
+    const refetch = more && this.removedSinceLoad > 0;
+    const page = more ? (refetch ? this.filters.page : this.filters.page + 1) : 1;
     // The page is only committed once it loaded: a failed request must not
     // skip a page (or grow it forever) on the next attempt.
-    const filters: Filters = {
-      ...this.filters,
-      page,
-      show_locked: this.memory.ShowLocked,
-      country: this.countryApplies() ? this.filters.country : undefined,
-    };
+    const filters = this.searchFilters(page);
     this.loading = true;
     if (!more) {
-      this.gridLoading = true;
+      if (!keepGrid) {
+        this.gridLoading = true;
+        // A new view replaces whatever search was on its way.
+        this.searchPending = false;
+      }
       this.loadMoreFailed = false;
     }
     try {
-      const channels: Channel[] = await invoke("search", { filters });
+      const channels = await this.fetchPage(filters);
       if (seq !== this.loadSeq) return;
       this.filters.page = page;
+      // Tiles dropped while this page loaded count for the next one.
+      this.removedSinceLoad = Math.max(0, this.removedSinceLoad - removedAtStart);
       if (!more) {
         this.channels = channels;
-        this.channelsVisible = true;
+        this.pruneSelection();
         // prevent flicker of hiding opacity
         this.viewType = this.filters.view_type;
         this.shownSort = filters.sort;
@@ -501,6 +736,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           filters.view_type === ViewMode.Favorites && filters.series_id === undefined
             ? filters.favorite_list
             : undefined;
+      } else if (refetch) {
+        // The tiles of the refetched page that are shown already.
+        const known = new Set(this.channels.map((c) => HomeComponent.key(c)));
+        this.channels = this.channels.concat(
+          channels.filter((c) => c.id === undefined || !known.has(HomeComponent.key(c))),
+        );
       } else {
         this.channels = this.channels.concat(channels);
       }
@@ -519,15 +760,50 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.channels = [];
         this.filters.page = 1;
         this.reachedMax = true;
-        this.channelsVisible = true;
         this.loadFailed = true;
       }
     } finally {
       if (seq === this.loadSeq) {
         this.loading = false;
         this.gridLoading = false;
+        // The first page may fit on screen: then nothing scrolls, and only
+        // this check loads the next one.
+        this.scheduleFillCheck();
       }
     }
+  }
+
+  /// Whether a page may load by itself (sentinel, resize, scrolling).
+  private canAutoLoad(): boolean {
+    return (
+      !!this.filters &&
+      !this.destroyed &&
+      !this.reachedMax &&
+      !this.loading &&
+      !this.loadMoreFailed &&
+      !this.restoring &&
+      this.panel === "library" &&
+      !this.memory.PlayerVisible
+    );
+  }
+
+  /// Checks once the tiles rendered whether the list still ends within
+  /// FILL_VIEWPORTS of the viewport, and loads the next page then (which
+  /// checks again when it is in).
+  private scheduleFillCheck() {
+    if (this.fillTimer !== undefined || this.destroyed) return;
+    this.fillTimer = setTimeout(() => {
+      this.fillTimer = undefined;
+      if (this.canAutoLoad() && this.sentinelNearViewport()) void this.loadMore();
+    }, 0);
+  }
+
+  /** The end of the list is less than FILL_VIEWPORTS viewport heights down. */
+  sentinelNearViewport(): boolean {
+    const sentinel = this.sentinelElement;
+    if (!sentinel || !sentinel.isConnected) return false;
+    const viewport = window.innerHeight || document.documentElement.clientHeight;
+    return sentinel.getBoundingClientRect().top <= viewport * FILL_VIEWPORTS;
   }
 
   /// Mirror the directly-playable channels so the embedded player's side
@@ -556,9 +832,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private isNearScrollEnd(): boolean {
-    if (this.reachedMax || this.loading || this.loadMoreFailed || !this.filters) return false;
-    if (this.panel !== "library") return false;
-    if (this.memory.PlayerVisible) return false;
+    if (!this.canAutoLoad()) return false;
     const scrollHeight = document.documentElement.scrollHeight;
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const clientHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -573,9 +847,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           filter((event: KeyboardEvent) => event.key !== "Escape"),
           map((event: KeyboardEvent) => {
             const value = (event.target as HTMLInputElement).value;
-            this.focus = 0;
-            this.focusArea = FocusArea.Tiles;
-            if (this.channelsVisible && value != this.prevSearchValue) this.channelsVisible = false;
+            if (value != this.prevSearchValue) {
+              this.focus = 0;
+              this.focusArea = FocusArea.Tiles;
+              // The old results stay, dimmed, until the new ones are in.
+              this.searchPending = true;
+            }
             this.prevSearchValue = value;
             return value;
           }),
@@ -583,9 +860,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         )
         .subscribe(async (term: string) => {
           // Cleared (button, Escape) while the term was still debouncing.
-          if (term !== this.search.nativeElement.value) return;
-          this.filters!.query = term;
-          await this.load();
+          if (term !== this.search.nativeElement.value || !this.filters) return;
+          // Already searched (Enter), or typed and deleted again.
+          if (term === (this.filters.query ?? "")) {
+            if (!this.loading) this.searchPending = false;
+            return;
+          }
+          this.filters.query = term;
+          await this.runSearch();
         }),
     );
   }
@@ -764,6 +1046,47 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       .length;
   }
 
+  /// The pills the user can see, with their labels.
+  private pills(): { label: string; active: boolean }[] {
+    const pills = [
+      { label: "HOME.PILL.LIVESTREAMS", active: this.chkLiveStream },
+      {
+        label: this.hasXtream ? "HOME.PILL.MOVIES_VODS" : "HOME.PILL.MOVIES_VODS_SERIES",
+        active: this.chkMovie,
+      },
+    ];
+    if (this.hasXtream) pills.push({ label: "HOME.PILL.SERIES", active: this.chkSerie });
+    return pills;
+  }
+
+  /**
+   * The filters narrowing the list (for the empty state): the media types
+   * when not all are on, and the country. Translated labels.
+   */
+  activeFilters(): string[] {
+    if (!this.filters || !this.filtersVisible()) return [];
+    const labels: string[] = [];
+    const pills = this.pills();
+    if (pills.some((p) => !p.active)) {
+      labels.push(...pills.filter((p) => p.active).map((p) => this.translate.instant(p.label)));
+    }
+    if (this.countryApplies() && this.filters.country) {
+      labels.push(this.translate.instant("EMPTY.FILTER_COUNTRY", { code: this.filters.country }));
+    }
+    return labels;
+  }
+
+  /** "Clear filters" in the empty state: all media types, all countries. */
+  async clearFilters() {
+    if (!this.filters) return;
+    this.chkLiveStream = true;
+    this.chkMovie = true;
+    this.chkSerie = this.hasXtream;
+    this.filters.media_types = [MediaType.livestream, MediaType.movie, MediaType.serie];
+    this.filters.country = undefined;
+    await this.load();
+  }
+
   private setPill(mediaType: MediaType, active: boolean) {
     if (mediaType === MediaType.livestream) this.chkLiveStream = active;
     else if (mediaType === MediaType.movie) this.chkMovie = active;
@@ -816,9 +1139,14 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /// Inside a category or series the names often carry no prefix: the
-  /// filter only narrows the top level (channels or the category list).
+  /// filter only narrows the top level (channels or the category list). The
+  /// hidden view lists everything hidden.
   countryApplies(): boolean {
-    return !this.filters?.group_id && !this.filters?.series_id;
+    return (
+      !this.filters?.group_id &&
+      !this.filters?.series_id &&
+      this.filters?.view_type !== ViewMode.Hidden
+    );
   }
 
   countryFilterVisible(): boolean {
@@ -943,8 +1271,10 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /// The history (also "continue watching") is always ordered by last
-  /// watched; only a series' season list follows the sort there.
+  /// watched; only a series' season list follows the sort there. The hidden
+  /// view is ordered by name.
   sortApplies(): boolean {
+    if (this.filters?.view_type === ViewMode.Hidden) return false;
     if (this.filters?.view_type !== ViewMode.History) return true;
     return this.filters.series_id !== undefined && this.filters.season === undefined;
   }
@@ -967,7 +1297,11 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         await this.load();
         return;
       }
-    } else if (sameMode) return;
+    } else if (sameMode && !this.nodeStack.hasNodes() && !this.filters.query) {
+      return;
+    }
+    // Also the view already shown (its nav item or shortcut again), when
+    // inside a category/series or searching: back to its top level.
     if (continueWatching !== this.continueWatching) {
       if (continueWatching) {
         this.savedMediaTypes = [...this.filters.media_types];
@@ -984,8 +1318,30 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.filters.season = undefined;
     this.filters.source_ids = Array.from(this.memory.Sources.keys());
     this.clearSearch();
+    this.searchPending = false;
     this.nodeStack.clear();
+    this.clearSelection();
     await this.load();
+    if (sameMode) window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  /// Index of the sidebar item of what is shown (viewMode-N).
+  activeNavIndex(): number {
+    if (this.panel === "guide") return 5;
+    if (this.panel === "recordings") return 6;
+    if (this.continueWatching) return 4;
+    switch (this.filters?.view_type) {
+      case ViewMode.Categories:
+        return 1;
+      case ViewMode.Favorites:
+        return 2;
+      case ViewMode.History:
+        return 3;
+      case ViewMode.Hidden:
+        return 7;
+      default:
+        return 0;
+    }
   }
 
   searchFocused(): boolean {
@@ -1022,7 +1378,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async goBackHotkey() {
-    if (this.memory.currentContextMenu?.menuOpen) {
+    if (this.selection.size > 0) {
+      this.clearSelection();
+    } else if (this.memory.currentContextMenu?.menuOpen) {
       this.closeContextMenu();
     } else if (this.searchFocused()) {
       this.selectFirstChannel();
@@ -1114,6 +1472,8 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         return "HOME.NAV.FAVORITES";
       case ViewMode.History:
         return "HOME.NAV.HISTORY";
+      case ViewMode.Hidden:
+        return "HOME.NAV.HIDDEN";
       default:
         return "HOME.NAV.ALL_CHANNELS";
     }
@@ -1125,6 +1485,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
    * puts it on the tile that was opened. Resolves to true in that case.
    */
   private async restorePosition(node: Node): Promise<boolean> {
+    this.restoring = true;
+    try {
+      return await this.restorePages(node);
+    } finally {
+      this.restoring = false;
+      this.scheduleFillCheck();
+    }
+  }
+
+  private async restorePages(node: Node): Promise<boolean> {
     let seq = this.loadSeq;
     const pages = Math.min(node.page ?? 1, MAX_RESTORED_PAGES);
     while (this.filters && this.filters.page < pages && !this.reachedMax && !this.loadMoreFailed) {
@@ -1163,6 +1533,177 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 
+  /** "Clear history" in the history's toolbar, after a confirmation. */
+  async clearHistory() {
+    const confirmed = await this.confirm.confirm({
+      title: "CONFIRM.CLEAR_HISTORY_TITLE",
+      messages: ["CONFIRM.CLEAR_HISTORY_BODY"],
+      confirmLabel: "SETTINGS.DATA.CLEAR_BTN",
+    });
+    if (!confirmed) return;
+    // tryIPC resolves to true when the action failed.
+    const failed = await this.memory.tryIPC(
+      this.translate.instant("TOAST.HISTORY_CLEARED"),
+      this.translate.instant("TOAST.HISTORY_CLEAR_FAILED"),
+      () => invoke("clear_history"),
+    );
+    if (!failed) await this.load();
+  }
+
+  // ---------------------------- Multi-selection ---------------------------
+
+  isSelected(channel: Channel): boolean {
+    return channel.id !== undefined && this.selection.has(HomeComponent.key(channel));
+  }
+
+  /** Ctrl/Cmd/Shift + click on a tile: in or out of the selection. */
+  toggleSelection(channel: Channel) {
+    if (channel.id === undefined || channel.id < 0) return;
+    const key = HomeComponent.key(channel);
+    if (this.selection.has(key)) this.selection.delete(key);
+    else this.selection.set(key, channel);
+    // A new Map, so the bindings see the change.
+    this.selection = new Map(this.selection);
+  }
+
+  clearSelection() {
+    if (this.selection.size > 0) this.selection = new Map();
+  }
+
+  /// Drops selected tiles that are no longer listed.
+  private pruneSelection() {
+    if (this.selection.size === 0) return;
+    const shown = new Set(this.channels.map((c) => HomeComponent.key(c)));
+    const kept = [...this.selection].filter(([key]) => shown.has(key));
+    if (kept.length !== this.selection.size) this.selection = new Map(kept);
+  }
+
+  /// Selected tiles that can be favorited (groups and seasons cannot).
+  private selectedFavoritable(): Channel[] {
+    return [...this.selection.values()].filter(
+      (c) => c.media_type !== MediaType.group && c.media_type !== MediaType.season && !c.favorite,
+    );
+  }
+
+  canFavoriteSelection(): boolean {
+    return this.viewType !== ViewMode.Hidden && this.selectedFavoritable().length > 0;
+  }
+
+  /** Action bar: adds the selected channels to the favorites. */
+  async favoriteSelection() {
+    const channels = this.selectedFavoritable();
+    if (channels.length === 0) return;
+    let done = 0;
+    for (const channel of channels) {
+      try {
+        await invoke("favorite_channel", { channelId: channel.id });
+        done++;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    this.reportBulk(done, channels.length, "TOAST.ITEMS_FAVORITED");
+    this.clearSelection();
+    await this.refreshInPlace();
+  }
+
+  /** Action bar: hides the selection (shows it again in the hidden view). */
+  async hideSelection() {
+    const channels = [...this.selection.values()];
+    if (channels.length === 0) return;
+    const hidden = this.viewType !== ViewMode.Hidden;
+    const changed: Channel[] = [];
+    for (const channel of channels) {
+      try {
+        await invoke(channel.media_type === MediaType.group ? "hide_group" : "hide_channel", {
+          id: channel.id,
+          hidden,
+        });
+        changed.push(channel);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    this.clearSelection();
+    const toast = this.reportBulk(
+      changed.length,
+      channels.length,
+      hidden ? "TOAST.ITEMS_HIDDEN_UNDO" : "TOAST.ITEMS_UNHIDDEN",
+    );
+    // Tapping "… hidden" brings them back.
+    if (toast && hidden) {
+      toast.onTap.pipe(take(1)).subscribe(async () => {
+        for (const channel of changed) {
+          await setHidden(channel, false, this.error, this.translate);
+        }
+        this.memory.Refresh.next(false);
+      });
+    }
+    await this.refreshInPlace();
+  }
+
+  /// Success toast for `done` of `total` items (an error toast when some
+  /// failed); returns the success toast.
+  private reportBulk(done: number, total: number, key: string) {
+    if (done < total) {
+      this.error.handleError(
+        `${total - done} of ${total} failed`,
+        this.translate.instant("TOAST.BULK_FAILED"),
+      );
+    }
+    if (done === 0) return undefined;
+    return this.toast.success(this.translate.instant(key, { count: done }));
+  }
+
+  // ------------------------- Actions on all results -----------------------
+
+  /// The menu with "favorite/hide all results": for a search with results
+  /// (not in a series' season list, which bulk_update leaves alone).
+  resultActionsVisible(): boolean {
+    return (
+      this.panel === "library" &&
+      !!this.filters?.query &&
+      this.channels.length > 0 &&
+      !(this.filters.series_id !== undefined && this.filters.season === undefined) &&
+      // The bulk update knows neither the country filter nor favorite lists:
+      // it would change more than the list shows.
+      !(this.countryApplies() && this.filters.country) &&
+      this.shownFavoriteList === undefined
+    );
+  }
+
+  /// Favorites need channels: not the category list, not the hidden view.
+  canFavoriteAllResults(): boolean {
+    if (this.viewType === ViewMode.Hidden) return false;
+    return !(this.viewType === ViewMode.Categories && this.filters?.group_id === undefined);
+  }
+
+  /** "Favorite/Hide/Unhide all results": bulk_update after a confirmation. */
+  async applyToAllResults(action: BulkActionType) {
+    if (!this.filters?.query) return;
+    const count = this.reachedMax ? String(this.channels.length) : `${this.channels.length}+`;
+    const [title, body, confirmLabel] =
+      action === BulkActionType.Favorite
+        ? ["CONFIRM.BULK_FAVORITE_TITLE", "CONFIRM.BULK_FAVORITE_BODY", "MENU.FAVORITE"]
+        : action === BulkActionType.Unhide
+          ? ["CONFIRM.BULK_UNHIDE_TITLE", "CONFIRM.BULK_UNHIDE_BODY", "MENU.UNHIDE"]
+          : ["CONFIRM.BULK_HIDE_TITLE", "CONFIRM.BULK_HIDE_BODY", "HOME.SELECTION.HIDE"];
+    const confirmed = await this.confirm.confirm({
+      title,
+      messages: [body],
+      confirmLabel,
+      params: { count, query: this.filters.query },
+      danger: false,
+    });
+    if (!confirmed) return;
+    const failed = await this.memory.tryIPC(
+      this.translate.instant("TOAST.RESULTS_UPDATED"),
+      this.translate.instant("TOAST.BULK_FAILED"),
+      () => invoke("bulk_update", { filters: this.searchFilters(1), action }),
+    );
+    if (!failed) await this.refreshInPlace();
+  }
+
   /** Home toolbar lock: show the locked groups (after the PIN) or hide them. */
   async toggleLocked() {
     if (await this.parental.toggleShowLocked()) {
@@ -1176,53 +1717,127 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.router.navigateByUrl("settings");
   }
 
+  /**
+   * Arrow keys follow the layout: the sidebar is a column (a row in the
+   * narrow top bar), above the content the search box and the media pills,
+   * then the tile grid.
+   */
   async nav(key: string) {
-    if (this.keyboardBlocked() || this.searchFocused()) return;
+    if (this.keyboardBlocked()) return;
     if (this.memory.currentContextMenu?.menuOpen) return;
+    if (this.searchFocused()) {
+      // Left/Right move the caret.
+      if (key === "ArrowDown") this.enterResults();
+      else if (key === "ArrowUp") this.focusNav(this.activeNavIndex());
+      return;
+    }
     if (this.panel !== "library") {
       this.navSidebarOnly(key);
       return;
     }
     // Focus may have moved by Tab or mouse since the last arrow key.
     this.syncFocusFromDom();
-    let tmpFocus = 0;
+    if (this.focusArea === FocusArea.ViewMode) this.navSidebar(key);
+    else if (this.focusArea === FocusArea.Filters) this.navFilters(key);
+    else await this.navTiles(key);
+  }
+
+  /// The sidebar's keys: [previous, next, into the content].
+  private sidebarKeys(): [string, string, string] {
+    return this.narrow
+      ? ["ArrowLeft", "ArrowRight", "ArrowDown"]
+      : ["ArrowUp", "ArrowDown", "ArrowRight"];
+  }
+
+  private navSidebar(key: string) {
+    const [previous, next, into] = this.sidebarKeys();
+    if (key === previous) this.focusNav(this.focus - 1);
+    else if (key === next) this.focusNav(this.focus + 1);
+    else if (key === into) this.enterContent();
+  }
+
+  /// From the sidebar into the library: the first tile, else the pills, else
+  /// the search box.
+  private enterContent() {
+    if (this.channels.length > 0) this.focusTile(0);
+    else if (this.filtersVisible()) this.focusFilter(0);
+    else this.search.nativeElement.focus();
+  }
+
+  private navFilters(key: string) {
+    const last = this.shortFiltersMode() ? 1 : 2;
     switch (key) {
-      case "ArrowUp":
-        tmpFocus -= this.focusArea == FocusArea.Tiles ? this.gridColumns() : 1;
-        break;
-      case "ArrowDown":
-        tmpFocus += this.focusArea == FocusArea.Tiles ? this.gridColumns() : 1;
-        break;
       case "ArrowLeft":
-        tmpFocus -= 1;
+        if (this.focus > 0) this.focusFilter(this.focus - 1);
+        else if (!this.narrow) this.focusNav(this.activeNavIndex());
         break;
       case "ArrowRight":
-        tmpFocus += 1;
+        this.focusFilter(Math.min(last, this.focus + 1));
+        break;
+      case "ArrowUp":
+        this.search.nativeElement.focus();
+        break;
+      case "ArrowDown":
+        if (this.channels.length > 0) this.focusTile(0);
         break;
     }
-    const goOverSize = this.shortFiltersMode() ? 1 : 2;
-    tmpFocus += this.focus;
-    if (tmpFocus < 0) {
-      this.changeFocusArea(false);
-    } else if (tmpFocus > goOverSize && this.focusArea == FocusArea.Filters) {
-      this.changeFocusArea(true);
-    } else if (tmpFocus > NAV_ITEM_COUNT - 1 && this.focusArea == FocusArea.ViewMode) {
-      this.changeFocusArea(true);
-    } else if (
-      this.focusArea == FocusArea.Tiles &&
-      tmpFocus >= this.filters!.page * this.PAGE_SIZE &&
-      !this.reachedMax &&
-      !this.loadMoreFailed
-    )
-      await this.loadMore();
-    else {
-      if (tmpFocus >= this.channels.length && this.focusArea == FocusArea.Tiles)
-        tmpFocus = (this.channels.length == 0 ? 1 : this.channels.length) - 1;
-      this.focus = tmpFocus;
-      setTimeout(() => {
-        document.getElementById(`${FocusAreaPrefix[this.focusArea]}${this.focus}`)?.focus();
-      }, 0);
+  }
+
+  private async navTiles(key: string) {
+    const columns = this.gridColumns();
+    const index = this.focus;
+    switch (key) {
+      case "ArrowUp":
+        if (index - columns >= 0) this.focusTile(index - columns);
+        // From the first row up to the toolbar.
+        else if (this.filtersVisible()) this.focusFilter(0);
+        else this.search.nativeElement.focus();
+        return;
+      case "ArrowLeft":
+        // From the first column (vertical sidebar) into the sidebar.
+        if (!this.narrow && index % columns === 0) this.focusNav(this.activeNavIndex());
+        else if (index > 0) this.focusTile(index - 1);
+        return;
+      case "ArrowDown":
+        await this.moveToTile(index + columns, true);
+        return;
+      case "ArrowRight":
+        await this.moveToTile(index + 1, false);
+        return;
     }
+  }
+
+  /// Moves on to tile `target`, loading the next page first when it is not
+  /// loaded yet. `clamp`: past the end, the last tile (ArrowDown).
+  private async moveToTile(target: number, clamp: boolean) {
+    if (target >= this.channels.length && !this.reachedMax && !this.loadMoreFailed) {
+      await this.loadMore();
+    }
+    if (target < this.channels.length) this.focusTile(target);
+    else if (clamp && this.channels.length > 0) this.focusTile(this.channels.length - 1);
+  }
+
+  private focusTile(index: number) {
+    this.focusArea = FocusArea.Tiles;
+    this.focus = index;
+    // The tile may only render with this change detection (a page loaded).
+    setTimeout(
+      () => document.getElementById(`${FocusAreaPrefix[FocusArea.Tiles]}${index}`)?.focus(),
+      0,
+    );
+  }
+
+  private focusFilter(index: number) {
+    this.focusArea = FocusArea.Filters;
+    this.focus = index;
+    document.getElementById(`${FocusAreaPrefix[FocusArea.Filters]}${index}`)?.focus();
+  }
+
+  private focusNav(index: number) {
+    const next = Math.min(NAV_ITEM_COUNT - 1, Math.max(0, index));
+    this.focusArea = FocusArea.ViewMode;
+    this.focus = next;
+    document.getElementById(`${FocusAreaPrefix[FocusArea.ViewMode]}${next}`)?.focus();
   }
 
   /// The guide and the recordings handle their own keys; arrow keys only move
@@ -1233,11 +1848,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!id.startsWith(prefix)) return;
     const index = Number(id.slice(prefix.length));
     if (!Number.isInteger(index)) return;
-    const delta = key === "ArrowUp" || key === "ArrowLeft" ? -1 : 1;
-    const next = Math.min(NAV_ITEM_COUNT - 1, Math.max(0, index + delta));
-    this.focusArea = FocusArea.ViewMode;
-    this.focus = next;
-    document.getElementById(`${prefix}${next}`)?.focus();
+    const [previous, next] = this.sidebarKeys();
+    if (key === previous) this.focusNav(index - 1);
+    else if (key === next) this.focusNav(index + 1);
   }
 
   /// Picks up the focus area/index from the focused element's id.
@@ -1282,26 +1895,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  changeFocusArea(down: boolean) {
-    const increment = down ? 1 : -1;
-    this.focusArea += increment;
-    if (this.focusArea == FocusArea.Filters && !this.filtersVisible()) this.focusArea += increment;
-    if (this.focusArea < 0) this.focusArea = 0;
-    this.applyFocusArea(down);
-  }
-
-  applyFocusArea(down: boolean) {
-    this.focus = down
-      ? 0
-      : this.focusArea == FocusArea.Filters
-        ? this.shortFiltersMode()
-          ? 1
-          : 2
-        : NAV_ITEM_COUNT - 1;
-    const id = FocusAreaPrefix[this.focusArea] + this.focus;
-    document.getElementById(id)?.focus();
-  }
-
   /// The tile component whose element currently has keyboard focus.
   private focusedTile(): ChannelTileComponent | undefined {
     const id = (document.activeElement as HTMLElement | null)?.id ?? "";
@@ -1330,6 +1923,12 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.modal.hasOpenModals()) {
       // Escape belongs to the modal; it must not also navigate back here.
       if (isBackKey && event.key != "Backspace") this.closeTrackedModal();
+      return;
+    }
+    // Escape first clears a multi-selection (Backspace keeps going back).
+    if (event.key == "Escape" && this.selection.size > 0) {
+      event.preventDefault();
+      this.clearSelection();
       return;
     }
     if (isBackKey) {
@@ -1376,6 +1975,9 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.destroyed = true;
     if (this.scrollListener) window.removeEventListener("scroll", this.scrollListener);
+    if (this.resizeListener) window.removeEventListener("resize", this.resizeListener);
+    this.endObserver?.disconnect();
+    if (this.fillTimer !== undefined) clearTimeout(this.fillTimer);
     this.narrowQuery.removeEventListener("change", this.narrowListener);
     this.subscriptions.forEach((x) => x.unsubscribe());
     this.autoRefreshUnlisten?.();

@@ -8,10 +8,28 @@ import { Channel } from "./models/channel";
 import { MemoryService } from "./memory.service";
 import { TranslateService } from "@ngx-translate/core";
 import { DOWNLOAD_MAX_CONCURRENT } from "./models/localStorage";
+import { PlaybackService } from "./playback.service";
+import { MediaType } from "./models/mediaType";
 
 /// How many finished downloads are kept in the manager before the oldest ones
 /// are dropped.
 const HISTORY_LIMIT = 50;
+/// localStorage key of the finished downloads, restored on the next start.
+export const DOWNLOAD_HISTORY = "downloadHistory";
+/// Weight of the newest sample in the smoothed transfer rate.
+const SPEED_SMOOTHING = 0.3;
+
+/// Payload of the download-bytes-<id> event (about every 500 ms).
+export interface DownloadBytes {
+  downloaded: number;
+  total: number | null;
+}
+
+/// What is kept of a finished download across restarts.
+type StoredDownload = Pick<
+  Download,
+  "id" | "channel" | "status" | "path" | "error" | "downloaded" | "total" | "filePath"
+>;
 
 @Injectable({
   providedIn: "root",
@@ -29,14 +47,18 @@ export class DownloadService {
   private maxConcurrent = 1;
   /// Downloads whose progress listener is still being registered, by id.
   private pendingEnqueues: Map<string, Promise<Download>> = new Map();
+  /// Last byte count per download and when it arrived, for the rate.
+  private byteSamples: Map<string, { bytes: number; at: number }> = new Map();
 
   constructor(
     private error: ErrorService,
     private ngZone: NgZone,
     private memory: MemoryService,
     private translate: TranslateService,
+    private playback: PlaybackService,
   ) {
     this.maxConcurrent = this.readStoredConcurrency();
+    this.History = this.readStoredHistory();
   }
 
   get MaxConcurrent() {
@@ -56,7 +78,8 @@ export class DownloadService {
   /// Puts a download at the end of the queue. It starts as soon as a slot is
   /// free; the returned object is the same instance the manager displays, so
   /// callers can subscribe to its progress right away.
-  enqueue(id: string, channel: Channel, path?: string): Promise<Download> {
+  /// `resume` continues the partial file a failed transfer left behind.
+  enqueue(id: string, channel: Channel, path?: string, resume = false): Promise<Download> {
     const existing = this.Downloads.get(id);
     if (existing) {
       return Promise.resolve(existing);
@@ -68,14 +91,19 @@ export class DownloadService {
     if (pending) {
       return pending;
     }
-    const promise = this.createDownload(id, channel, path).finally(() =>
+    const promise = this.createDownload(id, channel, path, resume).finally(() =>
       this.pendingEnqueues.delete(id),
     );
     this.pendingEnqueues.set(id, promise);
     return promise;
   }
 
-  private async createDownload(id: string, channel: Channel, path?: string): Promise<Download> {
+  private async createDownload(
+    id: string,
+    channel: Channel,
+    path: string | undefined,
+    resume: boolean,
+  ): Promise<Download> {
     const download: Download = {
       channel: channel,
       progress: 0,
@@ -84,13 +112,27 @@ export class DownloadService {
       progressUpdate: new Subject(),
       status: DownloadStatus.Queued,
       path: path,
+      resume: resume,
     };
-    download.unlisten = await listen<number>(`progress-${download.id}`, (event) => {
+    const unlistenProgress = await listen<number>(`progress-${download.id}`, (event) => {
       this.ngZone.run(() => {
         download.progress = event.payload;
       });
       download.progressUpdate.next(download.progress);
     });
+    let unlistenBytes: (() => void) | undefined;
+    try {
+      // Also when the size is unknown (no percentage then): bytes and rate.
+      unlistenBytes = await listen<DownloadBytes>(`download-bytes-${download.id}`, (event) => {
+        this.ngZone.run(() => this.onBytes(download, event.payload));
+      });
+    } catch (e) {
+      console.error(e);
+    }
+    download.unlisten = () => {
+      unlistenProgress();
+      unlistenBytes?.();
+    };
     this.Downloads.set(download.id, download);
     this.pump();
     return download;
@@ -151,18 +193,51 @@ export class DownloadService {
     return this.findSwapTarget(id, 1) !== undefined;
   }
 
-  /// Puts a finished download back at the end of the queue.
+  /// Puts a finished download back at the end of the queue. It continues
+  /// where a failed transfer stopped (the backend keeps the partial file
+  /// after a network failure, and starts over when there is none).
   async retry(download: Download) {
     this.removeFromHistory(download.id);
-    await this.enqueue(download.id, download.channel, download.path);
+    await this.enqueue(download.id, download.channel, download.path, true);
   }
 
   removeFromHistory(id: string) {
     this.History = this.History.filter((x) => x.id !== id);
+    this.storeHistory();
   }
 
   clearHistory() {
     this.History = [];
+    this.storeHistory();
+  }
+
+  /// Opens the folder of a finished download with the file selected.
+  async reveal(download: Download) {
+    if (!download.filePath) return;
+    try {
+      await invoke("reveal_path", { path: download.filePath });
+    } catch (e) {
+      this.error.handleError(e);
+    }
+  }
+
+  /// Plays a finished download from disk, like a recording.
+  async play(download: Download) {
+    if (!download.filePath) return;
+    try {
+      await this.playback.play(
+        {
+          id: -1,
+          name: download.channel.name,
+          url: download.filePath,
+          media_type: MediaType.movie,
+          favorite: false,
+        },
+        [],
+      );
+    } catch (e) {
+      this.error.handleError(e);
+    }
   }
 
   activeCount() {
@@ -209,11 +284,13 @@ export class DownloadService {
   private async run(download: Download) {
     download.status = DownloadStatus.Active;
     try {
-      await invoke("download", {
+      const filePath = await invoke<string | null>("download", {
         downloadId: download.id,
         channel: download.channel,
         path: download.path,
+        resume: download.resume ?? false,
       });
+      download.filePath = filePath || download.path;
       download.progress = 100;
       this.finish(download, DownloadStatus.Completed);
       this.error.success(
@@ -244,12 +321,81 @@ export class DownloadService {
       console.error(e);
     }
     download.unlisten = undefined;
+    download.speed = undefined;
+    this.byteSamples.delete(download.id);
     this.Downloads.delete(download.id);
     this.History.unshift(download);
     if (this.History.length > HISTORY_LIMIT) {
       this.History.length = HISTORY_LIMIT;
     }
+    this.storeHistory();
     download.complete.next(true);
+  }
+
+  /// Bytes so far, the size if known, and a smoothed transfer rate.
+  private onBytes(download: Download, payload: DownloadBytes) {
+    const now = Date.now();
+    download.downloaded = payload.downloaded;
+    download.total = payload.total ?? null;
+    const last = this.byteSamples.get(download.id);
+    if (last && now > last.at && payload.downloaded >= last.bytes) {
+      const rate = ((payload.downloaded - last.bytes) * 1000) / (now - last.at);
+      download.speed =
+        download.speed === undefined
+          ? rate
+          : download.speed * (1 - SPEED_SMOOTHING) + rate * SPEED_SMOOTHING;
+    }
+    this.byteSamples.set(download.id, { bytes: payload.downloaded, at: now });
+  }
+
+  /// Best effort: storage may be full or unavailable.
+  private storeHistory() {
+    try {
+      const stored: StoredDownload[] = this.History.map((x) => ({
+        id: x.id,
+        channel: x.channel,
+        status: x.status,
+        path: x.path,
+        error: x.error,
+        downloaded: x.downloaded,
+        total: x.total,
+        filePath: x.filePath,
+      }));
+      localStorage.setItem(DOWNLOAD_HISTORY, JSON.stringify(stored));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private readStoredHistory(): Download[] {
+    try {
+      const raw = localStorage.getItem(DOWNLOAD_HISTORY);
+      const stored = raw ? (JSON.parse(raw) as StoredDownload[]) : [];
+      if (!Array.isArray(stored)) return [];
+      const statuses = Object.values(DownloadStatus) as string[];
+      return stored
+        .filter((x) => x && typeof x.id === "string" && x.channel)
+        .slice(0, HISTORY_LIMIT)
+        .map((x) => {
+          // Only finished states are stored; anything else counts as failed.
+          const status =
+            statuses.includes(x.status) &&
+            x.status !== DownloadStatus.Queued &&
+            x.status !== DownloadStatus.Active
+              ? x.status
+              : DownloadStatus.Failed;
+          return {
+            ...x,
+            status,
+            progress: status === DownloadStatus.Completed ? 100 : 0,
+            complete: new Subject<boolean>(),
+            progressUpdate: new Subject<number>(),
+          };
+        });
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
   }
 
   /// Nearest neighbour in the given direction that may swap places with `id`.

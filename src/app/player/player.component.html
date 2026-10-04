@@ -165,10 +165,12 @@
       *ngFor="let ch of visibleChannels; trackBy: trackById"
       [class.active]="ch.id === current?.id"
       [attr.aria-current]="ch.id === current?.id ? 'true' : null"
-      [attr.aria-label]="ch.name"
+      [attr.aria-label]="numberText(ch) ? numberText(ch) + ' ' + ch.name : ch.name"
       (click)="switch(ch)"
       [title]="ch.name"
     >
+      <!-- The number to type for it (the provider's, or its place in the list). -->
+      <span class="pli-num" aria-hidden="true">{{ numberText(ch) }}</span>
       <img
         *ngIf="ch.image"
         [src]="ch.image"

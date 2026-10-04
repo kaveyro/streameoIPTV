@@ -22,7 +22,7 @@ use anyhow::{Context, Result};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::LazyLock;
-use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicIsize, AtomicU32, AtomicU64, Ordering};
 use tauri::{AppHandle, State};
 use tokio::sync::Mutex;
 
@@ -139,6 +139,28 @@ static SYNC_TX: std::sync::Mutex<Option<tokio::sync::mpsc::WeakUnboundedSender<V
 
 /// mpv's `pause` property, as last reported.
 static PAUSED: AtomicBool = AtomicBool::new(false);
+
+/// Volume and mute of this session (-1: none yet), so a rebuilt mpv (crash,
+/// changed player settings) keeps what the user set instead of starting
+/// over at the volume from the settings.
+static SESSION_VOLUME: AtomicI64 = AtomicI64::new(-1);
+static SESSION_MUTE: AtomicI64 = AtomicI64::new(-1);
+
+/// Source of the channel that plays (-1: none), so a starting recording can
+/// tell it needs the same provider connection.
+static CURRENT_SOURCE: AtomicI64 = AtomicI64::new(-1);
+
+/// Source id under which local files (recordings, downloads) keep their
+/// progress; real sources start at 1.
+pub const LOCAL_FILE_SOURCE: i64 = 0;
+
+/// Volume keys of the app (mpv's own 9/0 are channel digits here).
+const VOLUME_KEYS: [(&str, &str); 4] = [
+    ("+", "add volume 5"),
+    ("KP_ADD", "add volume 5"),
+    ("-", "add volume -5"),
+    ("KP_SUBTRACT", "add volume -5"),
+];
 
 /// The player was paused because the window went to the tray, so showing it
 /// again resumes (a pause of the user's own stays).
@@ -317,9 +339,14 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         let _ = ipc_tx.send(json!({
             "command": ["keybind", "MBTN_LEFT_DBL", "script-message streameo-fullscreen"]
         }));
-        let _ = ipc_tx.send(json!({
-            "command": ["keybind", "f", "script-message streameo-fullscreen"]
-        }));
+        for key in ["f", "F11"] {
+            let _ = ipc_tx.send(json!({
+                "command": ["keybind", key, "script-message streameo-fullscreen"]
+            }));
+        }
+        for (key, action) in VOLUME_KEYS {
+            let _ = ipc_tx.send(json!({ "command": ["keybind", key, action] }));
+        }
         for (key, action) in APP_KEYS {
             let _ = ipc_tx.send(json!({
                 "command": ["keybind", key, format!("script-message streameo-key {action}")]
@@ -340,6 +367,14 @@ pub async fn init(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Result<(
         let _ = ipc_tx.send(json!({
             "command": ["observe_property", STREAM_INFO_PROPS.len() + 2, "pause"]
         }));
+        for cmd in session_audio_commands() {
+            let _ = ipc_tx.send(cmd);
+        }
+        for (offset, prop) in [(3, "volume"), (4, "mute")] {
+            let _ = ipc_tx.send(json!({
+                "command": ["observe_property", STREAM_INFO_PROPS.len() + offset, prop]
+            }));
+        }
         // Saves the progress of a running movie now and then. Holds only a
         // weak sender: destroy() dropping the real one ends the IPC task.
         {
@@ -422,6 +457,7 @@ pub async fn play(
     for cmd in commands {
         let _ = tx.send(cmd);
     }
+    CURRENT_SOURCE.store(channel.source_id.unwrap_or(-1), Ordering::SeqCst);
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     crate::tray::set_now_playing(&app, Some(&channel.name));
     Ok(start)
@@ -429,27 +465,37 @@ pub async fn play(
 
 /// Where a movie or episode was left, if it is to be resumed.
 fn resume_position(channel: &Channel) -> Option<f64> {
-    if !keeps_progress(channel) {
-        return None;
-    }
-    let (source_id, url) = (channel.source_id?, channel.url.as_deref()?);
+    let (source_id, url) = (progress_source(channel)?, channel.url.as_deref()?);
     crate::sql::get_resume_position(source_id, url)
         .map_err(|e| crate::log::log(format!("{e:?}")))
         .ok()
         .flatten()
 }
 
-/// Whether the progress of `channel` is saved and resumed: movies and
-/// episodes, not live TV and not catch-up. Catch-up is a pseudo channel
-/// (negative id) whose URL carries the login and must never be stored.
-fn keeps_progress(channel: &Channel) -> bool {
-    channel.media_type != crate::media_type::LIVESTREAM && channel.id.is_some_and(|id| id >= 0)
+/// The source a movie or episode keeps its progress under: its own, or
+/// `LOCAL_FILE_SOURCE` for a local file (recording, download). Live TV and
+/// other pseudo channels (catch-up: its URL holds the login) keep none.
+fn progress_source(channel: &Channel) -> Option<i64> {
+    if channel.media_type == crate::media_type::LIVESTREAM {
+        return None;
+    }
+    match channel.id? {
+        id if id >= 0 => channel.source_id,
+        _ if channel.source_id.is_none() && channel.url.as_deref().is_some_and(is_local_path) => {
+            Some(LOCAL_FILE_SOURCE)
+        }
+        _ => None,
+    }
+}
+
+fn is_local_path(url: &str) -> bool {
+    !url.contains("://")
 }
 
 /// Makes `channel` the session whose progress is saved (none for live TV).
 fn begin_vod_session(channel: &Channel) {
-    let session = match (channel.source_id, channel.url.clone()) {
-        (Some(source_id), Some(url)) if keeps_progress(channel) => {
+    let session = match (progress_source(channel), channel.url.clone()) {
+        (Some(source_id), Some(url)) => {
             let mut urls = vec![url];
             // The episodes queued after it, in the order build_play_commands
             // appends them, so the playlist index finds the right one.
@@ -743,12 +789,35 @@ pub async fn command(state: State<'_, Mutex<AppState>>, command: &str) -> Result
 }
 
 fn player_command(command: &str) -> Option<Value> {
-    let property = match command {
-        "toggle_pause" => "pause",
-        "toggle_mute" => "mute",
+    Some(match command {
+        "toggle_pause" => json!({ "command": ["cycle", "pause"] }),
+        "toggle_mute" => json!({ "command": ["cycle", "mute"] }),
+        "volume_up" => json!({ "command": ["add", "volume", 5] }),
+        "volume_down" => json!({ "command": ["add", "volume", -5] }),
+        "seek_forward" => json!({ "command": ["seek", 60] }),
+        "seek_back" => json!({ "command": ["seek", -60] }),
         _ => return None,
-    };
-    Some(json!({ "command": ["cycle", property] }))
+    })
+}
+
+/// Restores the session's volume and mute in a new mpv.
+fn session_audio_commands() -> Vec<Value> {
+    let mut commands = Vec::new();
+    let volume = SESSION_VOLUME.load(Ordering::SeqCst);
+    if volume >= 0 {
+        commands.push(set_prop("volume", json!(volume)));
+    }
+    let mute = SESSION_MUTE.load(Ordering::SeqCst);
+    if mute >= 0 {
+        commands.push(set_prop("mute", json!(mute == 1)));
+    }
+    commands
+}
+
+/// The source the embedded player streams from while its view is open.
+pub fn playing_source() -> Option<i64> {
+    let source = CURRENT_SOURCE.load(Ordering::SeqCst);
+    (PLAYER_SHOWN.load(Ordering::SeqCst) && source >= 0).then_some(source)
 }
 
 /// Starts the movie or episode over.
@@ -797,6 +866,7 @@ pub async fn stop(state: State<'_, Mutex<AppState>>) -> Result<()> {
         let _ = tx.send(json!({ "command": ["stop"] }));
     }
     PAUSED_BY_HIDE.store(false, Ordering::SeqCst);
+    CURRENT_SOURCE.store(-1, Ordering::SeqCst);
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     if let Some(app) = APP_HANDLE.get() {
         crate::tray::set_now_playing(app, None);
@@ -1065,6 +1135,7 @@ pub async fn destroy(app: AppHandle, state: State<'_, Mutex<AppState>>) -> Resul
     CURRENT_VOD.store(0, Ordering::SeqCst);
     PAUSED.store(false, Ordering::SeqCst);
     PAUSED_BY_HIDE.store(false, Ordering::SeqCst);
+    CURRENT_SOURCE.store(-1, Ordering::SeqCst);
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     crate::tray::set_now_playing(&app, None);
     let (child, mpv) = {
@@ -1286,6 +1357,20 @@ async fn run_ipc(
                 {
                     let paused = v.get("data").and_then(Value::as_bool).unwrap_or(false);
                     PAUSED.store(paused, Ordering::SeqCst);
+                }
+                Some("property-change")
+                    if v.get("name").and_then(Value::as_str) == Some("volume") =>
+                {
+                    if let Some(volume) = v.get("data").and_then(Value::as_f64) {
+                        SESSION_VOLUME.store(volume.round() as i64, Ordering::SeqCst);
+                    }
+                }
+                Some("property-change")
+                    if v.get("name").and_then(Value::as_str) == Some("mute") =>
+                {
+                    if let Some(mute) = v.get("data").and_then(Value::as_bool) {
+                        SESSION_MUTE.store(mute as i64, Ordering::SeqCst);
+                    }
                 }
                 Some("property-change")
                     if v.get("name").and_then(Value::as_str) == Some("paused-for-cache") =>
@@ -1980,24 +2065,52 @@ mod test_player {
     }
 
     /// Catch-up is a pseudo channel whose URL carries the login: never saved.
+    /// Local files (recordings, downloads) keep theirs under source 0.
     #[test]
-    fn test_catch_up_keeps_no_progress() {
+    fn test_progress_source() {
         let movie = Channel {
             id: Some(5),
+            source_id: Some(3),
+            url: Some("http://h/movie/1.mkv".into()),
             media_type: crate::media_type::MOVIE,
             ..Default::default()
         };
-        assert!(keeps_progress(&movie));
+        assert_eq!(progress_source(&movie), Some(3));
         let catch_up = Channel {
             id: Some(-1),
             ..movie.clone()
         };
-        assert!(!keeps_progress(&catch_up));
+        assert_eq!(progress_source(&catch_up), None);
+        let catch_up_without_source = Channel {
+            source_id: None,
+            ..catch_up
+        };
+        assert_eq!(progress_source(&catch_up_without_source), None);
+        let recording = Channel {
+            id: Some(-1),
+            source_id: None,
+            url: Some("C:/Videos/News-20261003-2015.ts".into()),
+            ..movie.clone()
+        };
+        assert_eq!(progress_source(&recording), Some(LOCAL_FILE_SOURCE));
         let live = Channel {
             media_type: crate::media_type::LIVESTREAM,
             ..movie
         };
-        assert!(!keeps_progress(&live));
+        assert_eq!(progress_source(&live), None);
+    }
+
+    #[test]
+    fn test_player_commands_for_volume_and_seek() {
+        assert_eq!(
+            player_command("volume_up"),
+            Some(json!({ "command": ["add", "volume", 5] }))
+        );
+        assert_eq!(
+            player_command("seek_back"),
+            Some(json!({ "command": ["seek", -60] }))
+        );
+        assert_eq!(player_command("nope"), None);
     }
 
     /// Only the loadfile reply carries the request id the IPC reader reports on.

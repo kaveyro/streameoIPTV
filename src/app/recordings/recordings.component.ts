@@ -15,10 +15,21 @@ import { formatFileSize, uiLocale } from "../utils";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { NgbTooltipModule } from "@ng-bootstrap/ng-bootstrap";
+import { Subscription } from "rxjs";
+import { WatchProgressService } from "../watch-progress.service";
 
 /// A file as get_recording_files lists it: `recording` while a scheduled
 /// recording still writes it (recordings.rs marks those).
 export type ListedRecordingFile = RecordingFile;
+
+/// How far a file was watched (`get_file_progress`; the player keeps it
+/// under source 0 and the file's path).
+export interface FileProgress {
+  /// Null once finished or reset.
+  position: number | null;
+  duration: number | null;
+  finished: boolean;
+}
 
 /**
  * The recordings view of the home page: the recording schedule (pending,
@@ -56,7 +67,10 @@ export class RecordingsComponent implements OnInit, OnDestroy {
   addingAlert = false;
   /// Rows with an action in progress ("s<id>" / "a<id>" / "f<path>").
   busy = new Set<string>();
+  /// Watch progress per file path.
+  progress = new Map<string, FileProgress>();
   private timer?: ReturnType<typeof setInterval>;
+  private progressSubscription?: Subscription;
   private cachedFormats?: { dateTime: Intl.DateTimeFormat; time: Intl.DateTimeFormat };
   private formatLocale?: string;
 
@@ -66,9 +80,20 @@ export class RecordingsComponent implements OnInit, OnDestroy {
     private confirmService: ConfirmService,
     private playback: PlaybackService,
     public memory: MemoryService,
+    private watchProgress: WatchProgressService,
   ) {}
 
   ngOnInit(): void {
+    // What the player saves while a recording plays (source 0, the path).
+    this.watchProgress.init();
+    this.progressSubscription = this.watchProgress.changed.subscribe((p) => {
+      if (p.source_id !== 0 || !this.files.some((f) => f.path === p.url)) return;
+      this.progress.set(p.url, {
+        position: p.position ?? null,
+        duration: p.duration ?? null,
+        finished: p.finished,
+      });
+    });
     this.refresh(false);
     this.loadAlerts();
     this.loadFolder();
@@ -81,6 +106,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.timer !== undefined) clearInterval(this.timer);
     this.timer = undefined;
+    this.progressSubscription?.unsubscribe();
   }
 
   /** Reloads both lists; `silent` (periodic refresh) does not report errors. */
@@ -105,9 +131,45 @@ export class RecordingsComponent implements OnInit, OnDestroy {
     } catch (e) {
       if (!silent)
         this.error.handleError(e, this.translate.instant("RECORDINGS.FILES_LOAD_FAILED"));
+      return;
     } finally {
       this.filesLoaded = true;
     }
+    await this.loadProgress();
+  }
+
+  /** How far each listed file was watched (no bar where that fails). */
+  private async loadProgress() {
+    const paths = this.files.map((f) => f.path);
+    if (paths.length === 0) {
+      this.progress = new Map();
+      return;
+    }
+    try {
+      const progress = await invoke<Record<string, FileProgress> | null>("get_file_progress", {
+        paths,
+      });
+      this.progress = new Map(Object.entries(progress ?? {}));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  /** Share watched, 0..100, of a file left midway whose length is known. */
+  watchPercent(file: RecordingFile): number | undefined {
+    const p = this.progress.get(file.path);
+    if (!p || p.finished || p.position == null || !p.duration || p.duration <= 0) return undefined;
+    return Math.min(100, Math.max(0, (p.position / p.duration) * 100));
+  }
+
+  /** Left midway: playing it picks up there. */
+  resumable(file: RecordingFile): boolean {
+    const p = this.progress.get(file.path);
+    return !!p && !p.finished && p.position != null && p.position > 0;
+  }
+
+  watched(file: RecordingFile): boolean {
+    return !!this.progress.get(file.path)?.finished;
   }
 
   private async loadFolder() {
@@ -331,12 +393,17 @@ export class RecordingsComponent implements OnInit, OnDestroy {
    * whatever live channel was listed before.
    */
   async play(file: RecordingFile) {
+    const progress = this.progress.get(file.path);
     const channel: Channel = {
       id: -1,
       name: file.name,
       url: file.path,
       media_type: MediaType.movie,
       favorite: false,
+      // For the player's "resumed at" banner (the backend resumes the file).
+      watch_position: progress?.position ?? undefined,
+      watch_duration: progress?.duration ?? undefined,
+      watch_finished: progress?.finished,
     };
     try {
       await this.playback.play(channel, []);

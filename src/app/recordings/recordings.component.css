@@ -202,3 +202,34 @@
 .rec-action-wrap .icon-btn:disabled {
   pointer-events: none;
 }
+
+/* How far a file was watched: the tiles' thin progress bar. */
+.rec-watch-track {
+  height: 3px;
+  margin-top: 0.3rem;
+  border-radius: 2px;
+  /* --border-strong stays visible on the row's hover surface. */
+  background-color: var(--border-strong);
+  overflow: hidden;
+}
+
+.rec-watch-fill {
+  height: 100%;
+  background-color: var(--accent);
+}
+
+.rec-badge {
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rec-badge--done {
+  background-color: transparent;
+  border: 1px solid currentColor;
+  color: var(--text-secondary);
+}

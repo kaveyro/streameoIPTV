@@ -11,6 +11,7 @@ export const NATIVE_STRING_KEYS: Record<string, string> = {
   "NATIVE.TRAY_STOP": "tray_stop",
   "NATIVE.REMINDER_TITLE": "reminder_title",
   "NATIVE.REMINDER_BODY": "reminder_body",
+  "NATIVE.REMINDER_SOON_BODY": "reminder_soon_body",
   "NATIVE.RECORDING_STARTED": "recording_started",
   "NATIVE.RECORDING_FINISHED": "recording_finished",
   "NATIVE.RECORDING_FAILED": "recording_failed",

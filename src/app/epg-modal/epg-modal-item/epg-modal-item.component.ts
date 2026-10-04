@@ -23,6 +23,8 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { getDateFormatted, getExtension, sanitizeFileName, uiLocale } from "../../utils";
 import { TranslateService } from "@ngx-translate/core";
 import { PlaybackService } from "../../playback.service";
+import { ConfirmService } from "../../confirm.service";
+import { catchUpChannel, confirmRecordingConflicts } from "../programme-actions";
 
 @Component({
   selector: "app-epg-modal-item",
@@ -42,6 +44,7 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
     private ngZone: NgZone,
     private translate: TranslateService,
     private playback: PlaybackService,
+    private confirm: ConfirmService,
     /// The EPG dialog this item is in (absent when used elsewhere).
     @Optional() private activeModal?: NgbActiveModal,
   ) {}
@@ -159,10 +162,31 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
     return !!this.epg && this.epg.start_timestamp * 1000 > Date.now();
   }
 
+  /** On now: it can be recorded from now on (or that recording stopped). */
+  isNow(): boolean {
+    const now = Date.now();
+    return (
+      !!this.epg && this.epg.start_timestamp * 1000 <= now && now < this.epg.end_timestamp * 1000
+    );
+  }
+
+  /**
+   * Schedules the recording; a running programme is recorded from now on
+   * (the scheduler starts a recording whose start has passed at once).
+   */
   async scheduleRecording() {
     if (this.loadingSchedule || this.channelId === undefined || !this.epg) return;
     this.loadingSchedule = true;
     try {
+      // More recordings than the source has streams for: ask first.
+      const go = await confirmRecordingConflicts(
+        this.confirm,
+        this.channelId,
+        this.epg.start_timestamp,
+        this.epg.end_timestamp,
+        this.sourceId === undefined ? "" : (this.memory.Sources.get(this.sourceId)?.name ?? ""),
+      );
+      if (!go) return;
       await invoke("schedule_recording", {
         channelId: this.channelId,
         title: this.epg.title,
@@ -198,17 +222,13 @@ export class EpgModalItemComponent implements OnDestroy, AfterViewInit {
    * connection beside the embedded player.
    */
   async timeshift() {
-    if (this.playing) return;
+    if (this.playing || !this.epg) return;
     this.playing = true;
-    const channel: Channel = {
-      id: -1,
-      url: this.epg?.timeshift_url,
-      name: this.epg?.title,
-      media_type: MediaType.movie,
-
-      favorite: false,
-      source_id: this.sourceId,
-    };
+    const channel = catchUpChannel(
+      this.epg,
+      { name: this.name, source_id: this.sourceId },
+      uiLocale(this.translate),
+    );
     try {
       // The native video window would cover this dialog: close it first.
       if (!this.memory.UseExternalPlayer) this.activeModal?.close();

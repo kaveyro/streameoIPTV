@@ -51,7 +51,7 @@ describe("LanguageService", () => {
       tray_quit: "Beenden",
       quit_title: "Beenden?",
     });
-    expect(Object.keys(NATIVE_STRING_KEYS).length).toBe(15);
+    expect(Object.keys(NATIVE_STRING_KEYS).length).toBe(16);
   });
 
   it("sends the strings again on every language change", async () => {

@@ -20,6 +20,9 @@ import { CdkDragDrop } from "@angular/cdk/drag-drop";
 import { FavoriteListsService } from "../favorite-lists/favorite-lists.service";
 import { FocusArea } from "../models/focusArea";
 import { Router } from "@angular/router";
+import { ConfirmService } from "../confirm.service";
+import { BulkActionType } from "../models/bulkActionType";
+import { LIBRARY_SORT } from "../models/localStorage";
 import {
   IpcCall,
   TEST_IMPORTS,
@@ -38,7 +41,22 @@ describe("HomeComponent", () => {
 
   const source = { id: 1, name: "Main", source_type: SourceType.M3ULink, enabled: true };
 
+  /// Whether the end of the list is near the viewport. Tiles are not rendered
+  /// in these shallow tests, so the real measurement would always say yes and
+  /// load page after page: by default it says no.
+  let nearEnd: (home: HomeComponent) => boolean;
+
+  beforeEach(() => (nearEnd = () => false));
+
   async function create(handlers: Record<string, unknown> = {}) {
+    // A second create() in the same spec keeps the spy.
+    if (!jasmine.isSpy(HomeComponent.prototype.sentinelNearViewport)) {
+      spyOn(HomeComponent.prototype, "sentinelNearViewport").and.callFake(function (
+        this: HomeComponent,
+      ) {
+        return nearEnd(this);
+      });
+    }
     calls = mockTauri({ get_sources: [source], ...handlers });
     await TestBed.configureTestingModule({
       imports: [...TEST_IMPORTS, HomeComponent],
@@ -82,6 +100,459 @@ describe("HomeComponent", () => {
   afterEach(() => {
     resetTauri();
     sessionStorage.removeItem("favoriteListSelected");
+    localStorage.removeItem(LIBRARY_SORT);
+  });
+
+  const live = (id: number): Channel => ({
+    id,
+    name: `Channel ${id}`,
+    media_type: MediaType.livestream,
+    source_id: 1,
+    favorite: false,
+  });
+
+  /// A backend with `total` channels in pages of 36 (HomeComponent.PAGE_SIZE);
+  /// ids in `gone` are no longer listed (removed from the history, hidden).
+  function pagedBackend(total: number, gone = new Set<number>()) {
+    const all = Array.from({ length: total }, (_, i) => live(i + 1));
+    return (args: Record<string, unknown>) => {
+      const page = (args["filters"] as Filters).page;
+      return all.filter((c) => !gone.has(c.id!)).slice((page - 1) * 36, page * 36);
+    };
+  }
+
+  function grid(): HTMLElement {
+    return component.tileGrid!.nativeElement;
+  }
+
+  describe("automatic loading", () => {
+    it("loads further pages while the list does not fill the window", async () => {
+      // No scrollbar, so no scroll event: the sentinel check alone loads on.
+      nearEnd = (home) => home.channels.length < 72;
+      await create({ search: pagedBackend(200) });
+      await settle(10);
+      expect(callsOf(calls, "search").map((c) => (c.args["filters"] as Filters).page)).toEqual([
+        1, 2,
+      ]);
+      expect(component.channels.length).toBe(72);
+      expect(element.querySelector(".scroll-sentinel")).not.toBeNull();
+    });
+
+    it("stops at the last page and after a failed page", async () => {
+      nearEnd = () => true;
+      let fail = false;
+      await create({
+        search: (args: Record<string, unknown>) => {
+          if (fail) throw "offline";
+          return pagedBackend(50)(args);
+        },
+      });
+      await settle(10);
+      expect(component.channels.length).toBe(50);
+      expect(component.reachedMax).toBeTrue();
+      expect(callsOf(calls, "search").length).toBe(2);
+
+      fail = true;
+      component.reachedMax = false;
+      await component.loadMore();
+      await settle(10);
+      // One failed attempt; the "Load more" button is the way to retry.
+      expect(callsOf(calls, "search").length).toBe(3);
+      expect(component.loadMoreFailed).toBeTrue();
+    });
+
+    it("moves on to the next page with ArrowDown on the last row", async () => {
+      await create({ search: pagedBackend(100) });
+      component.focusArea = FocusArea.Tiles;
+      component.focus = 35;
+      await component.nav("ArrowDown");
+      expect(component.channels.length).toBe(72);
+      expect(component.focus).toBeGreaterThan(35);
+      expect(component.focusArea).toBe(FocusArea.Tiles);
+    });
+  });
+
+  describe("changes in place", () => {
+    it("drops a tile removed from the history without reloading the first page", async () => {
+      const gone = new Set<number>();
+      await create({ search: pagedBackend(100, gone) });
+      await component.switchMode(ViewMode.History);
+      const searches = callsOf(calls, "search").length;
+      gone.add(2);
+      TestBed.inject(MemoryService).RemoveTile.next({ channel: live(2) });
+      fixture.detectChanges();
+      expect(callsOf(calls, "search").length).toBe(searches);
+      expect(component.gridLoading).toBeFalse();
+      expect(component.channels.length).toBe(35);
+      expect(component.channels.some((c) => c.id === 2)).toBeFalse();
+
+      // The backend's pages moved up by one: the next page is the same one
+      // again, so channel 37 is not skipped.
+      await component.loadMore(true);
+      expect(lastSearch().page).toBe(1);
+      expect(component.channels.length).toBe(36);
+      expect(component.channels[35].id).toBe(37);
+      await component.loadMore(true);
+      expect(lastSearch().page).toBe(2);
+      expect(component.channels[36].id).toBe(38);
+    });
+
+    it("keeps an unfavorited tile where the favorites are not listed", async () => {
+      await create({ search: pagedBackend(3) });
+      TestBed.inject(MemoryService).RemoveTile.next({ channel: live(2), unfavorited: true });
+      expect(component.channels.length).toBe(3);
+      await component.switchMode(ViewMode.Favorites);
+      TestBed.inject(MemoryService).RemoveTile.next({ channel: live(2), unfavorited: true });
+      expect(component.channels.map((c) => c.id)).toEqual([1, 3]);
+    });
+
+    it("refreshes in place: no skeletons, all loaded pages, same scroll position", async () => {
+      await create({ search: pagedBackend(100) });
+      await component.loadMore(true);
+      const searches = callsOf(calls, "search").length;
+      const scroll = spyOn(window, "scrollTo");
+      TestBed.inject(MemoryService).Refresh.next(false);
+      fixture.detectChanges();
+      expect(component.gridLoading).toBeFalse();
+      expect(element.querySelector(".skeleton")).toBeNull();
+      expect(component.channels.length).toBe(72);
+      await settle();
+      const pages = callsOf(calls, "search")
+        .slice(searches)
+        .map((c) => (c.args["filters"] as Filters).page);
+      expect(pages).toEqual([1, 2]);
+      expect(component.channels.length).toBe(72);
+      expect(component.filters?.page).toBe(2);
+      expect(scroll.calls.mostRecent().args[0] as unknown).toEqual({
+        top: window.scrollY,
+        behavior: "instant",
+      });
+    });
+  });
+
+  describe("typing a search", () => {
+    function type(value: string) {
+      const input = element.querySelector("#search") as HTMLInputElement;
+      input.value = value;
+      input.dispatchEvent(new Event("input"));
+      input.dispatchEvent(new KeyboardEvent("keyup", { key: value.slice(-1) }));
+      fixture.detectChanges();
+    }
+
+    it("keeps the old results dimmed with a spinner until the new ones are in", async () => {
+      await create({ search: pagedBackend(3) });
+      type("news");
+      expect(component.searchPending).toBeTrue();
+      expect(grid().classList).toContain("stale");
+      expect(grid().getAttribute("aria-busy")).toBe("true");
+      expect(element.querySelector(".skeleton")).toBeNull();
+      expect(element.querySelector(".search-spinner")).not.toBeNull();
+      expect(component.channels.length).toBe(3);
+
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      await settle();
+      fixture.detectChanges();
+      expect(lastSearch().query).toBe("news");
+      expect(component.searchPending).toBeFalse();
+      expect(grid().classList).not.toContain("stale");
+      expect(element.querySelector(".search-spinner")).toBeNull();
+    });
+
+    it("names the category or series it searches in", async () => {
+      await create();
+      const input = element.querySelector("#search") as HTMLInputElement;
+      expect(input.placeholder).toBe("HOME.SEARCH_PLACEHOLDER");
+      await component.switchMode(ViewMode.Categories);
+      TestBed.inject(MemoryService).SetNode.next({ id: 9, name: "Kids", type: NodeType.Category });
+      await settle();
+      fixture.detectChanges();
+      expect(input.placeholder).toBe("HOME.SEARCH_IN");
+      expect(component.searchScope()).toBe("Kids");
+    });
+
+    it("searches right away on Enter and moves to the first result", async () => {
+      await create({ search: pagedBackend(3) });
+      const input = element.querySelector("#search") as HTMLInputElement;
+      input.value = "news";
+      input.dispatchEvent(new Event("input"));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await settle();
+      expect(lastSearch().query).toBe("news");
+      expect(component.focusArea).toBe(FocusArea.Tiles);
+      expect(component.focus).toBe(0);
+    });
+  });
+
+  describe("the active nav item", () => {
+    it("goes back to the top of the view and drops the query", async () => {
+      await create();
+      await component.switchMode(ViewMode.Categories);
+      TestBed.inject(MemoryService).SetNode.next({ id: 9, name: "Kids", type: NodeType.Category });
+      await settle();
+      component.filters!.query = "news";
+      fixture.detectChanges();
+      (element.querySelector("#viewMode-1") as HTMLButtonElement).click();
+      await settle();
+      expect(component.nodeStack.hasNodes()).toBeFalse();
+      expect(lastSearch().group_id).toBeUndefined();
+      expect(lastSearch().query).toBe("");
+      expect(lastSearch().view_type).toBe(ViewMode.Categories);
+    });
+
+    it("does nothing at the top of the view", async () => {
+      await create();
+      const searches = callsOf(calls, "search").length;
+      (element.querySelector("#viewMode-0") as HTMLButtonElement).click();
+      await settle();
+      expect(callsOf(calls, "search").length).toBe(searches);
+    });
+  });
+
+  describe("arrow keys", () => {
+    function focus(selector: string) {
+      (element.querySelector(selector) as HTMLElement).focus();
+    }
+
+    it("move along the vertical sidebar and ArrowRight enters the content", async () => {
+      await create({ search: pagedBackend(3) });
+      component.narrow = false;
+      focus("#viewMode-0");
+      await component.nav("ArrowDown");
+      expect(document.activeElement?.id).toBe("viewMode-1");
+      await component.nav("ArrowUp");
+      expect(document.activeElement?.id).toBe("viewMode-0");
+      await component.nav("ArrowRight");
+      expect(component.focusArea).toBe(FocusArea.Tiles);
+      expect(component.focus).toBe(0);
+    });
+
+    it("enter the filter row from the sidebar when there are no tiles", async () => {
+      await create();
+      component.narrow = false;
+      focus("#viewMode-0");
+      await component.nav("ArrowRight");
+      expect(document.activeElement?.id).toBe("filter-0");
+    });
+
+    it("go from the first tile row up to the filters, not to the last nav item", async () => {
+      await create({ search: pagedBackend(3) });
+      component.focusArea = FocusArea.Tiles;
+      component.focus = 0;
+      await component.nav("ArrowUp");
+      expect(document.activeElement?.id).toBe("filter-0");
+      // From the pills up to the search box, and from there to the active view.
+      await component.nav("ArrowUp");
+      expect(document.activeElement?.id).toBe("search");
+      await component.nav("ArrowUp");
+      expect(document.activeElement?.id).toBe("viewMode-0");
+    });
+
+    it("go from the search box down to the first tile", async () => {
+      await create({ search: pagedBackend(3) });
+      focus("#search");
+      await component.nav("ArrowDown");
+      expect(component.focusArea).toBe(FocusArea.Tiles);
+      expect(component.focus).toBe(0);
+    });
+
+    it("use Left/Right in the narrow top bar and ArrowDown into the content", async () => {
+      await create({ search: pagedBackend(3) });
+      component.narrow = true;
+      focus("#viewMode-0");
+      await component.nav("ArrowRight");
+      expect(document.activeElement?.id).toBe("viewMode-1");
+      await component.nav("ArrowDown");
+      expect(component.focusArea).toBe(FocusArea.Tiles);
+    });
+  });
+
+  describe("empty states", () => {
+    it("says when all sources are disabled and links to the settings", async () => {
+      await create({ get_sources: [{ ...source, enabled: false }] });
+      expect(component.allSourcesDisabled).toBeTrue();
+      expect(callsOf(calls, "search").length).toBe(0);
+      const empty = element.querySelector(".empty-state") as HTMLElement;
+      expect(empty.textContent).toContain("EMPTY.ALL_SOURCES_DISABLED");
+      expect(element.textContent).not.toContain("EMPTY.NO_CHANNELS_FOUND");
+      (empty.querySelector("button") as HTMLButtonElement).click();
+      await settle();
+      expect(TestBed.inject(Router).url).toBe("/settings");
+    });
+
+    it("lists the active filters and clears them", async () => {
+      await create({
+        get_countries: [
+          { code: "TR", count: 2 },
+          { code: "DE", count: 1 },
+        ],
+      });
+      component.setCountry("TR");
+      component.chkLiveStream = false;
+      component.updateMediaTypes(MediaType.livestream);
+      await settle();
+      fixture.detectChanges();
+      const empty = element.querySelector(".empty-state") as HTMLElement;
+      expect(empty.textContent).toContain("EMPTY.NO_MATCH_FILTERS");
+      expect(empty.textContent).toContain("EMPTY.ACTIVE_FILTERS");
+      expect(component.activeFilters()).toEqual([
+        "HOME.PILL.MOVIES_VODS_SERIES",
+        "EMPTY.FILTER_COUNTRY",
+      ]);
+
+      (empty.querySelector(".clear-filters-btn") as HTMLButtonElement).click();
+      await settle();
+      expect(component.chkLiveStream).toBeTrue();
+      expect(lastSearch().media_types).toEqual([
+        MediaType.livestream,
+        MediaType.movie,
+        MediaType.serie,
+      ]);
+      expect(lastSearch().country).toBeUndefined();
+      expect(component.activeFilters()).toEqual([]);
+    });
+  });
+
+  describe("sort", () => {
+    it("remembers the chosen sort over the settings' default", async () => {
+      await create({ get_settings: { default_sort: SortType.number } });
+      expect(lastSearch().sort).toBe(SortType.number);
+      TestBed.inject(MemoryService).Sort.next([SortType.alphabeticalDescending, true]);
+      await settle();
+      expect(localStorage.getItem(LIBRARY_SORT)).toBe(
+        `${SortType.alphabeticalDescending}|${SortType.number}`,
+      );
+
+      resetTauri();
+      await create({ get_settings: { default_sort: SortType.number } });
+      expect(lastSearch().sort).toBe(SortType.alphabeticalDescending);
+      expect(TestBed.inject(MemoryService).Sort.getValue()[0]).toBe(
+        SortType.alphabeticalDescending,
+      );
+    });
+
+    it("follows a default sort changed in the settings again", async () => {
+      localStorage.setItem(LIBRARY_SORT, `${SortType.alphabeticalDescending}|${SortType.number}`);
+      await create({ get_settings: { default_sort: SortType.provider } });
+      expect(lastSearch().sort).toBe(SortType.provider);
+    });
+
+    it("ignores a stored value that is no sort", async () => {
+      localStorage.setItem(LIBRARY_SORT, "banana");
+      await create({ get_settings: { default_sort: SortType.number } });
+      expect(lastSearch().sort).toBe(SortType.number);
+    });
+  });
+
+  describe("hidden view", () => {
+    it("lists the hidden items without sort or country filter", async () => {
+      await create({
+        get_countries: [
+          { code: "TR", count: 2 },
+          { code: "DE", count: 1 },
+        ],
+      });
+      component.setCountry("TR");
+      await settle();
+      (element.querySelector("#viewMode-7") as HTMLButtonElement).click();
+      await settle();
+      fixture.detectChanges();
+      expect(lastSearch().view_type).toBe(ViewMode.Hidden);
+      expect(lastSearch().country).toBeUndefined();
+      expect(element.querySelector("#viewMode-7")?.getAttribute("aria-current")).toBe("page");
+      expect(element.querySelector("h1")?.textContent?.trim()).toBe("HOME.NAV.HIDDEN");
+      expect(element.querySelector("app-sort-button")).toBeNull();
+      expect(element.querySelector("select.country-select")).toBeNull();
+      expect(element.querySelector(".empty-state")?.textContent).toContain("EMPTY.NOTHING_HIDDEN");
+    });
+  });
+
+  describe("multi-selection", () => {
+    it("shows an action bar for the selection and hides it in one go", async () => {
+      await create({ search: pagedBackend(3), hide_channel: null });
+      component.toggleSelection(component.channels[0]);
+      component.toggleSelection(component.channels[2]);
+      fixture.detectChanges();
+      const bar = element.querySelector(".selection-bar") as HTMLElement;
+      expect(bar.getAttribute("role")).toBe("toolbar");
+      expect(bar.textContent).toContain("HOME.SELECTION.COUNT");
+      expect(component.isSelected(component.channels[0])).toBeTrue();
+      expect(component.isSelected(component.channels[1])).toBeFalse();
+      const searches = callsOf(calls, "search").length;
+
+      (bar.querySelector(".selection-hide") as HTMLButtonElement).click();
+      await settle();
+      fixture.detectChanges();
+      expect(callsOf(calls, "hide_channel").map((c) => c.args)).toEqual([
+        { id: 1, hidden: true },
+        { id: 3, hidden: true },
+      ]);
+      expect(component.selection.size).toBe(0);
+      expect(element.querySelector(".selection-bar")).toBeNull();
+      // One reload, in place.
+      expect(callsOf(calls, "search").length).toBe(searches + 1);
+      expect(component.gridLoading).toBeFalse();
+    });
+
+    it("favorites the selection", async () => {
+      await create({ search: pagedBackend(3), favorite_channel: null });
+      component.toggleSelection(component.channels[1]);
+      fixture.detectChanges();
+      (element.querySelector(".selection-favorite") as HTMLButtonElement).click();
+      await settle();
+      expect(callsOf(calls, "favorite_channel").map((c) => c.args)).toEqual([{ channelId: 2 }]);
+    });
+
+    it("clears the selection on Escape instead of going back", async () => {
+      await create({ search: pagedBackend(3) });
+      const back = spyOn(component, "goBackHotkey");
+      component.toggleSelection(component.channels[0]);
+      const escape = new KeyboardEvent("keydown", { key: "Escape", cancelable: true });
+      document.dispatchEvent(escape);
+      expect(component.selection.size).toBe(0);
+      expect(escape.defaultPrevented).toBeTrue();
+      expect(back).not.toHaveBeenCalled();
+    });
+
+    it("acts on all results of a search after confirming the count", async () => {
+      await create({ search: pagedBackend(3), bulk_update: null });
+      const confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(true);
+      component.filters!.query = "news";
+      fixture.detectChanges();
+      expect(component.resultActionsVisible()).toBeTrue();
+      await component.applyToAllResults(BulkActionType.Hide);
+      expect(confirm.calls.mostRecent().args[0].params).toEqual({ count: "3", query: "news" });
+      const bulk = callsOf(calls, "bulk_update");
+      expect(bulk.length).toBe(1);
+      expect(bulk[0].args["action"]).toBe(BulkActionType.Hide);
+      expect((bulk[0].args["filters"] as Filters).query).toBe("news");
+    });
+  });
+
+  describe("history toolbar", () => {
+    it("clears the history only after confirming", async () => {
+      await create({ search: pagedBackend(3), clear_history: null });
+      await component.switchMode(ViewMode.History);
+      fixture.detectChanges();
+      const button = element.querySelector(".clear-history-btn") as HTMLButtonElement;
+      expect(button.getAttribute("aria-label")).toBe("HOME.CLEAR_HISTORY");
+      const confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(false);
+      button.click();
+      await settle();
+      expect(confirm).toHaveBeenCalled();
+      expect(callsOf(calls, "clear_history").length).toBe(0);
+
+      confirm.and.resolveTo(true);
+      const searches = callsOf(calls, "search").length;
+      button.click();
+      await settle();
+      expect(callsOf(calls, "clear_history").length).toBe(1);
+      expect(callsOf(calls, "search").length).toBe(searches + 1);
+    });
+
+    it("is not offered outside the history", async () => {
+      await create({ search: pagedBackend(3) });
+      expect(element.querySelector(".clear-history-btn")).toBeNull();
+    });
   });
 
   it("should create and load the library", async () => {

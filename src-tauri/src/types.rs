@@ -140,6 +140,9 @@ pub struct Settings {
     /// Switch to another feed of the same channel when a live stream fails.
     #[serde(default)]
     pub auto_fallback: Option<bool>,
+    /// Minutes before a programme starts that its reminder fires.
+    #[serde(default)]
+    pub reminder_lead_minutes: Option<u16>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]

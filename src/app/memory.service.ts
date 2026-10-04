@@ -11,6 +11,14 @@ import { SetNodeDTO } from "./models/setNodeDTO";
 import { Channel } from "./models/channel";
 import { CountryPrefixMode } from "./country-prefix";
 
+/// A tile that left the list shown (see MemoryService.RemoveTile).
+export interface RemovedTile {
+  channel: Channel;
+  /// Taken out of the favorites: only gone where the favorites are listed
+  /// (not inside a series, not in a favorites list).
+  unfavorited?: boolean;
+}
+
 @Injectable({
   providedIn: "root",
 })
@@ -45,7 +53,10 @@ export class MemoryService {
   public RefreshSources: Subject<boolean> = new Subject();
   public AddingAdditionalSource = false;
   public SeriesRefreshed: Map<number, boolean> = new Map();
-  public HideChannels: Subject<boolean> = new Subject();
+  /// A tile left the list shown (removed from the history or a list, hidden,
+  /// deleted, unfavorited in the favorites): the home page drops it in place
+  /// instead of reloading the first page.
+  public RemoveTile: Subject<RemovedTile> = new Subject();
   public CustomSourceIds: Set<number> = new Set();
   public XtreamSourceIds: Set<number> = new Set();
   /** An external XMLTV guide is cached: any live channel may have EPG, matched

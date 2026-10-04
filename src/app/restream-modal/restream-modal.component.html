@@ -2,47 +2,78 @@
   <h4 class="modal-title lbl">{{ "RESTREAM.TITLE" | translate: { name: channel?.name } }}</h4>
 </div>
 <div class="modal-body">
-  <div *ngIf="!started">
+  <ng-container *ngIf="!started">
     <p *ngIf="networkError" class="text-danger" role="alert">
       {{ "RESTREAM.NETWORK_UNAVAILABLE" | translate }}
     </p>
     <p>{{ "RESTREAM.INTRO1" | translate }}</p>
-    <br />
-    <p>{{ "RESTREAM.INTRO2" | translate }}</p>
-  </div>
-  <div *ngIf="started" class="selectable box mt-3">
-    <p>{{ "RESTREAM.RUNNING" | translate }}</p>
-    <br />
-    <p>{{ "RESTREAM.LOCAL_IPS" | translate }}</p>
-    <p *ngFor="let local of networkInfo?.local_ips">
-      {{ local }}
+    <p class="mb-0">{{ "RESTREAM.INTRO2" | translate }}</p>
+    <p *ngIf="starting" class="restream-status mt-3 mb-0" role="status">
+      <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      {{ "RESTREAM.STARTING" | translate }}
     </p>
-    <br />
-    <p>{{ "RESTREAM.WAN_ADDRESS" | translate }}</p>
-    <p>{{ networkInfo?.wan_ip }}</p>
-  </div>
-  <div *ngIf="started">
-    <br />
+  </ng-container>
+  <ng-container *ngIf="started">
+    <p class="restream-status mb-2" role="status">{{ "RESTREAM.RUNNING" | translate }}</p>
+    <div class="box mb-3">
+      <h5 class="restream-heading">{{ "RESTREAM.LOCAL_IPS" | translate }}</h5>
+      <ul class="restream-addresses">
+        <li *ngFor="let address of localAddresses">
+          <ng-container
+            *ngTemplateOutlet="addressRow; context: { $implicit: address }"
+          ></ng-container>
+        </li>
+      </ul>
+      <ng-container *ngIf="wanAddress as wan">
+        <h5 class="restream-heading mt-2">{{ "RESTREAM.WAN_ADDRESS" | translate }}</h5>
+        <ul class="restream-addresses">
+          <li>
+            <ng-container
+              *ngTemplateOutlet="addressRow; context: { $implicit: wan }"
+            ></ng-container>
+          </li>
+        </ul>
+      </ng-container>
+    </div>
     <p>{{ "RESTREAM.SHARE_INFO1" | translate }}</p>
-    <br />
     <p>{{ "RESTREAM.SHARE_INFO2" | translate }}</p>
-    <br />
-    <label for="ip-select">{{ "RESTREAM.SELECT_IP" | translate }}</label>
-    <select [(ngModel)]="selectedIP" id="ip-select" class="form-control">
-      <option *ngFor="let local of networkInfo?.local_ips">{{ local }}</option>
-      <option>{{ networkInfo?.wan_ip }}</option>
+    <label for="ip-select" class="form-label">{{ "RESTREAM.SELECT_IP" | translate }}</label>
+    <select [(ngModel)]="selectedIP" id="ip-select" class="form-select">
+      <option *ngFor="let address of addresses" [ngValue]="address.host">
+        {{ address.host }}
+      </option>
     </select>
-  </div>
+  </ng-container>
 </div>
-<div class="modal-footer">
-  <!-- Secondary actions left, the main one right; stopping deletes nothing -->
+<ng-template #addressRow let-address>
+  <span class="restream-url selectable" [title]="address.url ?? address.host">{{
+    address.url ?? address.host
+  }}</span>
   <button
-    (click)="activeModal.close('close')"
     type="button"
-    class="btn btn-secondary"
-    *ngIf="!started"
+    class="icon-btn restream-copy"
+    [attr.aria-label]="'RESTREAM.COPY_URL' | translate: { url: address.url ?? address.host }"
+    [ngbTooltip]="'RESTREAM.COPY' | translate"
+    (click)="copy(address)"
   >
-    <span>{{ "MODAL.CLOSE" | translate }}</span>
+    <svg
+      class="icon"
+      aria-hidden="true"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+      />
+    </svg>
+  </button>
+</ng-template>
+<div class="modal-footer">
+  <!-- Secondary actions left, the main one right; stopping deletes nothing.
+       Hiding keeps the restream running (status chip). -->
+  <button (click)="hide()" type="button" class="btn btn-secondary">
+    <span>{{ (restream.active ? "RESTREAM.HIDE" : "MODAL.CLOSE") | translate }}</span>
   </button>
   <button
     type="button"
@@ -66,7 +97,8 @@
   </button>
   <button
     *ngIf="!started"
-    [disabled]="loading || !networkInfo"
+    [disabled]="loading || !networkInfo || restream.active"
+    [attr.aria-busy]="starting"
     (click)="start()"
     type="button"
     class="btn btn-primary d-inline-flex align-items-center"
@@ -88,7 +120,7 @@
     type="button"
     class="btn btn-outline-primary d-inline-flex align-items-center"
     (click)="watch()"
-    [disabled]="loading || watching"
+    [disabled]="loading"
     *ngIf="started"
   >
     <span>{{ "RESTREAM.WATCH" | translate }}</span>

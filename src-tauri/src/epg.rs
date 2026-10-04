@@ -21,9 +21,16 @@ use crate::{
 };
 
 pub fn poll(mut to_watch: Vec<EPGNotify>, stop: Arc<AtomicBool>, app: AppHandle) -> Result<()> {
+    let mut lead = reminder_lead_secs();
+    let mut lead_read = std::time::Instant::now();
     while !stop.load(Relaxed) && !to_watch.is_empty() {
+        // The setting may change while reminders wait; read it now and then.
+        if lead_read.elapsed() >= Duration::from_secs(60) {
+            lead = reminder_lead_secs();
+            lead_read = std::time::Instant::now();
+        }
         to_watch.retain(|epg| {
-            let is_timestamp_over = match is_timestamp_over(epg.start_timestamp) {
+            let is_timestamp_over = match is_timestamp_over(epg.start_timestamp - lead) {
                 Ok(v) => v,
                 Err(e) => {
                     log::log(format!("{:?}", e));
@@ -45,18 +52,43 @@ pub fn poll(mut to_watch: Vec<EPGNotify>, stop: Arc<AtomicBool>, app: AppHandle)
 }
 
 fn notify(epg: &EPGNotify, app: &AppHandle) -> Result<()> {
+    let minutes = minutes_until(epg.start_timestamp, chrono::Utc::now().timestamp());
+    // With a lead time the programme has not started yet.
+    let body = if minutes > 0 {
+        crate::native_strings::text(
+            "reminder_soon_body",
+            &[
+                ("minutes", &minutes.to_string()),
+                ("channel", &epg.channel_name),
+            ],
+        )
+    } else {
+        crate::native_strings::text("reminder_body", &[("channel", &epg.channel_name)])
+    };
     app.notification()
         .builder()
         .title(crate::native_strings::text(
             "reminder_title",
             &[("title", &epg.title)],
         ))
-        .body(crate::native_strings::text(
-            "reminder_body",
-            &[("channel", &epg.channel_name)],
-        ))
+        .body(body)
         .show()?;
     Ok(())
+}
+
+/// Whole minutes until `start`, rounded; 0 once it started.
+fn minutes_until(start: i64, now: i64) -> i64 {
+    ((start - now).max(0) + 30) / 60
+}
+
+/// How long before a programme its reminder fires (the setting, in seconds).
+fn reminder_lead_secs() -> i64 {
+    crate::settings::get_settings()
+        .ok()
+        .and_then(|s| s.reminder_lead_minutes)
+        .map_or(0, |m| {
+            i64::from(m.min(crate::settings::MAX_REMINDER_LEAD_MINUTES)) * 60
+        })
 }
 
 fn is_timestamp_over(timestamp: i64) -> Result<bool> {
@@ -401,6 +433,19 @@ pub async fn process_alerts(app: &AppHandle) -> Result<()> {
         restart_poller(&state, app.clone()).await?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod test_reminder {
+    use super::minutes_until;
+
+    #[test]
+    fn test_minutes_until_the_programme() {
+        assert_eq!(minutes_until(10_000, 10_000 - 600), 10);
+        assert_eq!(minutes_until(10_000, 10_000 - 590), 10);
+        assert_eq!(minutes_until(10_000, 10_000 - 20), 0);
+        assert_eq!(minutes_until(10_000, 10_100), 0);
+    }
 }
 
 #[cfg(test)]

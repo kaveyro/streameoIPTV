@@ -116,7 +116,8 @@ pub async fn download(
     channel: Channel,
     download_id: &str,
     path: Option<String>,
-) -> Result<()> {
+    resume: bool,
+) -> Result<String> {
     let source_id = channel.source_id.context("no source id provided")?;
     let source = sql::get_source_from_id(source_id)
         .with_context(|| format!("failed to fetch source with id {}", source_id))?;
@@ -156,7 +157,8 @@ pub async fn download(
         .build()?;
     let url = crate::mpv::channel_stream_url(&channel)?;
     let name = channel.name.clone();
-    let result = download_to_file(&client, &url, name, path, &token, &app, download_id).await;
+    let result =
+        download_to_file(&client, &url, name, path, resume, &token, &app, download_id).await;
 
     // Always release the stream slot, also when the request itself failed —
     // a stale token would keep counting against the source's max_streams.
@@ -189,37 +191,162 @@ impl Drop for DownloadGuard {
     }
 }
 
+/// Partial downloads older than this are removed on start: kept for
+/// "Retry" after a failure, but never forever.
+const STALE_PART_SECS: u64 = 7 * 24 * 3600;
+
+/// Removes old `.part` files of failed downloads from the download folder.
+pub fn sweep_stale_downloads() {
+    let Ok(dir) = get_download_path(String::new()) else {
+        return;
+    };
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let stale = entry
+            .metadata()
+            .ok()
+            .and_then(|m| m.modified().ok())
+            .and_then(|t| t.elapsed().ok())
+            .is_some_and(|age| age.as_secs() > STALE_PART_SECS);
+        if stale && path.extension().is_some_and(|e| e == "part") {
+            let _ = std::fs::remove_file(&path);
+        }
+    }
+}
+
 /// Where a download is written until it is complete: an interrupted one
 /// (the app quit, a crash) must not look like a finished movie.
 fn partial_path(path: &str) -> String {
     format!("{path}.part")
 }
 
+/// How a (resumed) download goes on, by the HTTP status of its request.
+#[derive(Debug, PartialEq)]
+enum Continue {
+    /// From the start (no partial file, or the server ignored the range).
+    Fresh,
+    /// Appending to the partial file (206 Partial Content).
+    Append,
+    /// The partial file holds everything already (416 for its range).
+    Complete,
+    /// The partial file does not fit this download: request it whole.
+    Restart,
+    Failed,
+}
+
+/// `content_range` is the response's Content-Range header. A 206 must start
+/// where the partial file ends, and a 416 must name exactly its size as the
+/// whole length; anything else (another file of the same name, a partial
+/// file larger than the movie, a proxy's own range) starts over.
+fn continue_with(
+    status: reqwest::StatusCode,
+    offset: u64,
+    content_range: Option<&str>,
+) -> Continue {
+    let range = content_range.map(str::trim);
+    match status.as_u16() {
+        206 if offset > 0 => {
+            let start = range
+                .and_then(|r| r.strip_prefix("bytes "))
+                .and_then(|r| r.split('-').next())
+                .and_then(|start| start.trim().parse::<u64>().ok());
+            if start == Some(offset) {
+                Continue::Append
+            } else {
+                Continue::Restart
+            }
+        }
+        416 if offset > 0 => {
+            let whole = range
+                .and_then(|r| r.strip_prefix("bytes */"))
+                .and_then(|len| len.trim().parse::<u64>().ok());
+            if whole == Some(offset) {
+                Continue::Complete
+            } else {
+                Continue::Restart
+            }
+        }
+        _ if status.is_success() => Continue::Fresh,
+        _ => Continue::Failed,
+    }
+}
+
+/// Download progress for the frontend at most this often.
+const BYTES_EVENT_INTERVAL: Duration = Duration::from_millis(500);
+
+#[derive(Serialize, Clone)]
+struct DownloadBytes {
+    downloaded: u64,
+    total: Option<u64>,
+}
+
+#[allow(clippy::too_many_arguments)]
 async fn download_to_file(
     client: &reqwest::Client,
     url: &str,
     name: String,
     path: Option<String>,
+    resume: bool,
     token: &CancellationToken,
     app: &AppHandle,
     download_id: &str,
-) -> Result<()> {
-    let mut response = client.get(url).send().await?;
-    // Checked before the file exists, so an HTTP error leaves no empty file.
-    if !response.status().is_success() {
-        let error = response.status();
-        bail!("Failed to download movie: HTTP {error}")
-    }
-    let total_size = response.content_length().unwrap_or(0);
-    let mut downloaded = 0;
+) -> Result<String> {
     let path = match path {
         Some(p) => p,
         None => get_download_path(get_filename(name, url))?,
     };
-    let _guard = DownloadGuard::new();
     let part = partial_path(&path);
-    let mut file = tokio::fs::File::create(&part).await?;
+    let offset = if resume {
+        tokio::fs::metadata(&part)
+            .await
+            .map(|m| m.len())
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    let mut request = client.get(url);
+    if offset > 0 {
+        request = request.header(reqwest::header::RANGE, format!("bytes={offset}-"));
+    }
+    let mut response = request.send().await?;
+    let content_range = response
+        .headers()
+        .get(reqwest::header::CONTENT_RANGE)
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string);
+    let mut plan = continue_with(response.status(), offset, content_range.as_deref());
+    if plan == Continue::Restart {
+        response = client.get(url).send().await?;
+        plan = continue_with(response.status(), 0, None);
+    }
+    let (mut file, mut downloaded) = match plan {
+        Continue::Append => (
+            tokio::fs::OpenOptions::new()
+                .append(true)
+                .open(&part)
+                .await?,
+            offset,
+        ),
+        Continue::Fresh => (tokio::fs::File::create(&part).await?, 0),
+        Continue::Complete => {
+            tokio::fs::rename(&part, &path).await?;
+            return Ok(path);
+        }
+        Continue::Restart => unreachable!("a request without range never restarts"),
+        // Checked before the file is touched, so an HTTP error leaves no
+        // empty file (and keeps a partial one to resume).
+        Continue::Failed => {
+            let error = response.status();
+            bail!("Failed to download movie: HTTP {error}")
+        }
+    };
+    let _guard = DownloadGuard::new();
+    let total_size = response.content_length().map(|len| len + downloaded);
     let mut send_threshold: f64 = 0.1;
+    let mut bytes_sent = std::time::Instant::now() - BYTES_EVENT_INTERVAL;
 
     let mut result: Result<()> = loop {
         tokio::select! {
@@ -230,13 +357,20 @@ async fn download_to_file(
                            break Err(e.into());
                        }
                        downloaded += chunk.len() as u64;
-                       if total_size > 0 {
+                       if let Some(total_size) = total_size.filter(|t| *t > 0) {
                            let progress: f64 = (downloaded as f64 / total_size as f64) * 100.0;
                            let progress = (progress * 10.0).trunc() / 10.0;
                            if progress > send_threshold {
                                let _ = app.emit(&format!("progress-{}", download_id), progress);
                                send_threshold = progress + 0.1_f64;
                            }
+                       }
+                       if bytes_sent.elapsed() >= BYTES_EVENT_INTERVAL {
+                           bytes_sent = std::time::Instant::now();
+                           let _ = app.emit(
+                               &format!("download-bytes-{}", download_id),
+                               DownloadBytes { downloaded, total: total_size },
+                           );
                        }
                    }
                    Ok(None) => break Ok(()),
@@ -255,15 +389,17 @@ async fn download_to_file(
     }
     drop(file);
     if let Err(e) = result {
-        // Remove the partial file whatever the reason (abort, network error,
-        // full disk).
-        let _ = tokio::fs::remove_file(&part).await;
+        // Cancelled by the user: the partial file goes. Otherwise (network,
+        // disk) it stays, so "Retry" can continue where it stopped.
+        if token.is_cancelled() {
+            let _ = tokio::fs::remove_file(&part).await;
+        }
         return Err(e);
     }
     tokio::fs::rename(&part, &path)
         .await
         .with_context(|| format!("failed to move the finished download to {path}"))?;
-    Ok(())
+    Ok(path)
 }
 
 pub async fn remove_from_play_stop(
@@ -596,6 +732,41 @@ mod test_ffmpeg_input_args {
 #[cfg(test)]
 mod test_download_filename {
     use super::{active_downloads, get_extension, get_filename, partial_path};
+
+    #[test]
+    fn test_resumed_download_continues_by_status() {
+        use super::{Continue, continue_with};
+        use reqwest::StatusCode;
+        let partial = StatusCode::PARTIAL_CONTENT;
+        let unsatisfiable = StatusCode::RANGE_NOT_SATISFIABLE;
+        assert_eq!(
+            continue_with(partial, 500, Some("bytes 500-999/1000")),
+            Continue::Append
+        );
+        // Another range than asked for, or none: start over.
+        assert_eq!(
+            continue_with(partial, 500, Some("bytes 0-999/1000")),
+            Continue::Restart
+        );
+        assert_eq!(continue_with(partial, 500, None), Continue::Restart);
+        // The server ignored the range: start over.
+        assert_eq!(continue_with(StatusCode::OK, 500, None), Continue::Fresh);
+        assert_eq!(continue_with(StatusCode::OK, 0, None), Continue::Fresh);
+        // Complete only when the partial file has exactly the whole length.
+        assert_eq!(
+            continue_with(unsatisfiable, 500, Some("bytes */500")),
+            Continue::Complete
+        );
+        assert_eq!(
+            continue_with(unsatisfiable, 800, Some("bytes */500")),
+            Continue::Restart
+        );
+        assert_eq!(continue_with(unsatisfiable, 0, None), Continue::Failed);
+        assert_eq!(
+            continue_with(StatusCode::NOT_FOUND, 500, None),
+            Continue::Failed
+        );
+    }
 
     #[test]
     fn test_download_writes_a_part_file_first() {

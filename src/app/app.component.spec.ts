@@ -6,6 +6,7 @@ import { LanguageService } from "./language.service";
 import { UpdateService } from "./update.service";
 import { ZoomService } from "./zoom.service";
 import { DEFAULT_THEME } from "./theme-cache";
+import { RestreamService } from "./restream.service";
 import {
   TEST_IMPORTS,
   TEST_PROVIDERS,
@@ -48,6 +49,31 @@ describe("AppComponent", () => {
     expect(compiled.querySelector("main router-outlet")).not.toBeNull();
     expect(compiled.querySelector("app-player")).not.toBeNull();
     expect(compiled.querySelector("app-download-manager")).toBeNull();
+  });
+
+  it("shows a restream status chip with Open and Stop while a restream runs", async () => {
+    await create();
+    const restream = TestBed.inject(RestreamService);
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector(".restream-chip")).toBeNull();
+    restream.state = "running";
+    restream.channel = { id: 3, name: "News" };
+    fixture.detectChanges();
+    const chip = compiled.querySelector(".restream-chip")!;
+    expect(chip.textContent).toContain("RESTREAM.CHIP_RUNNING");
+    const open = spyOn(restream, "open");
+    const stop = spyOn(restream, "stop").and.resolveTo();
+    const [openButton, stopButton] = Array.from(chip.querySelectorAll("button"));
+    expect(openButton.textContent?.trim()).toBe("RESTREAM.OPEN");
+    openButton.click();
+    expect(open).toHaveBeenCalled();
+    stopButton.click();
+    expect(stop).toHaveBeenCalled();
+    restream.state = "idle";
+    fixture.detectChanges();
+    expect(compiled.querySelector(".restream-chip")).toBeNull();
   });
 
   it("applies the stored theme and language, and honours auto_update = false", async () => {

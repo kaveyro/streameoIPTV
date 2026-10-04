@@ -69,7 +69,9 @@
     <div *ngFor="let download of getDownloads(); trackBy: trackById">
       <div class="d-flex justify-content-between download-name small mb-1">
         <span class="text-truncate me-2">{{ download.channel.name }}</span>
-        <span class="flex-shrink-0" *ngIf="download.status === statusEnum.Active"
+        <span
+          class="flex-shrink-0"
+          *ngIf="download.status === statusEnum.Active && hasProgress(download)"
           >{{ download.progress }}%</span
         >
         <span class="flex-shrink-0 text-secondary" *ngIf="download.status === statusEnum.Queued">
@@ -78,13 +80,25 @@
       </div>
       <div class="d-flex align-items-center gap-2">
         <div class="progress flex-grow-1" style="height: 6px">
+          <!-- Without a known size the bar runs instead of standing at 0 % -->
           <div
             class="progress-bar"
             [class.progress-bar--active]="download.status === statusEnum.Active"
             [class.progress-bar--queued]="download.status === statusEnum.Queued"
+            [class.progress-bar-striped]="
+              download.status === statusEnum.Active && !hasProgress(download)
+            "
+            [class.progress-bar-animated]="
+              download.status === statusEnum.Active && !hasProgress(download)
+            "
             role="progressbar"
-            [style.width.%]="download.progress"
-            [attr.aria-valuenow]="download.progress"
+            [style.width.%]="
+              download.status === statusEnum.Active && !hasProgress(download)
+                ? 100
+                : download.progress
+            "
+            [attr.aria-valuenow]="hasProgress(download) ? download.progress : null"
+            [attr.aria-valuetext]="transferText(download) || null"
             [attr.aria-label]="download.channel.name"
             aria-valuemin="0"
             aria-valuemax="100"
@@ -129,6 +143,12 @@
             />
           </svg>
         </button>
+      </div>
+      <div
+        class="transfer-text small mt-1"
+        *ngIf="download.status === statusEnum.Active && download.downloaded !== undefined"
+      >
+        {{ transferText(download) }}
       </div>
     </div>
 
@@ -178,12 +198,44 @@
               d="M13.46,12L19,17.54V19H17.54L12,13.46L6.46,19H5V17.54L10.54,12L5,6.46V5H6.46L12,10.54L17.54,5H19V6.46L13.46,12Z"
             />
           </svg>
-          <span
-            class="text-truncate flex-grow-1 download-name"
-            [attr.title]="download.error || download.channel.name"
+          <div class="flex-grow-1 history-text">
+            <div class="text-truncate download-name" [attr.title]="download.channel.name">
+              {{ download.channel.name }}
+            </div>
+            <div
+              *ngIf="download.status === statusEnum.Failed && download.error"
+              class="text-truncate history-error"
+              [attr.title]="download.error"
+            >
+              {{ download.error }}
+            </div>
+          </div>
+          <button
+            type="button"
+            *ngIf="download.status === statusEnum.Completed && download.filePath"
+            class="icon-btn action"
+            (click)="play(download)"
+            [attr.aria-label]="'DOWNLOAD.PLAY_ARIA' | translate: { name: download.channel.name }"
+            [attr.title]="'DOWNLOAD.PLAY' | translate"
           >
-            {{ download.channel.name }}
-          </span>
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M8,5.14V19.14L19,12.14L8,5.14Z" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            *ngIf="download.status === statusEnum.Completed && download.filePath"
+            class="icon-btn action"
+            (click)="reveal(download)"
+            [attr.aria-label]="'DOWNLOAD.SHOW_IN_FOLDER' | translate"
+            [attr.title]="'DOWNLOAD.SHOW_IN_FOLDER' | translate"
+          >
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path
+                d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"
+              />
+            </svg>
+          </button>
           <button
             type="button"
             *ngIf="download.status !== statusEnum.Completed"

@@ -28,7 +28,7 @@ import { DeleteGroupModalComponent } from "../delete-group-modal/delete-group-mo
 import { EpgModalComponent } from "../epg-modal/epg-modal.component";
 import { EpgMappingModalComponent } from "../epg-mapping-modal/epg-mapping-modal.component";
 import { EPG } from "../models/epg";
-import { RestreamModalComponent } from "../restream-modal/restream-modal.component";
+import { RestreamService } from "../restream.service";
 import { DownloadService } from "../download.service";
 import { Download } from "../models/download";
 import { Subscription, take } from "rxjs";
@@ -61,6 +61,40 @@ import { WatchProgressService, isResumable, watchPercent } from "../watch-progre
 /// it is there when they scroll in.
 const VISIBILITY_MARGIN = "200px";
 
+/// Ctrl/Cmd/Shift with a click or Space/Enter selects instead of playing.
+function selectionModifier(event: Event): boolean {
+  const e = event as MouseEvent | KeyboardEvent;
+  return e.ctrlKey || e.metaKey || e.shiftKey;
+}
+
+/**
+ * Hides or shows a channel (hide_channel) or a group (hide_group). Resolves
+ * to false, after the error toast, when that failed. Takes the services, so
+ * the undo of a toast still works after its tile is gone.
+ */
+export async function setHidden(
+  channel: Channel,
+  hidden: boolean,
+  error: ErrorService,
+  translate: TranslateService,
+): Promise<boolean> {
+  try {
+    await invoke(channel.media_type == MediaType.group ? "hide_group" : "hide_channel", {
+      id: channel.id,
+      hidden,
+    });
+    return true;
+  } catch (e) {
+    error.handleError(
+      e,
+      translate.instant(hidden ? "TOAST.HIDE_FAILED" : "TOAST.UNHIDE_FAILED", {
+        name: channel.name,
+      }),
+    );
+    return false;
+  }
+}
+
 /// One clock formatter per locale, shared by all tiles (a grid page shows dozens).
 const clockFormats = new Map<string, Intl.DateTimeFormat>();
 
@@ -89,7 +123,7 @@ function formatClock(timestamp: number, locale?: string): string {
     CountryNamePipe,
   ],
   templateUrl: "./channel-tile.component.html",
-  styleUrl: "./channel-tile.component.css",
+  styleUrls: ["./channel-tile.component.css", "./channel-tile-states.css"],
 })
 export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
   constructor(
@@ -109,6 +143,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     private ngZone: NgZone,
     public favoriteLists: FavoriteListsService,
     private watchProgressService: WatchProgressService,
+    private restream: RestreamService,
   ) {}
   @Input() channel?: Channel;
   @Input() id!: number;
@@ -122,9 +157,14 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /// First/last tile of the whole order (nothing to move past).
   @Input() first = false;
   @Input() last = false;
+  /// Part of the home page's multi-selection (check mark, action bar).
+  @Input() selected = false;
   /// "Move forward" (-1) / "move back" (+1) from the context menu; the home
   /// page moves the tile and saves the order.
   @Output() move = new EventEmitter<-1 | 1>();
+  /// Ctrl/Cmd/Shift + click (or Shift + Space/Enter): add the tile to the home
+  /// page's selection or take it out.
+  @Output() toggleSelect = new EventEmitter<void>();
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
   @ViewChild("title") titleElement?: ElementRef<HTMLElement>;
   /// The name is cut off (ellipsis or line clamp): only then the tooltip
@@ -138,7 +178,6 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   mediaTypeEnum = MediaType;
   viewModeEnum = ViewMode;
   subscriptions: Subscription[] = [];
-  fade = false;
   logoSrc?: string;
   nowPlaying?: NowPlaying;
   nowPlayingProgress = 0;
@@ -166,8 +205,9 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /// Country prefix of the name ("TR"), for the badge display mode.
   countryCode?: string;
   /// A series/category is being opened (get_episodes can take a while); a
-  /// second click meanwhile must not push the same level twice.
-  private opening = false;
+  /// second click meanwhile must not push the same level twice. The tile
+  /// shows a spinner meanwhile; the grid stays as it is.
+  opening = false;
   /// The open context menu came from the ContextMenu key / Shift+F10.
   private menuFromKeyboard = false;
 
@@ -275,6 +315,11 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   /** Accessible name: number, the full channel name and what is on right now
    *  (or how far a movie was watched). */
   ariaLabel(): string {
+    const label = this.describe();
+    return this.selected ? `${label}, ${this.translate.instant("TILE.SELECTED")}` : label;
+  }
+
+  private describe(): string {
     const number = this.channel?.number;
     const name = (number != null ? `${number} ` : "") + (this.channel?.name ?? "");
     if (this.nowPlayingSummary) return `${name}, ${this.nowPlayingSummary}`;
@@ -302,6 +347,17 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     if (!this.channel) return;
     try {
       await this.watchProgressService.clear(this.channel);
+    } catch (e) {
+      this.error.handleError(e);
+    }
+  }
+
+  /** Movies/episodes left midway: count them as watched to the end. */
+  async markWatched() {
+    if (!this.channel) return;
+    try {
+      // The service updates every tile of this movie (WatchProgressService.changed).
+      await this.watchProgressService.markWatched(this.channel);
     } catch (e) {
       this.error.handleError(e);
     }
@@ -344,6 +400,29 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     void this.click();
   }
 
+  /// Shift + Space or Enter: selects the tile (the plain keys only match
+  /// without modifiers). Not Ctrl: Ctrl+Space goes to the search box.
+  onKeyDown(event: KeyboardEvent) {
+    if ((event.key !== " " && event.key !== "Enter") || !event.shiftKey) return;
+    event.preventDefault();
+    if (!event.repeat) this.toggleSelect.emit();
+  }
+
+  /** A click on the tile: plays/opens it, or with Ctrl/Cmd/Shift selects it. */
+  onClick(event: MouseEvent) {
+    if (selectionModifier(event)) {
+      event.preventDefault();
+      this.toggleSelect.emit();
+      return;
+    }
+    void this.click();
+  }
+
+  /// Shift+click would also select the text between two clicks.
+  onMouseDown(event: MouseEvent) {
+    if (event.shiftKey) event.preventDefault();
+  }
+
   checkNameTruncated() {
     const title = this.titleElement?.nativeElement;
     this.nameTruncated =
@@ -373,6 +452,12 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       this.channel?.media_type == MediaType.group ||
       this.channel?.media_type == MediaType.season
     ) {
+      // The hidden view lists hidden series and groups flat; they cannot be
+      // opened there, only shown again (their menu).
+      if (this.viewMode == ViewMode.Hidden) {
+        this.openContextMenuFromKeyboard();
+        return;
+      }
       if (this.opening) return;
       this.opening = true;
       try {
@@ -380,12 +465,13 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
           this.channel.media_type == MediaType.serie &&
           !this.memory.SeriesRefreshed.has(this.channel.id!)
         ) {
-          this.memory.HideChannels.next(false);
           try {
             await invoke("get_episodes", { channel: this.channel });
             this.memory.SeriesRefreshed.set(this.channel.id!, true);
           } catch (e) {
+            // Stay on this level: the series could not be loaded.
             this.error.handleError(e, this.translate.instant("TOAST.FETCH_SERIES_FAILED"));
+            return;
           }
         }
         this.memory.SetNode.next({
@@ -493,12 +579,13 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     setTimeout(() => this.matMenuTrigger.openMenu(), 0);
   }
 
-  /** Whether favorite() makes sense here (same rule as the context menu). */
+  /** Whether favorite() makes sense here (same rule as the context menu).
+   *  Hidden items stay out of the favorites view, so not in the hidden view. */
   canFavorite(): boolean {
     return (
       this.channel?.media_type != MediaType.group &&
       this.channel?.media_type != MediaType.season &&
-      this.viewMode != ViewMode.History
+      this.viewMode != ViewMode.Hidden
     );
   }
 
@@ -527,8 +614,10 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     if (await this.favoriteLists.setMember(list, this.channel, member)) {
       if (member) this.listMembership.add(list.id);
       else this.listMembership.delete(list.id);
-      // Taken out of the list that is shown: gone after the next load.
-      if (!member && list.id === this.favoriteList) this.memory.Refresh.next(false);
+      // Taken out of the list that is shown: the tile goes.
+      if (!member && list.id === this.favoriteList) {
+        this.memory.RemoveTile.next({ channel: this.channel });
+      }
     }
   }
 
@@ -546,7 +635,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
     const list = this.favoriteLists.current().find((l) => l.id === this.favoriteList);
     if (!list || !this.channel) return;
     if (await this.favoriteLists.setMember(list, this.channel, false)) {
-      this.memory.Refresh.next(false);
+      this.memory.RemoveTile.next({ channel: this.channel });
     }
   }
 
@@ -589,10 +678,11 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
             : this.translate.instant("TOAST.FAVORITE_REMOVED", { name }),
         );
       } else if (wasFavorite) {
-        if (this.viewMode == ViewMode.Favorites) this.fade = true;
+        if (this.viewMode == ViewMode.Favorites) {
+          this.memory.RemoveTile.next({ channel: this.channel!, unfavorited: true });
+        }
         this.toastr.success(this.translate.instant("TOAST.FAVORITE_REMOVED", { name }));
       } else {
-        if (this.viewMode == ViewMode.Favorites) this.fade = false;
         this.toastr.success(this.translate.instant("TOAST.FAVORITE_ADDED", { name }));
       }
     } catch (e) {
@@ -632,14 +722,49 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   async removeFromHistory() {
-    const name = this.channel?.name;
+    const channel = this.channel!;
+    const name = channel.name;
     try {
-      await invoke("remove_from_history", { id: this.channel!.id });
-      this.memory.Refresh.next(false);
+      await invoke("remove_from_history", { id: channel.id });
+      this.memory.RemoveTile.next({ channel });
       this.toastr.success(this.translate.instant("TOAST.HISTORY_REMOVED", { name }));
     } catch (e) {
       this.error.handleError(e, this.translate.instant("TOAST.HISTORY_REMOVE_FAILED", { name }));
     }
+  }
+
+  /** "Hide channel" / "Hide group": gone from every view but the hidden one.
+   *  Tapping the toast brings it back. */
+  async hide() {
+    const channel = this.channel;
+    if (!channel) return;
+    if (!(await setHidden(channel, true, this.error, this.translate))) return;
+    this.memory.RemoveTile.next({ channel });
+    const memory = this.memory;
+    const error = this.error;
+    const translate = this.translate;
+    this.toastr
+      .success(translate.instant("TOAST.HIDDEN_UNDO", { name: channel.name }))
+      .onTap.pipe(take(1))
+      .subscribe(async () => {
+        // The tile is gone by now: only services are used.
+        if (await setHidden(channel, false, error, translate)) memory.Refresh.next(false);
+      });
+  }
+
+  /** "Unhide" in the hidden view: back in the other views. */
+  async unhide() {
+    const channel = this.channel;
+    if (!channel) return;
+    if (!(await setHidden(channel, false, this.error, this.translate))) return;
+    this.memory.RemoveTile.next({ channel });
+    this.toastr.success(this.translate.instant("TOAST.UNHIDDEN", { name: channel.name }));
+  }
+
+  /** Stored channels, movies, series and groups can be hidden (not seasons). */
+  canHide(): boolean {
+    const channel = this.channel;
+    return channel?.id !== undefined && channel.id >= 0 && channel.media_type !== MediaType.season;
   }
 
   async record() {
@@ -803,7 +928,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
         id: this.channel?.id,
         doChannelsUpdate: false,
       });
-      this.memory.Refresh.next(true);
+      this.memory.RemoveTile.next({ channel: this.channel! });
       this.error.success(this.translate.instant("TOAST.CATEGORY_DELETED"));
     } catch (e) {
       this.error.handleError(e);
@@ -822,14 +947,7 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
   }
 
   openRestreamModal() {
-    this.memory.ModalRef = this.modal.open(RestreamModalComponent, {
-      backdrop: "static",
-      size: "xl",
-      keyboard: false,
-    });
-    this.memory.ModalRef.componentInstance.channel = this.channel;
-    this.memory.ModalRef.componentInstance.name = "RestreamModalComponent";
-    this.memory.ModalRef.result.then((_) => (this.memory.ModalRef = undefined));
+    this.restream.open(this.channel!);
   }
 
   async deleteChannel() {
@@ -840,12 +958,14 @@ export class ChannelTileComponent implements OnInit, OnChanges, OnDestroy, After
       params: { name: this.channel?.name ?? "" },
     });
     if (!confirmed) return;
-    await this.memory.tryIPC(
+    const channel = this.channel!;
+    // tryIPC resolves to true when the action failed.
+    const failed = await this.memory.tryIPC(
       this.translate.instant("TOAST.CHANNEL_DELETED"),
       this.translate.instant("TOAST.CHANNEL_DELETE_FAILED"),
-      () => invoke("delete_custom_channel", { id: this.channel?.id }),
+      () => invoke("delete_custom_channel", { id: channel.id }),
     );
-    this.memory.Refresh.next(true);
+    if (!failed) this.memory.RemoveTile.next({ channel });
   }
 
   isDownloading() {

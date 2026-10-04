@@ -96,10 +96,6 @@
   cursor: grab;
 }
 
-.faded {
-  opacity: 0.5;
-}
-
 .channel:focus {
   outline: none;
 }

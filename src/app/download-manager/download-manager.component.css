@@ -77,6 +77,20 @@
   min-width: 0;
 }
 
+.history-text {
+  min-width: 0;
+}
+
+.history-error {
+  color: var(--color-danger);
+  font-size: var(--fs-xs);
+}
+
+.transfer-text {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
 .status-icon {
   width: var(--icon-size-sm);
   height: var(--icon-size-sm);

@@ -2362,6 +2362,33 @@ fn add_scheduled_recording_on(sql: &Connection, rec: &ScheduledRecording) -> Res
     )?)
 }
 
+/// Pending or running recordings on the source of `channel_id` that overlap
+/// `start..end`, the programme itself left out.
+pub fn count_overlapping_recordings(channel_id: i64, start: i64, end: i64) -> Result<usize> {
+    count_overlapping_recordings_on(&*get_conn()?, channel_id, start, end)
+}
+
+fn count_overlapping_recordings_on(
+    conn: &Connection,
+    channel_id: i64,
+    start: i64,
+    end: i64,
+) -> Result<usize> {
+    let count: i64 = conn.query_row(
+        r#"
+        SELECT COUNT(*) FROM scheduled_recordings r
+        JOIN channels c ON c.id = r.channel_id
+        WHERE r.status IN (0, 1)
+          AND c.source_id = (SELECT source_id FROM channels WHERE id = ?1)
+          AND r.start_timestamp < ?3 AND r.end_timestamp > ?2
+          AND NOT (r.channel_id = ?1 AND r.start_timestamp = ?2)
+        "#,
+        params![channel_id, start, end],
+        |r| r.get(0),
+    )?;
+    Ok(count as usize)
+}
+
 /// Pending recordings that start before `until` and have not ended yet.
 pub fn count_upcoming_recordings(now: i64, until: i64) -> Result<usize> {
     let sql = get_conn()?;
@@ -2374,6 +2401,17 @@ pub fn count_upcoming_recordings(now: i64, until: i64) -> Result<usize> {
         |r| r.get(0),
     )?;
     Ok(count as usize)
+}
+
+pub fn get_scheduled_recording_status(id: i64) -> Result<Option<u8>> {
+    let sql = get_conn()?;
+    Ok(sql
+        .query_row(
+            "SELECT status FROM scheduled_recordings WHERE id = ?",
+            params![id],
+            |r| r.get(0),
+        )
+        .optional()?)
 }
 
 pub fn get_scheduled_recording_title(id: i64) -> Result<Option<String>> {
@@ -3448,6 +3486,57 @@ fn get_resume_position_on(
 
 /// Forgets how far a movie or episode was watched ("play from the start",
 /// "mark as unwatched").
+/// "Mark as watched": finished, so the next play starts at the beginning.
+pub fn mark_watch_finished(source_id: i64, url: &str) -> Result<()> {
+    mark_watch_finished_on(&*get_conn()?, source_id, url)
+}
+
+fn mark_watch_finished_on(conn: &Connection, source_id: i64, url: &str) -> Result<()> {
+    conn.execute(
+        r#"
+          INSERT INTO watch_progress (source_id, url, position, duration, finished, updated)
+          VALUES (?1, ?2, NULL, NULL, 1, strftime('%s', 'now'))
+          ON CONFLICT (source_id, url) DO UPDATE SET
+            position = NULL, finished = 1, updated = strftime('%s', 'now')
+        "#,
+        params![source_id, url],
+    )?;
+    Ok(())
+}
+
+/// The stored progress of these URLs of one source (local files use 0).
+pub fn get_watch_progress_for(source_id: i64, urls: &[String]) -> Result<Vec<WatchProgress>> {
+    get_watch_progress_for_on(&*get_conn()?, source_id, urls)
+}
+
+fn get_watch_progress_for_on(
+    conn: &Connection,
+    source_id: i64,
+    urls: &[String],
+) -> Result<Vec<WatchProgress>> {
+    let mut statement = conn.prepare(
+        "SELECT position, duration, finished FROM watch_progress WHERE source_id = ? AND url = ?",
+    )?;
+    let mut progress = Vec::new();
+    for url in urls {
+        if let Some((position, duration, finished)) = statement
+            .query_row(params![source_id, url], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+            })
+            .optional()?
+        {
+            progress.push(WatchProgress {
+                source_id,
+                url: url.clone(),
+                position,
+                duration,
+                finished,
+            });
+        }
+    }
+    Ok(progress)
+}
+
 pub fn clear_watch_progress(source_id: i64, url: &str) -> Result<()> {
     get_conn()?.execute(
         "DELETE FROM watch_progress WHERE source_id = ? AND url = ?",
@@ -3532,6 +3621,34 @@ mod test_sql {
         tx.commit().unwrap();
         assert!(locked(&conn, "Kids"));
         assert!(locked(&conn, "Adult"));
+    }
+
+    #[test]
+    fn test_overlapping_recordings_count_per_source() {
+        use super::count_overlapping_recordings_on;
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            CREATE TABLE channels (id INTEGER PRIMARY KEY, source_id INTEGER);
+            CREATE TABLE scheduled_recordings (id INTEGER PRIMARY KEY, channel_id INTEGER,
+              title TEXT, start_timestamp INTEGER, end_timestamp INTEGER, status INTEGER);
+            INSERT INTO channels (id, source_id) VALUES (1, 1), (2, 1), (3, 2);
+            INSERT INTO scheduled_recordings (channel_id, start_timestamp, end_timestamp, status)
+            VALUES (2, 100, 200, 0), (2, 150, 250, 1), (3, 100, 200, 0),
+                   (2, 300, 400, 0), (2, 100, 200, 3), (1, 100, 200, 0);
+            "#,
+        )
+        .unwrap();
+        // Same source, overlapping, pending or running; not the other source,
+        // not later, not failed, not the programme itself.
+        assert_eq!(
+            count_overlapping_recordings_on(&conn, 1, 100, 200).unwrap(),
+            2
+        );
+        assert_eq!(
+            count_overlapping_recordings_on(&conn, 3, 100, 200).unwrap(),
+            0
+        );
     }
 
     #[test]
@@ -3621,6 +3738,34 @@ mod test_sql {
         assert_eq!(get_resume_position_on(&conn, 1, "u").unwrap(), None);
         // Other sources and URLs are apart.
         assert_eq!(get_resume_position_on(&conn, 2, "u").unwrap(), None);
+    }
+
+    #[test]
+    fn test_mark_watched_and_read_back() {
+        use super::{
+            get_resume_position_on, get_watch_progress_for_on, mark_watch_finished_on,
+            save_watch_progress_on,
+        };
+        let conn = progress_db();
+        save_watch_progress_on(&conn, 0, "C:/rec/a.ts", 600.0, Some(3600.0)).unwrap();
+        let read = get_watch_progress_for_on(
+            &conn,
+            0,
+            &["C:/rec/a.ts".to_string(), "C:/rec/b.ts".to_string()],
+        )
+        .unwrap();
+        assert_eq!(read.len(), 1);
+        assert_eq!(read[0].position, Some(600.0));
+        assert!(!read[0].finished);
+        mark_watch_finished_on(&conn, 0, "C:/rec/a.ts").unwrap();
+        mark_watch_finished_on(&conn, 0, "C:/rec/b.ts").unwrap();
+        assert_eq!(
+            get_resume_position_on(&conn, 0, "C:/rec/a.ts").unwrap(),
+            None
+        );
+        let read = get_watch_progress_for_on(&conn, 0, &["C:/rec/a.ts".to_string()]).unwrap();
+        assert!(read[0].finished);
+        assert_eq!(read[0].duration, Some(3600.0));
     }
 
     #[test]

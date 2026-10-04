@@ -42,7 +42,8 @@
       "RECORDINGS": "Recordings",
       "SETTINGS": "Settings",
       "GUIDE": "TV guide",
-      "CONTINUE_WATCHING": "Continue watching"
+      "CONTINUE_WATCHING": "Continue watching",
+      "HIDDEN": "Hidden"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -58,7 +59,19 @@
     "VIEWING": "Viewing: {{path}}",
     "SEARCH_LABEL": "Search channels, movies and series",
     "CLEAR_SEARCH": "Clear search",
-    "BREADCRUMB": "Path"
+    "BREADCRUMB": "Path",
+    "SEARCH_IN": "Search in {{name}}…",
+    "RESULT_ACTIONS": "Actions for all results",
+    "FAVORITE_ALL_RESULTS": "Add all results to favorites",
+    "HIDE_ALL_RESULTS": "Hide all results",
+    "UNHIDE_ALL_RESULTS": "Show all results again",
+    "CLEAR_HISTORY": "Clear history",
+    "SELECTION": {
+      "ACTIONS": "Selected items",
+      "COUNT": "{{count}} selected",
+      "HIDE": "Hide",
+      "CLEAR": "Clear selection"
+    }
   },
   "MENU": {
     "REMOVE": "Remove",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "Unlock group",
     "MAP_EPG": "Assign EPG…",
     "PLAY_FROM_START": "Play from the start",
-    "MARK_UNWATCHED": "Mark as unwatched"
+    "MARK_UNWATCHED": "Mark as unwatched",
+    "MARK_WATCHED": "Mark as watched",
+    "HIDE_CHANNEL": "Hide channel",
+    "HIDE_GROUP": "Hide group",
+    "HIDE": "Hide",
+    "UNHIDE": "Show again"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "No items found",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "Recordings and downloads are saved in the recording folder (Settings → Recording)",
     "LOAD_FAILED": "This view could not be loaded",
     "LOAD_FAILED_HINT": "Check the connection to your source and try again",
-    "RETRY": "Try again"
+    "RETRY": "Try again",
+    "ALL_SOURCES_DISABLED": "All sources are disabled",
+    "ALL_SOURCES_DISABLED_HINT": "Enable a source in the settings to see its items",
+    "NO_MATCH_FILTERS": "Nothing matches the active filters",
+    "ACTIVE_FILTERS": "Active filters: {{filters}}",
+    "FILTER_COUNTRY": "Country {{code}}",
+    "CLEAR_FILTERS": "Clear filters",
+    "NOTHING_HIDDEN": "Nothing hidden",
+    "NOTHING_HIDDEN_HINT": "Hidden channels and categories show up here and can be shown again from their menu"
   },
   "RECORDING": {
     "SCHEDULED": "Scheduled recording",
     "STATUS_RECORDING": "Recording",
     "STATUS_DONE": "Done",
     "STATUS_FAILED": "Failed",
-    "STATUS_PENDING": "Pending"
+    "STATUS_PENDING": "Pending",
+    "CONFLICT_TITLE": "Not enough streams",
+    "CONFLICT_BODY": "{{source}} allows {{max}} streams; {{count}} other recordings run at that time. Schedule anyway?",
+    "CONFLICT_CONFIRM": "Schedule anyway"
   },
   "SORT": {
     "SORT": "Sort",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "You are running version {{version}}",
       "CHECK_UPDATES": "Check now",
       "CHECKING": "Checking...",
-      "RESTART_REQUIRED": "Requires a restart"
+      "RESTART_REQUIRED": "Requires a restart",
+      "REMINDER_LEAD": "Reminder lead time",
+      "REMINDER_LEAD_DESC": "Programme reminders appear this many minutes before the start (0 = at the start).",
+      "MINUTES_SHORT": "min"
     },
     "APPEARANCE": {
       "THEME": "Theme",
@@ -277,7 +309,9 @@
       "COVERAGE": "{{matched}} of {{live}} live channels have guide data.",
       "COVERAGE_HINT": "Channels without a match can be assigned by hand: open the channel's menu and choose “Assign EPG…”.",
       "DUPLICATE_COUNTRY": "{{country}} is covered by {{count}} sources – duplicate sources only make the refresh slower.",
-      "REFRESHING": "Refreshing…"
+      "REFRESHING": "Refreshing…",
+      "STATUS_LOADING": "Loading…",
+      "REMOVED_UNDO": "XMLTV source removed. Click here to undo"
     },
     "DATA": {
       "BACKUP": "Back up database",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "Download from archive",
     "NOTIFY_ON": "Remind me when it starts",
     "NOTIFY_OFF": "Remove reminder",
-    "NOTIFY_NEEDS_TRAY": "Reminders need the tray icon (Settings → General)"
+    "NOTIFY_NEEDS_TRAY": "Reminders need the tray icon (Settings → General)",
+    "STOP_RECORDING": "Stop recording"
   },
   "RESTREAM": {
     "TITLE": "Re-streaming: {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "Watch",
     "SHARE": "Export…",
     "STOP": "Stop",
-    "NETWORK_UNAVAILABLE": "Network information is unavailable, so re-streaming cannot be started."
+    "NETWORK_UNAVAILABLE": "Network information is unavailable, so re-streaming cannot be started.",
+    "STARTING": "Starting the restream…",
+    "HIDE": "Hide",
+    "COPY": "Copy",
+    "COPY_URL": "Copy {{url}}",
+    "COPIED": "Address copied",
+    "CHIP_RUNNING": "Restream running · {{channel}}",
+    "CHIP_STARTING": "Restream starting · {{channel}}",
+    "OPEN": "Open",
+    "STOPPED_FFMPEG": "The restream of {{name}} stopped: ffmpeg exited unexpectedly",
+    "STOPPED_SERVER": "The restream of {{name}} stopped: the local server failed",
+    "STOPPED_UNKNOWN": "The restream of {{name}} stopped unexpectedly"
   },
   "DOWNLOAD": {
     "TITLE": "Downloads",
@@ -427,7 +473,12 @@
     "FINISHED": "Finished",
     "CLEAR_FINISHED": "Clear",
     "CANCEL_ALL": "Cancel all",
-    "CONCURRENT": "Parallel downloads"
+    "CONCURRENT": "Parallel downloads",
+    "BYTES_OF": "{{done}} of {{total}}",
+    "SPEED": "{{speed}}/s",
+    "PLAY": "Play",
+    "PLAY_ARIA": "Play {{name}}",
+    "SHOW_IN_FOLDER": "Show in folder"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Creating a custom channel",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "The TV guide is loading in the background…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "Removed “{{name}}” from favorites; it stays in “{{list}}”",
     "DETAILS": "Details",
-    "RECORDING_ALREADY_SCHEDULED": "This programme is already scheduled for recording"
+    "RECORDING_ALREADY_SCHEDULED": "This programme is already scheduled for recording",
+    "HIDDEN_UNDO": "“{{name}}” hidden. Click to undo.",
+    "UNHIDDEN": "“{{name}}” is shown again",
+    "HIDE_FAILED": "Failed to hide “{{name}}”",
+    "UNHIDE_FAILED": "Failed to show “{{name}}” again",
+    "ITEMS_FAVORITED": "{{count}} items added to favorites",
+    "ITEMS_HIDDEN_UNDO": "{{count}} items hidden. Click to undo.",
+    "ITEMS_UNHIDDEN": "{{count}} items are shown again",
+    "BULK_FAILED": "Some items could not be changed",
+    "RESULTS_UPDATED": "The search results were updated"
   },
   "UPDATE": {
     "TITLE": "Update available",
     "AVAILABLE": "Version {{version}} is available, you have {{current}}.",
     "RESTART_HINT": "The app restarts once the update is installed.",
     "INSTALL": "Install now",
-    "LATER": "Later"
+    "LATER": "Later",
+    "PENDING_WORK": "{{count}} recordings or downloads are running or due soon; installing restarts the app and stops them.",
+    "INSTALL_ANYWAY": "Install anyway",
+    "PROGRESS": "Update download progress"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Catch-up available",
@@ -646,7 +709,8 @@
     "RESUME": "Resume",
     "LOCKED_GROUP": "Locked group",
     "WATCHED": "Watched",
-    "WATCH_PROGRESS": "{{percent}}% watched"
+    "WATCH_PROGRESS": "{{percent}}% watched",
+    "SELECTED": "selected"
   },
   "LOADING": {
     "CHANNELS": "Loading your channels..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "Programmes with \"{{query}}\" in the title will no longer be recorded automatically.",
     "DELETE_ALERT_KEEP": "Reminders and recordings already created stay. Remove them individually if you no longer want them.",
     "CLEAR_FINISHED_TITLE": "Remove finished entries?",
-    "CLEAR_FINISHED_FAILED_BODY": "Failed recordings among them: {{count}}. Their entries are the only sign that these recordings did not work. The recorded files stay in the folder."
+    "CLEAR_FINISHED_FAILED_BODY": "Failed recordings among them: {{count}}. Their entries are the only sign that these recordings did not work. The recorded files stay in the folder.",
+    "BULK_FAVORITE_TITLE": "Add all results to favorites?",
+    "BULK_FAVORITE_BODY": "All {{count}} results for “{{query}}” will be added to the favorites.",
+    "BULK_HIDE_TITLE": "Hide all results?",
+    "BULK_HIDE_BODY": "All {{count}} results for “{{query}}” will be hidden. You can show them again in the “Hidden” view.",
+    "BULK_UNHIDE_TITLE": "Show all results again?",
+    "BULK_UNHIDE_BODY": "All {{count}} results for “{{query}}” will be shown in the other views again."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Back to overview",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "Close player (Esc)",
     "FULLSCREEN_HINT": "Esc: exit full screen",
     "ERROR_RETRY_HINT": "Enter: try again",
-    "ERROR_LAST_HINT": "Backspace: previous channel"
+    "ERROR_LAST_HINT": "Backspace: previous channel",
+    "RECORDING_SOURCE_BUSY": "Recording “{{title}}” started and needs the connection – this channel may stop."
   },
   "GUIDE": {
     "CHANNEL": "Channel",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "Quit streameoIPTV?",
     "QUIT_BODY": "{count} recordings or downloads are running or due soon. Quitting stops them; a programme that is still on is recorded further on the next start.",
     "QUIT_CONFIRM": "Quit",
-    "QUIT_CANCEL": "Cancel"
+    "QUIT_CANCEL": "Cancel",
+    "REMINDER_SOON_BODY": "Starts in {minutes} min on {channel}"
   }
 }

@@ -42,7 +42,8 @@
       "RECORDINGS": "Enregistrements",
       "SETTINGS": "Paramètres",
       "GUIDE": "Guide TV",
-      "CONTINUE_WATCHING": "Reprendre la lecture"
+      "CONTINUE_WATCHING": "Reprendre la lecture",
+      "HIDDEN": "Masqués"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -58,7 +59,19 @@
     "VIEWING": "Affichage : {{path}}",
     "SEARCH_LABEL": "Rechercher des chaînes, films et séries",
     "CLEAR_SEARCH": "Effacer la recherche",
-    "BREADCRUMB": "Chemin"
+    "BREADCRUMB": "Chemin",
+    "SEARCH_IN": "Rechercher dans {{name}}…",
+    "RESULT_ACTIONS": "Actions pour tous les résultats",
+    "FAVORITE_ALL_RESULTS": "Ajouter tous les résultats aux favoris",
+    "HIDE_ALL_RESULTS": "Masquer tous les résultats",
+    "UNHIDE_ALL_RESULTS": "Réafficher tous les résultats",
+    "CLEAR_HISTORY": "Effacer l'historique",
+    "SELECTION": {
+      "ACTIONS": "Éléments sélectionnés",
+      "COUNT": "{{count}} sélectionné(s)",
+      "HIDE": "Masquer",
+      "CLEAR": "Effacer la sélection"
+    }
   },
   "MENU": {
     "REMOVE": "Retirer",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "Déverrouiller le groupe",
     "MAP_EPG": "Associer un EPG…",
     "PLAY_FROM_START": "Lire depuis le début",
-    "MARK_UNWATCHED": "Marquer comme non vu"
+    "MARK_UNWATCHED": "Marquer comme non vu",
+    "MARK_WATCHED": "Marquer comme vu",
+    "HIDE_CHANNEL": "Masquer la chaîne",
+    "HIDE_GROUP": "Masquer le groupe",
+    "HIDE": "Masquer",
+    "UNHIDE": "Réafficher"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Aucune chaîne trouvée",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "Les enregistrements et téléchargements sont placés dans le dossier d'enregistrement (Paramètres → Enregistrement)",
     "LOAD_FAILED": "Impossible de charger cette vue",
     "LOAD_FAILED_HINT": "Vérifiez la connexion à votre source et réessayez",
-    "RETRY": "Réessayer"
+    "RETRY": "Réessayer",
+    "ALL_SOURCES_DISABLED": "Toutes les sources sont désactivées",
+    "ALL_SOURCES_DISABLED_HINT": "Activez une source dans les paramètres pour voir ses éléments",
+    "NO_MATCH_FILTERS": "Rien ne correspond aux filtres actifs",
+    "ACTIVE_FILTERS": "Filtres actifs : {{filters}}",
+    "FILTER_COUNTRY": "Pays {{code}}",
+    "CLEAR_FILTERS": "Effacer les filtres",
+    "NOTHING_HIDDEN": "Rien de masqué",
+    "NOTHING_HIDDEN_HINT": "Les chaînes et catégories masquées apparaissent ici et peuvent être réaffichées depuis leur menu"
   },
   "RECORDING": {
     "SCHEDULED": "Enregistrement programmé",
     "STATUS_RECORDING": "Enregistrement en cours",
     "STATUS_DONE": "Terminé",
     "STATUS_FAILED": "Échoué",
-    "STATUS_PENDING": "En attente"
+    "STATUS_PENDING": "En attente",
+    "CONFLICT_TITLE": "Pas assez de flux",
+    "CONFLICT_BODY": "{{source}} autorise {{max}} flux ; {{count}} autres enregistrements ont lieu à ce moment. Programmer quand même ?",
+    "CONFLICT_CONFIRM": "Programmer quand même"
   },
   "SORT": {
     "SORT": "Trier",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "Vous utilisez la version {{version}}",
       "CHECK_UPDATES": "Vérifier maintenant",
       "CHECKING": "Vérification...",
-      "RESTART_REQUIRED": "Redémarrage nécessaire"
+      "RESTART_REQUIRED": "Redémarrage nécessaire",
+      "REMINDER_LEAD": "Délai des rappels",
+      "REMINDER_LEAD_DESC": "Les rappels d'émissions s'affichent ce nombre de minutes avant le début (0 = au début).",
+      "MINUTES_SHORT": "min"
     },
     "APPEARANCE": {
       "THEME": "Thème",
@@ -316,7 +348,9 @@
       "COVERAGE": "{{matched}} chaînes en direct sur {{live}} ont des données de programme.",
       "COVERAGE_HINT": "Les chaînes sans correspondance peuvent être associées à la main : ouvrez le menu de la chaîne et choisissez « Associer l’EPG… ».",
       "DUPLICATE_COUNTRY": "{{country}} est couvert par {{count}} sources – les sources en double ne font que ralentir l’actualisation.",
-      "REFRESHING": "Actualisation…"
+      "REFRESHING": "Actualisation…",
+      "STATUS_LOADING": "Chargement…",
+      "REMOVED_UNDO": "Source XMLTV supprimée. Cliquez ici pour annuler"
     },
     "PARENTAL": {
       "DESC": "Protégez des groupes par un code PIN. Les groupes verrouillés et leurs chaînes restent masqués jusqu'à la saisie du code PIN via le bouton cadenas de la page d'accueil. Verrouillez un groupe depuis son menu contextuel dans Catégories.",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "Télécharger depuis l'archive",
     "NOTIFY_ON": "M'avertir au début",
     "NOTIFY_OFF": "Désactiver la notification",
-    "NOTIFY_NEEDS_TRAY": "Les rappels nécessitent l’icône de la barre d’état (Paramètres → Général)"
+    "NOTIFY_NEEDS_TRAY": "Les rappels nécessitent l’icône de la barre d’état (Paramètres → Général)",
+    "STOP_RECORDING": "Arrêter l’enregistrement"
   },
   "RESTREAM": {
     "TITLE": "Re-stream : {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "Regarder",
     "SHARE": "Partager",
     "STOP": "Arrêter",
-    "NETWORK_UNAVAILABLE": "Les informations réseau ne sont pas disponibles : la rediffusion ne peut pas démarrer."
+    "NETWORK_UNAVAILABLE": "Les informations réseau ne sont pas disponibles : la rediffusion ne peut pas démarrer.",
+    "STARTING": "Démarrage du re-stream…",
+    "HIDE": "Masquer",
+    "COPY": "Copier",
+    "COPY_URL": "Copier {{url}}",
+    "COPIED": "Adresse copiée",
+    "CHIP_RUNNING": "Re-stream en cours · {{channel}}",
+    "CHIP_STARTING": "Re-stream en démarrage · {{channel}}",
+    "OPEN": "Ouvrir",
+    "STOPPED_FFMPEG": "Le re-stream de {{name}} s'est arrêté : ffmpeg s'est fermé de manière inattendue",
+    "STOPPED_SERVER": "Le re-stream de {{name}} s'est arrêté : le serveur local a échoué",
+    "STOPPED_UNKNOWN": "Le re-stream de {{name}} s'est arrêté de manière inattendue"
   },
   "DOWNLOAD": {
     "TITLE": "Téléchargements",
@@ -427,7 +473,12 @@
     "FINISHED": "Terminés",
     "CLEAR_FINISHED": "Vider",
     "CANCEL_ALL": "Tout annuler",
-    "CONCURRENT": "Téléchargements parallèles"
+    "CONCURRENT": "Téléchargements parallèles",
+    "BYTES_OF": "{{done}} sur {{total}}",
+    "SPEED": "{{speed}}/s",
+    "PLAY": "Lire",
+    "PLAY_ARIA": "Lire {{name}}",
+    "SHOW_IN_FOLDER": "Afficher dans le dossier"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Création d'une chaîne personnalisée",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "Le guide des programmes se charge en arrière-plan…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "« {{name}} » retiré des favoris ; reste dans « {{list}} »",
     "DETAILS": "Détails",
-    "RECORDING_ALREADY_SCHEDULED": "Ce programme est déjà planifié pour l'enregistrement"
+    "RECORDING_ALREADY_SCHEDULED": "Ce programme est déjà planifié pour l'enregistrement",
+    "HIDDEN_UNDO": "« {{name}} » masqué. Cliquez pour annuler.",
+    "UNHIDDEN": "« {{name}} » est de nouveau affiché",
+    "HIDE_FAILED": "Impossible de masquer « {{name}} »",
+    "UNHIDE_FAILED": "Impossible de réafficher « {{name}} »",
+    "ITEMS_FAVORITED": "{{count}} éléments ajoutés aux favoris",
+    "ITEMS_HIDDEN_UNDO": "{{count}} éléments masqués. Cliquez pour annuler.",
+    "ITEMS_UNHIDDEN": "{{count}} éléments sont de nouveau affichés",
+    "BULK_FAILED": "Certains éléments n'ont pas pu être modifiés",
+    "RESULTS_UPDATED": "Les résultats de recherche ont été mis à jour"
   },
   "UPDATE": {
     "TITLE": "Mise à jour disponible",
     "AVAILABLE": "La version {{version}} est disponible, vous avez la {{current}}.",
     "RESTART_HINT": "L'application redémarre une fois la mise à jour installée.",
     "INSTALL": "Installer maintenant",
-    "LATER": "Plus tard"
+    "LATER": "Plus tard",
+    "PENDING_WORK": "{{count}} enregistrements ou téléchargements sont en cours ou prévus sous peu ; l'installation redémarre l'application et les arrête.",
+    "INSTALL_ANYWAY": "Installer quand même",
+    "PROGRESS": "Progression du téléchargement de la mise à jour"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Replay disponible",
@@ -646,7 +709,8 @@
     "RESUME": "Reprendre",
     "LOCKED_GROUP": "Groupe verrouillé",
     "WATCHED": "Vu",
-    "WATCH_PROGRESS": "{{percent}} % vu"
+    "WATCH_PROGRESS": "{{percent}} % vu",
+    "SELECTED": "sélectionné"
   },
   "LOADING": {
     "CHANNELS": "Chargement de vos chaînes..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "Les émissions dont le titre contient « {{query}} » ne seront plus enregistrées automatiquement.",
     "DELETE_ALERT_KEEP": "Les rappels et enregistrements déjà créés sont conservés. Supprime-les un par un si tu n'en veux plus.",
     "CLEAR_FINISHED_TITLE": "Retirer les entrées terminées ?",
-    "CLEAR_FINISHED_FAILED_BODY": "Dont enregistrements échoués : {{count}}. Leurs entrées sont le seul signe que ces enregistrements n’ont pas fonctionné. Les fichiers enregistrés restent dans le dossier."
+    "CLEAR_FINISHED_FAILED_BODY": "Dont enregistrements échoués : {{count}}. Leurs entrées sont le seul signe que ces enregistrements n’ont pas fonctionné. Les fichiers enregistrés restent dans le dossier.",
+    "BULK_FAVORITE_TITLE": "Ajouter tous les résultats aux favoris ?",
+    "BULK_FAVORITE_BODY": "Les {{count}} résultats pour « {{query}} » seront ajoutés aux favoris.",
+    "BULK_HIDE_TITLE": "Masquer tous les résultats ?",
+    "BULK_HIDE_BODY": "Les {{count}} résultats pour « {{query}} » seront masqués. Vous pourrez les réafficher dans la vue « Masqués ».",
+    "BULK_UNHIDE_TITLE": "Réafficher tous les résultats ?",
+    "BULK_UNHIDE_BODY": "Les {{count}} résultats pour « {{query}} » réapparaîtront dans les autres vues."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Retour aux chaînes",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "Fermer le lecteur (Échap)",
     "FULLSCREEN_HINT": "Échap : quitter le plein écran",
     "ERROR_RETRY_HINT": "Entrée : réessayer",
-    "ERROR_LAST_HINT": "Retour arrière : chaîne précédente"
+    "ERROR_LAST_HINT": "Retour arrière : chaîne précédente",
+    "RECORDING_SOURCE_BUSY": "L’enregistrement « {{title}} » a commencé et a besoin de la connexion – cette chaîne peut s’arrêter."
   },
   "GUIDE": {
     "CHANNEL": "Chaîne",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "Quitter streameoIPTV ?",
     "QUIT_BODY": "{count} enregistrements ou téléchargements sont en cours ou imminents. Quitter les arrête ; un programme encore diffusé sera enregistré à nouveau au prochain démarrage.",
     "QUIT_CONFIRM": "Quitter",
-    "QUIT_CANCEL": "Annuler"
+    "QUIT_CANCEL": "Annuler",
+    "REMINDER_SOON_BODY": "Commence dans {minutes} min sur {channel}"
   }
 }

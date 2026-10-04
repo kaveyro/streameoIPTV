@@ -9,10 +9,12 @@ import {
   callsOf,
   mockTauri,
   resetTauri,
+  settle,
 } from "../../../testing/test-helpers";
 
 import { EpgModalItemComponent } from "./epg-modal-item.component";
 import { PlaybackService } from "../../playback.service";
+import { ConfirmService } from "../../confirm.service";
 import { MemoryService } from "../../memory.service";
 import { TranslateService } from "@ngx-translate/core";
 import { firstValueFrom } from "rxjs";
@@ -23,8 +25,11 @@ describe("EpgModalItemComponent", () => {
   let activeModal: jasmine.SpyObj<NgbActiveModal>;
   let calls: IpcCall[];
 
+  let conflicts: unknown = null;
+
   beforeEach(async () => {
-    calls = mockTauri();
+    conflicts = null;
+    calls = mockTauri({ recording_conflicts: () => conflicts });
     activeModal = activeModalStub();
     await TestBed.configureTestingModule({
       declarations: [EpgModalItemComponent, ...SHARED_DECLARATIONS],
@@ -64,6 +69,68 @@ describe("EpgModalItemComponent", () => {
     expect(labels).toContain("EPG.SCHEDULE_RECORDING");
   });
 
+  describe("the programme on now", () => {
+    const labels = () =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll("button")).map((b) =>
+        b.getAttribute("aria-label"),
+      );
+
+    const now = Math.floor(Date.now() / 1000);
+
+    beforeEach(() => {
+      const epg = component.epg;
+      if (!epg) throw new Error("no programme");
+      component.epg = { ...epg, start_timestamp: now - 600, end_timestamp: now + 1200 };
+      component.epg.now_playing = true;
+      fixture.detectChanges();
+    });
+
+    it("is recorded from now on, and that recording can be stopped", async () => {
+      expect(component.isNow()).toBeTrue();
+      expect(labels()).toContain("GUIDE.RECORD_FROM_NOW");
+      expect(labels()).not.toContain("EPG.SCHEDULE_RECORDING");
+      const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+        ".epg-record-now",
+      );
+      button?.click();
+      await settle();
+      expect(callsOf(calls, "schedule_recording").map((c) => c.args)).toEqual([
+        {
+          channelId: 5,
+          title: "Evening news",
+          startTimestamp: now - 600,
+          endTimestamp: now + 1200,
+        },
+      ]);
+      component.scheduledRecordingId = 42;
+      fixture.detectChanges();
+      expect(labels()).toContain("EPG.STOP_RECORDING");
+      expect(labels()).not.toContain("GUIDE.RECORD_FROM_NOW");
+      await component.cancelScheduledRecording();
+      expect(callsOf(calls, "cancel_scheduled_recording").map((c) => c.args)).toEqual([{ id: 42 }]);
+    });
+
+    it("asks first when the source has no stream left", async () => {
+      conflicts = { overlapping: 1, max_streams: 1, source_name: "Main" };
+      const confirm = spyOn(TestBed.inject(ConfirmService), "confirm").and.resolveTo(false);
+      await component.scheduleRecording();
+      expect(confirm).toHaveBeenCalledOnceWith(
+        jasmine.objectContaining({
+          params: { source: "Main", max: 1, count: 1 },
+          danger: false,
+        }),
+      );
+      expect(callsOf(calls, "schedule_recording").length).toBe(0);
+      expect(component.loadingSchedule).toBeFalse();
+      // Within the limit: no question.
+      conflicts = { overlapping: 0, max_streams: 1, source_name: "Main" };
+      confirm.calls.reset();
+      await component.scheduleRecording();
+      expect(confirm).not.toHaveBeenCalled();
+      expect(callsOf(calls, "schedule_recording").length).toBe(1);
+    });
+  });
+
   it("plays catch-up in the embedded player and closes the dialog it would cover", async () => {
     const play = spyOn(TestBed.inject(PlaybackService), "play").and.resolveTo();
     if (component.epg) component.epg.timeshift_url = "http://example.test/archive.ts";
@@ -73,6 +140,9 @@ describe("EpgModalItemComponent", () => {
       jasmine.objectContaining({ id: -1, url: "http://example.test/archive.ts" }),
       [],
     );
+    // "Channel · Title (date)" for the player's banner.
+    const name = (play.calls.mostRecent().args[0] as { name?: string }).name ?? "";
+    expect(name).toMatch(/^News · Evening news \(.+\)$/);
     // Never a second mpv window beside the embedded player.
     expect(callsOf(calls, "play").length).toBe(0);
   });

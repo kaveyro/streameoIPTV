@@ -42,7 +42,8 @@
       "RECORDINGS": "録画",
       "SETTINGS": "設定",
       "GUIDE": "番組表",
-      "CONTINUE_WATCHING": "続きから視聴"
+      "CONTINUE_WATCHING": "続きから視聴",
+      "HIDDEN": "非表示"
     },
     "PILL": {
       "LIVESTREAMS": "ライブ配信",
@@ -58,7 +59,19 @@
     "VIEWING": "表示中: {{path}}",
     "SEARCH_LABEL": "チャンネル・映画・シリーズを検索",
     "CLEAR_SEARCH": "検索をクリア",
-    "BREADCRUMB": "パス"
+    "BREADCRUMB": "パス",
+    "SEARCH_IN": "{{name}} 内を検索…",
+    "RESULT_ACTIONS": "すべての結果に対する操作",
+    "FAVORITE_ALL_RESULTS": "すべての結果をお気に入りに追加",
+    "HIDE_ALL_RESULTS": "すべての結果を非表示",
+    "UNHIDE_ALL_RESULTS": "すべての結果を再表示",
+    "CLEAR_HISTORY": "履歴を消去",
+    "SELECTION": {
+      "ACTIONS": "選択した項目",
+      "COUNT": "{{count}} 件選択中",
+      "HIDE": "非表示にする",
+      "CLEAR": "選択を解除"
+    }
   },
   "MENU": {
     "REMOVE": "削除",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "グループのロックを解除",
     "MAP_EPG": "EPG を割り当て…",
     "PLAY_FROM_START": "最初から再生",
-    "MARK_UNWATCHED": "未視聴にする"
+    "MARK_UNWATCHED": "未視聴にする",
+    "MARK_WATCHED": "視聴済みにする",
+    "HIDE_CHANNEL": "チャンネルを非表示",
+    "HIDE_GROUP": "グループを非表示",
+    "HIDE": "非表示にする",
+    "UNHIDE": "再表示"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "チャンネルが見つかりません",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "録画とダウンロードは録画フォルダーに保存されます（設定 → 録画）",
     "LOAD_FAILED": "この表示を読み込めませんでした",
     "LOAD_FAILED_HINT": "ソースへの接続を確認して、もう一度お試しください",
-    "RETRY": "再試行"
+    "RETRY": "再試行",
+    "ALL_SOURCES_DISABLED": "すべてのソースが無効です",
+    "ALL_SOURCES_DISABLED_HINT": "項目を表示するには、設定でソースを有効にしてください",
+    "NO_MATCH_FILTERS": "有効なフィルターに一致するものはありません",
+    "ACTIVE_FILTERS": "有効なフィルター: {{filters}}",
+    "FILTER_COUNTRY": "国 {{code}}",
+    "CLEAR_FILTERS": "フィルターをクリア",
+    "NOTHING_HIDDEN": "非表示の項目はありません",
+    "NOTHING_HIDDEN_HINT": "非表示にしたチャンネルとカテゴリはここに表示され、メニューから再表示できます"
   },
   "RECORDING": {
     "SCHEDULED": "予約録画",
     "STATUS_RECORDING": "録画中",
     "STATUS_DONE": "完了",
     "STATUS_FAILED": "失敗",
-    "STATUS_PENDING": "待機中"
+    "STATUS_PENDING": "待機中",
+    "CONFLICT_TITLE": "ストリーム数が足りません",
+    "CONFLICT_BODY": "{{source}} のストリーム上限は {{max}} です。その時間には他に {{count}} 件の録画があります。それでも予約しますか？",
+    "CONFLICT_CONFIRM": "それでも予約"
   },
   "SORT": {
     "SORT": "並べ替え",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "現在のバージョンは {{version}} です",
       "CHECK_UPDATES": "今すぐ確認",
       "CHECKING": "確認中...",
-      "RESTART_REQUIRED": "再起動が必要です"
+      "RESTART_REQUIRED": "再起動が必要です",
+      "REMINDER_LEAD": "リマインダーの事前通知",
+      "REMINDER_LEAD_DESC": "番組のリマインダーを開始の何分前に表示するか（0 = 開始時）。",
+      "MINUTES_SHORT": "分"
     },
     "APPEARANCE": {
       "THEME": "テーマ",
@@ -316,7 +348,9 @@
       "COVERAGE": "ライブチャンネル {{live}} 件中 {{matched}} 件に番組データがあります。",
       "COVERAGE_HINT": "一致しないチャンネルは手動で割り当てられます。チャンネルのメニューを開き、「EPG を割り当て…」を選んでください。",
       "DUPLICATE_COUNTRY": "{{country}} は {{count}} 件のソースでカバーされています。重複したソースは更新を遅くするだけです。",
-      "REFRESHING": "更新中…"
+      "REFRESHING": "更新中…",
+      "STATUS_LOADING": "読み込み中…",
+      "REMOVED_UNDO": "XMLTV ソースを削除しました。元に戻すにはここをクリック"
     },
     "PARENTAL": {
       "DESC": "PINでグループを保護します。ロックされたグループとそのチャンネルは、ホーム画面の鍵ボタンでPINを入力するまで表示されません。グループは「カテゴリ」のコンテキストメニューからロックできます。",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "アーカイブからダウンロード",
     "NOTIFY_ON": "開始時に通知",
     "NOTIFY_OFF": "通知をオフにする",
-    "NOTIFY_NEEDS_TRAY": "リマインダーにはトレイアイコンが必要です（設定 → 一般）"
+    "NOTIFY_NEEDS_TRAY": "リマインダーにはトレイアイコンが必要です（設定 → 一般）",
+    "STOP_RECORDING": "録画を停止"
   },
   "RESTREAM": {
     "TITLE": "再ストリーミング：{{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "視聴",
     "SHARE": "共有",
     "STOP": "停止",
-    "NETWORK_UNAVAILABLE": "ネットワーク情報を取得できないため、リストリーミングを開始できません。"
+    "NETWORK_UNAVAILABLE": "ネットワーク情報を取得できないため、リストリーミングを開始できません。",
+    "STARTING": "リストリームを開始しています…",
+    "HIDE": "隠す",
+    "COPY": "コピー",
+    "COPY_URL": "{{url}} をコピー",
+    "COPIED": "アドレスをコピーしました",
+    "CHIP_RUNNING": "リストリーム中 · {{channel}}",
+    "CHIP_STARTING": "リストリーム開始中 · {{channel}}",
+    "OPEN": "開く",
+    "STOPPED_FFMPEG": "{{name}} のリストリームが停止しました: ffmpeg が予期せず終了しました",
+    "STOPPED_SERVER": "{{name}} のリストリームが停止しました: ローカルサーバーでエラーが発生しました",
+    "STOPPED_UNKNOWN": "{{name}} のリストリームが予期せず停止しました"
   },
   "DOWNLOAD": {
     "TITLE": "ダウンロード",
@@ -427,7 +473,12 @@
     "FINISHED": "完了分",
     "CLEAR_FINISHED": "クリア",
     "CANCEL_ALL": "すべてキャンセル",
-    "CONCURRENT": "同時ダウンロード数"
+    "CONCURRENT": "同時ダウンロード数",
+    "BYTES_OF": "{{done}} / {{total}}",
+    "SPEED": "{{speed}}/秒",
+    "PLAY": "再生",
+    "PLAY_ARIA": "{{name}} を再生",
+    "SHOW_IN_FOLDER": "フォルダーに表示"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "カスタムチャンネルの作成",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "番組表をバックグラウンドで読み込んでいます…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "「{{name}}」をお気に入りから削除しました（「{{list}}」には残ります）",
     "DETAILS": "詳細",
-    "RECORDING_ALREADY_SCHEDULED": "この番組はすでに録画予約されています"
+    "RECORDING_ALREADY_SCHEDULED": "この番組はすでに録画予約されています",
+    "HIDDEN_UNDO": "「{{name}}」を非表示にしました。クリックで元に戻します。",
+    "UNHIDDEN": "「{{name}}」を再表示しました",
+    "HIDE_FAILED": "「{{name}}」を非表示にできませんでした",
+    "UNHIDE_FAILED": "「{{name}}」を再表示できませんでした",
+    "ITEMS_FAVORITED": "{{count}} 件をお気に入りに追加しました",
+    "ITEMS_HIDDEN_UNDO": "{{count}} 件を非表示にしました。クリックで元に戻します。",
+    "ITEMS_UNHIDDEN": "{{count}} 件を再表示しました",
+    "BULK_FAILED": "一部の項目を変更できませんでした",
+    "RESULTS_UPDATED": "検索結果を更新しました"
   },
   "UPDATE": {
     "TITLE": "更新があります",
     "AVAILABLE": "バージョン {{version}} が利用できます（現在は {{current}}）。",
     "RESTART_HINT": "インストール後にアプリを再起動します。",
     "INSTALL": "今すぐインストール",
-    "LATER": "後で"
+    "LATER": "後で",
+    "PENDING_WORK": "{{count}} 件の録画またはダウンロードが実行中か、まもなく開始されます。インストールするとアプリが再起動し、それらは停止します。",
+    "INSTALL_ANYWAY": "それでもインストール",
+    "PROGRESS": "アップデートのダウンロード状況"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "見逃し配信あり",
@@ -646,7 +709,8 @@
     "RESUME": "再開",
     "LOCKED_GROUP": "ロックされたグループ",
     "WATCHED": "視聴済み",
-    "WATCH_PROGRESS": "{{percent}}% 視聴済み"
+    "WATCH_PROGRESS": "{{percent}}% 視聴済み",
+    "SELECTED": "選択済み"
   },
   "LOADING": {
     "CHANNELS": "チャンネルを読み込んでいます..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "タイトルに「{{query}}」を含む番組は、今後自動で録画されなくなります。",
     "DELETE_ALERT_KEEP": "作成済みのリマインドと録画はそのまま残ります。不要な場合は個別に削除してください。",
     "CLEAR_FINISHED_TITLE": "終了した項目を削除しますか？",
-    "CLEAR_FINISHED_FAILED_BODY": "失敗した録画が含まれています：{{count}} 件。これらの項目は録画が失敗したことを示す唯一の手がかりです。録画済みのファイルはフォルダーに残ります。"
+    "CLEAR_FINISHED_FAILED_BODY": "失敗した録画が含まれています：{{count}} 件。これらの項目は録画が失敗したことを示す唯一の手がかりです。録画済みのファイルはフォルダーに残ります。",
+    "BULK_FAVORITE_TITLE": "すべての結果をお気に入りに追加しますか?",
+    "BULK_FAVORITE_BODY": "「{{query}}」の {{count}} 件の結果がすべてお気に入りに追加されます。",
+    "BULK_HIDE_TITLE": "すべての結果を非表示にしますか?",
+    "BULK_HIDE_BODY": "「{{query}}」の {{count}} 件の結果がすべて非表示になります。「非表示」ビューで再表示できます。",
+    "BULK_UNHIDE_TITLE": "すべての結果を再表示しますか?",
+    "BULK_UNHIDE_BODY": "「{{query}}」の {{count}} 件の結果がすべて他のビューに再表示されます。"
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "チャンネルに戻る",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "プレーヤーを閉じる (Esc)",
     "FULLSCREEN_HINT": "Esc：全画面表示を終了",
     "ERROR_RETRY_HINT": "Enter：再試行",
-    "ERROR_LAST_HINT": "Backspace：前のチャンネル"
+    "ERROR_LAST_HINT": "Backspace：前のチャンネル",
+    "RECORDING_SOURCE_BUSY": "録画「{{title}}」が始まり、接続を使用します – このチャンネルは停止する場合があります。"
   },
   "GUIDE": {
     "CHANNEL": "チャンネル",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "streameoIPTV を終了しますか？",
     "QUIT_BODY": "{count} 件の録画またはダウンロードが実行中か、まもなく始まります。終了すると停止します。放送中の番組は次回起動時に録画を再開します。",
     "QUIT_CONFIRM": "終了",
-    "QUIT_CANCEL": "キャンセル"
+    "QUIT_CANCEL": "キャンセル",
+    "REMINDER_SOON_BODY": "{minutes} 分後に {channel} で開始"
   }
 }

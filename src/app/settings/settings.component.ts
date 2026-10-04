@@ -7,7 +7,7 @@ import {
   QueryList,
   ViewChildren,
 } from "@angular/core";
-import { debounceTime, Subject, Subscription } from "rxjs";
+import { debounceTime, Subject, Subscription, take } from "rxjs";
 import { Settings } from "../models/settings";
 import { invoke } from "@tauri-apps/api/core";
 import { Router } from "@angular/router";
@@ -62,6 +62,22 @@ const PLAYER_SPAWN_SETTINGS = [
 const SAVE_DEBOUNCE_MS = 300;
 /// At most one "Saved" confirmation per this interval.
 const SAVED_TOAST_INTERVAL_MS = 2000;
+
+/// Wait after a change of the XMLTV list before loading the guides: adding
+/// several free guides in a row loads them once.
+export const XMLTV_REFRESH_DELAY_MS = 1000;
+/// How long a removed XMLTV link can be brought back from its toast.
+const XMLTV_UNDO_TIMEOUT_MS = 8000;
+
+/// Lead time of programme reminders, in minutes.
+export const REMINDER_LEAD_MAX = 60;
+export const REMINDER_LEAD_STEP = 5;
+
+/// A whole number of minutes in 0..REMINDER_LEAD_MAX; unset or invalid is 0.
+export function clampReminderLead(value: number | null | undefined): number {
+  if (value === null || value === undefined || !Number.isFinite(value)) return 0;
+  return Math.min(Math.max(Math.round(value), 0), REMINDER_LEAD_MAX);
+}
 
 /// Channel name the country prefix preview is rendered with.
 const COUNTRY_PREFIX_SAMPLE = "TR: Kanal D";
@@ -141,6 +157,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
   xmltvUrlError?: string;
   xmltvUrlHint?: string;
   refreshingXmltv = false;
+  /// A change of the XMLTV list waits for its refresh (debounced).
+  xmltvRefreshPending = false;
+  /// Debounce of that refresh (shortened in tests).
+  xmltvRefreshDelayMs = XMLTV_REFRESH_DELAY_MS;
+  private xmltvRefreshTimer?: ReturnType<typeof setTimeout>;
   /// Version of the running app, shown next to the update controls.
   appVersion = "";
   freeEpgSources = FREE_EPG_SOURCES;
@@ -161,6 +182,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   readonly zoomMin = ZOOM_MIN;
   readonly zoomMax = ZOOM_MAX;
   readonly zoomStep = ZOOM_STEP;
+  readonly reminderLeadMax = REMINDER_LEAD_MAX;
+  readonly reminderLeadStep = REMINDER_LEAD_STEP;
   @ViewChildren(SourceTileComponent) private sourceTiles?: QueryList<SourceTileComponent>;
   /// The tray icon is hidden on Linux (no reliable tray support there). There
   /// is no OS plugin in the frontend; the WebKitGTK user agent names Linux.
@@ -356,16 +379,32 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   /// Saves the list. On failure the stored list is loaded back, so the page
-  /// never shows URLs that were not saved.
-  private async saveXmltvSources(urls: string[]) {
+  /// never shows URLs that were not saved. A saved change loads the guides
+  /// (debounced), instead of listing a new link as "never loaded" until the
+  /// user finds the refresh button. Returns whether the list was saved.
+  private async saveXmltvSources(urls: string[]): Promise<boolean> {
     this.setXmltvUrls(urls);
+    let saved = true;
     try {
       await invoke("set_xmltv_sources", { urls });
+      this.scheduleXmltvRefresh();
     } catch (e) {
+      saved = false;
       this.error.handleError(e, this.translate.instant("TOAST.SETTINGS_SAVE_FAILED"));
       this.getXmltvSources();
     }
     await this.loadXmltvStatus();
+    return saved;
+  }
+
+  private scheduleXmltvRefresh() {
+    this.xmltvRefreshPending = true;
+    if (this.xmltvRefreshTimer !== undefined) clearTimeout(this.xmltvRefreshTimer);
+    this.xmltvRefreshTimer = setTimeout(() => {
+      this.xmltvRefreshTimer = undefined;
+      // A refresh still running picks the change up when it ends.
+      if (!this.refreshingXmltv) void this.refreshXmltv();
+    }, this.xmltvRefreshDelayMs);
   }
 
   isSourceAdded(url: string): boolean {
@@ -379,6 +418,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   async addXmltvSource() {
+    if (this.refreshingXmltv) return;
     this.onXmltvUrlInput();
     const url = this.newXmltvUrl.trim();
     if (!url) return;
@@ -395,7 +435,25 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   async removeXmltvSource(url: string) {
-    await this.saveXmltvSources(this.xmltvUrls.filter((x) => x !== url));
+    const index = this.xmltvUrls.indexOf(url);
+    const saved = await this.saveXmltvSources(this.xmltvUrls.filter((x) => x !== url));
+    // A free guide is back with one click on its chip; a typed link would
+    // have to be found and typed again.
+    if (!saved || index < 0 || this.freeEpgSources.some((src) => src.url === url)) return;
+    this.toastr
+      .info(this.translate.instant("SETTINGS.EPG.REMOVED_UNDO"), undefined, {
+        timeOut: XMLTV_UNDO_TIMEOUT_MS,
+      })
+      .onTap.pipe(take(1))
+      .subscribe(() => void this.undoXmltvRemoval(url, index));
+  }
+
+  /// Puts a removed link back at its old position.
+  private async undoXmltvRemoval(url: string, index: number) {
+    if (this.xmltvUrls.includes(url)) return;
+    const urls = [...this.xmltvUrls];
+    urls.splice(Math.min(index, urls.length), 0, url);
+    await this.saveXmltvSources(urls);
   }
 
   /// Typing clears the feedback of the previous attempt.
@@ -445,6 +503,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
   async refreshXmltv() {
     if (this.refreshingXmltv) return;
     this.refreshingXmltv = true;
+    // Covers a scheduled refresh as well (the button was used meanwhile).
+    this.cancelXmltvRefresh();
     try {
       const failed = await this.memory.tryIPC(
         this.translate.instant("TOAST.EPG_REFRESHED"),
@@ -457,6 +517,16 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
     // Also after a failure: the status shows which source failed and why.
     await this.loadXmltvStatus();
+    // The list changed while the guides were loading.
+    if (this.xmltvRefreshPending && this.xmltvRefreshTimer === undefined) {
+      await this.refreshXmltv();
+    }
+  }
+
+  private cancelXmltvRefresh() {
+    if (this.xmltvRefreshTimer !== undefined) clearTimeout(this.xmltvRefreshTimer);
+    this.xmltvRefreshTimer = undefined;
+    this.xmltvRefreshPending = false;
   }
 
   getSettings(): Promise<void> {
@@ -471,6 +541,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
         if (this.settings.restream_port == undefined) this.settings.restream_port = 3000;
         if (this.settings.enable_tray_icon == undefined) this.settings.enable_tray_icon = true;
         if (this.settings.zoom == undefined) this.settings.zoom = 100;
+        this.settings.reminder_lead_minutes = clampReminderLead(
+          this.settings.reminder_lead_minutes,
+        );
         // A shortcut's zoom that is not saved yet is newer than the stored
         // one; otherwise the stored one is what the shortcuts continue from.
         if (this.zoom.savePending) this.settings.zoom = this.zoom.value;
@@ -558,6 +631,17 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // the stored one, Angular sees no change and would leave e.g. "900" in
     // the field. Write the effective value back by hand.
     input.value = String(this.zoom.set(input.valueAsNumber));
+  }
+
+  /// Minutes before the start reminders fire, saved on `change` like the
+  /// zoom (not per keystroke). Out of range values are clamped and written
+  /// back, the field is bound one-way.
+  onReminderLeadChange(input: HTMLInputElement) {
+    const minutes = clampReminderLead(input.valueAsNumber);
+    input.value = String(minutes);
+    if (minutes === this.settings.reminder_lead_minutes) return;
+    this.settings.reminder_lead_minutes = minutes;
+    this.scheduleSave();
   }
 
   /// Re-applies theme, accent, language and zoom from the loaded settings.
@@ -946,6 +1030,19 @@ export class SettingsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Don't drop a change that was still waiting for its debounce.
     if (this.clearScheduledSave()) this.updateSettings();
+    // Nor the guide refresh a list change was still waiting for; quietly,
+    // the page and its feedback are gone.
+    // A refresh still running loads the list again when it ends.
+    if (this.xmltvRefreshTimer !== undefined) {
+      clearTimeout(this.xmltvRefreshTimer);
+      this.xmltvRefreshTimer = undefined;
+      if (!this.refreshingXmltv) {
+        this.xmltvRefreshPending = false;
+        invoke("refresh_xmltv")
+          .then(() => this.nowPlaying.xmltvChanged())
+          .catch((e) => console.error(e));
+      }
+    }
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
 }

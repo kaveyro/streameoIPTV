@@ -29,6 +29,8 @@ import { EpgAlert, EpgAlertAction, findEpgAlert } from "../models/epgAlert";
 import { splitCountryPrefix } from "../country-prefix";
 import { uiLocale } from "../utils";
 import { GuideEpgCache } from "./guide-epg-cache";
+import { ConfirmService } from "../confirm.service";
+import { catchUpChannel, confirmRecordingConflicts } from "../epg-modal/programme-actions";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { CountryNamePipe } from "../pipes/country-name.pipe";
@@ -84,12 +86,13 @@ export interface GuideSearchDay {
 }
 
 /**
- * TV guide: live channels as rows, time (now - 1 h .. now + 6 h, 30 minute
- * slots) as columns. EPG data is fetched lazily for the rows near the
- * viewport, at most {@link MAX_IN_FLIGHT} at a time, and cached per channel
- * for the session. A channel's EPG holds all its programmes, so moving the
- * time window (it follows the clock, and goes a day back or ahead) only lays
- * the cached programmes out again.
+ * TV guide: live channels as rows, time (the whole selected day, 00:00 to
+ * 24:00 plus {@link SPILL_SECONDS} for programmes running past midnight, in
+ * 30 minute slots) as columns, scrolled to now. EPG data is fetched lazily
+ * for the rows near the viewport, at most {@link MAX_IN_FLIGHT} at a time,
+ * and cached per channel for the session. A channel's EPG holds all its
+ * programmes, so going a day back or ahead only lays the cached programmes
+ * out again.
  */
 @Component({
   imports: [CommonModule, FormsModule, TranslatePipe, MatMenuModule, CountryNamePipe],
@@ -122,8 +125,11 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
   /// how far day navigation leads (canShiftDay).
   private epgFrom?: number;
   private epgUntil?: number;
-  /// Once now is this far into the window, it moves on with the clock.
-  static readonly WINDOW_ADVANCE_SECONDS = 2 * 3600;
+  /// The window runs on past the day's midnight by this much, so the late
+  /// programmes that cross it are shown whole.
+  static readonly SPILL_SECONDS = 3 * 3600;
+  /// The end of the selected day (its midnight), without the spill.
+  private dayEnd = 0;
 
   /// Restricts the rows to one group (the one open in the library).
   @Input() group?: { id: number; name: string };
@@ -199,6 +205,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     private cache: GuideEpgCache,
     private ngZone: NgZone,
     private host: ElementRef<HTMLElement>,
+    private confirm: ConfirmService,
   ) {}
 
   ngOnInit(): void {
@@ -236,6 +243,8 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.rowEls)
       this.subscriptions.push(this.rowEls.changes.subscribe(() => this.observeRows()));
+    // The day is laid out from midnight: open it at the now line.
+    this.scrollTimeline("now");
   }
 
   ngOnDestroy(): void {
@@ -250,49 +259,58 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // ------------------------------------------------------------ time window
 
+  /// Midnight (local time) of the day `offset` days from today, in seconds.
+  /// Through Date: a day with a DST switch has 23 or 25 hours.
+  private static dayStart(offset: number): number {
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() + offset);
+    return Math.floor(day.getTime() / 1000);
+  }
+
   private computeWindow() {
     const now = Math.floor(Date.now() / 1000);
     const slot = TvGuideComponent.SLOT_SECONDS;
-    // The same time of day on another day: the window moves by whole days.
-    const base = now + this.dayOffset * TvGuideComponent.DAY_SECONDS;
-    this.windowStart = Math.floor((base - 3600) / slot) * slot;
-    const count = Math.ceil((base + 6 * 3600 - this.windowStart) / slot);
+    this.windowStart = TvGuideComponent.dayStart(this.dayOffset);
+    this.dayEnd = TvGuideComponent.dayStart(this.dayOffset + 1);
+    const count = Math.ceil(
+      (this.dayEnd + TvGuideComponent.SPILL_SECONDS - this.windowStart) / slot,
+    );
     this.windowEnd = this.windowStart + count * slot;
     this.timelineWidth = count * TvGuideComponent.SLOT_WIDTH;
     this.slots = Array.from({ length: count }, (_, i) => {
       const timestamp = this.windowStart + i * slot;
       return { timestamp, label: this.formatTime(timestamp) };
     });
-    this.dayTitle = this.dayLabel(new Date(base * 1000));
+    this.dayTitle = this.dayLabel(new Date(this.windowStart * 1000));
     this.updateNow(now);
   }
 
   /**
-   * Lays the window out again (after it moved) and keeps the view where it
-   * was: "keep-time" holds the same time in view (the window followed the
-   * clock), "keep-position" the same place (a day back or ahead: the same
-   * time of day), "now" brings the now line in.
+   * Lays the window out again (after it moved to another day) and scrolls
+   * it: "now" brings the now line in, "start" goes to the day's beginning.
    */
-  private moveWindow(scroll: "keep-time" | "keep-position" | "now") {
-    const oldStart = this.windowStart;
+  private moveWindow(scroll: "now" | "start") {
     this.computeWindow();
     for (const row of this.rows) {
       if (row.state !== "done" || row.channel.id === undefined) continue;
       const cached = this.cache.entries.get(row.channel.id);
       if (cached) this.applyEpg(row, cached);
     }
+    this.scrollTimeline(scroll);
+  }
+
+  private scrollTimeline(scroll: "now" | "start") {
     const el = this.scroller?.nativeElement;
     if (!el) return;
     // scrollLeft runs negative from the start edge in right-to-left layouts.
     const sign = getComputedStyle(this.host.nativeElement).direction === "rtl" ? -1 : 1;
-    const px = TvGuideComponent.PX_PER_SECOND;
-    if (scroll === "keep-time") {
-      const offset = sign * el.scrollLeft - (this.windowStart - oldStart) * px;
-      el.scrollLeft = sign * Math.max(0, offset);
-    } else if (scroll === "now") {
-      // One slot of what already ran stays in view before the now line.
-      el.scrollLeft = sign * Math.max(0, this.nowOffset - TvGuideComponent.SLOT_WIDTH);
-    }
+    // One slot of what already ran stays in view before the now line.
+    const offset =
+      scroll === "now" && this.nowVisible()
+        ? Math.max(0, this.nowOffset - TvGuideComponent.SLOT_WIDTH)
+        : 0;
+    el.scrollLeft = sign * offset;
   }
 
   /** "Now": back to today, with the now line in view. */
@@ -301,11 +319,11 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     this.moveWindow("now");
   }
 
-  /** A day back (-1) or ahead (+1), at the same time of day. */
+  /** A day back (-1) or ahead (+1): today opens at now, other days at 00:00. */
   shiftDay(days: number) {
     if (!this.canShiftDay(days)) return;
     this.dayOffset += days;
-    this.moveWindow("keep-position");
+    this.moveWindow(this.dayOffset === 0 ? "now" : "start");
   }
 
   /**
@@ -318,8 +336,9 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     if (Math.abs(target) > TvGuideComponent.MAX_DAY_OFFSET) return false;
     if (target === 0) return true;
     if (this.epgFrom === undefined || this.epgUntil === undefined) return false;
-    const base = Date.now() / 1000 + target * TvGuideComponent.DAY_SECONDS;
-    return this.epgFrom < base + 6 * 3600 && this.epgUntil > base - 3600;
+    const start = TvGuideComponent.dayStart(target);
+    const end = TvGuideComponent.dayStart(target + 1);
+    return this.epgFrom < end && this.epgUntil > start;
   }
 
   private updateNow(now: number) {
@@ -332,11 +351,9 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private tick() {
     const now = Date.now() / 1000;
-    // Left open for hours, the guide would otherwise end up showing only
-    // the past. A window moved to another day stays where the user put it.
-    if (this.dayOffset === 0 && now > this.windowStart + TvGuideComponent.WINDOW_ADVANCE_SECONDS) {
-      this.moveWindow("keep-time");
-    }
+    // Left open past midnight, "today" is the next day now. A window moved
+    // to another day stays where the user put it.
+    if (this.dayOffset === 0 && now >= this.dayEnd) this.moveWindow("now");
     this.updateNow(now);
     for (const row of this.rows) {
       for (const block of row.blocks) block.state = this.stateOf(block.epg, now);
@@ -749,14 +766,7 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
    * an archived programme.
    */
   private async timeshift(row: GuideRow, epg: EPG) {
-    const channel: Channel = {
-      id: -1,
-      url: epg.timeshift_url,
-      name: epg.title,
-      media_type: MediaType.movie,
-      favorite: false,
-      source_id: row.channel.source_id,
-    };
+    const channel = catchUpChannel(epg, row.channel, uiLocale(this.translate));
     try {
       await this.playback.play(channel, []);
     } catch (e) {
@@ -837,6 +847,15 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
     const id = this.scheduledFor(channel, programme);
     try {
       if (id === undefined) {
+        // More recordings than the source has streams for: ask first.
+        const go = await confirmRecordingConflicts(
+          this.confirm,
+          channel.id,
+          programme.start_timestamp,
+          programme.end_timestamp,
+          this.sourceName(channel),
+        );
+        if (!go) return;
         await invoke("schedule_recording", {
           channelId: channel.id,
           title: programme.title,
@@ -854,6 +873,12 @@ export class TvGuideComponent implements OnInit, AfterViewInit, OnDestroy {
       this.scheduling = false;
     }
     await this.loadScheduled();
+  }
+
+  private sourceName(channel: Channel): string {
+    return channel.source_id === undefined
+      ? ""
+      : (this.memory.Sources.get(channel.source_id)?.name ?? "");
   }
 
   notificationOn(block?: GuideBlock): boolean {

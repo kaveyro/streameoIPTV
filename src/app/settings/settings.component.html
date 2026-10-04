@@ -198,7 +198,7 @@
                 [disabled]="update.Busy"
               >
                 {{
-                  (update.Busy ? "SETTINGS.GENERAL.CHECKING" : "SETTINGS.GENERAL.CHECK_UPDATES")
+                  (update.Checking ? "SETTINGS.GENERAL.CHECKING" : "SETTINGS.GENERAL.CHECK_UPDATES")
                     | translate
                 }}
               </button>
@@ -271,6 +271,34 @@
                   [(ngModel)]="settings.enable_tray_icon"
                   (ngModelChange)="updateSettings()"
                 />
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <div class="setting-info">
+              <label class="setting-title" for="set-reminder-lead">{{
+                "SETTINGS.GENERAL.REMINDER_LEAD" | translate
+              }}</label>
+              <div class="setting-desc">
+                {{ "SETTINGS.GENERAL.REMINDER_LEAD_DESC" | translate }}
+              </div>
+            </div>
+            <div class="setting-control">
+              <div class="input-group control-input">
+                <input
+                  id="set-reminder-lead"
+                  class="form-control"
+                  type="number"
+                  min="0"
+                  [max]="reminderLeadMax"
+                  [step]="reminderLeadStep"
+                  [ngModel]="settings.reminder_lead_minutes"
+                  (change)="onReminderLeadChange($any($event.target))"
+                />
+                <span class="input-group-text">{{
+                  "SETTINGS.GENERAL.MINUTES_SHORT" | translate
+                }}</span>
               </div>
             </div>
           </div>
@@ -939,7 +967,12 @@
                       class="xmltv-status"
                       *ngIf="!xmltvStatus[url]?.updated && !xmltvStatus[url]?.error"
                     >
-                      {{ "SETTINGS.EPG.STATUS_NEVER" | translate }}
+                      {{
+                        (xmltvRefreshPending || refreshingXmltv
+                          ? "SETTINGS.EPG.STATUS_LOADING"
+                          : "SETTINGS.EPG.STATUS_NEVER"
+                        ) | translate
+                      }}
                     </div>
                   </div>
                   <button
@@ -982,7 +1015,7 @@
                 <button
                   type="submit"
                   class="btn btn-primary d-inline-flex align-items-center"
-                  [disabled]="!newXmltvUrl.trim()"
+                  [disabled]="!newXmltvUrl.trim() || refreshingXmltv"
                 >
                   <span>{{ "SETTINGS.EPG.ADD_BTN" | translate }}</span>
                   <svg class="plus ms-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

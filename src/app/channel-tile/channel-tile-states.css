@@ -1,0 +1,24 @@
+/* Tile states set by the home page (own sheet: channel-tile.component.css
+   is at its style budget). */
+
+/* Part of the multi-selection: an accent ring and a check mark. Uses an
+   outline, so the focus ring (box-shadow) still shows on top. */
+.channel.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.select-check {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  fill: var(--accent);
+}
+
+.playing .select-check {
+  fill: var(--on-accent);
+}
+
+/* A series is being loaded before it opens. */
+.tile-spinner {
+  color: var(--accent);
+}

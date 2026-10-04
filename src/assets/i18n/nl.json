@@ -42,7 +42,8 @@
       "RECORDINGS": "Opnames",
       "SETTINGS": "Instellingen",
       "GUIDE": "TV-gids",
-      "CONTINUE_WATCHING": "Verder kijken"
+      "CONTINUE_WATCHING": "Verder kijken",
+      "HIDDEN": "Verborgen"
     },
     "PILL": {
       "LIVESTREAMS": "Livestreams",
@@ -58,7 +59,19 @@
     "VIEWING": "Weergave: {{path}}",
     "SEARCH_LABEL": "Zoek zenders, films en series",
     "CLEAR_SEARCH": "Zoekopdracht wissen",
-    "BREADCRUMB": "Pad"
+    "BREADCRUMB": "Pad",
+    "SEARCH_IN": "Zoeken in {{name}}…",
+    "RESULT_ACTIONS": "Acties voor alle resultaten",
+    "FAVORITE_ALL_RESULTS": "Alle resultaten aan favorieten toevoegen",
+    "HIDE_ALL_RESULTS": "Alle resultaten verbergen",
+    "UNHIDE_ALL_RESULTS": "Alle resultaten weer tonen",
+    "CLEAR_HISTORY": "Geschiedenis wissen",
+    "SELECTION": {
+      "ACTIONS": "Geselecteerde items",
+      "COUNT": "{{count}} geselecteerd",
+      "HIDE": "Verbergen",
+      "CLEAR": "Selectie wissen"
+    }
   },
   "MENU": {
     "REMOVE": "Verwijderen",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "Groep ontgrendelen",
     "MAP_EPG": "EPG toewijzen…",
     "PLAY_FROM_START": "Vanaf het begin afspelen",
-    "MARK_UNWATCHED": "Markeren als niet bekeken"
+    "MARK_UNWATCHED": "Markeren als niet bekeken",
+    "MARK_WATCHED": "Markeren als bekeken",
+    "HIDE_CHANNEL": "Zender verbergen",
+    "HIDE_GROUP": "Groep verbergen",
+    "HIDE": "Verbergen",
+    "UNHIDE": "Weer tonen"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Geen kanalen gevonden",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "Opnames en downloads worden opgeslagen in de opnamemap (Instellingen → Opname)",
     "LOAD_FAILED": "Deze weergave kon niet worden geladen",
     "LOAD_FAILED_HINT": "Controleer de verbinding met je bron en probeer het opnieuw",
-    "RETRY": "Opnieuw proberen"
+    "RETRY": "Opnieuw proberen",
+    "ALL_SOURCES_DISABLED": "Alle bronnen zijn uitgeschakeld",
+    "ALL_SOURCES_DISABLED_HINT": "Schakel een bron in bij de instellingen om de items ervan te zien",
+    "NO_MATCH_FILTERS": "Niets komt overeen met de actieve filters",
+    "ACTIVE_FILTERS": "Actieve filters: {{filters}}",
+    "FILTER_COUNTRY": "Land {{code}}",
+    "CLEAR_FILTERS": "Filters wissen",
+    "NOTHING_HIDDEN": "Niets verborgen",
+    "NOTHING_HIDDEN_HINT": "Verborgen zenders en categorieën verschijnen hier en kunnen via hun menu weer worden getoond"
   },
   "RECORDING": {
     "SCHEDULED": "Geplande opname",
     "STATUS_RECORDING": "Bezig met opnemen",
     "STATUS_DONE": "Klaar",
     "STATUS_FAILED": "Mislukt",
-    "STATUS_PENDING": "In afwachting"
+    "STATUS_PENDING": "In afwachting",
+    "CONFLICT_TITLE": "Niet genoeg streams",
+    "CONFLICT_BODY": "{{source}} staat {{max}} streams toe; op dat moment lopen {{count}} andere opnames. Toch plannen?",
+    "CONFLICT_CONFIRM": "Toch plannen"
   },
   "SORT": {
     "SORT": "Sorteren",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "Je gebruikt versie {{version}}",
       "CHECK_UPDATES": "Nu controleren",
       "CHECKING": "Bezig met controleren...",
-      "RESTART_REQUIRED": "Herstart vereist"
+      "RESTART_REQUIRED": "Herstart vereist",
+      "REMINDER_LEAD": "Voorlooptijd herinneringen",
+      "REMINDER_LEAD_DESC": "Herinneringen voor programma's verschijnen zoveel minuten vóór het begin (0 = bij het begin).",
+      "MINUTES_SHORT": "min"
     },
     "APPEARANCE": {
       "THEME": "Thema",
@@ -316,7 +348,9 @@
       "COVERAGE": "{{matched}} van {{live}} livekanalen hebben gidsgegevens.",
       "COVERAGE_HINT": "Kanalen zonder match kun je handmatig koppelen: open het menu van het kanaal en kies “EPG koppelen…”.",
       "DUPLICATE_COUNTRY": "{{country}} wordt door {{count}} bronnen gedekt – dubbele bronnen maken het vernieuwen alleen trager.",
-      "REFRESHING": "Vernieuwen…"
+      "REFRESHING": "Vernieuwen…",
+      "STATUS_LOADING": "Laden…",
+      "REMOVED_UNDO": "XMLTV-bron verwijderd. Klik hier om ongedaan te maken"
     },
     "PARENTAL": {
       "DESC": "Beveilig groepen met een pincode. Vergrendelde groepen en hun kanalen blijven verborgen tot de pincode is ingevoerd via de slotknop op de startpagina. Vergrendel een groep via het contextmenu in Categorieën.",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "Downloaden uit archief",
     "NOTIFY_ON": "Waarschuw me als het begint",
     "NOTIFY_OFF": "Melding uitschakelen",
-    "NOTIFY_NEEDS_TRAY": "Herinneringen hebben het systeemvakpictogram nodig (Instellingen → Algemeen)"
+    "NOTIFY_NEEDS_TRAY": "Herinneringen hebben het systeemvakpictogram nodig (Instellingen → Algemeen)",
+    "STOP_RECORDING": "Opname stoppen"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "Bekijken",
     "SHARE": "Delen",
     "STOP": "Stoppen",
-    "NETWORK_UNAVAILABLE": "Netwerkinformatie is niet beschikbaar, daarom kan het herstreamen niet starten."
+    "NETWORK_UNAVAILABLE": "Netwerkinformatie is niet beschikbaar, daarom kan het herstreamen niet starten.",
+    "STARTING": "Herstream wordt gestart…",
+    "HIDE": "Verbergen",
+    "COPY": "Kopiëren",
+    "COPY_URL": "{{url}} kopiëren",
+    "COPIED": "Adres gekopieerd",
+    "CHIP_RUNNING": "Herstream actief · {{channel}}",
+    "CHIP_STARTING": "Herstream start · {{channel}}",
+    "OPEN": "Openen",
+    "STOPPED_FFMPEG": "De herstream van {{name}} is gestopt: ffmpeg is onverwacht afgesloten",
+    "STOPPED_SERVER": "De herstream van {{name}} is gestopt: de lokale server is uitgevallen",
+    "STOPPED_UNKNOWN": "De herstream van {{name}} is onverwacht gestopt"
   },
   "DOWNLOAD": {
     "TITLE": "Downloads",
@@ -427,7 +473,12 @@
     "FINISHED": "Voltooid",
     "CLEAR_FINISHED": "Wissen",
     "CANCEL_ALL": "Alles annuleren",
-    "CONCURRENT": "Parallelle downloads"
+    "CONCURRENT": "Parallelle downloads",
+    "BYTES_OF": "{{done}} van {{total}}",
+    "SPEED": "{{speed}}/s",
+    "PLAY": "Afspelen",
+    "PLAY_ARIA": "{{name}} afspelen",
+    "SHOW_IN_FOLDER": "Tonen in map"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Een aangepast kanaal maken",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "De tv-gids wordt op de achtergrond geladen…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "‘{{name}}’ verwijderd uit favorieten; blijft in ‘{{list}}’",
     "DETAILS": "Details",
-    "RECORDING_ALREADY_SCHEDULED": "Dit programma staat al gepland voor opname"
+    "RECORDING_ALREADY_SCHEDULED": "Dit programma staat al gepland voor opname",
+    "HIDDEN_UNDO": "‘{{name}}’ verborgen. Klik om ongedaan te maken.",
+    "UNHIDDEN": "‘{{name}}’ wordt weer getoond",
+    "HIDE_FAILED": "Kan ‘{{name}}’ niet verbergen",
+    "UNHIDE_FAILED": "Kan ‘{{name}}’ niet weer tonen",
+    "ITEMS_FAVORITED": "{{count}} items aan favorieten toegevoegd",
+    "ITEMS_HIDDEN_UNDO": "{{count}} items verborgen. Klik om ongedaan te maken.",
+    "ITEMS_UNHIDDEN": "{{count}} items worden weer getoond",
+    "BULK_FAILED": "Sommige items konden niet worden gewijzigd",
+    "RESULTS_UPDATED": "De zoekresultaten zijn bijgewerkt"
   },
   "UPDATE": {
     "TITLE": "Update beschikbaar",
     "AVAILABLE": "Versie {{version}} is beschikbaar, jij hebt {{current}}.",
     "RESTART_HINT": "De app start opnieuw op na de installatie.",
     "INSTALL": "Nu installeren",
-    "LATER": "Later"
+    "LATER": "Later",
+    "PENDING_WORK": "{{count}} opnames of downloads lopen of staan binnenkort gepland; installeren herstart de app en stopt ze.",
+    "INSTALL_ANYWAY": "Toch installeren",
+    "PROGRESS": "Voortgang van de updatedownload"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Terugkijken beschikbaar",
@@ -646,7 +709,8 @@
     "RESUME": "Hervatten",
     "LOCKED_GROUP": "Vergrendelde groep",
     "WATCHED": "Bekeken",
-    "WATCH_PROGRESS": "{{percent}}% bekeken"
+    "WATCH_PROGRESS": "{{percent}}% bekeken",
+    "SELECTED": "geselecteerd"
   },
   "LOADING": {
     "CHANNELS": "Je kanalen worden geladen..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "Programma's met \"{{query}}\" in de titel worden dan niet meer automatisch opgenomen.",
     "DELETE_ALERT_KEEP": "Herinneringen en opnames die al zijn aangemaakt, blijven bestaan. Verwijder ze afzonderlijk als je ze niet meer wilt.",
     "CLEAR_FINISHED_TITLE": "Afgeronde items verwijderen?",
-    "CLEAR_FINISHED_FAILED_BODY": "Waaronder mislukte opnamen: {{count}}. Hun items zijn het enige teken dat deze opnamen niet gelukt zijn. De opgenomen bestanden blijven in de map."
+    "CLEAR_FINISHED_FAILED_BODY": "Waaronder mislukte opnamen: {{count}}. Hun items zijn het enige teken dat deze opnamen niet gelukt zijn. De opgenomen bestanden blijven in de map.",
+    "BULK_FAVORITE_TITLE": "Alle resultaten aan favorieten toevoegen?",
+    "BULK_FAVORITE_BODY": "Alle {{count}} resultaten voor ‘{{query}}’ worden aan de favorieten toegevoegd.",
+    "BULK_HIDE_TITLE": "Alle resultaten verbergen?",
+    "BULK_HIDE_BODY": "Alle {{count}} resultaten voor ‘{{query}}’ worden verborgen. Je kunt ze weer tonen in de weergave ‘Verborgen’.",
+    "BULK_UNHIDE_TITLE": "Alle resultaten weer tonen?",
+    "BULK_UNHIDE_BODY": "Alle {{count}} resultaten voor ‘{{query}}’ worden weer getoond in de andere weergaven."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Terug naar kanalen",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "Speler sluiten (Esc)",
     "FULLSCREEN_HINT": "Esc: volledig scherm verlaten",
     "ERROR_RETRY_HINT": "Enter: opnieuw proberen",
-    "ERROR_LAST_HINT": "Backspace: vorig kanaal"
+    "ERROR_LAST_HINT": "Backspace: vorig kanaal",
+    "RECORDING_SOURCE_BUSY": "Opname ‘{{title}}’ is gestart en heeft de verbinding nodig – deze zender kan stoppen."
   },
   "GUIDE": {
     "CHANNEL": "Kanaal",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "streameoIPTV afsluiten?",
     "QUIT_BODY": "{count} opnamen of downloads lopen of beginnen binnenkort. Afsluiten stopt ze; een programma dat nog loopt, wordt bij de volgende start verder opgenomen.",
     "QUIT_CONFIRM": "Afsluiten",
-    "QUIT_CANCEL": "Annuleren"
+    "QUIT_CANCEL": "Annuleren",
+    "REMINDER_SOON_BODY": "Begint over {minutes} min op {channel}"
   }
 }

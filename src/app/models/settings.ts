@@ -31,4 +31,7 @@ export class Settings {
   /// Switch to another feed of the same channel when a live stream fails;
   /// unset means on (memory.AutoFallback mirrors it).
   auto_fallback?: boolean;
+  /// Minutes before the programme starts that a reminder fires (0-60,
+  /// unset means 0: at the start).
+  reminder_lead_minutes?: number;
 }

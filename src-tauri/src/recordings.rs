@@ -104,6 +104,39 @@ pub fn open_folder() -> Result<()> {
     open_in_file_manager(&folder()?)
 }
 
+/// Shows a finished download or recording in the file manager, selected.
+/// The path comes from the frontend: only an existing media file is shown,
+/// so this can never open (and on some systems run) anything else.
+pub fn reveal(path: &str) -> Result<()> {
+    let file = Path::new(path);
+    anyhow::ensure!(
+        file.is_file() && is_media(file),
+        "{path} is not a media file"
+    );
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        // explorer parses "/select,<path>" itself; Rust's quoting of the
+        // whole argument would break it. Windows paths contain no quotes.
+        std::process::Command::new("explorer")
+            .raw_arg(format!("/select,\"{path}\""))
+            .spawn()
+            .with_context(|| format!("could not show {path}"))?;
+    }
+    #[cfg(target_os = "macos")]
+    std::process::Command::new("open")
+        .arg("-R")
+        .arg(file)
+        .spawn()
+        .with_context(|| format!("could not show {path}"))?;
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    std::process::Command::new("xdg-open")
+        .arg(file.parent().context("no folder")?)
+        .spawn()
+        .with_context(|| format!("could not show {path}"))?;
+    Ok(())
+}
+
 /// Opens one of the app's own folders (recordings, logs) in the system file
 /// manager. Never called with a path from the frontend.
 pub fn open_in_file_manager(dir: &str) -> Result<()> {

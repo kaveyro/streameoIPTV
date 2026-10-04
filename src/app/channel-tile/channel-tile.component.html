@@ -4,11 +4,13 @@
   tabindex="0"
   role="button"
   [attr.aria-label]="ariaLabel()"
+  [attr.aria-busy]="opening || null"
   (keydown.enter)="onActivateKey($event)"
   (keydown.space)="onActivateKey($event)"
+  (keydown)="onKeyDown($event)"
   [ngClass]="{
     playing: starting,
-    faded: fade,
+    selected: selected,
     'channel-list': format === 'list',
     'has-now-playing': !!nowPlaying,
   }"
@@ -19,7 +21,8 @@
   (mouseenter)="checkNameTruncated()"
   (focusin)="checkNameTruncated()"
   (shown)="onTooltipShown()"
-  (click)="click()"
+  (mousedown)="onMouseDown($event)"
+  (click)="onClick($event)"
   class="channel d-inline-flex p-2 align-items-center"
   (contextmenu)="onRightClick($event)"
 >
@@ -70,6 +73,17 @@
     </div>
   </div>
   <div class="tile-badges d-flex flex-column justify-content-center align-items-center h-100">
+    <!-- A series is being loaded (get_episodes); the grid stays as it is. -->
+    <span
+      *ngIf="opening"
+      class="spinner-border spinner-border-sm tile-spinner"
+      aria-hidden="true"
+    ></span>
+    <svg *ngIf="selected" viewBox="0 0 24 24" class="select-check" aria-hidden="true">
+      <path
+        d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+      />
+    </svg>
     <span *ngIf="showResumeBadge()" class="resume-badge">{{ "TILE.RESUME" | translate }}</span>
     <svg
       *ngIf="watched"
@@ -139,6 +153,7 @@
       channel?.media_type === mediaTypeEnum.group || channel?.media_type === mediaTypeEnum.season;
     <!-- Playback -->
     @let showPlayFromStart = resumable;
+    @let showMarkWatched = resumable;
     @let showMarkUnwatched = resumable || watched;
     @let showRecord = isLivestream();
     @let showDownload = isMovie() && !downloading;
@@ -146,7 +161,7 @@
     @let showRestream = isLivestream();
     <!-- History, favorites and lists -->
     @let showRemoveFromHistory = viewMode === viewModeEnum.History;
-    @let showFavorite = !isGroupOrSeason && viewMode !== viewModeEnum.History;
+    @let showFavorite = canFavorite();
     @let showAddToList = canFavorite();
     @let showRemoveFromList = favoriteList !== undefined;
     @let showMoveForward = reorderable && !first;
@@ -158,12 +173,15 @@
     @let showEdit = isCustom();
     @let showShare = isCustom();
     @let showCopyUrl = !isGroupOrSeason && channel?.media_type !== mediaTypeEnum.serie;
-    <!-- Lock (only with a PIN to lock with) and delete -->
+    <!-- Lock (only with a PIN to lock with), hide and delete -->
     @let showLock = canLockGroup();
+    @let showHide = canHide() && viewMode !== viewModeEnum.Hidden;
+    @let showUnhide = canHide() && viewMode === viewModeEnum.Hidden;
     @let showDelete = isCustom();
 
     @let playGroup =
       showPlayFromStart ||
+      showMarkWatched ||
       showMarkUnwatched ||
       showRecord ||
       showDownload ||
@@ -178,10 +196,16 @@
       showMoveBack;
     @let guideGroup = showEpg || showMapEpg;
     @let editGroup = showEdit || showShare || showCopyUrl;
+    @let hideGroup = showLock || showHide || showUnhide;
 
     @if (showPlayFromStart) {
       <button mat-menu-item (click)="playFromStart()">
         {{ "MENU.PLAY_FROM_START" | translate }}
+      </button>
+    }
+    @if (showMarkWatched) {
+      <button mat-menu-item (click)="markWatched()">
+        {{ "MENU.MARK_WATCHED" | translate }}
       </button>
     }
     @if (showMarkUnwatched) {
@@ -277,7 +301,7 @@
       </button>
     }
 
-    @if (showLock && (playGroup || listGroup || guideGroup || editGroup)) {
+    @if (hideGroup && (playGroup || listGroup || guideGroup || editGroup)) {
       <mat-divider></mat-divider>
     }
     @if (showLock) {
@@ -285,8 +309,21 @@
         {{ (isLockedGroup() ? "MENU.UNLOCK_GROUP" : "MENU.LOCK_GROUP") | translate }}
       </button>
     }
+    @if (showHide) {
+      <button mat-menu-item (click)="hide()">
+        {{
+          (isGroup() ? "MENU.HIDE_GROUP" : isLivestream() ? "MENU.HIDE_CHANNEL" : "MENU.HIDE")
+            | translate
+        }}
+      </button>
+    }
+    @if (showUnhide) {
+      <button mat-menu-item (click)="unhide()">
+        {{ "MENU.UNHIDE" | translate }}
+      </button>
+    }
 
-    @if (showDelete && (playGroup || listGroup || guideGroup || editGroup || showLock)) {
+    @if (showDelete && (playGroup || listGroup || guideGroup || editGroup || hideGroup)) {
       <mat-divider></mat-divider>
     }
     @if (showDelete) {

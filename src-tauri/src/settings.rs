@@ -40,6 +40,9 @@ pub const XMLTV_LAST_UPDATED: &str = "xmltvLastUpdated";
 pub const XMLTV_STATUS: &str = "xmltvStatus";
 pub const COUNTRY_PREFIX: &str = "countryPrefix";
 pub const AUTO_FALLBACK: &str = "autoFallback";
+pub const REMINDER_LEAD_MINUTES: &str = "reminderLeadMinutes";
+/// Reminders fire at most this long before the programme.
+pub const MAX_REMINDER_LEAD_MINUTES: u16 = 60;
 
 /// Per-source results of the last XMLTV refresh, keyed by URL.
 pub fn get_xmltv_status() -> Result<HashMap<String, XmltvSourceStatus>> {
@@ -132,6 +135,7 @@ pub fn get_settings() -> Result<Settings> {
         mpv_debug_log: map.get(MPV_DEBUG_LOG).and_then(|s| s.parse().ok()),
         country_prefix: map.get(COUNTRY_PREFIX).map(|s| s.to_string()),
         auto_fallback: map.get(AUTO_FALLBACK).and_then(|s| s.parse().ok()),
+        reminder_lead_minutes: map.get(REMINDER_LEAD_MINUTES).and_then(|s| s.parse().ok()),
     };
     Ok(settings)
 }
@@ -215,6 +219,10 @@ pub fn update_settings(settings: Settings) -> Result<()> {
     }
     if let Some(auto_fallback) = settings.auto_fallback {
         map.insert(AUTO_FALLBACK.to_string(), Some(auto_fallback.to_string()));
+    }
+    if let Some(minutes) = settings.reminder_lead_minutes {
+        let minutes = minutes.min(MAX_REMINDER_LEAD_MINUTES);
+        map.insert(REMINDER_LEAD_MINUTES.to_string(), Some(minutes.to_string()));
     }
     if let Some(country_prefix) = settings.country_prefix {
         map.insert(COUNTRY_PREFIX.to_string(), Some(country_prefix));

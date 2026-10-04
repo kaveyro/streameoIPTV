@@ -2,4 +2,28 @@
   <router-outlet></router-outlet>
 </main>
 <app-download-manager *ngIf="showDownloadManager()"></app-download-manager>
+<!-- A restream runs on while its dialog is hidden: shown wherever the user is -->
+<div
+  *ngIf="restream.active"
+  class="restream-chip shadow-sm"
+  [class.restream-chip--beside]="showDownloadManager()"
+  role="status"
+>
+  <span class="restream-chip-dot" aria-hidden="true"></span>
+  <span class="restream-chip-label" [title]="restream.channel?.name ?? ''">{{
+    (restream.state === "starting" ? "RESTREAM.CHIP_STARTING" : "RESTREAM.CHIP_RUNNING")
+      | translate: { channel: restream.channel?.name }
+  }}</span>
+  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="restream.open()">
+    {{ "RESTREAM.OPEN" | translate }}
+  </button>
+  <button
+    type="button"
+    class="btn btn-sm btn-outline-secondary"
+    [disabled]="restream.state === 'stopping'"
+    (click)="restream.stop()"
+  >
+    {{ "RESTREAM.STOP" | translate }}
+  </button>
+</div>
 <app-player></app-player>

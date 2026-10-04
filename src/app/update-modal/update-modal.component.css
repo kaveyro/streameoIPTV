@@ -41,3 +41,29 @@
   color: var(--text-primary);
   font-size: 0.95em;
 }
+
+/* Not red: installing is still the user's call, nothing is lost for good. */
+.update-warning {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+
+.update-warning-icon {
+  flex-shrink: 0;
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  margin-top: 0.1rem;
+  color: var(--text-secondary);
+}
+
+.update-progress {
+  height: 8px;
+  background-color: var(--bg-surface-hover);
+}

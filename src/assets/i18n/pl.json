@@ -42,7 +42,8 @@
       "RECORDINGS": "Nagrania",
       "SETTINGS": "Ustawienia",
       "GUIDE": "Program TV",
-      "CONTINUE_WATCHING": "Kontynuuj oglądanie"
+      "CONTINUE_WATCHING": "Kontynuuj oglądanie",
+      "HIDDEN": "Ukryte"
     },
     "PILL": {
       "LIVESTREAMS": "Transmisje na żywo",
@@ -58,7 +59,19 @@
     "VIEWING": "Przeglądasz: {{path}}",
     "SEARCH_LABEL": "Szukaj kanałów, filmów i seriali",
     "CLEAR_SEARCH": "Wyczyść wyszukiwanie",
-    "BREADCRUMB": "Ścieżka"
+    "BREADCRUMB": "Ścieżka",
+    "SEARCH_IN": "Szukaj w {{name}}…",
+    "RESULT_ACTIONS": "Działania dla wszystkich wyników",
+    "FAVORITE_ALL_RESULTS": "Dodaj wszystkie wyniki do ulubionych",
+    "HIDE_ALL_RESULTS": "Ukryj wszystkie wyniki",
+    "UNHIDE_ALL_RESULTS": "Pokaż ponownie wszystkie wyniki",
+    "CLEAR_HISTORY": "Wyczyść historię",
+    "SELECTION": {
+      "ACTIONS": "Zaznaczone elementy",
+      "COUNT": "Zaznaczono: {{count}}",
+      "HIDE": "Ukryj",
+      "CLEAR": "Wyczyść zaznaczenie"
+    }
   },
   "MENU": {
     "REMOVE": "Usuń",
@@ -77,7 +90,12 @@
     "UNLOCK_GROUP": "Odblokuj grupę",
     "MAP_EPG": "Przypisz EPG…",
     "PLAY_FROM_START": "Odtwórz od początku",
-    "MARK_UNWATCHED": "Oznacz jako nieobejrzane"
+    "MARK_UNWATCHED": "Oznacz jako nieobejrzane",
+    "MARK_WATCHED": "Oznacz jako obejrzane",
+    "HIDE_CHANNEL": "Ukryj kanał",
+    "HIDE_GROUP": "Ukryj grupę",
+    "HIDE": "Ukryj",
+    "UNHIDE": "Pokaż ponownie"
   },
   "EMPTY": {
     "NO_CHANNELS_FOUND": "Nie znaleziono kanałów",
@@ -95,14 +113,25 @@
     "NO_RECORDING_FILES_HINT": "Nagrania i pobrane pliki są zapisywane w folderze nagrań (Ustawienia → Nagrywanie)",
     "LOAD_FAILED": "Nie udało się wczytać tego widoku",
     "LOAD_FAILED_HINT": "Sprawdź połączenie ze źródłem i spróbuj ponownie",
-    "RETRY": "Spróbuj ponownie"
+    "RETRY": "Spróbuj ponownie",
+    "ALL_SOURCES_DISABLED": "Wszystkie źródła są wyłączone",
+    "ALL_SOURCES_DISABLED_HINT": "Włącz źródło w ustawieniach, aby zobaczyć jego elementy",
+    "NO_MATCH_FILTERS": "Nic nie pasuje do aktywnych filtrów",
+    "ACTIVE_FILTERS": "Aktywne filtry: {{filters}}",
+    "FILTER_COUNTRY": "Kraj {{code}}",
+    "CLEAR_FILTERS": "Wyczyść filtry",
+    "NOTHING_HIDDEN": "Nic nie jest ukryte",
+    "NOTHING_HIDDEN_HINT": "Ukryte kanały i kategorie pojawiają się tutaj i można je ponownie pokazać z ich menu"
   },
   "RECORDING": {
     "SCHEDULED": "Zaplanowane nagranie",
     "STATUS_RECORDING": "Nagrywanie",
     "STATUS_DONE": "Gotowe",
     "STATUS_FAILED": "Niepowodzenie",
-    "STATUS_PENDING": "Oczekujące"
+    "STATUS_PENDING": "Oczekujące",
+    "CONFLICT_TITLE": "Za mało strumieni",
+    "CONFLICT_BODY": "{{source}} pozwala na {{max}} strumieni; w tym czasie trwa {{count}} innych nagrań. Zaplanować mimo to?",
+    "CONFLICT_CONFIRM": "Zaplanuj mimo to"
   },
   "SORT": {
     "SORT": "Sortuj",
@@ -177,7 +206,10 @@
       "APP_VERSION_DESC": "Używasz wersji {{version}}",
       "CHECK_UPDATES": "Sprawdź teraz",
       "CHECKING": "Sprawdzanie...",
-      "RESTART_REQUIRED": "Wymaga ponownego uruchomienia"
+      "RESTART_REQUIRED": "Wymaga ponownego uruchomienia",
+      "REMINDER_LEAD": "Wyprzedzenie przypomnień",
+      "REMINDER_LEAD_DESC": "Przypomnienia o programach pojawiają się tyle minut przed rozpoczęciem (0 = w chwili rozpoczęcia).",
+      "MINUTES_SHORT": "min"
     },
     "APPEARANCE": {
       "THEME": "Motyw",
@@ -316,7 +348,9 @@
       "COVERAGE": "Dane przewodnika ma {{matched}} z {{live}} kanałów na żywo.",
       "COVERAGE_HINT": "Kanały bez dopasowania możesz przypisać ręcznie: otwórz menu kanału i wybierz „Przypisz EPG…”.",
       "DUPLICATE_COUNTRY": "{{country}}: liczba źródeł {{count}} – zdublowane źródła tylko spowalniają odświeżanie.",
-      "REFRESHING": "Odświeżanie…"
+      "REFRESHING": "Odświeżanie…",
+      "STATUS_LOADING": "Ładowanie…",
+      "REMOVED_UNDO": "Usunięto źródło XMLTV. Kliknij tutaj, aby cofnąć"
     },
     "PARENTAL": {
       "DESC": "Chroń grupy kodem PIN. Zablokowane grupy i ich kanały pozostają ukryte, dopóki PIN nie zostanie wprowadzony przyciskiem kłódki na stronie głównej. Grupę zablokujesz z jej menu kontekstowego w Kategoriach.",
@@ -388,7 +422,8 @@
     "DOWNLOAD_CATCHUP": "Pobierz z archiwum",
     "NOTIFY_ON": "Powiadom mnie, gdy się zacznie",
     "NOTIFY_OFF": "Wyłącz powiadomienie",
-    "NOTIFY_NEEDS_TRAY": "Przypomnienia wymagają ikony w zasobniku (Ustawienia → Ogólne)"
+    "NOTIFY_NEEDS_TRAY": "Przypomnienia wymagają ikony w zasobniku (Ustawienia → Ogólne)",
+    "STOP_RECORDING": "Zatrzymaj nagrywanie"
   },
   "RESTREAM": {
     "TITLE": "Re-stream: {{name}}",
@@ -404,7 +439,18 @@
     "WATCH": "Oglądaj",
     "SHARE": "Udostępnij",
     "STOP": "Zatrzymaj",
-    "NETWORK_UNAVAILABLE": "Informacje o sieci są niedostępne, więc nie można uruchomić retransmisji."
+    "NETWORK_UNAVAILABLE": "Informacje o sieci są niedostępne, więc nie można uruchomić retransmisji.",
+    "STARTING": "Uruchamianie retransmisji…",
+    "HIDE": "Ukryj",
+    "COPY": "Kopiuj",
+    "COPY_URL": "Kopiuj {{url}}",
+    "COPIED": "Skopiowano adres",
+    "CHIP_RUNNING": "Retransmisja trwa · {{channel}}",
+    "CHIP_STARTING": "Retransmisja uruchamia się · {{channel}}",
+    "OPEN": "Otwórz",
+    "STOPPED_FFMPEG": "Retransmisja {{name}} została zatrzymana: ffmpeg nieoczekiwanie zakończył działanie",
+    "STOPPED_SERVER": "Retransmisja {{name}} została zatrzymana: lokalny serwer przestał działać",
+    "STOPPED_UNKNOWN": "Retransmisja {{name}} nieoczekiwanie się zatrzymała"
   },
   "DOWNLOAD": {
     "TITLE": "Pobrania",
@@ -427,7 +473,12 @@
     "FINISHED": "Zakończone",
     "CLEAR_FINISHED": "Wyczyść",
     "CANCEL_ALL": "Anuluj wszystko",
-    "CONCURRENT": "Równoległe pobierania"
+    "CONCURRENT": "Równoległe pobierania",
+    "BYTES_OF": "{{done}} z {{total}}",
+    "SPEED": "{{speed}}/s",
+    "PLAY": "Odtwórz",
+    "PLAY_ARIA": "Odtwórz {{name}}",
+    "SHOW_IN_FOLDER": "Pokaż w folderze"
   },
   "EDIT_CHANNEL": {
     "CREATE_TITLE": "Tworzenie kanału niestandardowego",
@@ -631,14 +682,26 @@
     "EPG_LOADING": "Program TV wczytuje się w tle…",
     "FAVORITE_REMOVED_STAYS_IN_LIST": "Usunięto „{{name}}” z ulubionych; pozostaje na liście „{{list}}”",
     "DETAILS": "Szczegóły",
-    "RECORDING_ALREADY_SCHEDULED": "Ten program jest już zaplanowany do nagrania"
+    "RECORDING_ALREADY_SCHEDULED": "Ten program jest już zaplanowany do nagrania",
+    "HIDDEN_UNDO": "„{{name}}” ukryto. Kliknij, aby cofnąć.",
+    "UNHIDDEN": "„{{name}}” jest znowu widoczne",
+    "HIDE_FAILED": "Nie udało się ukryć „{{name}}”",
+    "UNHIDE_FAILED": "Nie udało się ponownie pokazać „{{name}}”",
+    "ITEMS_FAVORITED": "Dodano do ulubionych: {{count}}",
+    "ITEMS_HIDDEN_UNDO": "Ukryto: {{count}}. Kliknij, aby cofnąć.",
+    "ITEMS_UNHIDDEN": "Ponownie widoczne: {{count}}",
+    "BULK_FAILED": "Nie udało się zmienić niektórych elementów",
+    "RESULTS_UPDATED": "Wyniki wyszukiwania zostały zaktualizowane"
   },
   "UPDATE": {
     "TITLE": "Dostępna aktualizacja",
     "AVAILABLE": "Wersja {{version}} jest dostępna, masz {{current}}.",
     "RESTART_HINT": "Aplikacja uruchomi się ponownie po instalacji.",
     "INSTALL": "Zainstaluj teraz",
-    "LATER": "Później"
+    "LATER": "Później",
+    "PENDING_WORK": "Trwają lub wkrótce rozpoczną się nagrania albo pobierania ({{count}}); instalacja uruchomi aplikację ponownie i je zatrzyma.",
+    "INSTALL_ANYWAY": "Zainstaluj mimo to",
+    "PROGRESS": "Postęp pobierania aktualizacji"
   },
   "TILE": {
     "CATCHUP_AVAILABLE": "Dostępne oglądanie wstecz",
@@ -646,7 +709,8 @@
     "RESUME": "Wznów",
     "LOCKED_GROUP": "Zablokowana grupa",
     "WATCHED": "Obejrzane",
-    "WATCH_PROGRESS": "Obejrzano {{percent}}%"
+    "WATCH_PROGRESS": "Obejrzano {{percent}}%",
+    "SELECTED": "zaznaczone"
   },
   "LOADING": {
     "CHANNELS": "Wczytywanie kanałów..."
@@ -680,7 +744,13 @@
     "DELETE_ALERT_RECORD_BODY": "Programy z „{{query}}” w tytule nie będą już automatycznie nagrywane.",
     "DELETE_ALERT_KEEP": "Utworzone już przypomnienia i nagrania pozostają. Usuń je pojedynczo, jeśli już ich nie chcesz.",
     "CLEAR_FINISHED_TITLE": "Usunąć zakończone wpisy?",
-    "CLEAR_FINISHED_FAILED_BODY": "W tym nieudane nagrania: {{count}}. Ich wpisy to jedyny ślad, że te nagrania się nie powiodły. Nagrane pliki pozostaną w folderze."
+    "CLEAR_FINISHED_FAILED_BODY": "W tym nieudane nagrania: {{count}}. Ich wpisy to jedyny ślad, że te nagrania się nie powiodły. Nagrane pliki pozostaną w folderze.",
+    "BULK_FAVORITE_TITLE": "Dodać wszystkie wyniki do ulubionych?",
+    "BULK_FAVORITE_BODY": "Wszystkie wyniki dla „{{query}}” ({{count}}) zostaną dodane do ulubionych.",
+    "BULK_HIDE_TITLE": "Ukryć wszystkie wyniki?",
+    "BULK_HIDE_BODY": "Wszystkie wyniki dla „{{query}}” ({{count}}) zostaną ukryte. Możesz je ponownie pokazać w widoku „Ukryte”.",
+    "BULK_UNHIDE_TITLE": "Pokazać ponownie wszystkie wyniki?",
+    "BULK_UNHIDE_BODY": "Wszystkie wyniki dla „{{query}}” ({{count}}) będą znowu widoczne w pozostałych widokach."
   },
   "PLAYER": {
     "BACK_TO_CHANNELS": "Wróć do kanałów",
@@ -718,7 +788,8 @@
     "CLOSE_PLAYER_HINT": "Zamknij odtwarzacz (Esc)",
     "FULLSCREEN_HINT": "Esc: zamknij pełny ekran",
     "ERROR_RETRY_HINT": "Enter: spróbuj ponownie",
-    "ERROR_LAST_HINT": "Backspace: poprzedni kanał"
+    "ERROR_LAST_HINT": "Backspace: poprzedni kanał",
+    "RECORDING_SOURCE_BUSY": "Nagrywanie „{{title}}” się rozpoczęło i potrzebuje połączenia – ten kanał może się zatrzymać."
   },
   "GUIDE": {
     "CHANNEL": "Kanał",
@@ -873,6 +944,7 @@
     "QUIT_TITLE": "Zamknąć streameoIPTV?",
     "QUIT_BODY": "{count} nagrań lub pobrań trwa albo wkrótce się rozpocznie. Zamknięcie je zatrzyma; program, który wciąż trwa, zostanie nagrany dalej przy następnym uruchomieniu.",
     "QUIT_CONFIRM": "Zakończ",
-    "QUIT_CANCEL": "Anuluj"
+    "QUIT_CANCEL": "Anuluj",
+    "REMINDER_SOON_BODY": "Zaczyna się za {minutes} min na {channel}"
   }
 }

@@ -5,14 +5,50 @@
   <p class="mb-2">
     {{ "UPDATE.AVAILABLE" | translate: { version: version, current: currentVersion } }}
   </p>
-  <div class="update-notes" *ngIf="notesHtml" [innerHTML]="notesHtml"></div>
-  <p class="text-secondary small mb-0">{{ "UPDATE.RESTART_HINT" | translate }}</p>
+  <ng-container *ngIf="state !== 'installing'">
+    <div class="update-notes" *ngIf="notesHtml" [innerHTML]="notesHtml"></div>
+    <p class="text-secondary small mb-0">{{ "UPDATE.RESTART_HINT" | translate }}</p>
+  </ng-container>
+  <div *ngIf="state === 'warn'" class="update-warning mt-3" role="alert">
+    <svg class="update-warning-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M13,14H11V9H13M13,18H11V16H13M1,21H23L12,2L1,21Z" />
+    </svg>
+    <span>{{ "UPDATE.PENDING_WORK" | translate: { count: pendingCount } }}</span>
+  </div>
+  <div *ngIf="state === 'installing'" class="update-progress-wrap">
+    <div class="d-flex justify-content-between small mb-1">
+      <span>{{ "TOAST.UPDATE_DOWNLOADING" | translate: { version: version } }}</span>
+      <span *ngIf="percent !== undefined">{{ percent }}%</span>
+    </div>
+    <div class="progress update-progress">
+      <div
+        class="progress-bar"
+        [class.progress-bar-striped]="percent === undefined"
+        [class.progress-bar-animated]="percent === undefined"
+        role="progressbar"
+        [attr.aria-label]="'UPDATE.PROGRESS' | translate"
+        [style.width.%]="percent ?? 100"
+        [attr.aria-valuenow]="percent ?? null"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      ></div>
+    </div>
+  </div>
 </div>
-<div class="modal-footer">
+<div class="modal-footer" *ngIf="state !== 'installing'">
   <button type="button" class="btn btn-secondary" (click)="activeModal.close(false)">
     {{ "UPDATE.LATER" | translate }}
   </button>
-  <button type="button" class="btn btn-primary" (click)="activeModal.close(true)">
+  <button
+    *ngIf="state === 'offer'"
+    type="button"
+    class="btn btn-primary"
+    [disabled]="checkingPending"
+    (click)="requestInstall()"
+  >
     {{ "UPDATE.INSTALL" | translate }}
+  </button>
+  <button *ngIf="state === 'warn'" type="button" class="btn btn-primary" (click)="installNow()">
+    {{ "UPDATE.INSTALL_ANYWAY" | translate }}
   </button>
 </div>

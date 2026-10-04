@@ -256,7 +256,7 @@
             [title]="
               (scheduledFor(item.hit.channel, item.hit) === undefined
                 ? 'GUIDE.RECORD_FROM_NOW'
-                : 'EPG.CANCEL_SCHEDULED'
+                : 'EPG.STOP_RECORDING'
               ) | translate
             "
             [attr.aria-label]="('GUIDE.RECORD_FROM_NOW' | translate) + ': ' + item.hit.title"
@@ -482,7 +482,7 @@
         {{
           (scheduledId(menuRow, menuBlock) === undefined
             ? "GUIDE.RECORD_FROM_NOW"
-            : "EPG.CANCEL_SCHEDULED"
+            : "EPG.STOP_RECORDING"
           ) | translate
         }}
       </button>

@@ -867,7 +867,7 @@ pub async fn stop(state: State<'_, Mutex<AppState>>) -> Result<()> {
     }
     PAUSED_BY_HIDE.store(false, Ordering::SeqCst);
     CURRENT_SOURCE.store(-1, Ordering::SeqCst);
-    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    #[cfg(target_os = "windows")]
     if let Some(app) = APP_HANDLE.get() {
         crate::tray::set_now_playing(app, None);
     }

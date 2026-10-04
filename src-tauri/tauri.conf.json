@@ -1,6 +1,6 @@
 {
   "productName": "streameoIPTV",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "identifier": "com.kaveyro.streameo-iptv",
   "build": {
     "frontendDist": "../dist/streameoIPTV/browser",
